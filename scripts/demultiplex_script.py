@@ -29,11 +29,16 @@ def qc(RunId):
     execute('multiqc /mnt/data/demultiplex/' + RunId + '/QC' + ' -o /mnt/data/demultiplex/' + RunId + '/QC' + ' 2> /mnt/data/demultiplex/' + RunId + '/demultiplex_log/05_multiqc.log')
     print ('5/5 Tasks: MultiQC complete')
 
+# def copyQC(RunId):
+#     execute('rsync /mnt/data/demultiplex/' + RunId + '/Stats ' + '/mnt/data/demultiplex/' + RunId + '/demultiplex_log ' + ' /mnt/data/scratch/' + RunId)
+#    execute('rsync /mnt/data/demultiplex/' + RunId + '/Reports ' + '/mnt/data/demultiplex/' + RunId + '/demultiplex_log ' + ' /mnt/data/scratch/' + RunId)
+
 def main(RunId):
     createDirectory(RunId)
     demutliplex(RunId)
     moveFiles(RunId)
     qc(RunId)
+#    copyQC(RunId)
 
 if __name__ == '__main__':
     RunId = sys.argv[1]
