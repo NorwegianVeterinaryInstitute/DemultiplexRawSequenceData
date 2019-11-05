@@ -1,8 +1,8 @@
 # prod_bioinf
 
-# Demutliplexing MiSeq run
+## Demutliplexing MiSeq run
 
-log into seqtech01
+### Log into seqtech01
 
 Run data is at /mnt/data/scratch/<RunId>  
 Demultiplex data will be available here at /mnt/data/demultiplex/<RunId>
