@@ -7,6 +7,10 @@
 Run data is at /mnt/data/scratch/<RunId>  
 Demultiplex data will be available here at /mnt/data/demultiplex/<RunId>
 
+Python script is available at:  
+https://github.com/NorwegianVeterinaryInstitute/prod_bioinf/blob/master/scripts/demultiplex_script.py  
+/mnt/data/demultiplex/demultiplex_script.py  
+
 Execute the following command:
 
 ```
