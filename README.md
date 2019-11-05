@@ -1,6 +1,6 @@
 # prod_bioinf
 
-## Demutliplexing MiSeq run
+## Demutliplexing a MiSeq run
 
 ### Log into seqtech01
 
