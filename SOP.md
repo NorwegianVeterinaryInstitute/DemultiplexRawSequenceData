@@ -28,6 +28,7 @@ IP: 128.39.96.73
 ## Backup
 * Backup for _scratch_
 * Backup for _demultiplex_
+* Create a folder and copy all the four folders: Demultiplex, QC, Reports and Stats for backup log
   
 ## Procedure
 * How and where will the lab users, Bjørn, XXXX will access _demultiplex_ for run QC?
