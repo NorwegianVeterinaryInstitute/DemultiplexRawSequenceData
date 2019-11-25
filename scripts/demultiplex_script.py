@@ -6,6 +6,13 @@ def execute(command):
     (output, err) = p.communicate()
     p_status = p.wait()
 
+def checkComplete(RunId):
+    if not os.path.exists('/mnt/data/scratch/' + RunId + '/RTAComplete.txt'):
+        print ('Run is not complete')
+        return ('False')
+    else:
+        return ('True')
+    
 def createDirectory(RunId):
     execute('mkdir /mnt/data/demultiplex/' + RunId)
     execute('mkdir /mnt/data/demultiplex/' + RunId + '/QC')
@@ -34,10 +41,11 @@ def qc(RunId):
 #    execute('rsync /mnt/data/demultiplex/' + RunId + '/Reports ' + '/mnt/data/demultiplex/' + RunId + '/demultiplex_log ' + ' /mnt/data/scratch/' + RunId)
 
 def main(RunId):
-    createDirectory(RunId)
-    demutliplex(RunId)
-    moveFiles(RunId)
-    qc(RunId)
+    if checkComplete(RunId) is 'True':
+        createDirectory(RunId)
+        demutliplex(RunId)
+        moveFiles(RunId)
+        qc(RunId)
 #    copyQC(RunId)
 
 if __name__ == '__main__':
