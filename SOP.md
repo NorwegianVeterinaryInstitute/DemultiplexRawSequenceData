@@ -9,12 +9,14 @@ IP: 128.39.96.73
 
     ./mnt/data/ 
             ├── scratch                       # MiSeq writes the Runs here; Mounted on MiSeq as Z:\
+                ├── SampleSheets              # Copy of all SampleSheets
             ├── demultiplex                   # Demultiplex data goes here; Mounted on MiSeq as Y:\
                 ├── demultiplex_script_v2.py  # Script used to demutliplex and QC the run   
 
 ## Read/Write access
 
 * MiSeq writes as _sambauser01_ to /mnt/data/scratch; shared folder Z:\
+* Lab members save the _SampleSheet.csv_ file to the <RunId> folder in Z:\ and a copy within Z:\SampleSheets\
 * Lab members login to seqtech01.vetinst.no from MiSeq using Putty and personal credentials
 * Execute python script _demultiplex_script_v2.py_ as below
 ```bash
