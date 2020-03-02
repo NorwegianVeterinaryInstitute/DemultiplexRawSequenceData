@@ -16,7 +16,7 @@ IP: 128.39.96.73
 ## Read/Write access
 
 * MiSeq writes as _sambauser01_ to /mnt/data/scratch; shared folder Z:\
-* Lab members save the _SampleSheet.csv_ file to the <RunId> folder in Z:\ and a copy within Z:\SampleSheets\
+* Lab members save the _SampleSheet.csv_ file to the \<RunId\> folder in Z:\ and a copy within Z:\SampleSheets\ as \<RunId>\_SampleSheet.csv
 * Lab members login to seqtech01.vetinst.no from MiSeq using Putty and personal credentials
 * Execute python script _demultiplex_script_v2.py_ as below
 ```bash
