@@ -24,6 +24,7 @@ def createDirectory(DemultiplexLocation):
 
 def demutliplex(RunLocation, DemultiplexLocation):
     print ('2/5 Tasks: Demultiplexing started')
+    execute('cp ' + RunLocation + '/SampleSheet.csv ' + DemultiplexLocation)
     execute('bcl2fastq --runfolder-dir ' + RunLocation + ' --output-dir ' + DemultiplexLocation + ' 2> ' + DemultiplexLocation + '/demultiplex_log/02_demultiplex.log')
     print ('2/5 Tasks: Demultiplexing complete')
 
@@ -32,6 +33,17 @@ def moveFiles(DemultiplexLocation):
         for name in files:
             if 'fastq.gz' in name:
                 execute('mv ' + root + '/' + name + ' ' + root + '/' + '_'.join(RunId.split('_')[0:2]) + '.' + name)
+
+    check = 'False'
+    project_list = []
+    for line in open(DemultiplexLocation + '/SampleSheet.csv', 'r'):
+        if check == 'True':
+            if line.rstrip().split(',')[9] not in project_list:
+                project_list.append(line.rstrip().split(',')[9])
+        if 'Sample_ID' in line:
+            check = 'True'
+    for project in project_list:
+        execute('mv ' + DemultiplexLocation + '/' + project + ' ' + DemultiplexLocation + '/' + '_'.join(RunId.split('_')[0:2]) + '.'+ project)
     print ('3/5 Tasks: Moving files complete')
 
 def qc(DemultiplexLocation):
