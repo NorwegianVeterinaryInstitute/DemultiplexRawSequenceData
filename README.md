@@ -8,13 +8,13 @@ Run data is at /mnt/data/scratch/<RunId>
 Demultiplex data will be available here at /mnt/data/demultiplex/<RunId>
 
 Python script is available at:  
-https://github.com/NorwegianVeterinaryInstitute/prod_bioinf/blob/master/scripts/demultiplex_script.py  
+https://github.com/NorwegianVeterinaryInstitute/prod_bioinf/blob/master/scripts/demultiplex_script_v2.py  
 /mnt/data/demultiplex/demultiplex_script_v2.py  
 
 Execute the following command:
 
 ```
-python /mnt/data/demultiplex/demultiplex_script.py <RunId>
+python /mnt/data/demultiplex/demultiplex_script_v2.py <RunId>
 ```
 
 Replace <RunId> with <RunId> in the above command. Example <RunID> looks like "190912_M06578_0001_000000000-CNNTP".
