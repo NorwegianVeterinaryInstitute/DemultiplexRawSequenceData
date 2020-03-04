@@ -12,13 +12,14 @@ IP: 128.39.96.73
                 ├── SampleSheets              # Copy of all SampleSheets
             ├── demultiplex                   # Demultiplex data goes here; Mounted on MiSeq as Y:\
                 ├── demultiplex_script_v2.py  # Script used to demutliplex and QC the run   
+                ├── scrips                    # Contains the cron job and cron job output files. Also old scripts
 
 ## Read/Write access
 
 * MiSeq writes as _sambauser01_ to /mnt/data/scratch; shared folder Z:\
 * Lab members save the _SampleSheet.csv_ file to the \<RunId\> folder in Z:\ and a copy within Z:\SampleSheets\ as \<RunId>\_SampleSheet.csv
-* Lab members login to seqtech01.vetinst.no from MiSeq using Putty and personal credentials
-* Execute python script _demultiplex_script_v2.py_ as below
+* Cron job runs every three hours and if it finds a new run, _RTAComplete.txt_ and _SampleSheet.csv_ files within the run new, it starts the demultiplexing script
+* It can be manually started as below
 ```bash
 $ python /mnt/data/demultiplex_script_v2.py <RunId>
 ```
