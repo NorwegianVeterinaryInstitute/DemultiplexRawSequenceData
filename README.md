@@ -1,11 +1,9 @@
 # prod_bioinf
 
-## Demutliplexing a MiSeq run
+## Demutliplexing a MiSeq run: Cron job takes care of this now
 
-### Cron job takes for this now
-
-### Manual demultiplexing steps:
-#### Log into seqtech01
+## Manual demultiplexing steps:
+### Log into seqtech01
 
 Run data is at /mnt/data/scratch/<RunId>  
 Demultiplex data will be available here at /mnt/data/demultiplex/<RunId>
