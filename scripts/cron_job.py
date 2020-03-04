@@ -31,7 +31,7 @@ if count == len(RunList):
 
 if NewRun:
     cron_out_file.write('Need to work on this: ' + NewRun)
-    if 'RTAComplete.txt' in os.listdir(RunDir + '/' + NewRun):
+    if 'RTAComplete.txt' in os.listdir(RunDir + '/' + NewRun) and 'SampleSheet.csv' in os.listdir(RunDir + '/' + NewRun):
         command = 'python /mnt/data/demultiplex/demultiplex_script_v2.py ' + NewRun
         cron_out_file.write('\n' + command + '\n')
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
