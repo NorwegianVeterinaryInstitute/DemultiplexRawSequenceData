@@ -1,0 +1,3 @@
+SHELL=/bin/bash
+PATH=/src/anaconda3/bin:/src/anaconda3/condabin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/rootuser/.local/bin:/home/rootuser/bin
+0 */3 * * * python /mnt/data/demultiplex/scripts/cron_job.py
