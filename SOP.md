@@ -4,11 +4,15 @@ IP: 128.39.96.73
 > Folder structure:  
 
     ./mnt/data/ 
-            ├── scratch                       # MiSeq writes the Runs here; Mounted on MiSeq as Z:\
-                ├── SampleSheets              # Copy of all SampleSheets
-            ├── demultiplex                   # Demultiplex data goes here; Mounted on MiSeq as Y:\
-                ├── demultiplex_script_v2.py  # Script used to demutliplex and QC the run   
-                ├── scripts                    # Contains the cron job and cron job output files. Also old scripts
+            ├── scratch                             # MiSeq writes the Runs here; Mounted on MiSeq as Z:\
+                ├── SampleSheets                    # Copy of all SampleSheets
+            ├── demultiplex                         # Demultiplex data goes here; Mounted on MiSeq as Y:\  
+                ├── scripts                         # scripts
+                    ├── cron_job.py                 # Cron job script 
+                    ├── cron_out.txt                # Cron job output
+                    ├── demultiplex_script_v2.py    # Script used to demutliplex and QC the run 
+                    ├── demultiplex_script_v1.py    # Old script(s)
+
 
 ## Procedure
 * MiSeq writes as _sambauser01_ to /mnt/data/scratch; shared folder Z:\ (alias rawdata) in MiSeq
@@ -16,7 +20,7 @@ IP: 128.39.96.73
 * Cron job runs every three hours and if it finds a new run, _RTAComplete.txt_ and _SampleSheet.csv_ files within the run new, it starts the demultiplexing script
 * It can be manually started as below
 ```bash
-$ python /mnt/data/demultiplex_script_v2.py <RunId>
+$ python /mnt/data/demultiplex/scripts/demultiplex_script_v2.py <RunId>
 ```
 * Produced _\<RunId\>\_demultiplex_ in /mnt/data/demultiplex; shared folder Y:\ (alias demutiplex) in MiSeq
     
