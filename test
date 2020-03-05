@@ -1,0 +1,22 @@
+process hisat2 {
+    tag "$sampleName"
+    publishDir params.hisat2Folder, mode: 'copy', overwrite: false
+
+    input:
+    val genome from params.genomeName
+    file genome_index from hs2_index
+    set sampleName, file(read1), file(read2) from clean_reads
+
+    output:
+    set sampleName, file("${sampleName}.sorted.bam") into bam_for_qualimap, bam_for_featureCounts
+    file "${sampleName}_hisat2.summary"
+    set sampleName, file("${sampleName}_hisat2.log") into BWAmem_log
+    set sampleName, file("${sampleName}_hisat2.sh") into BWAmem_sh
+
+    script:
+    """
+    hisat2 -p $params.cpu $params.hisat2Parameters -x ${genome} -1 ${read1} -2 ${read2} --summary-file ${sampleName}_hisat2.summary | samtools sort -T ./${sampleName}_tmp -O bam -o ${sampleName}.sorted.bam -
+    cp .command.log ${sampleName}_hisat2.log
+    cp .command.sh ${sampleName}_hisat2.sh
+    """
+}
