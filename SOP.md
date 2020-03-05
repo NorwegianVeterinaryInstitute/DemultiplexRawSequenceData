@@ -27,11 +27,13 @@ $ python /mnt/data/demultiplex_script_v2.py <RunId>
     
 ## SampleSheet.csv
 
-|Sample_ID|Sample_Name|Sample_Plate|Sample_Well|Index_Plate_Well|I7_Index_ID|index|I5_Index_ID|index2|Sample_Project|Description
-1,VI62001,,A01,A03,UDP0017,GAGAATGGTT,UDP0017,TCGGCAGCAA,Listeria,2020-22-30-49
+| __Sample_ID__ | __Sample_Name__ | __Sample_Plate__ | __Sample_Well__ | __Index_Plate_Well__ | __I7_Index_ID__ | __index__ | __I5_Index_ID__ | __index__ | __Sample_Project__ | __Description__ |
+|-------------|------------|------------|-------------|------------|------------|------------|------------|-------------|------------|------------|
+| \<empty\>     | SampleName     |       |          |      | UDP0018      |  AGAGGCAACC    | UDP0018      | CTAATGATGG         | Listeria_20200101     |       |
+
+
 
 ## To do
-* _SampleSheet.csv_ template 
 * Backup for _scratch_ and _demultiplex_
 * Create users in the VM and check the script.
 * How(Who) are(is) we going to transfer the data from _demultiplex_ to SAGA?
