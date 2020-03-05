@@ -12,9 +12,9 @@ IP: 128.39.96.73
                 ├── SampleSheets              # Copy of all SampleSheets
             ├── demultiplex                   # Demultiplex data goes here; Mounted on MiSeq as Y:\
                 ├── demultiplex_script_v2.py  # Script used to demutliplex and QC the run   
-                ├── scrips                    # Contains the cron job and cron job output files. Also old scripts
+                ├── scripts                    # Contains the cron job and cron job output files. Also old scripts
 
-## Read/Write access
+## Procedure
 
 * MiSeq writes as _sambauser01_ to /mnt/data/scratch; shared folder Z:\
 * Lab members save the _SampleSheet.csv_ file to the \<RunId\> folder in Z:\ and a copy within Z:\SampleSheets\ as \<RunId>\_SampleSheet.csv
@@ -31,11 +31,13 @@ $ python /mnt/data/demultiplex_script_v2.py <RunId>
 |-------------|------------|------------|-------------|------------|------------|------------|------------|-------------|------------|------------|
 | \<empty\>     | SampleName     |       |          |      | UDP0018      |  AGAGGCAACC    | UDP0018      | CTAATGATGG         | Listeria_20200101     |       |
 
-
+## Backup
+* Daily backups that lasts for a month
 
 ## To do
-* Backup for _scratch_ and _demultiplex_
-* Create users in the VM and check the script.
-* How(Who) are(is) we going to transfer the data from _demultiplex_ to SAGA?
-* How and when will the data be deleted from _scratch_?
-* How and when will the data be deleted from _demultiplex_?
+### Deletion protocol
+* _scratch_
+* _demultiplex_
+
+### Transfer to SAGA
+* rsync _demultiplex_ to SAGA?
