@@ -41,3 +41,5 @@ $ python /mnt/data/demultiplex_script_v2.py <RunId>
 
 ### Transfer to SAGA
 * rsync _demultiplex_ to SAGA?
+
+### Rename the VM
