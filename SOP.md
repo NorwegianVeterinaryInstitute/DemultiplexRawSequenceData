@@ -25,6 +25,11 @@ $ python /mnt/data/demultiplex_script_v2.py <RunId>
 ```
 * Produced _\<RunId\>\_demultiplex_ in /mnt/data/demultiplex; shared folder Y:\
     
+## SampleSheet.csv
+
+|Sample_ID|Sample_Name|Sample_Plate|Sample_Well|Index_Plate_Well|I7_Index_ID|index|I5_Index_ID|index2|Sample_Project|Description
+1,VI62001,,A01,A03,UDP0017,GAGAATGGTT,UDP0017,TCGGCAGCAA,Listeria,2020-22-30-49
+
 ## To do
 * _SampleSheet.csv_ template 
 * Backup for _scratch_ and _demultiplex_
