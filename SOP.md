@@ -17,6 +17,16 @@ IP: 128.39.96.73
 ## Procedure
 * MiSeq writes as _sambauser01_ to /mnt/data/scratch; shared folder Z:\ (alias rawdata) in MiSeq
 * Lab members save the _SampleSheet.csv_ file to the \<RunId\> folder in Z:\ and a copy within Z:\SampleSheets\ as \<RunId>\.csv
+
+> Example:  
+
+    Z:\190912_M06578_0001_000000000-CNNTP 
+            ├── SampleSheets.csv                             
+    Z:\SampleSheets 
+            ├── 190912_M06578_0001_000000000-CNNTP.csv                            
+                 
+      
+                
 * Cron job runs every three hours and if it finds a new run, _RTAComplete.txt_ and _SampleSheet.csv_ files within the run new, it starts the demultiplexing script
 * It can be manually started as below
 ```bash
