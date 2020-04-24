@@ -72,7 +72,8 @@ def main(RunId):
     
     execute('touch ' + DemultiplexLocation + '/DemultiplexComplete.txt', demultiplex_out_file)
     execute('chown -R arvindsu:sambagroup ' + DemultiplexLocation)
-
+    execute('chmod -R g+rwX sambagroup ' + DemultiplexLocation, demultiplex_out_file)
+    
     demultiplex_out_file.write('\nAll done!\n')
 
     demultiplex_out_file.close()
