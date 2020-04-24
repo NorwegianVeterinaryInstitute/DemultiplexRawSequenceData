@@ -69,6 +69,10 @@ def main(RunId):
     demutliplex(RunLocation, DemultiplexLocation, demultiplex_out_file)
     moveFiles(DemultiplexLocation, demultiplex_out_file)
     qc(DemultiplexLocation, demultiplex_out_file)
+    
+    execute('touch ' + DemultiplexLocation + '/DemultiplexComplete.txt', demultiplex_out_file)
+    execute('chown -R arvindsu:sambagroup ' + DemultiplexLocation)
+
     demultiplex_out_file.write('\nAll done!\n')
 
     demultiplex_out_file.close()
