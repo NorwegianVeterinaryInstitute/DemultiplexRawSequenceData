@@ -26,6 +26,10 @@ $ cd /projects/NS9305K/datasets/wgs/<RUN_FOLDER>
 md5sum check has not been implemented yet. This will happen before end of April.  
 
 <!--- Not implemented yet
+
+Filepermission to 444  
+chwon to user  
+finger command to find the username  
 Check md5sum:
 ```
 $ md5sum -c md5sum.txt > md5sum.check
