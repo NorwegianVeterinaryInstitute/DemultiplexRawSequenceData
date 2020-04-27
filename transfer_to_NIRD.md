@@ -30,6 +30,8 @@ md5sum check has not been implemented yet. This will happen before end of April.
 Filepermission to 444  
 chwon to user  
 finger command to find the username  
+DATA NEED NOT BE DELETED  
+
 Check md5sum:
 ```
 $ md5sum -c md5sum.txt > md5sum.check
