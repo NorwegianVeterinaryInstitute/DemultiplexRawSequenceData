@@ -9,7 +9,7 @@ $ cd /mnt/data/demultiplex
 ```
 Rsync the demultiplexed run folder to NIRD:
 ```
-$ rsync -rauPW <RUN_FOLDER> <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/datasets/wgs/
+$ rsync -rauPW <RUN_FOLDER> <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/SEQ-TECH/data_delivery/
 ```
 Log out of MiSeq server.  
 
