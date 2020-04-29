@@ -7,9 +7,9 @@ Move to demultiplexed directory:
 ```
 $ cd /mnt/data/demultiplex
 ```
-Rsync the demultiplexed run folder to NIRD:
+Rsync the compressed (tar) demultiplexed run folder and its md5sum to NIRD:
 ```
-$ rsync -rauPW <RUN_FOLDER> <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/SEQ-TECH/data_delivery/
+$ rsync -rauPW <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5> <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/SEQ-TECH/data_delivery/
 ```
 Log out of MiSeq server.  
 
@@ -19,11 +19,27 @@ Log in into NIRD:
 ```
 $ ssh <USERNAME>@128.39.96.73
 ```
-Move to the transferred folder:
+Move to the destination folder:
 ```
-$ cd /projects/NS9305K/datasets/wgs/<RUN_FOLDER>
+$ cd /projects/NS9305K/datasets/wgs/
 ```
-md5sum check has not been implemented yet. This will happen before end of April.  
+Check the md5sum for the transferred tar file:
+```
+$ md5sum -c <RUN_FOLDER.tar.md5>
+```
+Change the persmission on the files:
+```
+$ chmod 444 <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5>
+```
+Find the user's NIRD username
+```
+$ finger
+```
+Change the ownership of the files to the user
+```
+$ chown 
+```
+
 
 <!--- Not implemented yet
 
