@@ -21,7 +21,7 @@ $ ssh <USERNAME>@128.39.96.73
 ```
 Move to the destination folder:
 ```
-$ cd /projects/NS9305K/datasets/wgs/
+$ cd /projects/NS9305K/SEQ-TECH/data_delivery/
 ```
 Check the md5sum for the transferred tar file:
 ```
