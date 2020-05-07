@@ -28,6 +28,24 @@ Check the md5sum for the transferred tar file:
 ```
 $ md5sum -c <RUN_FOLDER.tar.md5>
 ```
+If the output says 'OK', All done!
+
+------
+Log in into MiSeq server:
+```
+$ ssh <USERNAME>@128.39.96.73
+```
+Move to demultiplexed directory:
+```
+$ cd /mnt/data/demultiplex
+```
+Remove the transferred tar and md5 file
+```
+rm <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5>
+```
+
+<!--- Not implemented yet
+
 Change the persmission on the files:
 ```
 $ chmod 444 <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5>
@@ -40,31 +58,5 @@ Change the ownership of the files to the user
 ```
 $ chown 
 ```
-
-
-<!--- Not implemented yet
-
-Filepermission to 444  
-chwon to user  
-finger command to find the username  
 DATA NEED NOT BE DELETED  
-
-Check md5sum:
-```
-$ md5sum -c md5sum.txt > md5sum.check
-```
-Check if the number of lines in md5sum files match
-```
-$ wc -l md5sum.txt md5sum.check
-```
-Check if all the lines in md5sum.check contains 'OK'  
-'-v' option in grep outputs lines that does NOT contain the search term ('OK' in this search)  
-Following command should produce NO output (should return '$ ')
-```
-$ grep -v 'OK' md5sum.check
-```
-Delete the 'md5sum.check' file:
-```
-$ rm md5sum.check
-```
 --->
