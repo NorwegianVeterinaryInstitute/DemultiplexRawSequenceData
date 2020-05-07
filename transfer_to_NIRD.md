@@ -18,7 +18,7 @@ Log out of MiSeq server
 ### Check the transfer is successful in NIRD
 Log in into NIRD:
 ```
-$ ssh <USERNAME>@128.39.96.73
+$ ssh <USERNAME>@login.nird.sigma2.no
 ```
 Move to the destination folder:
 ```
@@ -28,7 +28,12 @@ Check the md5sum for the transferred tar file:
 ```
 $ md5sum -c <RUN_FOLDER.tar.md5>
 ```
-If the output says 'OK', log out of NIRD
+If the output says 'OK', 
+Change the persmission on the files:
+```
+$ chmod 444 <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5>
+```
+Log out of NIRD
 
 ------
 ### Delete the transferred files in MiSeq VM
@@ -50,10 +55,7 @@ rm <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5>
 
 <!--- Not implemented yet
 
-Change the persmission on the files:
-```
-$ chmod 444 <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5>
-```
+
 Find the user's NIRD username
 ```
 $ finger
