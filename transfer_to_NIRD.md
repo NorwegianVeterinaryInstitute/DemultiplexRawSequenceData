@@ -9,7 +9,8 @@ $ cd /mnt/data/demultiplex
 ```
 Rsync the compressed (tar) demultiplexed run folder and its md5sum to NIRD:
 ```
-$ rsync -rauPW <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5> <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/SEQ-TECH/data_delivery/
+$ rsync -rauPW <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5> \
+  <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/SEQ-TECH/data_delivery/
 ```
 Log out of MiSeq server.  
 
