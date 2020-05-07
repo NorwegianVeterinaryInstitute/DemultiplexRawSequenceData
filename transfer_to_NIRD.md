@@ -1,5 +1,5 @@
-### Transfer the demultiplexed run folder to NIRD
-Log in into MiSeq server:
+### Transfer the demultiplexed run folder to NIRD from MiSeq VM
+Log in into MiSeq VM:
 ```
 $ ssh <USERNAME>@128.39.96.73
 ```
@@ -12,7 +12,7 @@ Rsync the compressed (tar) demultiplexed run folder and its md5sum to NIRD:
 $ rsync -rauPW <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5> \
   <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/SEQ-TECH/data_delivery/
 ```
-Log out of MiSeq server.  
+Log out of MiSeq server  
 
 ------
 ### Check the transfer is successful in NIRD
@@ -28,10 +28,11 @@ Check the md5sum for the transferred tar file:
 ```
 $ md5sum -c <RUN_FOLDER.tar.md5>
 ```
-If the output says 'OK', All done!
+If the output says 'OK', log out of NIRD
 
 ------
-Log in into MiSeq server:
+### Delete the transferred files in MiSeq VM
+Log in into MiSeq VM:
 ```
 $ ssh <USERNAME>@128.39.96.73
 ```
@@ -43,6 +44,9 @@ Remove the transferred tar and md5 file
 ```
 rm <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5>
 ```
+
+-----
+### All tasks completed!!!
 
 <!--- Not implemented yet
 
