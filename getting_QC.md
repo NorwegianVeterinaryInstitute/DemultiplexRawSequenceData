@@ -11,5 +11,6 @@ Log out of MiSeq server
 
 ### Transfer the QC.zip file to your computer
 ```
+$ cd Desktop
 $ rsync -rauPW <USERNAME>@128.39.96.73:/mnt/data/demultiplex/<RUN_FOLDER>/QC .
 ```
