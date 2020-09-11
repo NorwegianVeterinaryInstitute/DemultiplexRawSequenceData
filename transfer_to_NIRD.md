@@ -5,11 +5,11 @@ $ ssh <USERNAME>@128.39.96.73
 ```
 Move to demultiplexed directory:
 ```
-$ cd /mnt/data/demultiplex
+$ cd /mnt/data/demultiplex/for_transfer
 ```
 Rsync the compressed (tar) demultiplexed run folder and its md5sum to NIRD:
 ```
-$ rsync -rauPW <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5> \
+$ rsync -rauPW <tar> <tar.md5> \
   <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/SEQ-TECH/data_delivery/
 ```
 Log out of MiSeq server  
@@ -26,12 +26,12 @@ $ cd /projects/NS9305K/SEQ-TECH/data_delivery/
 ```
 Check the md5sum for the transferred tar file:
 ```
-$ md5sum -c <RUN_FOLDER.tar.md5>
+$ md5sum -c <tar.md5>
 ```
 If the output says 'OK', 
 Change the persmission on the files:
 ```
-$ chmod 444 <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5>
+$ chmod 444 <tar> <tar.md5>
 ```
 Log out of NIRD
 
@@ -43,11 +43,11 @@ $ ssh <USERNAME>@128.39.96.73
 ```
 Move to demultiplexed directory:
 ```
-$ cd /mnt/data/demultiplex
+$ cd /mnt/data/demultiplex/for_transfer
 ```
 Remove the transferred tar and md5 file
 ```
-rm <RUN_FOLDER.tar> <RUN_FOLDER.tar.md5>
+rm <tar> <tar.md5>
 ```
 
 -----
