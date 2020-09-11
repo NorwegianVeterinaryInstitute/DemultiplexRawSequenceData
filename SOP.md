@@ -10,7 +10,7 @@ IP: 128.39.96.73
                 ├── scripts                         # scripts
                     ├── cron_job.py                 # Cron job script 
                     ├── cron_out.txt                # Cron job output
-                    ├── demultiplex_script_v2.py    # Script used to demutliplex and QC the run 
+                    ├── demultiplex_script_v5.py    # Script used to demutliplex and QC the run 
                     ├── demultiplex_script_v1.py    # Old script(s)
 
 
@@ -30,15 +30,15 @@ IP: 128.39.96.73
 * Cron job runs every three hours and if it finds a new run, _RTAComplete.txt_ and _SampleSheet.csv_ files within the run new, it starts the demultiplexing script
 * It can be manually started as below
 ```bash
-$ python /mnt/data/demultiplex/scripts/demultiplex_script_v2.py <RunId>
+$ python /mnt/data/demultiplex/scripts/demultiplex_script_v5.py <RunId>
 ```
 * Produced _\<RunId\>\_demultiplex_ in /mnt/data/demultiplex; shared folder Y:\ (alias demutiplex) in MiSeq
     
 ## SampleSheet.csv
 
-| __Sample_ID__ | __Sample_Name__ | __Sample_Plate__ | __Sample_Well__ | __Index_Plate_Well__ | __I7_Index_ID__ | __index__ | __I5_Index_ID__ | __index__ | __Sample_Project__ | __Description__ |
-|-------------|------------|------------|-------------|------------|------------|------------|------------|-------------|------------|------------|
-| \<empty\>     | SampleName     |       |          |      | UDP0018      |  AGAGGCAACC    | UDP0018      | CTAATGATGG         | Listeria_20200101     |       |
+| __Sample_ID__ | __Sample_Name__ | __Sample_Plate__ | __Sample_Well__ | __Index_Plate_Well__ | __I7_Index_ID__ | __index__ | __I5_Index_ID__ | __index__ | __Sample_Project__ | __Description__ |__Analysis__|
+|-------------|------------|------------|-------------|------------|------------|------------|------------|-------------|------------|------------|------------|
+| \<empty\>     | SampleName     |       |          |      | UDP0018      |  AGAGGCAACC    | UDP0018      | CTAATGATGG         | Listeria_20200101     |       |   X   |
 
 ## Backup
 * Daily backups that lasts for a month
