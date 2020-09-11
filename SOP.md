@@ -34,7 +34,7 @@ $ python /mnt/data/demultiplex/scripts/demultiplex_script_v5.py <RunId>
 ```
 * Produced _\<RunId\>\_demultiplex_ in /mnt/data/demultiplex; shared folder Y:\ (alias demutiplex) in MiSeq
     
-## SampleSheet.csv
+## SampleSheet.csv (Scroll to see the hidden part)
 
 | __Sample_ID__ | __Sample_Name__ | __Sample_Plate__ | __Sample_Well__ | __Index_Plate_Well__ | __I7_Index_ID__ | __index__ | __I5_Index_ID__ | __index__ | __Sample_Project__ | __Description__ |__Analysis__|
 |-------------|------------|------------|-------------|------------|------------|------------|------------|-------------|------------|------------|------------|
