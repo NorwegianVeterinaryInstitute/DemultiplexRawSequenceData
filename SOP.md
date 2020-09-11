@@ -11,7 +11,7 @@ IP: 128.39.96.73
                     ├── cron_job.py                 # Cron job script 
                     ├── cron_out.txt                # Cron job output
                     ├── demultiplex_script_v5.py    # Script used to demutliplex and QC the run 
-                    ├── demultiplex_script_v1.py    # Old script(s)
+                    ├── demultiplex_script_v*.py    # Old script(s)
 
 
 ## Procedure
