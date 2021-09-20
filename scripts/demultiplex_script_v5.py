@@ -24,7 +24,7 @@ def createDirectory(DemultiplexFolder, RunId_short):
 def demutliplex(RunFolder, DemultiplexFolder, demultiplex_out_file):
     demultiplex_out_file.write('2/5 Tasks: Demultiplexing started\n')
     execute('cp ' + RunFolder + '/SampleSheet.csv ' + DemultiplexFolder, demultiplex_out_file)
-    execute('bcl2fastq --runfolder-dir ' + RunFolder + ' --output-dir ' + DemultiplexFolder + ' 2> ' + DemultiplexFolder + '/demultiplex_log/02_demultiplex.log', demultiplex_out_file)
+    execute('bcl2fastq --no-lane-splitting --runfolder-dir ' + RunFolder + ' --output-dir ' + DemultiplexFolder + ' 2> ' + DemultiplexFolder + '/demultiplex_log/02_demultiplex.log', demultiplex_out_file)
     demultiplex_out_file.write('2/5 Tasks: Demultiplexing complete\n')
 
 def getProjectName(DemultiplexFolder, demultiplex_out_file):
