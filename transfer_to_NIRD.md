@@ -5,7 +5,7 @@ $ ssh <USERNAME>@128.39.96.73
 ```
 Move to demultiplexed directory:
 ```
-$ cd //data/demultiplex/for_transfer
+$ cd //data/for_transfer
 ```
 Rsync the compressed (tar) demultiplexed run folder and its md5sum to NIRD:
 ```
@@ -43,7 +43,7 @@ $ ssh <USERNAME>@128.39.96.73
 ```
 Move to demultiplexed directory:
 ```
-$ cd /data/demultiplex/for_transfer
+$ cd /data/for_transfer
 ```
 Remove the transferred tar and md5 file
 ```
