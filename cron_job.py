@@ -102,12 +102,12 @@ if NewRunID:
             result = subprocess.run( python_bin, argv, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = utf-8  )
         except CalledProcessError as err: 
             text = [ "Caught exception!",
-                     f"Command: {err.cmd}\n", #interpolated strings
-                     f"Return code: {err.returncode}\n"
-                     f"Process output: {err.output}\n",
+                     f"Command: {err.cmd}", # interpolated strings
+                     f"Return code: {err.returncode}"
+                     f"Process output: {err.output}",
                    ]
             
-            print( ' '.join( text ) )
+            print( '\n'.join( text ) )
 
         # p = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True)
         # (output, err) = p.communicate()
