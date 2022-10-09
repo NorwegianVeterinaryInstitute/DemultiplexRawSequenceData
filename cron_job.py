@@ -101,10 +101,10 @@ if NewRunID:
             # /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK        
             result = subprocess.run( python_bin, argv, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = utf-8  )
         except CalledProcessError as err: 
-            text = [ "Caught exception!\n",
-                     "Command:", err.cmd, "\n"
-                     "Return code:", err.returncode, "\n"
-                     "Process output:", err.output, "\n",
+            text = [ "Caught exception!",
+                     f"Command: {err.cmd}\n", #interpolated strings
+                     f"Return code: {err.returncode}\n"
+                     f"Process output: {err.output}\n",
                    ]
             
             print( ' '.join( text ) )
