@@ -43,44 +43,75 @@ from time import strftime, localtime, time
 #               /data/bin/cron_out.log
 
 
-DataDir = '/data'
-RunDir = '/data/scratch'
-DemultiplexDir = '/data/demultiplex'
-cron_out_file = open( DataDir + '/' + 'bin/cron_out.log', 'a')
+DataDir              = '/data'
+RawDir               = '/data/scratch'
+DemultiplexDir       = '/data/demultiplex'
+logfileLocation      = 'bin/cron_out.log'
+cron_out_file        = open( os.path.join( DataDir, logfileLocation ), 'a')
+MiSeq                = 'M06578'   # if we get more than one, turn this into an array
+NextSeq              = 'NB552450' # if we get more than one, turn this into an array
+DemuxDirectorySuffix = '_demultiplex'
+RTACompleteFilename  = 'RTAComplete.txt'
+SampleSheetFilename  = 'SampleSheet.csv'
+
+
 
 RunList = []
-for foldername in os.listdir(RunDir): # future perfomance, read the list into var, then itterate
-    # if 'M06578' in foldername and '_demultiplex' and 'copy' not in foldername:
-    if ( ( 'NB552450' in foldername ) or ( 'M06578' in foldername ) ) and ( '_demultiplex' not in foldername ): 
+for foldername in os.listdir( RawDir ): # add directory names from the raw generated data directory
+    # if ( ( MiSeq in foldername ) or ( NextSeq in foldername ) ) and  ( DemuxDirectorySuffix in foldername ):
+    if ( MiSeq or NextSeq ) in foldername and ( DemuxDirectorySuffix not in foldername ): # ignore directories that have no sequncer tag; ignore any _demux dirs
         RunList.append(foldername)
 
-DemultiplexList = []
-for foldername in os.listdir(DemultiplexDir): # future perfomance, read the list into var, then itterate        
-    if ( ( 'M06578' in foldername ) or ( 'NB552450' in foldername ) ) and  ( '_demultiplex' in foldername ):    
-        DemultiplexList.append(foldername.replace('_demultiplex',''))
+DemultiplexList = [] 
+for foldername in os.listdir(DemultiplexDir):
+    # if ( ( MiSeq in foldername ) or ( NextSeq in foldername ) ) and  ( DemuxDirectorySuffix in foldername ):
+    if ( MiSeq or NextSeq ) in foldername and ( addendum in foldername ): # ignore directories that have no sequncer tag; require any _demux dirs
+        DemultiplexList.append( foldername.replace( DemuxDirectorySuffix, '' ) ) # null _demultiplex so we can compare the two lists below
+
+# Right now the script operates on only one run at a time, but in the future we might want to run miltiple things at a time
 
 count = 0
-NewRun = ''
-for item in RunList:
+NewRunID = '' # turn this into an array
+for item in RunList: # iterate over RunList to see if there a new item in DemultiplexList, effectively comparing the contents of the two directories
     if item in DemultiplexList:
         count += 1
     else:
-        NewRun = item
+        NewRunID = item # any RunList item that is not in the demux list, gets processed
 
-cron_out_file.write(strftime("%Y-%m-%d %H:%M:%S", localtime()) + ' - ')
-cron_out_file.write(str(len(RunList)) + ' in scratch and ' + str(len(DemultiplexList)) + ' in demultiplex : ')
 
-if count == len(RunList):
-     cron_out_file.write('all the runs have been demultiplexed\n')
+cron_out_file.write( strftime( "%Y-%m-%d %H:%M:%S", localtime() ) + ' - ' )
+cron_out_file.write( str( len( RunList ) ) + ' in scratch and ' + str( len( DemultiplexList ) ) + ' in demultiplex : ')
 
-if NewRun:
-    cron_out_file.write('Need to work on this: ' + NewRun)
-    if 'RTAComplete.txt' in os.listdir(RunDir + '/' + NewRun) and 'SampleSheet.csv' in os.listdir(RunDir + '/' + NewRun):
-        command = '/bin/python3 /data/bin/current_demultiplex_script.py ' + NewRun
-        cron_out_file.write('\n' + command + '\n')
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        (output, err) = p.communicate()
-        p_status = p.wait()
+if count == len( RunList ): # no new items in DemultiplexList, therefore count == len( RunList )
+     cron_out_file.write( 'all the runs have been demultiplexed\n' )
+
+if NewRunID:
+    cron_out_file.write(' Need to work on this: ' + NewRunID ) # caution: if the corresponding _demux directory is somehow corrupted (wrong data in SampleSheetFilename or incomplete files), this will be printed over and over in the log file
+
+    # essential condition to process is that RTAComplete.txt and SampleSheet.csv
+    if RTACompleteFilename in os.listdir( os.path.join( RawDir, NewRunID ) ) and SampleSheetFilename in os.listdir( os.path.join( RawDir, NewRunID ) ):
+
+        python_bin     = '/usr/bin/python3'
+        ScriptFilepath = '/data/bin/current_demultiplex_script.py'
+        argv           =  [ ScriptFilepath , NewRunID ]
+
+        cron_out_file.write('\n' + python_bin + ' ' + ' ' + '\n') # format and write out the 
+
+        try:
+            # /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK        
+            result = subprocess.run( python_bin, argv, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = utf-8  )
+        except CalledProcessError as err: 
+            text = [ "Caught exception!\n",
+                     "Command:", err.cmd, "\n"
+                     "Return code:", err.returncode, "\n"
+                     "Process output:", err.output, "\n",
+                   ]
+            
+            print( ' '.join( text ) )
+
+        # p = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True)
+        # (output, err) = p.communicate()
+        # p_status = p.wait()
         cron_out_file.write('completed\n')
     else:
         cron_out_file.write(', waiting for the run to complete\n')
