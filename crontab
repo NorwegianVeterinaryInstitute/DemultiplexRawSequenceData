@@ -1,1 +1,1 @@
-*/30 * * * * /data/bin/cron_job.py 
+*/30 * * * * /data/bin/cron_job.py
