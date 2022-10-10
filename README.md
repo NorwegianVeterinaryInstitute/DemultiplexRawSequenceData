@@ -1,3 +1,5 @@
+This is the old prod_bioinf repo
+
 Demutliplexing a MiSeq run: Cron job takes care of this now
 
 Manual demultiplexing steps:
