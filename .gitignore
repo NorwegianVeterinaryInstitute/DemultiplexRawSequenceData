@@ -1,3 +1,17 @@
 bcl2fastq
+coloredlogs
+cron_job.py
+crontab
+demultiplex_script.py
+fonttools
+humanfriendly
+multiqc
+pyftmerge
+pyftsubset
+rich-click
+ttx
 FastQC
 FastQC/*
+*.log
+# I would like to keep a copy of .out for future reference and as a reminder that sometime in the future the logfile should be shipped off to splunk/workplace/appropriate syslog server
+# *.out
