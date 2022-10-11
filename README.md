@@ -35,8 +35,7 @@ IP: 128.39.96.73
               ├── current_demultiplex_script.py
           ├── scratch                             # MiSeq writes the Runs here; Mounted on MiSeq as Z:\
               ├── SampleSheets                    # Copy of all SampleSheets
-          ├── demultiplex                         # Demultiplex data goes here; Mounted on MiSeq as Y:\ 
-              ├── scripts                         # scripts
+          ├── demultiplex                         # Demultiplex data goes here; Mounted on MiSeq as Y:\              ├── scripts                         # scripts
                   ├── cron_job.py                 # Cron job script
                   ├── cron_out.txt                # Cron job output
                   ├── demultiplex_script_v5.py    # Script used to demutliplex and QC the run
@@ -92,8 +91,7 @@ Move to demultiplexed directory:
 ```
 $ cd /mnt/data/demultiplex/<RUN_FOLDER>
 ```
-Log out of MiSeq server  
-
+Log out of MiSeq server
 ### Transfer the QC.zip file to your computer
 ```
 $ cd Desktop
@@ -116,8 +114,7 @@ Rsync the compressed (tar) demultiplexed run folder and its md5sum to NIRD:
 $ rsync -rauPW <tar> <tar.md5> \
   <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/SEQ-TECH/data_delivery/
 ```
-Log out of MiSeq server  
-
+Log out of MiSeq server
 ------
 ### Check the transfer is successful in NIRD
 Log in into NIRD:
@@ -132,8 +129,7 @@ Check the md5sum for the transferred tar file:
 ```
 $ md5sum -c <tar.md5>
 ```
-If the output says 'OK', 
-Change the persmission on the files:
+If the output says 'OK',Change the persmission on the files:
 ```
 $ chmod 444 <tar> <tar.md5>
 ```
@@ -166,10 +162,8 @@ $ finger
 ```
 Change the ownership of the files to the user
 ```
-$ chown 
-```
-DATA NEED NOT BE DELETED  
---->
+$ chown```
+DATA NEED NOT BE DELETED--->
 ### Transfer the demultiplexed run folder to NIRD from MiSeq VM
 Log in into MiSeq VM:
 ```
@@ -184,7 +178,32 @@ Rsync the compressed (tar) demultiplexed run folder and its md5sum to NIRD:
 $ rsync -rauPW <tar> <tar.md5> \
   <NIRD_USERNAME>@login.nird.sigma2.no:/projects/NS9305K/SEQ-TECH/data_delivery/
 ```
-Log out of MiSeq server  
+Log out of MiSeq server
+How to transfer over an ssh proxy:
+1. setup the bastion host in  your ssh config
+
+Host blastion
+   Hostname mybastionhostname
+   User bogon
+
+2. Set up the remote and use the ProxyJump ssh option, and point it to the bastion:
+
+Host remote
+   Hostname remote.server.yes.no
+   User boton
+   ProxyJump blastion
+scp -rv remote:/path/to/copy/from /path/to/copy/to/local
+
+works with rsync!
+rsync --progress --info=progress2 --no-inc-recursive -avpe ssh  seqtech:/data/scratch/220308_NB552450_0006_AHJ5F5AFX3 /mnt/downloads/seqtech/
+
+if you got ssh keys setup, this will be a trip.
+
+
+https://www.acagroup.be/en/blog/jump-hosts-file-transferring/
+https://serverfault.com/questions/219013/showing-total-progress-in-rsync-is-it-possible
+
+
 
 ------
 ### Check the transfer is successful in NIRD
@@ -200,8 +219,7 @@ Check the md5sum for the transferred tar file:
 ```
 $ md5sum -c <tar.md5>
 ```
-If the output says 'OK', 
-Change the persmission on the files:
+If the output says 'OK',Change the persmission on the files:
 ```
 $ chmod 444 <tar> <tar.md5>
 ```
@@ -234,7 +252,5 @@ $ finger
 ```
 Change the ownership of the files to the user
 ```
-$ chown 
-```
-DATA NEED NOT BE DELETED  
---->
+$ chown```
+DATA NEED NOT BE DELETED--->
