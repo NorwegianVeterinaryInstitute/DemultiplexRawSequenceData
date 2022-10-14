@@ -98,6 +98,10 @@ lex_out_file)
 
 #
 def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
+    """
+    Run QC on the sequence run files
+    """
+
     for project in project_list:
         project_folder = DemultiplexFolder + '/' + RunId_short + '.' + project
         #execute('/src/anaconda3/envs/miseq/bin/fastqc -t 4 ' + project_folder + '/*fastq.gz' + ' > ' + DemultiplexFolder + '/demultiplex_log/04_fastqc.log', demultiplex_out_file)
