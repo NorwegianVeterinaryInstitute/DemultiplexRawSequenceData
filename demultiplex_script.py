@@ -137,60 +137,97 @@ def prepare_delivery(folder, DemultiplexFolder , tar_file, md5_file, demultiplex
 
 #
 def change_permission(folder_or_file, demultiplex_out_file):
-    execute('/bin/chown -R sambauser01:sambagroup ' + folder_or_file, demultiplex_out_file)
-    execute('/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file)
+
+    argv1    =
+    argv2    =
+    command1 = '/bin/chown -R sambauser01:sambagroup ' + folder_or_file, demultiplex_out_file
+    command2 = '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+
+# TRY TO SEE IF THERE IS A RECURSIVE CHOWN call in Python
+
+    try:
+        # EXAMPLE: /bin/chown -R sambauser01:sambagroup ' + folder_or_file
+        result = subprocess.run( command1, argv1, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+    except CalledProcessError as err: 
+        text = [ "Caught exception!",
+                 f"Command: { err.cmd }", # interpolated strings
+                 f"Return code: { err.returncode }"
+                 f"Process output: { err.output }",
+               ]
+
+    try:
+        # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+        result = subprocess.run( command2, argv2, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+    except CalledProcessError as err: 
+        text = [ "Caught exception!",
+                 f"Command: { err.cmd }", # interpolated strings
+                 f"Return code: { err.returncode }"
+                 f"Process output: { err.output }",
+               ]
+
+        
+        print( '\n'.join( text ) )
 
 #
 def main(RunId):
+    """
+    Main function for the demultiplex script.
+    All actions are coordinated through here
+    """
 
-    DataFolder          = '/data'
-    RunLocation         = DataFolder + '/' + 'scratch'
-    DemultiplexLocation = DataFolder + '/' + 'demultiplex'
+    DataFolder             = '/data'
+    DemultiplexLogDir      = 'demultiplex_log'
+    ScriptLog              = 'script.log'
+    DemultiplexLogFilePath = os.path.join( DemultiplexLogDir, ScriptLog )
+    md5Extension           = '.md5'
+    tarExtension           = '.tar'
+    ForTransferDirPath     = 'for_transfer'
+    RunLocation            = os.path.join( DataFolder, 'scratch' )
+    DemultiplexLocation    = os.path.join( DataFolder, 'demultiplex' )
+    DemultiplexDirSuffix   = '_demultiplex'
+    QCDirSuffix            = '_QC'
 
-    RunId_short       = '_'.join(RunId.split('_')[0:2])
-    RunFolder         = RunLocation + '/' + RunId
-    DemultiplexFolder = DemultiplexLocation + '/' + RunId + '_demultiplex'
+    RunId_short         = '_'.join(RunId.split('_')[0:2])
+    RunFolder           = os.path.join( RunLocation, RunId )
+    DemultiplexFolder   = os.path.join( DemultiplexLocation, RunId +  DemultiplexDirSuffix )
+    project_name        = '.'.join( RunId_short, project )
+    DemultiplexDirPath  = os.path.join( DemultiplexFolder, project_name )
+    project_list        = getProjectName( DemultiplexFolder, demultiplex_out_file )
+    tar_file            = os.path.join( DataFolder, os.path.join( ForTransferDirPath, project_name + tarExtension ) )
+    md5_file            = '+'.join( tar_file, md5Extension )
+    QC_tar_file         = os.path.join( DemultiplexLocation, os.path.join ( ForTransferDirPath, ''.join( RunId_short, '_QC.tar' ) ) )
+    QC_md5_file         = '+'.join( QC_tar_file, md5Extension )
 
-    if checkComplete(RunFolder) is False:
-        print (RunId + ' is not finished sequencing yet!')
+    if checkComplete( RunFolder ) is False:
+        print( ' '.join( RunId, 'is not finished sequencing yet!' ) )
         sys.exit()
 
-    if createDirectory(DemultiplexFolder, RunId_short) is False:
-        print (DemultiplexFolder + ' exists. Delete or rename the demultiplex folder before re-running the script')
+    if createDirectory( DemultiplexFolder, RunId_short ) is False:
+        print( ' '.join( DemultiplexFolder, 'exists. Delete or rename the demultiplex folder before re-running the script' ) )
         sys.exit()
     else:
-        demultiplex_out_file = open(DemultiplexFolder + '/demultiplex_log/script.log', 'w')
+        demultiplex_out_file = open( os.path.join( DemultiplexFolder, DemultiplexLogFile ) , 'w')
         demultiplex_out_file.write('1/5 Tasks: Directories created\n')
 
-    demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file)
+    demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file )
+    moveFiles(   DemultiplexFolder, RunId_short, project_list, demultiplex_out_file )
+    qc(          DemultiplexFolder, RunId_short, project_list, demultiplex_out_file )
 
-    # runs to here
-    project_list = getProjectName( DemultiplexFolder, demultiplex_out_file)
-    moveFiles(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file)
-    qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file)
-
-    change_permission(DemultiplexFolder, demultiplex_out_file)
+    change_permission( DemultiplexFolder, demultiplex_out_file )
     for project in project_list:
-        project_name = RunId_short + '.' + project
-        create_md5deep(DemultiplexFolder + '/' + project_name, demultiplex_out_file)
-        #tar_file = DemultiplexLocation + 'for_transfer/' + project_name + '.tar'
-        tar_file = DataFolder + '/'+ 'for_transfer/' + project_name + '.tar'
-        md5_file = tar_file + '.md5'
-        prepare_delivery(project_name, DemultiplexFolder, tar_file, md5_file, demultiplex_out_file)
-        change_permission(tar_file, demultiplex_out_file)
-        change_permission(md5_file, demultiplex_out_file)
 
-    QC_tar_file = DemultiplexLocation + '/' + 'for_transfer/' + RunId_short + '_QC.tar'
-    QC_md5_file = QC_tar_file + '.md5'
+        create_md5deep(    DemultiplexDirPath, demultiplex_out_file )
+        prepare_delivery(  project_name, DemultiplexFolder, tar_file, md5_file, demultiplex_out_file )
+        change_permission( tar_file, demultiplex_out_file )
+        change_permission( md5_file, demultiplex_out_file )
 
-    prepare_delivery(RunId_short + '_QC', DemultiplexFolder, QC_tar_file, QC_md5_file, demultiplex_out_file)
-    change_permission(QC_tar_file, demultiplex_out_file)
-    change_permission(QC_md5_file, demultiplex_out_file)
+    prepare_delivery(  RunId_short + QCDirSuffix, DemultiplexFolder, QC_tar_file, QC_md5_file, demultiplex_out_file )
+    change_permission( QC_tar_file, demultiplex_out_file )
+    change_permission( QC_md5_file, demultiplex_out_file )
 
     script_completion_file(DemultiplexFolder, demultiplex_out_file)
 
     demultiplex_out_file.write('\nAll done!\n')
-
     demultiplex_out_file.close()
 
 if __name__ == '__main__':
