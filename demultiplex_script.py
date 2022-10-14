@@ -2,6 +2,7 @@
 
 import os
 import sys
+import shutil
 import subprocess
 
 # INPUTS:
@@ -21,13 +22,18 @@ import subprocess
 #   - Can demultipex one directory at a time only
 #   - No sanity checking to see if a demultiplexed directory is correctly demux'ed
 #       - Relies only on output directory name and does not verify contents
+#
+#
+# CONDA/EXECUTION environment
 
 
 #
 def execute(command, demultiplex_out_file):
-    # why is  export LANG=nb_NO.utf8 && export LC_ALL=nb_NO.utf8 there?
-    command2 = 'source activate miseq && export LANG=nb_NO.utf8 && export LC_ALL=nb_NO.utf8 && ' + command
-    #demultiplex_out_file.write('    ' + command2 + '\n')
+    """
+    Invoke the appropriate demux/QC command, while writing out to the log file.
+        There used to be a reference to activating a conda environment here
+        but got removed to make the execution environment less complex
+    """
     demultiplex_out_file.write('    ' + command + '\n')
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     (output, err) = p.communicate()
@@ -36,20 +42,28 @@ def execute(command, demultiplex_out_file):
 
 #
 def checkComplete(RunFolder):
-    if os.path.exists(RunFolder + '/RTAComplete.txt'):
+    """
+    Check to see if the RunFolder/RTAComplete.txt file exists and return true/false,
+    signaling that the sequencing run is complete or not.
+    """
+    RTACompleteFile = "RTAComplete.txt"
+    if os.path.exists( os.path.join( RunFolder, RTACompleteFile ) ):
         return ( True )
     else:
         return ( False )
 
 #
 def createDirectory(DemultiplexFolder, RunId_short):
+    """
+    If the Demultiplexing directory or any relevant directory does not exist, create it
+    """
     if os.path.isdir( DemultiplexFolder ):
         return( False )
     else:
-        QCSuffix    = '_QC'
-        DemuxLogDir = 'demultiplex_log'
-        QCDirectory = os.path.join( RunId_short + QCSuffix)
-        DemultiplexLogFile = os.path.join( ) 
+        QCSuffix    = '_QC'                  # this and next are duplicated.
+        DemuxLogDir = 'demultiplex_log'      # could be throw them in an object
+        QCDirectory = RunId_short + QCSuffix # joining the two previous strins
+        # DemultiplexLogFile = os.path.join( ) 
         os.mkdir( DemultiplexFolder )                              # root directory for run
         os.mkdir( os.path.join( DemultiplexFolder, QCDirectory ) ) # QC directory   for run
         os.mkdir( os.path.join( DemultiplexFolder, DemuxLogDir ) ) # log directory  for run
@@ -57,21 +71,63 @@ def createDirectory(DemultiplexFolder, RunId_short):
 
 #
 def demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file):
+    """
+    """
+    SampleSheetFile = 'SampleSheet.csv'
+    source          = os.path.join( RunFolder, SampleSheetFile )
+    # destination   = DemultiplexFolder
+    shutil.copy2( source, DemultiplexFolder ) # shutil.copy2() is the only method in Python 3 in which you are allowed to use a directory as a destionation https://stackoverflow.com/questions/123198/how-to-copy-files
     demultiplex_out_file.write('2/5 Tasks: Demultiplexing started\n')
-    execute('/bin/cp ' + RunFolder + '/SampleSheet.csv ' + DemultiplexFolder, demultiplex_out_file)
-    #execute('/usr/local/bin/bcl2fastq --ignore-missing-bcl --no-lane-splitting --runfolder-dir ' + RunFolder + ' --output-dir ' + DemultiplexFolder + ' 2> ' + DemultiplexFolder + '/demultiplex_log/02_demultiplex.log', demultiplex_out_file)
-    execute('/usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + RunFolder + ' --output-dir ' + DemultiplexFolder + ' 2> ' + DemultiplexFolder + '/demultiplex_log/02_demultiplex.log', demultiplex_out_file)
+
+    bcl2fastq_bin = '/usr/local/bin/bcl2fastq'
+    argv = [
+        '--no-lane-splitting',
+        f"--runfolder-dir {RunFolder}"
+        f"--output-dir {DemultiplexFolder}"
+    ]
+    Bcl2FastqLogDirName  = 'demultiplex_log'
+    Bcl2FastqLogFileName = '02_demultiplex.log'
+    Bcl2FastqLogFile     = os.path.join( DemultiplexFolder, os.path.join( Bcl2FastqLogDir, Bcl2FastqLogFileName ) )
+
+    try:
+        # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + RunFolder + ' --output-dir ' + DemultiplexFolder + ' 2> ' + DemultiplexFolder + '/demultiplex_log/02_demultiplex.log'
+        result = subprocess.run( bcl2fastq_bin, argv, stdout = cron_out_file, stderr = Bcl2FastqLogFile, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+    except CalledProcessError as err: 
+        text = [ "Caught exception!",
+            f"Command: {err.cmd}", # interpolated strings
+            f"Return code: {err.returncode}"
+            f"Process output: {err.output}",
+        ]
+        print( '\n'.join( text ) )
+    demultiplex_out_file.write( result.output )
+
     demultiplex_out_file.write('2/5 Tasks: Demultiplexing complete\n')
 
 #
 def getProjectName( DemultiplexFolder, demultiplex_out_file):
+    """
+    Get the associated project name from SampleSheet.csv
+
+    Parsing is simple:
+        go line-by-line
+        ignore all the we do not need until
+            we hit the line that contains 'Sample_Project'
+            if 'Sample_Project' found
+                split the line and 
+                    take the value of 'Sample_Project'
+                    take the value of 'Analysis'
+
+        return an set of the values of all values of 'Sample_Project' and 'Analysis'
+    """
 
     project_line_check = False
     project_index  = ''
     analysis_index = ''
     project_list   = []
+    SampleSheetFileName = 'SampleSheet.csv'
+    SampleSheetFilePath = os.path.join( DemultiplexFolder, SampleSheetFileName )
 
-    for line in open(DemultiplexFolder + '/SampleSheet.csv', 'r'):
+    for line in open( SampleSheetFilePath, 'r', encoding="utf-8" ):
         line = line.rstrip()
         if project_line_check == True:
             project_list.append(line.split(',')[project_index] + '.' + line.split(',')[analysis_index])
@@ -79,14 +135,20 @@ def getProjectName( DemultiplexFolder, demultiplex_out_file):
             project_index      = line.split(',').index('Sample_Project')
             analysis_index     = line.split(',').index('Analysis')
             project_line_check = True
+
     return( set( project_list ) )
 
 
 #
 def moveFiles(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
+    """
+    """
+
+    CompressedFastqSuffix = 'fastq.gz' 
+
     for root, dirs, files in os.walk(DemultiplexFolder):
         for name in files:
-            if 'fastq.gz' in name:
+            if CompressedFastqSuffix in name:
                 execute('/bin/mv ' + root + '/' + name + ' ' + root + '/' + RunId_short + '.' + name, demultiplex_out_file)
 
     for project in project_list:
