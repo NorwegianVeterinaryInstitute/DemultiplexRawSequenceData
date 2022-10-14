@@ -92,14 +92,14 @@ if NewRunID:
     if RTACompleteFilename in os.listdir( os.path.join( RawDir, NewRunID ) ) and SampleSheetFilename in os.listdir( os.path.join( RawDir, NewRunID ) ):
 
         python_bin     = '/usr/bin/python3'
-        ScriptFilepath = '/data/bin/current_demultiplex_script.py'
+        ScriptFilepath = '/data/bin/demultiplex_script.py'
         argv           =  [ ScriptFilepath , NewRunID ]
 
         cron_out_file.write('\n' + python_bin + ' ' + ' ' + '\n') # format and write out the 
 
         try:
-            # /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK        
-            result = subprocess.run( python_bin, argv, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = utf-8  )
+            # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK        
+            result = subprocess.run( python_bin, argv, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
         except CalledProcessError as err: 
             text = [ "Caught exception!",
                      f"Command: {err.cmd}", # interpolated strings
@@ -108,6 +108,8 @@ if NewRunID:
                    ]
             
             print( '\n'.join( text ) )
+
+        # cron_out_file.write( result.output )
 
         # p = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True)
         # (output, err) = p.communicate()
