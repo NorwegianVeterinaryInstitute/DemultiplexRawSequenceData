@@ -16,11 +16,16 @@ Manual demultiplexing steps:
     The script checks if the run is complete (preference of file "RTAComplete.txt"), executes bcl2fastq, renames the fastq files to include the part of the <RunId> and completed quality control using FastQC and multiQC.
 
 Software requirements
+
     Python 3.6.7
-    bcl2fastq v2.19.0.316
+
+    bcl2fastq ( from https://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software/downloads.html )
+
     FastQC v0.11.8
+
     MultiQC v1.7
-    or newer
+
+or newer
 
 
 
