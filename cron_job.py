@@ -96,7 +96,10 @@ if NewRunID:
         ScriptFilePath = "/data/bin/demultiplex_script.py"
         argv           = [ python_bin, ScriptFilePath , NewRunID ]
 
-        cron_out_file.write('\n' + python_bin + ' ' + ' ' + '\n') # format and write out the 
+        cron_out_file.write('\n' + python_bin + ' ' + ' ' + '\n') # format and write out the
+
+        if demultiplex_script.demux.debug: 
+            print( f"{python_bin} {ScriptFilePath} {NewRunID}")
 
         if not os.path.exists( ScriptFilePath ):
             print( f"{ScriptFilePath} does not exist!" )
@@ -107,6 +110,7 @@ if NewRunID:
 
         # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
         demultiplex_script.main( NewRunID )
+
         cron_out_file.write('completed\n')
     else:
         cron_out_file.write(', waiting for the run to complete\n')
