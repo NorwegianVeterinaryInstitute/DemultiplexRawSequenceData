@@ -91,17 +91,19 @@ if NewRunID:
     # essential condition to process is that RTAComplete.txt and SampleSheet.csv
     if RTACompleteFilename in os.listdir( os.path.join( RawDir, NewRunID ) ) and SampleSheetFilename in os.listdir( os.path.join( RawDir, NewRunID ) ):
 
-        python_bin     = '/usr/bin/python3'
-        ScriptFilepath = '/data/bin/demultiplex_script.py'
-        argv           = [ ScriptFilepath , NewRunID ]
-        cmd            = ' '.join( [python_bin, ' '.join( argv )] )
+        python_bin     = "/usr/bin/python3"
+        ScriptFilePath = "/data/bin/demultiplex_script.py"
+        argv           = [ python_bin, ScriptFilePath , NewRunID ]
 
         cron_out_file.write('\n' + python_bin + ' ' + ' ' + '\n') # format and write out the 
+        try: # see if python3 exists 
+        except:
+        try: # see if ScriptFilePath
 
         try:
             # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK        
             # ValueError: stdout and stderr arguments may not be used with capture_output.
-            result = subprocess.run( cmd, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+            result = subprocess.run( argv, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
             # result = subprocess.run( python_bin, argv, stdout = cron_out_file, cwd = RawDir, check = True, encoding = "utf-8" )
         except ChildProcessError  as err: 
             text = [ "Caught exception!",
@@ -109,8 +111,11 @@ if NewRunID:
                      f"Return code: {err.returncode}"
                      f"Process output: {err.output}",
                    ]
-            
             print( '\n'.join( text ) )
+
+        except FileNotFoundError as err:
+            text = [ {err} ]
+            print( text)
 
         # cron_out_file.write( result.output )
 
