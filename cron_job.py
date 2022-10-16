@@ -3,6 +3,7 @@
 import os, sys, subprocess
 import time
 from time import strftime, localtime, time
+import demultiplex_script
 
 # LIMITATIONS/ASSUMPTIONS:
 #   This script cannot handle more than 1 new run /data/scratch/{*M06578*,*NB552450*}_demultiplex
@@ -96,32 +97,16 @@ if NewRunID:
         argv           = [ python_bin, ScriptFilePath , NewRunID ]
 
         cron_out_file.write('\n' + python_bin + ' ' + ' ' + '\n') # format and write out the 
-        try: # see if python3 exists 
-        except:
-        try: # see if ScriptFilePath
 
-        try:
-            # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK        
-            # ValueError: stdout and stderr arguments may not be used with capture_output.
-            result = subprocess.run( argv, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-            # result = subprocess.run( python_bin, argv, stdout = cron_out_file, cwd = RawDir, check = True, encoding = "utf-8" )
-        except ChildProcessError  as err: 
-            text = [ "Caught exception!",
-                     f"Command: {err.cmd}", # interpolated strings
-                     f"Return code: {err.returncode}"
-                     f"Process output: {err.output}",
-                   ]
-            print( '\n'.join( text ) )
+        if not os.path.exists( ScriptFilePath ):
+            print( f"{ScriptFilePath} does not exist!" )
+            exit( )
+        if not os.path.isdir( f"/data/rawdata/{NewRunID}" ):
+            print( f"/data/rawdata/{NewRunID} does not exist!" )
+            exit( )
 
-        except FileNotFoundError as err:
-            text = [ {err} ]
-            print( text)
-
-        # cron_out_file.write( result.output )
-
-        # p = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True)
-        # (output, err) = p.communicate()
-        # p_status = p.wait()
+        # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
+        demultiplex_script.main( NewRunID )
         cron_out_file.write('completed\n')
     else:
         cron_out_file.write(', waiting for the run to complete\n')
