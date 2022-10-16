@@ -33,18 +33,18 @@ from pathlib import Path
 # 
 #
 
-class demux
-"""
-demux: make an object of the entire demultiplex process.
-"""
+class demux:
+    """
+    demux: make an object of the entire demultiplex process.
+    """
 
-    def __init__( self )
-    """
-    __init__
-        Check for existance of RunID
-            Complain if not
-        Checks to see if debug or not is set
-    """
+    def __init__( self ):
+        """
+        __init__
+            Check for existance of RunID
+                Complain if not
+            Checks to see if debug or not is set
+        """
         #self.RunID =
         self.debug = sys.argsv[ 'debug' ]
         # self.demultiplex_out_file = 
@@ -171,7 +171,7 @@ def demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file):
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + RunFolder + ' --output-dir ' + DemultiplexFolder + ' 2> ' + DemultiplexFolder + '/demultiplex_log/02_demultiplex.log'
         result = subprocess.run( bcl2fastq_bin, argv, stdout = cron_out_file, stderr = Bcl2FastqLogFile, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-    except CalledProcessError as err: 
+    except ChildProcessError as err: 
         text = [ "Caught exception!",
             f"Command: {err.cmd}", # interpolated strings
             f"Return code: {err.returncode}"
@@ -202,11 +202,11 @@ def moveFiles(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file
                 destination = os.path.join( root, '.'.join( [ RunId_short, name ] ) )
                 if demux.debug:
                     print( f"/usr/bin/mv {source} {destination}")
-                else
+                else:
                     try:
                         # EXAMPLE: /usr/bin/mv root/name root/RunId_short.name
                         result = shutil.move( source, destination )
-                    except CalledProcessError as err: 
+                    except ChildProcessError as err: 
                         text = [ "Caught exception!",
                                 f"Command: { err.cmd }", # interpolated strings
                                 f"Return code: { err.returncode }"
@@ -220,11 +220,11 @@ def moveFiles(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file
         destination = os.path.join( DemultiplexFolder, '.'.join( RunId_short, project  ) )
         if demux.debug:
             print( f"/usr/bin/mv {source} {destination}")
-        else 
+        else:
             try:
                 # EXAMPLE: /usr/bin/mv root/name root/RunId_short.name
                 result = shutil.move( source, destination )
-            except CalledProcessError as err: 
+            except ChildProcessError as err: 
                 text = [ "Caught exception!",
                         f"Command: { err.cmd }", # interpolated strings
                         f"Return code: { err.returncode }"
@@ -258,7 +258,7 @@ def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
             ]
             # EXAMPLE: /usr/local/bin/fastqc -t 4 project_folder/*fastq.gz > DemultiplexFolder/demultiplex_log/04_fastqc.log
             result = subprocess.run( command, args, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-        except CalledProcessError as err: 
+        except ChildProcessError as err: 
             text = [ "Caught exception!",
                      f"Command: { err.cmd }", # interpolated strings
                      f"Return code: { err.returncode }"
@@ -268,10 +268,10 @@ def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
         # EXAMPLE: /usr/bin/cp project_folder/*zip project_folder/*html DemultiplexFolder/RunId_short_QC # (destination is a directory)
         zipFiles = f"{project_folder}/*zip"                     # source of zip files
         destination = f"{DemultiplexFolder}/{RunId_short}_QC"   # destination folder
-        for source in os.list ( zipFiles )
+        for source in os.list ( zipFiles ):
             shutil.copy2( source, destination )                 # copy zip files
         HTLMfiles = f"{project_folder}/*html"
-        for source in os.list ( HTLMfiles )
+        for source in os.list ( HTLMfiles ):
             shutil.copy2( source, destination )                 # copy htlm files required by multiqc
 
         try:
@@ -282,7 +282,7 @@ def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
 
             # EXAMPLE: /usr/local/bin/multiqc project_folder -o project_folder 2> DemultiplexFolder/demultiplex_log/05_multiqc.log
             result = subprocess.run( command, args, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-        except CalledProcessError as err: 
+        except ChildProcessError as err: 
             text = [ "Caught exception!",
                      f"Command: { err.cmd }", # interpolated strings
                      f"Return code: { err.returncode }"
@@ -299,7 +299,7 @@ def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
 
             # EXAMPLE: /usr/local/bin/multiqc project_folder -o project_folder 2> DemultiplexFolder/demultiplex_log/05_multiqc.log
             result = subprocess.run( command, args, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-        except CalledProcessError as err: 
+        except ChildProcessError as err: 
             text = [ "Caught exception!",
                      f"Command: { err.cmd }", # interpolated strings
                      f"Return code: { err.returncode }"
@@ -330,7 +330,7 @@ def create_md5deep( directory , demultiplex_out_file):
         # FIXME check if folder_or_file exists
         # EXAMPLE: /bin/chown -R sambauser01:sambagroup folder_or_file
         result = os.chown( command, uid = userid, gid = groupid ) #uid = self.userid, gid = self.groupid )
-    except CalledProcessError as err: 
+    except ChildProcessError as err: 
         text = [ "Caught exception!",
                  f"Command: { err.cmd }", # interpolated strings
                  f"Return code: { err.returncode }"
@@ -342,13 +342,13 @@ def create_md5deep( directory , demultiplex_out_file):
         print ( f"/usr/bin/md5deep -r {directory} | {sed_command} | /usr/bin/grep -v md5sum | /usr/bin/grep -v script > md5deep_out " )
         exit( )
     else:
-        command = 
-        argv
+        command = f"/usr/bin/md5deep -r {directory} | {sed_command} | /usr/bin/grep -v md5sum | /usr/bin/grep -v script > md5deep_out "
+        #argv    = 
         try:
             # FIXME check if folder_or_file exists
             # EXAMPLE: /bin/md5deep -r directory | sed_command | grep -v md5sum | grep -v script > md5deep_out
             result = subprocess.run( command, argv, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-        except CalledProcessError as err: 
+        except ChildProcessError as err: 
             text = [ "Caught exception!",
                      f"Command: { err.cmd }",           # interpolated strings
                      f"Return code: { err.returncode }"
@@ -370,7 +370,7 @@ def script_completion_file(DemultiplexFolder, demultiplex_out_file):
     except Exception as e:
         print( e.error )
         print( f"{DemultiplexFolder}/{DemultiplexCompleteFile} already exists. Please delete it before running demux.\n")
-            exit( )
+        exit( )
         # FIXMEFIXME notify_warning_system_that_error_occured( )
 
 
@@ -410,7 +410,7 @@ def change_permission(folder_or_file, demultiplex_out_file):
     try:
         # EXAMPLE: /bin/chown -R sambauser01:sambagroup ' + folder_or_file
         result = subprocess.run( command1, argv1, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-    except CalledProcessError as err: 
+    except ChildProcessError as err: 
         text = [ "Caught exception!",
                  f"Command: { err.cmd }", # interpolated strings
                  f"Return code: { err.returncode }"
@@ -420,7 +420,7 @@ def change_permission(folder_or_file, demultiplex_out_file):
     try:
         # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
         result = subprocess.run( command2, argv2, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-    except CalledProcessError as err: 
+    except ChildProcessError as err: 
         text = [ "Caught exception!",
                  f"Command: { err.cmd }", # interpolated strings
                  f"Return code: { err.returncode }"
@@ -502,8 +502,9 @@ def main(RunId):
 # MAIN
 ########################################################################
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-    RunId = sys.argv[]
-    main(RunId)
+#     parser = argparse.ArgumentParser()
+#     # FIXMEFIXME add named arguments
+#     RunId = sys.argv[1]
+#     main(RunId)
