@@ -101,7 +101,11 @@ def execute(command, demultiplex_out_file):
     p_status = p.wait()
 
 
-#
+
+########################################################################
+# checkComplete
+########################################################################
+
 def checkComplete(RunFolder):
     """
     Check to see if the RunFolder/RTAComplete.txt file exists and return true/false,
@@ -113,7 +117,12 @@ def checkComplete(RunFolder):
     else:
         return ( False )
 
-#
+
+
+########################################################################
+# createDirectory
+########################################################################
+
 def createDirectory(DemultiplexFolder, RunId_short):
     """
     If the Demultiplexing directory or any relevant directory does not exist, create it
@@ -130,7 +139,11 @@ def createDirectory(DemultiplexFolder, RunId_short):
         os.mkdir( os.path.join( DemultiplexFolder, DemuxLogDir ) ) # log directory  for run
 
 
-#
+
+########################################################################
+# demutliplex
+########################################################################
+
 def demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file):
     """
     """
@@ -164,62 +177,66 @@ def demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file):
 
     demultiplex_out_file.write('2/5 Tasks: Demultiplexing complete\n')
 
-#
-def getProjectName( DemultiplexFolder, demultiplex_out_file):
-    """
-    Get the associated project name from SampleSheet.csv
-
-    Parsing is simple:
-        go line-by-line
-        ignore all the we do not need until
-            we hit the line that contains 'Sample_Project'
-            if 'Sample_Project' found
-                split the line and 
-                    take the value of 'Sample_Project'
-                    take the value of 'Analysis'
-
-        return an set of the values of all values of 'Sample_Project' and 'Analysis'
-    """
-
-    project_line_check = False
-    project_index  = ''
-    analysis_index = ''
-    project_list   = []
-    SampleSheetFileName = 'SampleSheet.csv'
-    SampleSheetFilePath = os.path.join( DemultiplexFolder, SampleSheetFileName )
-
-    for line in open( SampleSheetFilePath, 'r', encoding="utf-8" ):
-        line = line.rstrip()
-        if project_line_check == True:
-            project_list.append(line.split(',')[project_index] + '.' + line.split(',')[analysis_index])
-        if 'Sample_Project' in line:
-            project_index      = line.split(',').index('Sample_Project')
-            analysis_index     = line.split(',').index('Analysis')
-            project_line_check = True
-
-    return( set( project_list ) )
 
 
-#
+########################################################################
+# moveFiles
+########################################################################
+
 def moveFiles(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
     """
+    Move?Rename? files FIXMEFIXMEFIXME more info when debugging
     """
-
     CompressedFastqSuffix = 'fastq.gz' 
 
     for root, dirs, files in os.walk(DemultiplexFolder):
         for name in files:
+
             if CompressedFastqSuffix in name:
-                execute('/bin/mv ' + root + '/' + name + ' ' + root + '/' + RunId_short + '.' + name, demultiplex_out_file)
+                source = os.path.join( root, name )
+                destination = os.path.join( root, '.'.join( [ RunId_short, name ] ) )
+                if demux.debug:
+                    print( f"/usr/bin/mv {source} {destination}")
+                else
+                    try:
+                        # EXAMPLE: /usr/bin/mv root/name root/RunId_short.name
+                        result = shutil.move( source, destination )
+                    except CalledProcessError as err: 
+                        text = [ "Caught exception!",
+                                f"Command: { err.cmd }", # interpolated strings
+                                f"Return code: { err.returncode }"
+                                f"Process output: { err.output }",
+                        ]
 
     for project in project_list:
-        execute('/bin/mv ' + DemultiplexFolder + '/' + project.split('.')[0] + ' ' + DemultiplexFolder + '/' + RunId_short + '.'+ project, demultip
-lex_out_file)
+
+        # /usr/bin/mv DemultiplexFolder/project.split('.')[0] DemultiplexFolder/RunId_short.project
+        source      = os.path.join( DemultiplexFolder, project.split('.')[0] )
+        destination = os.path.join( DemultiplexFolder, '.'.join( RunId_short, project  ) )
+        if demux.debug:
+            print( f"/usr/bin/mv {source} {destination}")
+        else 
+            try:
+                # EXAMPLE: /usr/bin/mv root/name root/RunId_short.name
+                result = shutil.move( source, destination )
+            except CalledProcessError as err: 
+                text = [ "Caught exception!",
+                        f"Command: { err.cmd }", # interpolated strings
+                        f"Return code: { err.returncode }"
+                        f"Process output: { err.output }",
+                ]
 
     demultiplex_out_file.write('3/5 Tasks: Moving files complete\n')
 
+    if demux.debug:
+        exit()
 
-#
+
+
+########################################################################
+# qc
+########################################################################
+
 def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
     """
     Run QC on the sequence run files
@@ -227,71 +244,192 @@ def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
 
     for project in project_list:
         project_folder = DemultiplexFolder + '/' + RunId_short + '.' + project
-        #execute('/src/anaconda3/envs/miseq/bin/fastqc -t 4 ' + project_folder + '/*fastq.gz' + ' > ' + DemultiplexFolder + '/demultiplex_log/04_fastqc.log', demultiplex_out_file)
-        execute('/usr/local/bin/fastqc -t 4 ' + project_folder + '/*fastq.gz' + ' > ' + DemultiplexFolder + '/demultiplex_log/04_fastqc.log', demul
-tiplex_out_file)
-        execute('/bin/cp ' + project_folder + '/*zip ' + project_folder + '/*html ' + DemultiplexFolder + '/' + RunId_short + '_QC', demultiplex_ou
-t_file)
-        #execute('/src/anaconda3/envs/miseq/bin/multiqc ' + project_folder + ' -o ' + project_folder + ' 2> ' + DemultiplexFolder + '/demultiplex_log/05_multiqc.log', demultiplex_out_file)
-        execute('/usr/local/bin/multiqc ' + project_folder + ' -o ' + project_folder + ' 2> ' + DemultiplexFolder + '/demultiplex_log/05_multiqc.log', demultiplex_out_file)
-    demultiplex_out_file.write('4/5 Tasks: FastQC complete\n')
-    #execute('/src/anaconda3/envs/miseq/bin/multiqc ' + DemultiplexFolder + '/' + RunId_short + '_QC' + ' -o ' + DemultiplexFolder + '/' + RunId_short + '_QC' + ' 2> ' + DemultiplexFolder + '/demultiplex_log/05_multiqc.log', demultiplex_out_file)
-    execute('/usr/local/bin/multiqc ' + DemultiplexFolder + '/' + RunId_short + '_QC' + ' -o ' + DemultiplexFolder + '/' + RunId_short + '_QC' + ' 2> ' + DemultiplexFolder + '/demultiplex_log/05_multiqc.log', demultiplex_out_file)
-    demultiplex_out_file.write('5/5 Tasks: MultiQC complete\n')
 
 
-#
-def create_md5deep(Folder, demultiplex_out_file):
-    md5deep_out = Folder + '/md5sum.txt'
-    sed_command = '/bin/sed "s ' + Folder + '/  g" '
-    execute('/bin/md5deep -r ' + Folder + ' | ' + sed_command + ' | grep -v md5sum | grep -v script > ' + md5deep_out, demultiplex_out_file)       
+        try:
+            command = '/usr/local/bin/fastqc'
+            args = [ '-t 4', 
+                    f"{project_folder}/*fastq.gz"
+            ]
+            # EXAMPLE: /usr/local/bin/fastqc -t 4 project_folder/*fastq.gz > DemultiplexFolder/demultiplex_log/04_fastqc.log
+            result = subprocess.run( command, args, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+        except CalledProcessError as err: 
+            text = [ "Caught exception!",
+                     f"Command: { err.cmd }", # interpolated strings
+                     f"Return code: { err.returncode }"
+                     f"Process output: { err.output }",
+            ]
 
-#
+        # EXAMPLE: /usr/bin/cp project_folder/*zip project_folder/*html DemultiplexFolder/RunId_short_QC # (destination is a directory)
+        zipFiles = f"{project_folder}/*zip"                     # source of zip files
+        destination = f"{DemultiplexFolder}/{RunId_short}_QC"   # destination folder
+        for source in os.list ( zipFiles )
+            shutil.copy2( source, destination )                 # copy zip files
+        HTLMfiles = f"{project_folder}/*html"
+        for source in os.list ( HTLMfiles )
+            shutil.copy2( source, destination )                 # copy htlm files required by multiqc
+
+        try:
+            command = '/usr/local/bin/multiqc'
+            args = [ project_folder,
+                    f"-o {project_folder}" 
+            ]
+
+            # EXAMPLE: /usr/local/bin/multiqc project_folder -o project_folder 2> DemultiplexFolder/demultiplex_log/05_multiqc.log
+            result = subprocess.run( command, args, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+        except CalledProcessError as err: 
+            text = [ "Caught exception!",
+                     f"Command: { err.cmd }", # interpolated strings
+                     f"Return code: { err.returncode }"
+                     f"Process output: { err.output }",
+            ]
+        demultiplex_out_file.write('4/5 Tasks: FastQC complete\n')
+
+        # EXAMPLE: /usr/local/bin/multiqc DemultiplexFolder/RunId_short_QC -o DemultiplexFolder /RunId_short_QC 2> DemultiplexFolder/demultiplex_log/05_multiqc.log
+        try:
+            command = '/usr/local/bin/multiqc'
+            args = [ project_folder,
+                    f"-o {project_folder}" 
+            ]
+
+            # EXAMPLE: /usr/local/bin/multiqc project_folder -o project_folder 2> DemultiplexFolder/demultiplex_log/05_multiqc.log
+            result = subprocess.run( command, args, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+        except CalledProcessError as err: 
+            text = [ "Caught exception!",
+                     f"Command: { err.cmd }", # interpolated strings
+                     f"Return code: { err.returncode }"
+                     f"Process output: { err.output }",
+            ]
+
+        demultiplex_out_file.write('5/5 Tasks: MultiQC complete\n')
+
+
+
+########################################################################
+# create_md5deep
+########################################################################
+
+def create_md5deep( directory , demultiplex_out_file):
+    """
+    """
+    md5File     = 'md5sum.txt'
+    md5deep_out = os.path.join( directory, md5File )
+    sed_bin     = '/usr/bin/sed'
+    sed_command = [ sed_bin , f"s {directory}/  g" ]
+
+
+    try:
+        userid  = 'sambauser01'
+        groupid = 'sambagroup'
+
+        # FIXME check if folder_or_file exists
+        # EXAMPLE: /bin/chown -R sambauser01:sambagroup folder_or_file
+        result = os.chown( command, uid = userid, gid = groupid ) #uid = self.userid, gid = self.groupid )
+    except CalledProcessError as err: 
+        text = [ "Caught exception!",
+                 f"Command: { err.cmd }", # interpolated strings
+                 f"Return code: { err.returncode }"
+                 f"Process output: { err.output }",
+        ]
+    # FIXMEFIXMEFIXME this is not done
+
+    if demux.debug: # DEBUG DEBUG DEBUG
+        print ( f"/usr/bin/md5deep -r {directory} | {sed_command} | /usr/bin/grep -v md5sum | /usr/bin/grep -v script > md5deep_out " )
+        exit( )
+    else:
+        command = 
+        argv
+        try:
+            # FIXME check if folder_or_file exists
+            # EXAMPLE: /bin/md5deep -r directory | sed_command | grep -v md5sum | grep -v script > md5deep_out
+            result = subprocess.run( command, argv, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+        except CalledProcessError as err: 
+            text = [ "Caught exception!",
+                     f"Command: { err.cmd }",           # interpolated strings
+                     f"Return code: { err.returncode }"
+                     f"Process output: { err.output }",
+            ]
+
+
+
+########################################################################
+# script_completion_file
+########################################################################
+
 def script_completion_file(DemultiplexFolder, demultiplex_out_file):
-    execute('/bin/touch ' + DemultiplexFolder + '/DemultiplexComplete.txt', demultiplex_out_file)
+    """
+    """
+    DemultiplexCompleteFile = 'DemultiplexComplete.txt'
+    try: 
+        Path( os.path.join ( DemultiplexFolder, DemultiplexCompleteFile )).touch( mode=644, exist_ok=False)
+    except Exception as e:
+        print( e.error )
+        print( f"{DemultiplexFolder}/{DemultiplexCompleteFile} already exists. Please delete it before running demux.\n")
+            exit( )
+        # FIXMEFIXME notify_warning_system_that_error_occured( )
 
 
-#
+
+########################################################################
+# prepare_delivery
+########################################################################
+
 def prepare_delivery(folder, DemultiplexFolder , tar_file, md5_file, demultiplex_out_file):
+    """
+    """
+    # EXAMPLE: /bin/tar -cvf tar_file -C DemultiplexFolder folder 
     execute('/bin/tar -cvf ' + tar_file + ' -C ' + DemultiplexFolder + ' ' + folder , demultiplex_out_file)
     #sed_command = '/bin/sed "s /mnt/data/demultiplex/for_transfer/  g" '
     sed_command = '/bin/sed "s /data/for_transfer/  g" '
+    # EXAMPLE: /bin/md5sum tar_file | sed_command > md5_file
     execute('/bin/md5sum ' + tar_file + ' | ' + sed_command + ' > ' + md5_file, demultiplex_out_file)
 
-#
+
+
+########################################################################
+# change_permission
+########################################################################
+
 def change_permission(folder_or_file, demultiplex_out_file):
+    """
+    """
 
-    argv1    =
-    argv2    =
-    command1 = '/bin/chown -R sambauser01:sambagroup ' + folder_or_file, demultiplex_out_file
-    command2 = '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+    command1 = '/usr/bin/chown'
+    command2 = '/usr/bin/chmod'
+    user     = 'sambauser01'
+    group    = 'sambagroup'
+    argv1    = [ '-R', f"{user}:{group}", folder_or_file ]
+    argv2    = [ '-R g+rwX', f"{group}", folder_or_file ]
 
-# TRY TO SEE IF THERE IS A RECURSIVE CHOWN call in Python
-
+    # TRY TO SEE IF THERE IS A RECURSIVE CHOWN call in Python
     try:
         # EXAMPLE: /bin/chown -R sambauser01:sambagroup ' + folder_or_file
-        result = subprocess.run( command1, argv1, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+        result = subprocess.run( command1, argv1, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
     except CalledProcessError as err: 
         text = [ "Caught exception!",
                  f"Command: { err.cmd }", # interpolated strings
                  f"Return code: { err.returncode }"
                  f"Process output: { err.output }",
-               ]
+        ]
 
     try:
         # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-        result = subprocess.run( command2, argv2, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+        result = subprocess.run( command2, argv2, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
     except CalledProcessError as err: 
         text = [ "Caught exception!",
                  f"Command: { err.cmd }", # interpolated strings
                  f"Return code: { err.returncode }"
                  f"Process output: { err.output }",
-               ]
+        ]
 
         
         print( '\n'.join( text ) )
 
-#
+
+########################################################################
+# MAIN
+########################################################################
+
 def main(RunId):
     """
     Main function for the demultiplex script.
@@ -353,6 +491,14 @@ def main(RunId):
     demultiplex_out_file.write('\nAll done!\n')
     demultiplex_out_file.close()
 
+
+
+########################################################################
+# MAIN
+########################################################################
+
 if __name__ == '__main__':
-    RunId = sys.argv[1]
+
+    parser = argparse.ArgumentParser()
+    RunId = sys.argv[]
     main(RunId)
