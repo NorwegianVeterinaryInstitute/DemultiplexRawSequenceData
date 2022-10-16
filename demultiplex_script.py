@@ -4,6 +4,8 @@ import os
 import sys
 import shutil
 import subprocess
+import argparse
+from pathlib import Path
 
 # INPUTS:
 #   - Run name eg python /mnt/data/demultiplex/scripts/demultiplex_script_v2.py 200306_M06578_0015_000000000-CWLBG
