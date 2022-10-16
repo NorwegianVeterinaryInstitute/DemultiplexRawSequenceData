@@ -18,3 +18,4 @@ FastQC/*
 FastQC/fastqc
 /data/bin/FastQC/fastqc
 fastqc
+__pycache__
