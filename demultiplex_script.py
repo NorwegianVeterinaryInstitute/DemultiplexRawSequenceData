@@ -28,8 +28,67 @@ from pathlib import Path
 #
 # CONDA/EXECUTION environment
 
+class demux
+"""
+demux: make an object of the entire demultiplex process.
+"""
 
-#
+    def __init__( self )
+    """
+    __init__
+        Check for existance of RunID
+            Complain if not
+        Checks to see if debug or not is set
+    """
+        #self.RunID =
+        self.debug = sys.argsv[ 'debug' ]
+        # self.demultiplex_out_file = 
+
+
+########################################################################
+# getProjectName
+########################################################################
+
+def getProjectName( DemultiplexFolder ):
+    """
+    Get the associated project name from SampleSheet.csv
+
+    Parsing is simple:
+        go line-by-line
+        ignore all the we do not need until
+            we hit the line that contains 'Sample_Project'
+            if 'Sample_Project' found
+                split the line and 
+                    take the value of 'Sample_Project'
+                    take the value of 'Analysis'
+
+        return an set of the values of all values of 'Sample_Project' and 'Analysis'
+    """
+
+    project_line_check = False
+    project_index  = ''
+    analysis_index = ''
+    project_list   = []
+    SampleSheetFileName = 'SampleSheet.csv'
+    SampleSheetFilePath = os.path.join( DemultiplexFolder, SampleSheetFileName )
+
+    for line in open( SampleSheetFilePath, 'r', encoding="utf-8" ):
+        line = line.rstrip()
+        if project_line_check == True:
+            project_list.append(line.split(',')[project_index] + '.' + line.split(',')[analysis_index])
+        if 'Sample_Project' in line:
+            project_index      = line.split(',').index('Sample_Project')
+            analysis_index     = line.split(',').index('Analysis')
+            project_line_check = True
+
+    return( set( project_list ) )
+
+
+
+########################################################################
+# execute
+########################################################################
+
 def execute(command, demultiplex_out_file):
     """
     Invoke the appropriate demux/QC command, while writing out to the log file.
