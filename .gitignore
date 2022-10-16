@@ -15,3 +15,5 @@ FastQC/*
 *.log
 # I would like to keep a copy of .out for future reference and as a reminder that sometime in the future the logfile should be shipped off to splunk/workplace/appropriate syslog server
 # *.out
+FastQC/fastqc
+/data/bin/FastQC/fastqc
