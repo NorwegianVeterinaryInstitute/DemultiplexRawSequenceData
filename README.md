@@ -25,6 +25,8 @@ Software requirements
 
     MultiQC v1.7
 
+    md5deep
+
 or newer
 
 
