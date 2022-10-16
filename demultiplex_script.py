@@ -37,6 +37,7 @@ class demux:
     """
     demux: make an object of the entire demultiplex process.
     """
+    debug = True
 
     def __init__( self ):
         """
@@ -46,7 +47,8 @@ class demux:
             Checks to see if debug or not is set
         """
         #self.RunID =
-        self.debug = sys.argsv[ 'debug' ]
+        #self.debug = sys.argsv[ 'debug' ]
+        #self.debug = True
         # self.demultiplex_out_file = 
 
 
@@ -453,16 +455,17 @@ def main(RunId):
     DemultiplexDirSuffix   = '_demultiplex'
     QCDirSuffix            = '_QC'
 
-    RunId_short         = '_'.join(RunId.split('_')[0:2])
-    RunFolder           = os.path.join( RunLocation, RunId )
-    DemultiplexFolder   = os.path.join( DemultiplexLocation, RunId +  DemultiplexDirSuffix )
-    project_name        = '.'.join( RunId_short, project )
-    DemultiplexDirPath  = os.path.join( DemultiplexFolder, project_name )
-    project_list        = getProjectName( DemultiplexFolder, demultiplex_out_file )
-    tar_file            = os.path.join( DataFolder, os.path.join( ForTransferDirPath, project_name + tarExtension ) )
-    md5_file            = '+'.join( tar_file, md5Extension )
-    QC_tar_file         = os.path.join( DemultiplexLocation, os.path.join ( ForTransferDirPath, ''.join( RunId_short, '_QC.tar' ) ) )
-    QC_md5_file         = '+'.join( QC_tar_file, md5Extension )
+    RunId_short          = '_'.join(RunId.split('_')[0:2])
+    RunFolder            = os.path.join( RunLocation, RunId )
+    DemultiplexFolder    = os.path.join( DemultiplexLocation, RunId +  DemultiplexDirSuffix )
+    demultiplex_out_file = open( DemultiplexLogFilePath , 'w')
+    project_list         = getProjectName( DemultiplexFolder, demultiplex_out_file )
+    project_name         = '.'.join( RunId_short, project_list )
+    DemultiplexDirPath   = os.path.join( DemultiplexFolder, project_name )
+    tar_file             = os.path.join( DataFolder, os.path.join( ForTransferDirPath, project_name + tarExtension ) )
+    md5_file             = '+'.join( tar_file, md5Extension )
+    QC_tar_file          = os.path.join( DemultiplexLocation, os.path.join ( ForTransferDirPath, ''.join( RunId_short, '_QC.tar' ) ) )
+    QC_md5_file          = '+'.join( QC_tar_file, md5Extension )
 
     if checkComplete( RunFolder ) is False:
         print( ' '.join( RunId, 'is not finished sequencing yet!' ) )
@@ -472,7 +475,6 @@ def main(RunId):
         print( ' '.join( DemultiplexFolder, 'exists. Delete or rename the demultiplex folder before re-running the script' ) )
         sys.exit()
     else:
-        demultiplex_out_file = open( os.path.join( DemultiplexFolder, DemultiplexLogFile ) , 'w')
         demultiplex_out_file.write('1/5 Tasks: Directories created\n')
 
     demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file )
@@ -502,9 +504,9 @@ def main(RunId):
 # MAIN
 ########################################################################
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
 
-#     parser = argparse.ArgumentParser()
-#     # FIXMEFIXME add named arguments
-#     RunId = sys.argv[1]
-#     main(RunId)
+    parser = argparse.ArgumentParser()
+    # FIXMEFIXME add named arguments
+    RunId = sys.argv[1]
+    main(RunId)
