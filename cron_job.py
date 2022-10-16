@@ -5,14 +5,14 @@ import time
 from time import strftime, localtime, time
 
 # LIMITATIONS/ASSUMPTIONS:
-#   This script cannot handle more than 1 new run /data/scratch/*M06578*_demultiplex
+#   This script cannot handle more than 1 new run /data/scratch/{*M06578*,*NB552450*}_demultiplex
 #       if more than 1 new run exists in /data/scratch/ the script will pick the first
 #       directory  os.listdir() will return, THERE IS NO GUARANTEE FOR LEXICOGRAPHICAL
 #       ORDER.
 #
 # INPUT:
 #   none from command line
-#   the directories in /data/scratch/*M06578*_demultiplex
+#   the directories in /data/scratch/{*M06578*,*NB552450*}_demultiplex
 #
 # OUTPUT:
 #   Log file in /data/bin/cron_out.log, append mode, file does not get overwritten with each run
