@@ -26,7 +26,12 @@ from pathlib import Path
 #       - Relies only on output directory name and does not verify contents
 #
 #
-# CONDA/EXECUTION environment
+# Needs: 
+#   turn stuff into an object
+#       then module
+#   log to syslog
+# 
+#
 
 class demux
 """
