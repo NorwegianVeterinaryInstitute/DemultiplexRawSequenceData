@@ -93,14 +93,17 @@ if NewRunID:
 
         python_bin     = '/usr/bin/python3'
         ScriptFilepath = '/data/bin/demultiplex_script.py'
-        argv           =  [ ScriptFilepath , NewRunID ]
+        argv           = [ ScriptFilepath , NewRunID ]
+        cmd            = ' '.join( [python_bin, ' '.join( argv )] )
 
         cron_out_file.write('\n' + python_bin + ' ' + ' ' + '\n') # format and write out the 
 
         try:
             # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK        
-            result = subprocess.run( python_bin, argv, stdout = cron_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-        except CalledProcessError as err: 
+            # ValueError: stdout and stderr arguments may not be used with capture_output.
+            result = subprocess.run( cmd, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+            # result = subprocess.run( python_bin, argv, stdout = cron_out_file, cwd = RawDir, check = True, encoding = "utf-8" )
+        except ChildProcessError  as err: 
             text = [ "Caught exception!",
                      f"Command: {err.cmd}", # interpolated strings
                      f"Return code: {err.returncode}"
