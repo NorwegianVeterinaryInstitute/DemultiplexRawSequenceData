@@ -38,57 +38,60 @@ class demux:
     demux: make an object of the entire demultiplex process.
     """
     debug = True
+    SampleSheetFileName = 'SampleSheet.csv'
 
-    def __init__( self ):
+    def __init__( self, RunId ):
         """
         __init__
             Check for existance of RunID
                 Complain if not
             Checks to see if debug or not is set
         """
-        #self.RunID =
-        #self.debug = sys.argsv[ 'debug' ]
+        self.RunID = RunId # this needs more reading, about globals and init'ing
+        self.debug = True
         #self.debug = True
         # self.demultiplex_out_file = 
 
 
-########################################################################
-# getProjectName
-########################################################################
+    ########################################################################
+    # getProjectName
+    ########################################################################
+    def getProjectName( SampleSheetFilePath ):
+        """
+        Get the associated project name from SampleSheet.csv
 
-def getProjectName( DemultiplexFolder ):
-    """
-    Get the associated project name from SampleSheet.csv
+        Requires:
+           /data/rawdata/RunId/demultiplex/SampleSheet.csv # FIXME CHECK LOCATION of SampleSheet.csv and fix path here
 
-    Parsing is simple:
-        go line-by-line
-        ignore all the we do not need until
-            we hit the line that contains 'Sample_Project'
-            if 'Sample_Project' found
-                split the line and 
-                    take the value of 'Sample_Project'
-                    take the value of 'Analysis'
+        Returns:
+            List of included Sample Projects. 
+                Example of returned project_list:     {'SAV-amplicon-MJH'}
 
-        return an set of the values of all values of 'Sample_Project' and 'Analysis'
-    """
+        Parsing is simple:
+            go line-by-line
+            ignore all the we do not need until
+                we hit the line that contains 'Sample_Project'
+                if 'Sample_Project' found
+                    split the line and 
+                        take the value of 'Sample_Project'
+            return an set of the values of all values of 'Sample_Project' and 'Analysis'
+        """
 
-    project_line_check = False
-    project_index  = ''
-    analysis_index = ''
-    project_list   = []
-    SampleSheetFileName = 'SampleSheet.csv'
-    SampleSheetFilePath = os.path.join( DemultiplexFolder, SampleSheetFileName )
+        project_line_check = False
+        project_index  = ''
+        # analysis_index = ''
+        project_list   = []
 
-    for line in open( SampleSheetFilePath, 'r', encoding="utf-8" ):
-        line = line.rstrip()
-        if project_line_check == True:
-            project_list.append(line.split(',')[project_index] + '.' + line.split(',')[analysis_index])
-        if 'Sample_Project' in line:
-            project_index      = line.split(',').index('Sample_Project')
-            analysis_index     = line.split(',').index('Analysis')
-            project_line_check = True
+        for line in open( SampleSheetFilePath, 'r', encoding="utf-8" ):
+            line = line.rstrip()
+            if project_line_check == True:
+                project_list.append(line.split(',')[project_index] )# + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
+            if 'Sample_Project' in line:
+                project_index      = line.split(',').index('Sample_Project')
+                # analysis_index     = line.split(',').index('Analysis') # this is the part where .x shows up. Removed.
+                project_line_check = True
 
-    return( set( project_list ) )
+        return( set( project_list ) )
 
 
 
