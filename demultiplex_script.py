@@ -133,20 +133,20 @@ def checkComplete(SequenceRunOriginDir):
 # createDirectory
 ########################################################################
 
-def createDirectory(DemultiplexFolder, RunId_short):
+def createDirectory(DemultiplexDir, RunId_short):
     """
     If the Demultiplexing directory or any relevant directory does not exist, create it
     """
-    if os.path.isdir( DemultiplexFolder ):
+    if os.path.isdir( DemultiplexDir ):
         return( False )
     else:
         QCSuffix    = '_QC'                  # this and next are duplicated.
         DemuxLogDir = 'demultiplex_log'      # could be throw them in an object
         QCDirectory = RunId_short + QCSuffix # joining the two previous strins
         # DemultiplexLogFile = os.path.join( ) 
-        os.mkdir( DemultiplexFolder )                              # root directory for run
-        os.mkdir( os.path.join( DemultiplexFolder, QCDirectory ) ) # QC directory   for run
-        os.mkdir( os.path.join( DemultiplexFolder, DemuxLogDir ) ) # log directory  for run
+        os.mkdir( DemultiplexDir )                              # root directory for run
+        os.mkdir( os.path.join( DemultiplexDir, QCDirectory ) ) # QC directory   for run
+        os.mkdir( os.path.join( DemultiplexDir, DemuxLogDir ) ) # log directory  for run
 
 
 
@@ -154,27 +154,26 @@ def createDirectory(DemultiplexFolder, RunId_short):
 # demutliplex
 ########################################################################
 
-def demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file):
+def demutliplex( SequenceRunOriginDir, DemultiplexDir, demultiplex_out_file):
     """
     """
-    SampleSheetFile = 'SampleSheet.csv'
-    source          = os.path.join( RunFolder, SampleSheetFile )
-    # destination   = DemultiplexFolder
-    shutil.copy2( source, DemultiplexFolder ) # shutil.copy2() is the only method in Python 3 in which you are allowed to use a directory as a destionation https://stackoverflow.com/questions/123198/how-to-copy-files
+    source          = os.path.join( SequenceRunOriginDir, demux.SampleSheetFile )
+    # destination   = DemultiplexDir
+    shutil.copy2( source, DemultiplexDir ) # shutil.copy2() is the only method in Python 3 in which you are allowed to use a directory as a destionation https://stackoverflow.com/questions/123198/how-to-copy-files
     demultiplex_out_file.write('2/5 Tasks: Demultiplexing started\n')
 
     bcl2fastq_bin = '/usr/local/bin/bcl2fastq'
     argv = [
         '--no-lane-splitting',
-        f"--runfolder-dir {RunFolder}"
-        f"--output-dir {DemultiplexFolder}"
+        f"--runfolder-dir {SequenceRunOriginDir}"
+        f"--output-dir {DemultiplexDir}"
     ]
     Bcl2FastqLogDirName  = 'demultiplex_log'
     Bcl2FastqLogFileName = '02_demultiplex.log'
-    Bcl2FastqLogFile     = os.path.join( DemultiplexFolder, os.path.join( Bcl2FastqLogDir, Bcl2FastqLogFileName ) )
+    Bcl2FastqLogFile     = os.path.join( DemultiplexDir, os.path.join( Bcl2FastqLogDir, Bcl2FastqLogFileName ) )
 
     try:
-        # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + RunFolder + ' --output-dir ' + DemultiplexFolder + ' 2> ' + DemultiplexFolder + '/demultiplex_log/02_demultiplex.log'
+        # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
         result = subprocess.run( bcl2fastq_bin, argv, stdout = cron_out_file, stderr = Bcl2FastqLogFile, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
     except ChildProcessError as err: 
         text = [ "Caught exception!",
@@ -193,13 +192,13 @@ def demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file):
 # moveFiles
 ########################################################################
 
-def moveFiles(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
+def moveFiles(DemultiplexDir, RunId_short, project_list, demultiplex_out_file):
     """
     Move?Rename? files FIXMEFIXMEFIXME more info when debugging
     """
     CompressedFastqSuffix = 'fastq.gz' 
 
-    for root, dirs, files in os.walk(DemultiplexFolder):
+    for root, dirs, files in os.walk(DemultiplexDir):
         for name in files:
 
             if CompressedFastqSuffix in name:
@@ -220,9 +219,9 @@ def moveFiles(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file
 
     for project in project_list:
 
-        # /usr/bin/mv DemultiplexFolder/project.split('.')[0] DemultiplexFolder/RunId_short.project
-        source      = os.path.join( DemultiplexFolder, project.split('.')[0] )
-        destination = os.path.join( DemultiplexFolder, '.'.join( RunId_short, project  ) )
+        # /usr/bin/mv DemultiplexDir/project.split('.')[0] DemultiplexDir/RunId_short.project
+        source      = os.path.join( DemultiplexDir, project.split('.')[0] )
+        destination = os.path.join( DemultiplexDir, '.'.join( RunId_short, project  ) )
         if demux.debug:
             print( f"/usr/bin/mv {source} {destination}")
         else:
@@ -247,13 +246,13 @@ def moveFiles(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file
 # qc
 ########################################################################
 
-def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
+def qc(DemultiplexDir, RunId_short, project_list, demultiplex_out_file):
     """
     Run QC on the sequence run files
     """
 
     for project in project_list:
-        project_folder = DemultiplexFolder + '/' + RunId_short + '.' + project
+        project_folder = DemultiplexDir + '/' + RunId_short + '.' + project
 
 
         try:
@@ -261,7 +260,7 @@ def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
             args = [ '-t 4', 
                     f"{project_folder}/*fastq.gz"
             ]
-            # EXAMPLE: /usr/local/bin/fastqc -t 4 project_folder/*fastq.gz > DemultiplexFolder/demultiplex_log/04_fastqc.log
+            # EXAMPLE: /usr/local/bin/fastqc -t 4 project_folder/*fastq.gz > DemultiplexDir/demultiplex_log/04_fastqc.log
             result = subprocess.run( command, args, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
         except ChildProcessError as err: 
             text = [ "Caught exception!",
@@ -270,9 +269,9 @@ def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
                      f"Process output: { err.output }",
             ]
 
-        # EXAMPLE: /usr/bin/cp project_folder/*zip project_folder/*html DemultiplexFolder/RunId_short_QC # (destination is a directory)
+        # EXAMPLE: /usr/bin/cp project_folder/*zip project_folder/*html DemultiplexDir/RunId_short_QC # (destination is a directory)
         zipFiles = f"{project_folder}/*zip"                     # source of zip files
-        destination = f"{DemultiplexFolder}/{RunId_short}_QC"   # destination folder
+        destination = f"{DemultiplexDir}/{RunId_short}_QC"   # destination folder
         for source in os.list ( zipFiles ):
             shutil.copy2( source, destination )                 # copy zip files
         HTLMfiles = f"{project_folder}/*html"
@@ -285,7 +284,7 @@ def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
                     f"-o {project_folder}" 
             ]
 
-            # EXAMPLE: /usr/local/bin/multiqc project_folder -o project_folder 2> DemultiplexFolder/demultiplex_log/05_multiqc.log
+            # EXAMPLE: /usr/local/bin/multiqc project_folder -o project_folder 2> DemultiplexDir/demultiplex_log/05_multiqc.log
             result = subprocess.run( command, args, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
         except ChildProcessError as err: 
             text = [ "Caught exception!",
@@ -295,14 +294,14 @@ def qc(DemultiplexFolder, RunId_short, project_list, demultiplex_out_file):
             ]
         demultiplex_out_file.write('4/5 Tasks: FastQC complete\n')
 
-        # EXAMPLE: /usr/local/bin/multiqc DemultiplexFolder/RunId_short_QC -o DemultiplexFolder /RunId_short_QC 2> DemultiplexFolder/demultiplex_log/05_multiqc.log
+        # EXAMPLE: /usr/local/bin/multiqc DemultiplexDir/RunId_short_QC -o DemultiplexDir /RunId_short_QC 2> DemultiplexDir/demultiplex_log/05_multiqc.log
         try:
             command = '/usr/local/bin/multiqc'
             args = [ project_folder,
                     f"-o {project_folder}" 
             ]
 
-            # EXAMPLE: /usr/local/bin/multiqc project_folder -o project_folder 2> DemultiplexFolder/demultiplex_log/05_multiqc.log
+            # EXAMPLE: /usr/local/bin/multiqc project_folder -o project_folder 2> DemultiplexDir/demultiplex_log/05_multiqc.log
             result = subprocess.run( command, args, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
         except ChildProcessError as err: 
             text = [ "Caught exception!",
@@ -366,15 +365,15 @@ def create_md5deep( directory , demultiplex_out_file):
 # script_completion_file
 ########################################################################
 
-def script_completion_file(DemultiplexFolder, demultiplex_out_file):
+def script_completion_file(DemultiplexDir, demultiplex_out_file):
     """
     """
     DemultiplexCompleteFile = 'DemultiplexComplete.txt'
     try: 
-        Path( os.path.join ( DemultiplexFolder, DemultiplexCompleteFile )).touch( mode=644, exist_ok=False)
+        Path( os.path.join ( DemultiplexDir, DemultiplexCompleteFile )).touch( mode=644, exist_ok=False)
     except Exception as e:
         print( e.error )
-        print( f"{DemultiplexFolder}/{DemultiplexCompleteFile} already exists. Please delete it before running demux.\n")
+        print( f"{DemultiplexDir}/{DemultiplexCompleteFile} already exists. Please delete it before running demux.\n")
         exit( )
         # FIXMEFIXME notify_warning_system_that_error_occured( )
 
@@ -384,11 +383,11 @@ def script_completion_file(DemultiplexFolder, demultiplex_out_file):
 # prepare_delivery
 ########################################################################
 
-def prepare_delivery(folder, DemultiplexFolder , tar_file, md5_file, demultiplex_out_file):
+def prepare_delivery(folder, DemultiplexDir , tar_file, md5_file, demultiplex_out_file):
     """
     """
-    # EXAMPLE: /bin/tar -cvf tar_file -C DemultiplexFolder folder 
-    execute('/bin/tar -cvf ' + tar_file + ' -C ' + DemultiplexFolder + ' ' + folder , demultiplex_out_file)
+    # EXAMPLE: /bin/tar -cvf tar_file -C DemultiplexDir folder 
+    execute('/bin/tar -cvf ' + tar_file + ' -C ' + DemultiplexDir + ' ' + folder , demultiplex_out_file)
     #sed_command = '/bin/sed "s /mnt/data/demultiplex/for_transfer/  g" '
     sed_command = '/bin/sed "s /data/for_transfer/  g" '
     # EXAMPLE: /bin/md5sum tar_file | sed_command > md5_file
@@ -446,57 +445,98 @@ def main(RunId):
     All actions are coordinated through here
     """
 
-    DataFolder             = '/data'
-    DemultiplexLogDir      = 'demultiplex_log'
-    ScriptLog              = 'script.log'
-    DemultiplexLogFilePath = os.path.join( DemultiplexLogDir, ScriptLog )
-    md5Extension           = '.md5'
-    tarExtension           = '.tar'
-    ForTransferDirPath     = 'for_transfer'
-    RunLocation            = os.path.join( DataFolder, 'scratch' )
-    DemultiplexLocation    = os.path.join( DataFolder, 'demultiplex' )
+    DataRootDirPath        = '/data'
+    RawDataDirName         = 'rawdata'
+    DemultiplexDirName     = "demultiplex"
+    ForTransferDirName     = 'for_transfer'
     DemultiplexDirSuffix   = '_demultiplex'
+    DemultiplexLogDir      = 'demultiplex_log'
+    ScriptLogFile          = 'script.log'
     QCDirSuffix            = '_QC'
+    tarExtension           = '.tar'
+    md5Extension           = '.md5'
+    RunIdDir               = os.path.join( DataRootDirPath, os.path.join( DemultiplexDirName, RunId + DemultiplexDirSuffix ) )
+    DemultiplexLogDirPath  = os.path.join( RunIdDir, DemultiplexLogDir )
+    DemultiplexLogFilePath = os.path.join( DemultiplexLogDirPath, ScriptLogFile )
+    ForTransferDirRoot     = os.path.join ( DataRootDirPath, DemultiplexDirName )
+    RawDataLocationDirRoot = os.path.join( DataRootDirPath, RawDataDirName )
+    DemultiplexDirRoot     = os.path.join( DataRootDirPath, DemultiplexDirName )
+    RunId_short            = '_'.join(RunId.split('_')[0:2])
+    SequenceRunOriginDir   = os.path.join( RawDataLocationDirRoot, RunId )
+    SampleSheetFilePath    = os.path.join( SequenceRunOriginDir, demux.SampleSheetFileName )
+    QC_tar_file            = f"{ForTransferDirRoot}/{RunId}/{RunId_short}{QCDirSuffix}{tarExtension}" # dot is stored in tarExtension
+    QC_md5_file            = f"{QC_tar_file}{md5Extension}" # dot is stored in md5Extension
 
-    RunId_short          = '_'.join(RunId.split('_')[0:2])
-    RunFolder            = os.path.join( RunLocation, RunId )
-    DemultiplexFolder    = os.path.join( DemultiplexLocation, RunId +  DemultiplexDirSuffix )
-    demultiplex_out_file = open( DemultiplexLogFilePath , 'w')
-    project_list         = getProjectName( DemultiplexFolder, demultiplex_out_file )
-    project_name         = '.'.join( RunId_short, project_list )
-    DemultiplexDirPath   = os.path.join( DemultiplexFolder, project_name )
-    tar_file             = os.path.join( DataFolder, os.path.join( ForTransferDirPath, project_name + tarExtension ) )
-    md5_file             = '+'.join( tar_file, md5Extension )
-    QC_tar_file          = os.path.join( DemultiplexLocation, os.path.join ( ForTransferDirPath, ''.join( RunId_short, '_QC.tar' ) ) )
-    QC_md5_file          = '+'.join( QC_tar_file, md5Extension )
+    project_list           = demux.getProjectName( SampleSheetFilePath )
 
-    if checkComplete( RunFolder ) is False:
-        print( ' '.join( RunId, 'is not finished sequencing yet!' ) )
+    DemuxProjectName       = []
+    # Build the paths for each of the projects. example: /data/for_transfer/{RunId}/{item}
+    for item in project_list: 
+        DemuxProjectName.append( f"{ForTransferDirRoot}/{RunId}/" + str(item) )
+
+
+    # DemultiplexDirPaths    = os.path.join( DemultiplexDir, project_name )
+
+    if demux.debug: # add additional vars that can have more than one value here
+        DemuxProjectName.append( f"{ForTransferDirRoot}/{RunId}/" + "kot" )
+
+    if demux.debug: # print the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
+            print( f"RunId:\t\t{RunId}")
+            print( f"RunId_short:\t\t{RunId_short}")
+            print( f"DemultiplexDirRoot:\t{DemultiplexDirRoot}")
+            print( f"RunIdDir:\t\t{RunIdDir}")
+            print( f"DemultiplexLogDirPath:\t{DemultiplexLogDirPath}")
+            print( f"DemultiplexLogFilePath:\t{DemultiplexLogFilePath}")
+            print( f"DemuxProjectName:\t{DemuxProjectName}")
+            print( f"RawDataLocationDirRoot:\t{RawDataLocationDirRoot}")
+            print( f"SequenceRunOriginDir:\t{SequenceRunOriginDir}")
+            print( f"SampleSheetFilePath:\t{SampleSheetFilePath}")
+            print( f"QC_tar_file:\t\t{QC_tar_file}")
+            print( f"QC_md5_file:\t\t{QC_md5_file}")
+            print( f"project_list:\t\t{project_list}")
+            # print( f"project_name:\t{project_name}")
+            # print( f"DemultiplexDirPaths:\t{DemultiplexDirPaths}")  FIXME FIXME FIXME iterat through demux 
+    sys.exit( )
+
+    project_name           = f"{RunId_short}.{project_list}"
+    tar_file               = os.path.join( DataRootDirPath, os.path.join( ForTransferDirRoot, project_name + tarExtension ) )
+    md5_file               = f"{tar_file}.{tarExtension}"
+
+    # init:
+    #   check if /data/demultiplex exists
+    #       exit if not
+    #   create directory structrure
+    #       /data/demultiplex/{RunId}_{DemultiplexDirSuffix}
+    #       /data/demultiplex/{RunId}_{DemultiplexDirSuffix}/{DemultiplexLogDir}
+
+    if checkComplete( SequenceRunOriginDir ) is False:
+        print( f"{RunId} is not finished sequencing yet!" ) 
         sys.exit()
 
-    if createDirectory( DemultiplexFolder, RunId_short ) is False:
-        print( ' '.join( DemultiplexFolder, 'exists. Delete or rename the demultiplex folder before re-running the script' ) )
+    demultiplex_out_file = open( DemultiplexLogFilePath , 'w')
+    if createDirectory( DemultiplexDirPath ) is False:
+        print( f"{DemultiplexDirPath} exists. Delete the demultiplex folder before re-running the script" )
         sys.exit()
     else:
         demultiplex_out_file.write('1/5 Tasks: Directories created\n')
 
-    demutliplex( RunFolder, DemultiplexFolder, demultiplex_out_file )
-    moveFiles(   DemultiplexFolder, RunId_short, project_list, demultiplex_out_file )
-    qc(          DemultiplexFolder, RunId_short, project_list, demultiplex_out_file )
+    demutliplex( SequenceRunOriginDir, DemultiplexDir, demultiplex_out_file )
+    moveFiles(   DemultiplexDir, RunId_short, project_list, demultiplex_out_file )
+    qc(          DemultiplexDir, RunId_short, project_list, demultiplex_out_file )
+    change_permission( DemultiplexDir, demultiplex_out_file )
 
-    change_permission( DemultiplexFolder, demultiplex_out_file )
     for project in project_list:
 
         create_md5deep(    DemultiplexDirPath, demultiplex_out_file )
-        prepare_delivery(  project_name, DemultiplexFolder, tar_file, md5_file, demultiplex_out_file )
+        prepare_delivery(  project_name, DemultiplexDir, tar_file, md5_file, demultiplex_out_file )
         change_permission( tar_file, demultiplex_out_file )
         change_permission( md5_file, demultiplex_out_file )
 
-    prepare_delivery(  RunId_short + QCDirSuffix, DemultiplexFolder, QC_tar_file, QC_md5_file, demultiplex_out_file )
+    prepare_delivery(  RunId_short + QCDirSuffix, DemultiplexDir, QC_tar_file, QC_md5_file, demultiplex_out_file )
     change_permission( QC_tar_file, demultiplex_out_file )
     change_permission( QC_md5_file, demultiplex_out_file )
 
-    script_completion_file(DemultiplexFolder, demultiplex_out_file)
+    script_completion_file(DemultiplexDir, demultiplex_out_file)
 
     demultiplex_out_file.write('\nAll done!\n')
     demultiplex_out_file.close()
