@@ -111,24 +111,6 @@ def execute(command, demultiplex_out_file):
     p_status = p.wait()
 
 
-
-########################################################################
-# checkComplete
-########################################################################
-
-def checkComplete(SequenceRunOriginDir):
-    """
-    Check to see if the SequenceRunOriginDir/RTAComplete.txt file exists and return true/false,
-    signaling that the sequencing run is complete or not.
-    """
-    RTACompleteFile = "RTAComplete.txt"
-    if os.path.exists( os.path.join( SequenceRunOriginDir, RTACompleteFile ) ):
-        return ( True )
-    else:
-        return ( False )
-
-
-
 ########################################################################
 # createDirectory
 ########################################################################
