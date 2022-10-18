@@ -61,7 +61,7 @@ class demux:
         Get the associated project name from SampleSheet.csv
 
         Requires:
-           /data/rawdata/RunId/demultiplex/SampleSheet.csv # FIXME CHECK LOCATION of SampleSheet.csv and fix path here
+           /data/rawdata/RunId/SampleSheet.csv
 
         Returns:
             List of included Sample Projects. 
@@ -88,7 +88,7 @@ class demux:
                 project_list.append(line.split(',')[project_index] )# + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
             if 'Sample_Project' in line:
                 project_index      = line.split(',').index('Sample_Project')
-                # analysis_index     = line.split(',').index('Analysis') # this is the part where .x shows up. Removed.
+                # analysis_index   = line.split(',').index('Analysis') # this is the part where .x shows up. Removed.
                 project_line_check = True
 
         return( set( project_list ) )
