@@ -455,47 +455,50 @@ def main(RunId):
     QCDirSuffix            = '_QC'
     tarExtension           = '.tar'
     md5Extension           = '.md5'
-    RunIdDir               = os.path.join( DataRootDirPath, os.path.join( DemultiplexDirName, RunId + DemultiplexDirSuffix ) )
-    DemultiplexLogDirPath  = os.path.join( RunIdDir, DemultiplexLogDir )
+    # RunId
+    DemultiplexRunIdDir    = os.path.join( DataRootDirPath, os.path.join( DemultiplexDirName, RunId + DemultiplexDirSuffix ) )
+    DemultiplexLogDirPath  = os.path.join( DemultiplexRunIdDir, DemultiplexLogDir )
     DemultiplexLogFilePath = os.path.join( DemultiplexLogDirPath, ScriptLogFile )
-    ForTransferDirRoot     = os.path.join ( DataRootDirPath, DemultiplexDirName )
+    ForTransferDirRoot     = os.path.join ( DataRootDirPath, ForTransferDirName )
     RawDataLocationDirRoot = os.path.join( DataRootDirPath, RawDataDirName )
     DemultiplexDirRoot     = os.path.join( DataRootDirPath, DemultiplexDirName )
     RunId_short            = '_'.join(RunId.split('_')[0:2])
     SequenceRunOriginDir   = os.path.join( RawDataLocationDirRoot, RunId )
     SampleSheetFilePath    = os.path.join( SequenceRunOriginDir, demux.SampleSheetFileName )
-    QC_tar_file            = f"{ForTransferDirRoot}/{RunId}/{RunId_short}{QCDirSuffix}{tarExtension}" # dot is stored in tarExtension
-    QC_md5_file            = f"{QC_tar_file}{md5Extension}" # dot is stored in md5Extension
+    QC_tar_file_source     = f"{DemultiplexRunIdDir}/{RunId_short}{QCDirSuffix}{tarExtension}" # dot is stored in tarExtension
+    QC_md5_file_source     = f"{QC_tar_file_source}{md5Extension}" # dot is stored in md5Extension
+    QC_tar_file_dest       = f"{ForTransferDirRoot}/{RunId}/{RunId_short}{QCDirSuffix}{tarExtension}"
+    QC_md5_file_dest       = f"{QC_tar_file_dest}{md5Extension}" # dot is stored in md5Extension
+
 
     project_list           = demux.getProjectName( SampleSheetFilePath )
+    if demux.debug:
+        project_list.add( "FOO-blahblah-BAR" ) # if debug, have at least two project names to ensure multiple paths are being created
 
-    DemuxProjectName       = []
+    DemuxProjectNames       = []
     # Build the paths for each of the projects. example: /data/for_transfer/{RunId}/{item}
     for item in project_list: 
-        DemuxProjectName.append( f"{ForTransferDirRoot}/{RunId}/" + str(item) )
-
-
-    # DemultiplexDirPaths    = os.path.join( DemultiplexDir, project_name )
-
-    if demux.debug: # add additional vars that can have more than one value here
-        DemuxProjectName.append( f"{ForTransferDirRoot}/{RunId}/" + "kot" )
+        DemuxProjectNames.append( f"{ForTransferDirRoot}/{RunId}/" + str(item) )
 
     if demux.debug: # print the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
-            print( f"RunId:\t\t{RunId}")
+            print( f"RunId:\t\t\t{RunId}")
             print( f"RunId_short:\t\t{RunId_short}")
+            print( f"project_list:\t\t{project_list}")
+            print( "=============================================================================")
             print( f"DemultiplexDirRoot:\t{DemultiplexDirRoot}")
-            print( f"RunIdDir:\t\t{RunIdDir}")
+            print( f"DemultiplexRunIdDir:\t{DemultiplexRunIdDir}")
             print( f"DemultiplexLogDirPath:\t{DemultiplexLogDirPath}")
             print( f"DemultiplexLogFilePath:\t{DemultiplexLogFilePath}")
-            print( f"DemuxProjectName:\t{DemuxProjectName}")
+            print( f"DemuxProjectNames:\t{DemuxProjectNames}")
+            print( "=============================================================================")
             print( f"RawDataLocationDirRoot:\t{RawDataLocationDirRoot}")
             print( f"SequenceRunOriginDir:\t{SequenceRunOriginDir}")
             print( f"SampleSheetFilePath:\t{SampleSheetFilePath}")
-            print( f"QC_tar_file:\t\t{QC_tar_file}")
-            print( f"QC_md5_file:\t\t{QC_md5_file}")
-            print( f"project_list:\t\t{project_list}")
-            # print( f"project_name:\t{project_name}")
-            # print( f"DemultiplexDirPaths:\t{DemultiplexDirPaths}")  FIXME FIXME FIXME iterat through demux 
+            print( "=============================================================================")
+            print( f"QC_tar_file_source:\t{QC_tar_file_source}")
+            print( f"QC_md5_file_source:\t{QC_md5_file_source}")
+            print( f"QC_tar_file_dest:\t{QC_tar_file_dest}")
+            print( f"QC_md5_file_dest:\t{QC_md5_file_dest}")
     sys.exit( )
 
     project_name           = f"{RunId_short}.{project_list}"
