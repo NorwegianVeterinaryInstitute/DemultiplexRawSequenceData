@@ -39,6 +39,7 @@ class demux:
     """
     debug = True
     SampleSheetFileName = 'SampleSheet.csv'
+    RTACompleteFile     = 'RTAComplete.txt'
 
     def __init__( self, RunId ):
         """
@@ -115,7 +116,7 @@ def execute(command, demultiplex_out_file):
 # createDirectory
 ########################################################################
 
-def createDirectory(DemultiplexDir, RunId_short):
+def createDemultiplexDirectoryHierarchy(DemultiplexDir, RunId_short):
     """
     If the Demultiplexing directory or any relevant directory does not exist, create it
     """
@@ -441,51 +442,63 @@ def main(RunId):
     DemultiplexRunIdDir    = os.path.join( DataRootDirPath, os.path.join( DemultiplexDirName, RunId + DemultiplexDirSuffix ) )
     DemultiplexLogDirPath  = os.path.join( DemultiplexRunIdDir, DemultiplexLogDir )
     DemultiplexLogFilePath = os.path.join( DemultiplexLogDirPath, ScriptLogFile )
-    ForTransferDirRoot     = os.path.join ( DataRootDirPath, ForTransferDirName )
     RawDataLocationDirRoot = os.path.join( DataRootDirPath, RawDataDirName )
     DemultiplexDirRoot     = os.path.join( DataRootDirPath, DemultiplexDirName )
     RunId_short            = '_'.join(RunId.split('_')[0:2])
     SequenceRunOriginDir   = os.path.join( RawDataLocationDirRoot, RunId )
     SampleSheetFilePath    = os.path.join( SequenceRunOriginDir, demux.SampleSheetFileName )
+    ForTransferDirRoot     = os.path.join ( DataRootDirPath, ForTransferDirName )
+    ForTransferDir         = os.path.join ( ForTransferDirRoot, RunId )
     QC_tar_file_source     = f"{DemultiplexRunIdDir}/{RunId_short}{QCDirSuffix}{tarExtension}" # dot is stored in tarExtension
     QC_md5_file_source     = f"{QC_tar_file_source}{md5Extension}" # dot is stored in md5Extension
-    QC_tar_file_dest       = f"{ForTransferDirRoot}/{RunId}/{RunId_short}{QCDirSuffix}{tarExtension}"
-    QC_md5_file_dest       = f"{QC_tar_file_dest}{md5Extension}" # dot is stored in md5Extension
-
+    QC_tar_file_dest       = f"{ForTransferDirRoot}/{RunId}/{RunId_short}{QCDirSuffix}{tarExtension}" # dot is stored in tarExtension
+    QC_md5_file_dest       = f"{QC_tar_file_dest}{md5Extension}"   # dot is stored in md5Extension
+    RTACompleteFilePath    = f"{SequenceRunOriginDir}/{demux.RTACompleteFile}"
+    DemultiplexProjSubDirs = [ ]
 
     project_list           = demux.getProjectName( SampleSheetFilePath )
-    if demux.debug:
+    if demux.debug and len(project_list) == 1:
         project_list.add( "FOO-blahblah-BAR" ) # if debug, have at least two project names to ensure multiple paths are being created
+    for project_name in project_list: # build the full list of subdirectories to make under {DemultiplexRunIdDir}
+        DemultiplexProjSubDirs.append( f"{DemultiplexRunIdDir}{RunId_short}.{project_name}" )
 
-    DemuxProjectNames       = []
+    ForTransferProjectNames = []
     # Build the paths for each of the projects. example: /data/for_transfer/{RunId}/{item}
     for item in project_list: 
-        DemuxProjectNames.append( f"{ForTransferDirRoot}/{RunId}/" + str(item) )
+        ForTransferProjectNames.append( f"{ForTransferDirRoot}/{RunId}/" + str(item) )
 
     if demux.debug: # print the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
-            print( f"RunId:\t\t\t{RunId}")
-            print( f"RunId_short:\t\t{RunId_short}")
-            print( f"project_list:\t\t{project_list}")
-            print( "=============================================================================")
-            print( f"DemultiplexDirRoot:\t{DemultiplexDirRoot}")
-            print( f"DemultiplexRunIdDir:\t{DemultiplexRunIdDir}")
-            print( f"DemultiplexLogDirPath:\t{DemultiplexLogDirPath}")
-            print( f"DemultiplexLogFilePath:\t{DemultiplexLogFilePath}")
-            print( f"DemuxProjectNames:\t{DemuxProjectNames}")
-            print( "=============================================================================")
-            print( f"RawDataLocationDirRoot:\t{RawDataLocationDirRoot}")
-            print( f"SequenceRunOriginDir:\t{SequenceRunOriginDir}")
-            print( f"SampleSheetFilePath:\t{SampleSheetFilePath}")
-            print( "=============================================================================")
-            print( f"QC_tar_file_source:\t{QC_tar_file_source}")
-            print( f"QC_md5_file_source:\t{QC_md5_file_source}")
-            print( f"QC_tar_file_dest:\t{QC_tar_file_dest}")
-            print( f"QC_md5_file_dest:\t{QC_md5_file_dest}")
-    sys.exit( )
+        print( f"RunId:\t\t\t{RunId}")
+        print( f"RunId_short:\t\t{RunId_short}")
+        print( f"project_list:\t\t{project_list}")
+        print( "=============================================================================")
+        print( f"DemultiplexDirRoot:\t{DemultiplexDirRoot}" )
+        print( f"DemultiplexRunIdDir:\t{DemultiplexRunIdDir}" )
+        print( f"DemultiplexLogDirPath:\t{DemultiplexLogDirPath}" )
+        print( f"DemultiplexLogFilePath:\t{DemultiplexLogFilePath}" )
+        print( f"DemultiplexProjSubDirs:\t{DemultiplexProjSubDirs}")
+        print( "=============================================================================")
+        print( f"RawDataLocationDirRoot:\t{RawDataLocationDirRoot}" )
+        print( f"SequenceRunOriginDir:\t{SequenceRunOriginDir}" )
+        print( f"SampleSheetFilePath:\t{SampleSheetFilePath}" )
+        print( f"RTACompleteFilePath:\t{SequenceRunOriginDir}/{demux.RTACompleteFile}" )
+        print( "=============================================================================")
+        print( f"QC_tar_file_source:\t{QC_tar_file_source}" )
+        print( f"QC_md5_file_source:\t{QC_md5_file_source}" )
+        print( f"QC_tar_file_dest:\t{QC_tar_file_dest}" )
+        print( f"QC_md5_file_dest:\t{QC_md5_file_dest}" )
+        print( "=============================================================================")
+        print( f"ForTransferDirRoot:\t{ForTransferDirRoot}" )
+        print( f"ForTransferDir:\t\t{ForTransferDir}" )
+        print( f"ForTransferProjectNames: {ForTransferProjectNames}" )
+        print( "=============================================================================")
 
-    project_name           = f"{RunId_short}.{project_list}"
-    tar_file               = os.path.join( DataRootDirPath, os.path.join( ForTransferDirRoot, project_name + tarExtension ) )
-    md5_file               = f"{tar_file}.{tarExtension}"
+        # tar_file               = os.path.join( DataRootDirPath, os.path.join( ForTransferDirRoot, project_name + tarExtension ) )
+        # md5_file               = f"{tar_file}{md5Extension}"
+        # print( f"tar_file:\t\t{tar_file}")
+        # print( f"md5_file:\t\t{md5_file}")
+
+
 
     # init:
     #   check if /data/demultiplex exists
@@ -494,9 +507,11 @@ def main(RunId):
     #       /data/demultiplex/{RunId}_{DemultiplexDirSuffix}
     #       /data/demultiplex/{RunId}_{DemultiplexDirSuffix}/{DemultiplexLogDir}
 
-    if checkComplete( SequenceRunOriginDir ) is False:
+    if os.path.isfile( f"{SequenceRunOriginDir}/{demux.RTACompleteFile}" ) is False: # Check to see if {SequenceRunOriginDir}/{demux.RTACompleteFile} exists and it is a file
         print( f"{RunId} is not finished sequencing yet!" ) 
         sys.exit()
+
+    sys.exit( )
 
     demultiplex_out_file = open( DemultiplexLogFilePath , 'w')
     if createDirectory( DemultiplexDirPath ) is False:
@@ -505,14 +520,14 @@ def main(RunId):
     else:
         demultiplex_out_file.write('1/5 Tasks: Directories created\n')
 
-    demutliplex( SequenceRunOriginDir, DemultiplexDir, demultiplex_out_file )
-    moveFiles(   DemultiplexDir, RunId_short, project_list, demultiplex_out_file )
-    qc(          DemultiplexDir, RunId_short, project_list, demultiplex_out_file )
-    change_permission( DemultiplexDir, demultiplex_out_file )
+    demutliplex( SequenceRunOriginDir, DemultiplexDir , demultiplex_out_file )
+    moveFiles(   DemultiplexDir, RunId_short, project_list , demultiplex_out_file )
+    qc(          DemultiplexDir, RunId_short, project_list , demultiplex_out_file )
+    change_permissions( DemultiplexDir , demultiplex_out_file ) # need only base dir, everything else is recursively changed.
 
     for project in project_list:
 
-        create_md5deep(    DemultiplexDirPath, demultiplex_out_file )
+        create_md5deep( DemultiplexDirPath, demultiplex_out_file )
         prepare_delivery(  project_name, DemultiplexDir, tar_file, md5_file, demultiplex_out_file )
         change_permission( tar_file, demultiplex_out_file )
         change_permission( md5_file, demultiplex_out_file )
