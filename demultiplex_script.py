@@ -185,7 +185,14 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
     PathParts = path.split(os.sep)                     # split the path according to the OS specific dir seperator
     print( PathParts )
     RunID     =  PathParts[3]                          # Reconstruct RunID
-    DemultiplexDirRoot = os.path.join( PathParts[1], PathParts[2] ) # Reconstruct /data/rawdata
+    DemultiplexDirRoot = os.path.join( '/', PathParts[1], PathParts[2] ) # Reconstruct /data/rawdata
+
+
+    ####################################
+    #
+    # YOU ARE HERE: trying to make this subprocess.run() method work
+    #
+    ####################################
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
@@ -204,7 +211,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
 
     # handle = open( Bcl2FastqLogFile , 'w')
     # handle.write('2/5 Tasks: Demultiplexing complete\n')
-    # print( "2/5 Tasks: Demultiplexing complete" )
+    print( "2/5 Tasks: Demultiplexing complete" )
 
 
 
