@@ -152,37 +152,59 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
 # def demultiplex( SequenceRunOriginDir, DemultiplexDir, demultiplex_out_file):
 def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
     """
+    Use Illumina's blc2fastq linux command-line tool to demultiplex each lane into an appropriate fastq file
+
+    bcl2fastq is available here https://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software/downloads.html
+        and you will have to have an account with Illumina to download it.
+        Account is setup automatically, but needs manual approval from representative in Illumina, which means you need a contract with Illumina
+        in order to access the software.
+
+    CAREFUL: bcl2fastq --runfolder-dir does not accept full paths hwhen executed from within the script!! 
+        you need to specify it as bcl2fastq --runfolder-dir ./220314_M06578_0091_000000000-DFM6K and your current execution path needs to be
+        inside /data/rawdata
+
+        blc2fastq accepts just *fine* absolute paths when run from the command-line
+        example: /data/bin/bcl2fastq --no-lane-splitting --runfolder-dir /data/rawdata/220314_M06578_0091_000000000-DFM6K --output-dir /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex
+
     """
     # demultiplex_out_file.write('2/5 Tasks: Demultiplexing started\n')
     print( "2/5 Tasks: Demultiplexing started" )
 
-
-    argv = [ '--no-lane-splitting',
-        f"--runfolder-dir {SequenceRunOriginDir}"
+    argv = [ demux.bcl2fastq_bin,
+         "--no-lane-splitting",
+        f"--runfolder-dir {SequenceRunOriginDir}",
         f"--output-dir {DemultiplexRunIdDir}"
     ]
-    Bcl2FastqLogDirName  = 'demultiplex_log'
     Bcl2FastqLogFileName = '02_demultiplex.log'
-    Bcl2FastqLogFile     = os.path.join( DemultiplexRunIdDir, Bcl2FastqLogDirName, Bcl2FastqLogFileName )
+    Bcl2FastqLogFile     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDir, Bcl2FastqLogFileName )
     if demux.debug:
-        print( f"Bcl2FastqLogFile:\t {Bcl2FastqLogFile}")
+        print( f"Bcl2FastqLogFile:\t{Bcl2FastqLogFile}")
+        print( f"Command to execute:\t" + " ".join( argv ) )
+
+    path      = os.path.normpath(SequenceRunOriginDir) # normalize the path according to the OS script is being run on
+    PathParts = path.split(os.sep)                     # split the path according to the OS specific dir seperator
+    print( PathParts )
+    RunID     =  PathParts[3]                          # Reconstruct RunID
+    DemultiplexDirRoot = os.path.join( PathParts[1], PathParts[2] ) # Reconstruct /data/rawdata
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
-        result = subprocess.run( [ demux.bcl2fastq_bin, argv ], capture_output = True, cwd = DemultiplexRunIdDir, check = True, encoding = "utf-8" )
+        result = subprocess.run( [ demux.bcl2fastq_bin, "--no-lane-splitting", f"--runfolder-dir ./{SequenceRunOriginDir}", f"--output-dir {DemultiplexRunIdDir}" ], capture_output = True, text = True, cwd = DemultiplexDirRoot, check = True, encoding = "utf-8" )
     except ChildProcessError as err: 
         text = [ "Caught exception!",
             f"Command: {err.cmd}", # interpolated strings
             f"Return code: {err.returncode}"
-            f"Process output: {err.output}",
+            f"Process output: {err.stdout}",
+            f"Process error:  {err.stderr}"
         ]
         print( '\n'.join( text ) )
 
-    print( result.output )
+    print( f"result.stdout: {result.stdout}" )
+    print( f"result.stderr: {result.stderr}" )
 
-    open( Bcl2FastqLogFile , 'w')
-    Bcl2FastqLogFile.write('2/5 Tasks: Demultiplexing complete\n')
-    print( "2/5 Tasks: Demultiplexing complete" )
+    # handle = open( Bcl2FastqLogFile , 'w')
+    # handle.write('2/5 Tasks: Demultiplexing complete\n')
+    # print( "2/5 Tasks: Demultiplexing complete" )
 
 
 
