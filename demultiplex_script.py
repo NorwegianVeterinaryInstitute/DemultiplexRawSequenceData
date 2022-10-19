@@ -159,20 +159,22 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
         Account is setup automatically, but needs manual approval from representative in Illumina, which means you need a contract with Illumina
         in order to access the software.
 
-    CAREFUL: bcl2fastq --runfolder-dir does not accept full paths hwhen executed from within the script!! 
-        you need to specify it as bcl2fastq --runfolder-dir ./220314_M06578_0091_000000000-DFM6K and your current execution path needs to be
-        inside /data/rawdata
+    CAREFUL: when trying to execute this array, please break all arguments that include a space into their own array element. Otherwise it will execute as '--runfolder-dir {SequenceRunOriginDir}'
+         the space will be considered part of the argument: While you will scratch your head that you are passing argument and option, subprocess.run() will report that as a single
+         argument with no options
 
         blc2fastq accepts just *fine* absolute paths when run from the command-line
         example: /data/bin/bcl2fastq --no-lane-splitting --runfolder-dir /data/rawdata/220314_M06578_0091_000000000-DFM6K --output-dir /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex
+
+    CAREFUL: if you run blc2fastq with only --runfolder-dir {SequenceRunOriginDir} , bcl2fastq will create all the files within the {SequenceRunOriginDir} rawdata directory
 
     """
     # demultiplex_out_file.write('2/5 Tasks: Demultiplexing started\n')
     print( "2/5 Tasks: Demultiplexing started" )
 
-    argv = [ demux.bcl2fastq_bin, # when trying to execute this array, please break all arguments that include a space into their own array element. Otherwise it will execute as '--runfolder-dir {SequenceRunOriginDir}'
-         "--no-lane-splitting",   #         the space will be considered part of the argument: While you will scratch your head that you are passing argument and option, subprocess.run() will report that as a single
-         "--runfolder-dir",       #         argument with no options
+    argv = [ demux.bcl2fastq_bin,
+         "--no-lane-splitting",
+         "--runfolder-dir",
         f"{SequenceRunOriginDir}",
          "--output-dir",
         f"{DemultiplexRunIdDir}"
@@ -183,7 +185,6 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
         print( f"Bcl2FastqLogFile:\t{Bcl2FastqLogFile}")
         print( f"Command to execute:\t" + " ".join( argv ) )
 
-    handle = open( Bcl2FastqLogFile , 'w')
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
         result =  subprocess.run( argv, capture_output = True, text = True, cwd = SequenceRunOriginDir, check = True, encoding = "utf-8" )
@@ -196,9 +197,11 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
         ]
         print( '\n'.join( text ) )
 
-    handle.write( result.stdout )
-
+    handle = open( Bcl2FastqLogFile , 'w')
+    handle.write('2/5 Tasks: Demultiplexing started\n')
+    handle.write( result.stderr )
     handle.write('2/5 Tasks: Demultiplexing complete\n')
+
     print( "2/5 Tasks: Demultiplexing complete" )
 
 
@@ -206,35 +209,41 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
 # moveFiles
 ########################################################################
 
-def moveFiles(DemultiplexDir, RunIDShort, project_list, demultiplex_out_file):
+def moveFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
     """
     Move?Rename? files FIXMEFIXMEFIXME more info when debugging
     """
 
-    for root, dirs, files in os.walk(DemultiplexDir):
+    for root, dirs, files in os.walk( DemultiplexRunIdDir ):
         for name in files:
 
-            if CompressedFastqSuffix in name:
+            print( f"root: {root} | dirs: {dirs} | files: {files} ")
+            source = ""
+            destination = ""
+            if demux.CompressedFastqSuffix in name:
                 source = os.path.join( root, name )
-                destination = os.path.join( root, '.'.join( [ RunIDShort, name ] ) )
+                destination = os.path.join( root, f"{RunIDShort}.{name}" )
+
                 if demux.debug:
                     print( f"/usr/bin/mv {source} {destination}")
-                else:
-                    try:
-                        # EXAMPLE: /usr/bin/mv root/name root/RunIDShort.name
-                        result = shutil.move( source, destination )
-                    except ChildProcessError as err: 
-                        text = [ "Caught exception!",
-                                f"Command: { err.cmd }", # interpolated strings
-                                f"Return code: { err.returncode }"
-                                f"Process output: { err.output }",
-                        ]
+                    # sys.exit( )
+                # else:
+                #     try:
+                #         # EXAMPLE: /usr/bin/mv root/name root/RunIDShort.name
+                #         result = shutil.move( source, destination )
+                #     except ChildProcessError as err: 
+                #         text = [ "Caught exception!",
+                #                 f"Command: { err.cmd }", # interpolated strings
+                #                 f"Return code: { err.returncode }"
+                #                 f"Process output: { err.output }",
+                #         ]
 
+    sys.exit( )
     for project in project_list:
 
-        # /usr/bin/mv DemultiplexDir/project.split('.')[0] DemultiplexDir/RunIDShort.project
-        source      = os.path.join( DemultiplexDir, project.split('.')[0] )
-        destination = os.path.join( DemultiplexDir, '.'.join( RunIDShort, project  ) )
+        # /usr/bin/mv DemultiplexRunIdDir/project.split('.')[0] DemultiplexRunIdDir/RunIDShort.project
+        source      = os.path.join( DemultiplexRunIdDir, project.split('.')[0] )
+        destination = os.path.join( DemultiplexRunIdDir, '.'.join( RunIDShort, project  ) )
         if demux.debug:
             print( f"/usr/bin/mv {source} {destination}")
         else:
@@ -248,11 +257,7 @@ def moveFiles(DemultiplexDir, RunIDShort, project_list, demultiplex_out_file):
                         f"Process output: { err.output }",
                 ]
 
-    demultiplex_out_file.write('3/5 Tasks: Moving files complete\n')
-
-    if demux.debug:
-        exit()
-
+    print( '3/5 Tasks: Moving files complete\n' )
 
 
 ########################################################################
@@ -555,10 +560,10 @@ def main( RunId ):
     # demultiplex_out_file.write('1/5 Tasks: Directories created\n')
     print( '1/5 Tasks: Demultiplex directory structure created')
     
-    demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ) #, demultiplex_out_file )
+    demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir )
+    moveFiles(   DemultiplexRunIdDir, RunIDShort, project_list )
     sys.exit()
 
-    moveFiles(   DemultiplexDir, RunIDShort, project_list , demultiplex_out_file )
     qc(          DemultiplexDir, RunIDShort, project_list , demultiplex_out_file )
     change_permissions( DemultiplexDir , demultiplex_out_file ) # need only base dir, everything else is recursively changed.
 
