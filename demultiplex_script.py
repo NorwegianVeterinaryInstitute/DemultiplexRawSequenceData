@@ -238,9 +238,9 @@ def moveFiles(DemultiplexDir, RunIDShort, project_list, demultiplex_out_file):
 
     for project in project_list:
 
-        # /usr/bin/mv DemultiplexDir/project.split('.')[0] DemultiplexDir/RunId_short.project
+        # /usr/bin/mv DemultiplexDir/project.split('.')[0] DemultiplexDir/RunIDShort.project
         source      = os.path.join( DemultiplexDir, project.split('.')[0] )
-        destination = os.path.join( DemultiplexDir, '.'.join( RunId_short, project  ) )
+        destination = os.path.join( DemultiplexDir, '.'.join( RunIDShort, project  ) )
         if demux.debug:
             print( f"/usr/bin/mv {source} {destination}")
         else:
