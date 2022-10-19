@@ -104,9 +104,6 @@ if NewRunID:
         if not os.path.exists( ScriptFilePath ):
             print( f"{ScriptFilePath} does not exist!" )
             exit( )
-        if not os.path.isdir( f"/data/rawdata/{NewRunID}" ):
-            print( f"/data/rawdata/{NewRunID} does not exist!" )
-            exit( )
 
         # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
         demultiplex_script.main( NewRunID )
