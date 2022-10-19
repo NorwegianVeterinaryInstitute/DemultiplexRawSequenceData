@@ -170,10 +170,12 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
     # demultiplex_out_file.write('2/5 Tasks: Demultiplexing started\n')
     print( "2/5 Tasks: Demultiplexing started" )
 
-    argv = [ demux.bcl2fastq_bin,
-         "--no-lane-splitting",
-        f"--runfolder-dir {SequenceRunOriginDir}",
-        f"--output-dir {DemultiplexRunIdDir}"
+    argv = [ demux.bcl2fastq_bin, # when trying to execute this array, please break all arguments that include a space into their own array element. Otherwise it will execute as '--runfolder-dir {SequenceRunOriginDir}'
+         "--no-lane-splitting",   #         the space will be considered part of the argument: While you will scratch your head that you are passing argument and option, subprocess.run() will report that as a single
+         "--runfolder-dir",       #         argument with no options
+        f"{SequenceRunOriginDir}",
+         "--output-dir",
+        f"{DemultiplexRunIdDir}"
     ]
     Bcl2FastqLogFileName = '02_demultiplex.log'
     Bcl2FastqLogFile     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDir, Bcl2FastqLogFileName )
@@ -181,22 +183,10 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
         print( f"Bcl2FastqLogFile:\t{Bcl2FastqLogFile}")
         print( f"Command to execute:\t" + " ".join( argv ) )
 
-    path      = os.path.normpath(SequenceRunOriginDir) # normalize the path according to the OS script is being run on
-    PathParts = path.split(os.sep)                     # split the path according to the OS specific dir seperator
-    print( PathParts )
-    RunID     =  PathParts[3]                          # Reconstruct RunID
-    DemultiplexDirRoot = os.path.join( '/', PathParts[1], PathParts[2] ) # Reconstruct /data/rawdata
-
-
-    ####################################
-    #
-    # YOU ARE HERE: trying to make this subprocess.run() method work
-    #
-    ####################################
-
+    handle = open( Bcl2FastqLogFile , 'w')
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
-        result = subprocess.run( [ demux.bcl2fastq_bin, "--no-lane-splitting", f"--runfolder-dir ./{SequenceRunOriginDir}", f"--output-dir {DemultiplexRunIdDir}" ], capture_output = True, text = True, cwd = DemultiplexDirRoot, check = True, encoding = "utf-8" )
+        result =  subprocess.run( argv, capture_output = True, text = True, cwd = SequenceRunOriginDir, check = True, encoding = "utf-8" )
     except ChildProcessError as err: 
         text = [ "Caught exception!",
             f"Command: {err.cmd}", # interpolated strings
@@ -206,13 +196,10 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
         ]
         print( '\n'.join( text ) )
 
-    print( f"result.stdout: {result.stdout}" )
-    print( f"result.stderr: {result.stderr}" )
+    handle.write( result.stdout )
 
-    # handle = open( Bcl2FastqLogFile , 'w')
-    # handle.write('2/5 Tasks: Demultiplexing complete\n')
+    handle.write('2/5 Tasks: Demultiplexing complete\n')
     print( "2/5 Tasks: Demultiplexing complete" )
-
 
 
 ########################################################################
