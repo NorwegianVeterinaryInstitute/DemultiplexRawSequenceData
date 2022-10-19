@@ -131,8 +131,8 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
         {DemultiplexDirRoot}{RunId}_{DemultiplexDirSuffix}/{RunIDShort}.project_list[ len(project_list) -1 ]
         {DemultiplexDirRoot}{RunId}_{DemultiplexDirSuffix}/{DemultiplexLogDir}
         {DemultiplexDirRoot}{RunId}_{DemultiplexDirSuffix}/{RunIDShort}{demux.QCDirSuffix}
-        {DemultiplexDirRoot}{RunId}_{DemultiplexDirSuffix}/Reports
-        {DemultiplexDirRoot}{RunId}_{DemultiplexDirSuffix}/Stats
+        {DemultiplexDirRoot}{RunId}_{DemultiplexDirSuffix}/Reports      # created by bcl2fastq
+        {DemultiplexDirRoot}{RunId}_{DemultiplexDirSuffix}/Stats        # created by bcl2fastq
     """
 
     DemuxQCDirectory = RunIDShort + demux.QCDirSuffix                        # FIXMEFIXME move this to a setter in demux object
