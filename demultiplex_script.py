@@ -38,8 +38,24 @@ class demux:
     demux: make an object of the entire demultiplex process.
     """
     debug = True
-    SampleSheetFileName = 'SampleSheet.csv'
-    RTACompleteFile     = 'RTAComplete.txt'
+    ######################################################
+    DataRootDirPath         = '/data'
+    RawDataDirName          = 'rawdata'
+    DemultiplexDirName      = "demultiplex"
+    ForTransferDirName      = 'for_transfer'
+    ######################################################
+    DemultiplexDirSuffix    = '_demultiplex'
+    DemultiplexLogDir       = 'demultiplex_log'
+    SampleSheetFileName     = 'SampleSheet.csv'
+    RTACompleteFile         = 'RTAComplete.txt'
+    ScriptLogFile           = 'script.log'
+    QCDirSuffix             = '_QC'
+    tarSuffix               = '.tar'
+    md5Suffix               = '.md5'
+    CompressedFastqSuffix   = 'fastq.gz' 
+    ######################################################
+    bcl2fastq_bin           = f"{DataRootDirPath}/bin/bcl2fastq"
+
 
     def __init__( self, RunId ):
         """
