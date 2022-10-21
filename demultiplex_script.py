@@ -5,6 +5,7 @@ import sys
 import shutil
 import subprocess
 import argparse
+import glob
 from pathlib import Path
 
 # INPUTS:
@@ -209,55 +210,87 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
 # moveFiles
 ########################################################################
 
-def moveFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
+def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
     """
-    Move?Rename? files FIXMEFIXMEFIXME more info when debugging
+    Rename any [sample-1_S1_R1_001.fastq.gz, .. , sample-1_S1_Rn_001.fastq.gz ] files inside 
+        {DemultiplexRunIdDir}/{RunIDShort}[{project_list[0]}, .. , {project_list[n]}] to match the pattern
+        {RunIDShort}.[sample-1_S1_R1_001.fastq.gz, .. , sample-1_S1_Rn_001.fastq.gz ]
+
+    Examples:
+    
+        DemultiplexRunIdDir: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/
+        Sample_Project:      SAV-amplicon-MJH
+        RunIDShort:          220314_M06578
+
+        1. Rename the files:
+            /bin/mv /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/SAV-amplicon-MJH/sample-1_S1_R1_001.fastq.gz /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/SAV-amplicon-MJH/220314_M06578.sample-1_S1_R1_001.fastq.gz
+            /bin/mv /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/SAV-amplicon-MJH/sample-1_S1_R2_001.fastq.gz /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/SAV-amplicon-MJH/220314_M06578.sample-1_S1_R2_001.fastq.gz
+
+        2. Rename the base directory, for each project:
+            /bin/mv /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/SAV-amplicon-MJH /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH
+
     """
 
-    for root, dirs, files in os.walk( DemultiplexRunIdDir ):
-        for name in files:
+    print( '3/5 Tasks: Moving files started\n' )
+    oldname = ""
+    newname = ""
 
-            print( f"root: {root} | dirs: {dirs} | files: {files} ")
-            source = ""
-            destination = ""
-            if demux.CompressedFastqSuffix in name:
-                source = os.path.join( root, name )
-                destination = os.path.join( root, f"{RunIDShort}.{name}" )
-
-                if demux.debug:
-                    print( f"/usr/bin/mv {source} {destination}")
-                    # sys.exit( )
-                # else:
-                #     try:
-                #         # EXAMPLE: /usr/bin/mv root/name root/RunIDShort.name
-                #         result = shutil.move( source, destination )
-                #     except ChildProcessError as err: 
-                #         text = [ "Caught exception!",
-                #                 f"Command: { err.cmd }", # interpolated strings
-                #                 f"Return code: { err.returncode }"
-                #                 f"Process output: { err.output }",
-                #         ]
-
-    sys.exit( )
+    # rename files in each project directory
     for project in project_list:
 
-        # /usr/bin/mv DemultiplexRunIdDir/project.split('.')[0] DemultiplexRunIdDir/RunIDShort.project
-        source      = os.path.join( DemultiplexRunIdDir, project.split('.')[0] )
-        destination = os.path.join( DemultiplexRunIdDir, '.'.join( RunIDShort, project  ) )
+        CompressedFastQfiles = glob.glob( f'{DemultiplexRunIdDir}/{project}/sample*.{demux.CompressedFastqSuffix}' ) # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
+
         if demux.debug:
-            print( f"/usr/bin/mv {source} {destination}")
+            print( f"fastq files for {project}: {DemultiplexRunIdDir}/{project}/sample*.{demux.CompressedFastqSuffix}")
+            print( f"\t{CompressedFastQfiles}")
+
+        for file in CompressedFastQfiles:
+    
+            # get the base filename. We picked up sample*.{CompressedFastqSuffix} and we have to rename it to {RunIDShort}sample*.{CompressedFastqSuffix}
+            baseFileName = os.path.basename( file )
+            if demux.debug:
+                print( f"baseFilename:\t{baseFileName}")
+
+            oldname = f"{DemultiplexRunIdDir}/{project}/{file}"
+            newname =  f"{DemultiplexRunIdDir}/{project}/{RunIDShort}.{baseFileName}"
+
+            if demux.debug:
+                print( f"name:\t{file}")
+                print( f"/usr/bin/mv {oldname} {newname}")
+
+            # make sure oldname files exist
+            # make sure newname files do not exist
+            oldfileExists = os.path.isfile( oldname )
+            newfileExists = os.path.isfile( newname )
+            if oldfileExists and not newfileExists:
+                os.rename( oldname, newname )
+            else:
+                print( f"Error during renaming {oldname}:")
+                print( f"oldname: {oldname}\noldfileExists: {oldfileExists} ")
+                print( f"newfile: {newname}\noldfileExists: {newfileExists} ")
+                print( "Please check the debug output and take appropriate action.")
+                print( "Exiting!")
+
+    for project in project_list:
+
+        oldname = f"{DemultiplexRunIdDir}/{project}"
+        newname = f"{DemultiplexRunIdDir}/{RunIDShort}.{project}"
+        # make sure oldname dir exists
+        # make sure newname dir name does not exist
+        olddirExists = os.path.isdir( oldname )
+        newdirExists = os.path.isdir( newname )
+
+        if olddirExists and not newdirExists: # rename directory
+            os.rename( oldname, newname )
         else:
-            try:
-                # EXAMPLE: /usr/bin/mv root/name root/RunId_short.name
-                result = shutil.move( source, destination )
-            except ChildProcessError as err: 
-                text = [ "Caught exception!",
-                        f"Command: { err.cmd }", # interpolated strings
-                        f"Return code: { err.returncode }"
-                        f"Process output: { err.output }",
-                ]
+            print( f"Error during renaming {oldname}:")
+            print( f"oldname: {oldname}\noldfileExists: {olddirExists} ")
+            print( f"newfile: {newname}\noldfileExists: {newdirExists} ")
+            print( "Please check the debug output and take appropriate action.")
+            print( "Exiting!")
 
     print( '3/5 Tasks: Moving files complete\n' )
+    sys.exit( )
 
 
 ########################################################################
@@ -561,8 +594,7 @@ def main( RunId ):
     print( '1/5 Tasks: Demultiplex directory structure created')
     
     demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir )
-    moveFiles(   DemultiplexRunIdDir, RunIDShort, project_list )
-    sys.exit()
+    renameFiles( DemultiplexRunIdDir, RunIDShort, project_list )
 
     qc(          DemultiplexDir, RunIDShort, project_list , demultiplex_out_file )
     change_permissions( DemultiplexDir , demultiplex_out_file ) # need only base dir, everything else is recursively changed.
