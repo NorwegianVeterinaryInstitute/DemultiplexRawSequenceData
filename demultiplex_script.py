@@ -234,6 +234,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
     print( '3/5 Tasks: Moving files started\n' )
     oldname = ""
     newname = ""
+    newNameList = [ ]
 
     # rename files in each project directory
     for project in project_list:
@@ -241,8 +242,8 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
         CompressedFastQfiles = glob.glob( f'{DemultiplexRunIdDir}/{project}/sample*.{demux.CompressedFastqSuffix}' ) # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
 
         if demux.debug:
-            print( f"fastq files for {project}: {DemultiplexRunIdDir}/{project}/sample*.{demux.CompressedFastqSuffix}")
-            print( f"\t{CompressedFastQfiles}")
+            print( f"fastq files for {project}: {DemultiplexRunIdDir}/{project}/sample*.{demux.CompressedFastqSuffix}" )
+            print( f"\t{CompressedFastQfiles}" )
 
         for file in CompressedFastQfiles:
     
@@ -251,25 +252,35 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             if demux.debug:
                 print( f"baseFilename:\t{baseFileName}")
 
-            oldname = f"{DemultiplexRunIdDir}/{project}/{file}"
-            newname =  f"{DemultiplexRunIdDir}/{project}/{RunIDShort}.{baseFileName}"
+            oldname = f"{file}"
+            newname = f"{DemultiplexRunIdDir}/{project}/{RunIDShort}.{baseFileName}"
+            newfoo  = f"{DemultiplexRunIdDir}/{RunIDShort}.{project}/{RunIDShort}.{baseFileName}" # saving this var in order to print the location during debugging
 
             if demux.debug:
                 print( f"name:\t{file}")
-                print( f"/usr/bin/mv {oldname} {newname}")
+                print( f"/usr/bin/mv {oldname} {newfoo}" )
+            
 
             # make sure oldname files exist
             # make sure newname files do not exist
             oldfileExists = os.path.isfile( oldname )
             newfileExists = os.path.isfile( newname )
+
             if oldfileExists and not newfileExists:
-                os.rename( oldname, newname )
-            else:
-                print( f"Error during renaming {oldname}:")
-                print( f"oldname: {oldname}\noldfileExists: {oldfileExists} ")
-                print( f"newfile: {newname}\noldfileExists: {newfileExists} ")
-                print( "Please check the debug output and take appropriate action.")
-                print( "Exiting!")
+                try: 
+                    os.rename( oldname, newname )
+                except FileNotFoundError as err:
+                    print( f"Error during renaming {oldname}:")
+                    print( f"oldname: {oldname}\noldfileExists: {oldfileExists}" )
+                    print( f"newfoo : {newfoo }\nnewfileExists: {newfileExists}" )
+                    print( "err.filename:  {err.filename}" )
+                    print( "err.filename2: {err.filename2}" )
+                    print( "Exiting!" )
+
+                newNameList.append( newfoo ) # save it to return the list, so we will not have to recreate the filenames
+
+                if demux.debug:
+                    print( f"\nRenaming {oldname} to {newfoo}\n" )
 
     for project in project_list:
 
@@ -281,16 +292,24 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
         newdirExists = os.path.isdir( newname )
 
         if olddirExists and not newdirExists: # rename directory
-            os.rename( oldname, newname )
-        else:
-            print( f"Error during renaming {oldname}:")
-            print( f"oldname: {oldname}\noldfileExists: {olddirExists} ")
-            print( f"newfile: {newname}\noldfileExists: {newdirExists} ")
-            print( "Please check the debug output and take appropriate action.")
-            print( "Exiting!")
 
+            try: 
+                os.rename( oldname, newname )
+                if demux.debug:
+                    print( f"Renaming {oldname} to {newname}")
+            except FileNotFoundError as err:
+                print( f"Error during renaming {oldname}:")
+                print( f"oldname: {oldname}\noldfileExists: {oldfileExists}" )
+                print( f"newfile: {newname}\nnewfileExists: {newfileExists}" )
+                print( "err.filename:  {err.filename}")
+                print( "err.filename2: {err.filename2}")
+                print( "Exiting!")
+
+            if demux.debug:
+                print( f"\nRenaming {oldname} to {newname}\n" )
     print( '3/5 Tasks: Moving files complete\n' )
-    sys.exit( )
+    return newNameList
+
 
 
 ########################################################################
@@ -594,8 +613,9 @@ def main( RunId ):
     print( '1/5 Tasks: Demultiplex directory structure created')
     
     demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir )
-    renameFiles( DemultiplexRunIdDir, RunIDShort, project_list )
-
+    newFileList = renameFiles( DemultiplexRunIdDir, RunIDShort, project_list )
+    print( f"\nnewFileList: {newFileList}\n")
+    sys.exit( )
     qc(          DemultiplexDir, RunIDShort, project_list , demultiplex_out_file )
     change_permissions( DemultiplexDir , demultiplex_out_file ) # need only base dir, everything else is recursively changed.
 
