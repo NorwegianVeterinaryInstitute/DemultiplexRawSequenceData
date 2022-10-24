@@ -59,6 +59,10 @@ class demux:
     bcl2fastq_bin           = f"{DataRootDirPath}/bin/bcl2fastq"
     fastqc_bin              = f"{DataRootDirPath}/bin/fastqc"
     mutliqc_bin             = f"{DataRootDirPath}/bin/multiqc"
+    chown_bin               = '/usr/bin/chown'
+    chmod_bin               = '/usr/bin/chmod'
+    user                    = 'sambauser01'
+    group                   = 'sambagroup'
     ######################################################
     TestProject             = 'FOO-blahblah-BAR'
     Sample_Project          = 'Sample_Project'
@@ -363,7 +367,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
 ########################################################################
 def FastQC( newFileList ):
     """
-    put blah blah here
+    FastQC: Run /data/bin/fastqc (which is a symlink to the real qc)
     """
     command             = demux.fastqc_bin
     argv                = [ command, '-t', '4', *newFileList ] # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
@@ -392,11 +396,9 @@ def FastQC( newFileList ):
 
 def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
     """
-    Put some blah blah here
+    Preperation to run MultiQC:
+        copy *.zip and *.html from  {DemultiplexRunIdDirNewNamel}/{RunIDShort}_QC directory
     """
-    ###################################################################################################
-    # copy *.zip and *.html from  {DemultiplexRunIdDirNewNamel}/{RunIDShort}_QC directory for MultiQC
-    ###################################################################################################
 
     print('4/5 Tasks: Preparing files for MultiQC started\n')
 
@@ -443,16 +445,15 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
         print( f"\tfilename2:\t{err.filename2}"                    )
         sys.exit( )
 
-    print('4/5 Tasks: Preparing files for MultiQC started\n')
-    sys.exit( )
+    print('4/5 Tasks: Preparing files for MultiQC finished\n')
 
 
-def MultiQC( DemultiplexRunIdDir ):
+def MultiQC( DemultiplexRunIdDir, projectNewList ):
  
     print('4/5 Tasks: MultiQC started\n')
 
     if demux.debug:
-        print( f"DemultiplexRunIdDir:\t\t\t\t\t{DemultiplexRunIdDir}" )
+        print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}" )
 
     command = demux.mutliqc_bin
     argv    = [ command, DemultiplexRunIdDir,
@@ -461,11 +462,11 @@ def MultiQC( DemultiplexRunIdDir ):
     args    = " ".join(argv[1:])
 
     if demux.debug:
-        print( f"\nCommand to execute: {command} {args} " )
+        print( f"Command to execute:\t\t\t\t{command} {args[1:]} " )
 
     try:
         # EXAMPLE: /usr/local/bin/multiqc {DemultiplexRunIdDir} -o {DemultiplexRunIdDir} 2> {DemultiplexRunIdDir}/demultiplex_log/05_multiqc.log
-        result = subprocess.run( command, args, capture_output = True, cwd = DemultiplexRunIdDir, check = True, encoding = "utf-8" )
+        result = subprocess.run( argv, capture_output = True, cwd = DemultiplexRunIdDir, check = True, encoding = "utf-8" )
     except ChildProcessError as err: 
         text = [ "Caught exception!",
             f"Command:\t{err.cmd}", # interpolated strings
@@ -507,12 +508,50 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, proje
                 print( f"{demux.TestProject} test project detected. Skipping." )
             continue
 
-        FastQC( newFileList )
-        prepareMultiQC( DemultiplexRunIdDir, projectNewList, RunIDShort )
-        MultiQC( DemultiplexRunIdDir, project )
+    FastQC( newFileList )
+    prepareMultiQC( DemultiplexRunIdDir, projectNewList, RunIDShort )
+    MultiQC( DemultiplexRunIdDir, projectNewList )
 
 
     print( "4/5 Tasks: Quality Check finished\n")
+
+
+
+#######################################################################
+# change_permission
+########################################################################
+
+def change_permission( folder_or_file, demultiplex_out_file ):
+    """
+    """
+
+
+    argv1     = [ chown_bin, '-R', f"{user}:{group}", folder_or_file ]
+    argv2     = [ chmod_bin, '-R g+rwX', f"{group}", folder_or_file ]
+
+    # TRY TO SEE IF THERE IS A RECURSIVE CHOWN call in Python
+    try:
+        # EXAMPLE: /bin/chown -R sambauser01:sambagroup ' + folder_or_file
+        result = subprocess.run( argv1, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+    except ChildProcessError as err: 
+        text = [ "Caught exception!",
+                 f"Command: {err.cmd}", # interpolated strings
+                 f"Return code: {err.returncode}"
+                 f"Process output: {err.output}",
+        ]
+
+    try:
+        # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+        result = subprocess.run( argv2, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+    except ChildProcessError as err: 
+        text = [ "Caught exception!",
+                 f"Command: {err.cmd}", # interpolated strings
+                 f"Return code: {err.returncode}"
+                 f"Process output: {err.output}",
+        ]
+
+        
+        print( '\n'.join( text ) )
 
 
 
@@ -596,45 +635,7 @@ def prepare_delivery( folder, DemultiplexDir , tar_file, md5_file, demultiplex_o
 
 
 
-########################################################################
-# change_permission
-########################################################################
-
-def change_permission( folder_or_file, demultiplex_out_file ):
-    """
-    """
-
-    chown_bin = '/usr/bin/chown'
-    chmod_bin = '/usr/bin/chmod'
-    user      = 'sambauser01'
-    group     = 'sambagroup'
-    argv1     = [ chown_bin, '-R', f"{user}:{group}", folder_or_file ]
-    argv2     = [ chmod_bin, '-R g+rwX', f"{group}", folder_or_file ]
-
-    # TRY TO SEE IF THERE IS A RECURSIVE CHOWN call in Python
-    try:
-        # EXAMPLE: /bin/chown -R sambauser01:sambagroup ' + folder_or_file
-        result = subprocess.run( argv1, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-    except ChildProcessError as err: 
-        text = [ "Caught exception!",
-                 f"Command: {err.cmd}", # interpolated strings
-                 f"Return code: {err.returncode}"
-                 f"Process output: {err.output}",
-        ]
-
-    try:
-        # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-        result = subprocess.run( argv2, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-    except ChildProcessError as err: 
-        text = [ "Caught exception!",
-                 f"Command: {err.cmd}", # interpolated strings
-                 f"Return code: {err.returncode}"
-                 f"Process output: {err.output}",
-        ]
-
-        
-        print( '\n'.join( text ) )
-
+#
 
 ########################################################################
 # MAIN
@@ -746,8 +747,8 @@ def main( RunId ):
         projectNewList.append( f"{RunIDShort}.{project}" )
 
     qualityCheck( newFileList, DemultiplexRunIdDirNewName, RunIDShort, projectNewList )
-    sys.exit( )
     change_permissions( DemultiplexRunIdDirNewName , demultiplex_out_file ) # need only base dir, everything else is recursively changed.
+    sys.exit( )
 
     for project in project_list:
 
