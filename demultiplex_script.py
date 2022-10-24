@@ -230,7 +230,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
             sys.exit( )
         else:
             filesize = os.path.getsize( Bcl2FastqLogFile )
-            print( f"Bcl2FastqLogFile:\t\t\t\t{Bcl2FastqLogFile} is {filesize} bytes.")
+            print( f"Bcl2FastqLogFile:\t\t\t\t{Bcl2FastqLogFile} is {filesize} bytes.\n")
 
     print( "2/5 Tasks: Demultiplexing finished\n" )
 
@@ -299,8 +299,8 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             newfoo  = f"{DemultiplexRunIdDir}/{RunIDShort}.{project}/{RunIDShort}.{baseFileName}" # saving this var to pass locations of new directories
 
             if demux.debug:
-                print( f"name:\t\t\t\t\t\t{file}")
-                print( f"/usr/bin/mv {oldname} {newname}" )
+                print( f"file:\t\t\t\t\t\t{file}")
+                print( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}" )
             
 
             # make sure oldname files exist
@@ -338,8 +338,6 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             try: 
                 DemultiplexRunIdDirNewNameList.append( newname ) # EXAMPLE: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH
                 os.rename( oldname, newname )
-                if demux.debug:
-                    print( f"Renaming {oldname} to {newname}")
             except FileNotFoundError as err:
                 print( f"Error during renaming {oldname}:")
                 print( f"oldname: {oldname}\noldfileExists: {oldfileExists}" )
@@ -349,13 +347,13 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 print( "Exiting!")
 
             if demux.debug:
-                print( f"\nRenaming {oldname} to {newname}\n" )
+                print( f"\nRenaming {oldname} to {newname}" )
                 for index, item in enumerate( newNameList ):
                     print( f"newNameList[{index}]:\t\t\t\t\t{item}")
                 for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
-                    print( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}")
+                    print( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}\n")
 
-        print( '3/5 Tasks: Renaming files finished\n' )
+    print( '3/5 Tasks: Renaming files finished\n' )
 
     return newNameList, DemultiplexRunIdDirNewNameList
 
@@ -374,10 +372,10 @@ def FastQC( newFileList ):
     print('4/5 Tasks: FastQC started\n')
 
     if demux.debug:
-        print( f"argv:\t\t\t\t\t\t{argv}\n")
+        print( f"argv:\t\t\t\t\t\t{argv}")
         arguments = " ".join( argv[1:] )
-        print( f"Command to execute:\t\t\t\t{command} {arguments}\n") # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
-        print( f"os.path.dirname( os.path.dirname( newFileList[0] ) ): {demultiplexRunIdDir}\n")
+        print( f"Command to execute:\t\t\t\t{command} {arguments}") # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
+        print( f"demultiplexRunIdDir:\t\t\t\t{demultiplexRunIdDir}\n")
 
     try:
         # EXAMPLE: /usr/local/bin/fastqc -t 4 {DemultiplexRunIdDir}/{project}/*fastq.gz > DemultiplexRunIdDir/demultiplex_log/04_fastqc.log
@@ -392,7 +390,7 @@ def FastQC( newFileList ):
     print('4/5 Tasks: FastQC complete\n')
 
 
-def prepareMultiQC( DemultiplexRunIdDir, projectNewName, RunIDShort ):
+def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
     """
     Put some blah blah here
     """
@@ -402,43 +400,51 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewName, RunIDShort ):
 
     print('4/5 Tasks: Preparing files for MultiQC started\n')
 
+    zipFiles  = [ ]
+    HTLMfiles = [ ]
+    for project in projectNewNameList:
+        if f"{RunIDShort}.{demux.TestProject}" == project:
+            if demux.debug:
+                print( f"Test project '{RunIDShort}.{demux.TestProject}' detected. Skipping.")
+            continue
+        zipFiles  = glob.glob( f"{DemultiplexRunIdDir}/{project}/*zip"  ) # source zip files
+        HTLMfiles = glob.glob( f"{DemultiplexRunIdDir}/{project}/*html" ) # source html files
+        if demux.debug:
+            print( f"DemultiplexRunIdDir/project/*zip:  {DemultiplexRunIdDir}/{project}/*zip"  )
+            print( f"DemultiplexRunIdDir/project/*html: {DemultiplexRunIdDir}/{project}/*html"  )
+
+    sourcefiles = [ *zipFiles, *HTLMfiles ]
+    destination = f"{DemultiplexRunIdDir}/{RunIDShort}{demux.QCDirSuffix}"  # destination folder
+    textsource  = " ".join(sourcefiles)
+
     if demux.debug:
-        print( f"RunIDShort:\t\t\t\t\t\t\t{RunIDShort}" )
-        print( f"projectNewName:\t\t\t\t\t\t\t{projectNewName}" )
-        print( f"DemultiplexRunIdDir:\t\t\t\t\t\t{DemultiplexRunIdDir}" )
-        print( f"DemultiplexRunIdDir/project/*zip:\t\t\t\t{DemultiplexRunIdDir}/{projectNewName}/*zip"  )
-        print( f"DemultiplexRunIdDir/project/*html:\t\t\t\t{DemultiplexRunIdDir}/{projectNewName}/*html" ) # source html files
-
-
-    # EXAMPLE: /usr/bin/cp project/*zip project_f/*html DemultiplexDir/RunIDShort.short_QC # (destination is a directory)
-    zipFiles  = glob.glob( f"{DemultiplexRunIdDir}/{projectNewName}/*zip"  ) # source zip files
-    HTLMfiles = glob.glob( f"{DemultiplexRunIdDir}/{projectNewName}/*html" ) # source html files
-    
-    sourceFileList = [ *zipFiles, *HTLMfiles ]
-    source         = " ".join( sourceFileList )
-    destination    = f"{os.path.dirname(os.path.dirname( newFileList[0] ) ) }/{RunIDShort}{QCDirSuffix}"  # destination folder
-
-    if demux.debug:
-        print( f"sourceFileList:\t\t\t\t{sourceFileList}")
-        print( f"Command to execute:\t\t\t/usr/bin/cp {source} {destination}\n" )
+        print( f"RunIDShort:\t\t\t\t\t{RunIDShort}"                 )
+        print( f"projectNewNameList:\t\t\t\t{projectNewNameList}"   )
+        print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}" )
+        print( f"zipFiles:\t\t\t\t\t{zipFiles}"                     )
+        print( f"HTLMfiles:\t\t\t\t\t{HTLMfiles}"                   )
+        print( f"sourcefiles:\t\t\t\t\t{sourcefiles}"               ) # textual representation of the source files.
+        print( f"Command to execute:\t\t\t\t/usr/bin/cp {textsource} {destination}\n" )
 
     if not os.path.isdir( destination ) :
         print( f"Directory {destination} does not exist. Please check the logs, delete {DemultiplexRunIdDir} and try again." )
         sys.exit( )
 
-    sys.exit( )
 
     try:
-        shutil.copy2( source, destination )                 # destination has to be a directory
-    except Exception as err:
-        text = [ "Caught exception!",
-            f"Command:\t{err.cmd}", # interpolated strings
-            f"Return code:\t{err.returncode}",
-            f"Process output: {err.output}"
-        ]
+        # EXAMPLE: /usr/bin/cp project/*zip project_f/*html DemultiplexDir/RunIDShort.short_QC # (destination is a directory)
+        for source in sourcefiles:
+            shutil.copy2( source, destination )    # destination has to be a directory
+    except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+        print( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
+        print( f"\terrno:\t{err.errno}"                            )
+        print( f"\tstrerror:\t{err.strerror}"                      )
+        print( f"\tfilename:\t{err.filename}"                      )
+        print( f"\tfilename2:\t{err.filename2}"                    )
+        sys.exit( )
 
     print('4/5 Tasks: Preparing files for MultiQC started\n')
-
+    sys.exit( )
 
 
 def MultiQC( DemultiplexRunIdDir ):
@@ -492,8 +498,8 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, proje
         print( f"newFileList:\t\t\t\t\t{newFileList}" )
         print( f"DemultiplexRunIdDirNewNameList:\t\t\t{DemultiplexRunIdDirNewNameList}" )
         print( f"RunIDShort:\t\t\t\t\t{RunIDShort}" )
-        print( f"projectNewList:\t\t\t\t\t{projectNewList}\n" )
-        print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}" )
+        print( f"projectNewList:\t\t\t\t\t{projectNewList}" )
+        print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}\n" )
 
     for project in projectNewList: 
         if f"{RunIDShort}.{demux.TestProject}" == project:
