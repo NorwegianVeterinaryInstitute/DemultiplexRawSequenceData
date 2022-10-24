@@ -7,6 +7,8 @@ import subprocess
 import argparse
 import glob
 import inspect
+import stat
+import hashlib
 from pathlib import Path
 
 # INPUTS:
@@ -59,8 +61,6 @@ class demux:
     bcl2fastq_bin           = f"{DataRootDirPath}/bin/bcl2fastq"
     fastqc_bin              = f"{DataRootDirPath}/bin/fastqc"
     mutliqc_bin             = f"{DataRootDirPath}/bin/multiqc"
-    chown_bin               = '/usr/bin/chown'
-    chmod_bin               = '/usr/bin/chmod'
     user                    = 'sambauser01'
     group                   = 'sambagroup'
     ######################################################
@@ -516,89 +516,134 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, proje
     print( "4/5 Tasks: Quality Check finished\n")
 
 
+def chownerror( OSError ):
+    """
+    """
+    print ( "" )
+
 
 #######################################################################
 # change_permission
 ########################################################################
 
-def change_permission( folder_or_file, demultiplex_out_file ):
+def changePermissions( path ):
     """
+    changePermissions: recursively walk down from {directoryRoot} and 
+        change the owner to :sambagroup
+        if directory
+            change permissions to 755
+        if file
+            change permissions to 644
     """
 
+    print( "4/5 Tasks: Changing Permissions started\n")
 
-    argv1     = [ chown_bin, '-R', f"{user}:{group}", folder_or_file ]
-    argv2     = [ chmod_bin, '-R g+rwX', f"{group}", folder_or_file ]
+    if demux.debug:
+        print( '= walk the file tree ======================')
+    for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
+    
+        # change ownership and access mode of files
+        for file in filenames:
+            filepath = os.path.join( directoryRoot, file )
+            if demux.debug:
+                print( filepath )
 
-    # TRY TO SEE IF THERE IS A RECURSIVE CHOWN call in Python
-    try:
-        # EXAMPLE: /bin/chown -R sambauser01:sambagroup ' + folder_or_file
-        result = subprocess.run( argv1, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-    except ChildProcessError as err: 
-        text = [ "Caught exception!",
-                 f"Command: {err.cmd}", # interpolated strings
-                 f"Return code: {err.returncode}"
-                 f"Process output: {err.output}",
-        ]
+            if not os.path.isfile( filepath ):
+                print( f"{filepath} is not a file. Exiting.")
+                sys.exit( )
 
-    try:
-        # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-        result = subprocess.run( argv2, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-    except ChildProcessError as err: 
-        text = [ "Caught exception!",
-                 f"Command: {err.cmd}", # interpolated strings
-                 f"Return code: {err.returncode}"
-                 f"Process output: {err.output}",
-        ]
+            try:
+                # shutil.chown( filepath, user = demux.user, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup filepath
+                shutil.chown( filepath, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup filepath
+                                                              # chown user is not available for non-root users
+            except FileNotFoundError as err:                  # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+                print( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
+                print( f"\terrno:\t{err.errno}"                            )
+                print( f"\tstrerror:\t{err.strerror}"                      )
+                print( f"\tfilename:\t{err.filename}"                      )
+                print( f"\tfilename2:\t{err.filename2}"                    )
+                sys.exit( )
 
-        
-        print( '\n'.join( text ) )
+            try:
+                # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+                os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
+            except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+                print( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
+                print( f"\terrno:\t{err.errno}"                            )
+                print( f"\tstrerror:\t{err.strerror}"                      )
+                print( f"\tfilename:\t{err.filename}"                      )
+                print( f"\tfilename2:\t{err.filename2}"                    )
+                sys.exit( )
+
+
+    # change ownership and access mode of directories
+    if demux.debug:
+        print( '= walk the dir tree ======================')
+    for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
+
+        for name in dirnames:
+            dirpath = os.path.join( directoryRoot, name )
+
+            if demux.debug:
+                print( dirpath )
+
+            if not os.path.isdir( dirpath ):
+                print( f"{dirpath} is not a directory. Exiting.")
+                sys.exit( )
+
+            try:
+                shutil.chown( dirpath, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup dirpath
+                                                              # chown user is not available for non-root users
+            except FileNotFoundError as err:                  # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+                print( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
+                print( f"\terrno:\t{err.errno}"                            )
+                print( f"\tstrerror:\t{err.strerror}"                      )
+                print( f"\tfilename:\t{err.filename}"                      )
+                print( f"\tfilename2:\t{err.filename2}"                    )
+                sys.exit( )
+
+            try:
+                # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+                os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
+            except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+                print( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
+                print( f"\terrno:\t{err.errno}"                            )
+                print( f"\tstrerror:\t{err.strerror}"                      )
+                print( f"\tfilename:\t{err.filename}"                      )
+                print( f"\tfilename2:\t{err.filename2}"                    )
+                sys.exit( )
+
+    print( "4/5 Tasks: Changing Permissions finished\n")
 
 
 
 ########################################################################
-# create_md5deep
+# calcmd5hash
 ########################################################################
 
-def create_md5deep( directory , demultiplex_out_file):
+def calcmd5hash( DemultiplexRunIdDir ):
     """
+        Calculate the md5 sum for files which are meant to be delivered.
     """
     md5File     = 'md5sum.txt'
     md5deep_out = os.path.join( directory, md5File )
     sed_bin     = '/usr/bin/sed'
     sed_command = [ sed_bin , f"s {directory}/  g" ]
 
-
-    try:
-        userid  = 'sambauser01'
-        groupid = 'sambagroup'
-
-        # FIXME check if folder_or_file exists
-        # EXAMPLE: /bin/chown -R sambauser01:sambagroup folder_or_file
-        result = os.chown( command, uid = userid, gid = groupid ) #uid = self.userid, gid = self.groupid )
-    except ChildProcessError as err: 
-        text = [ "Caught exception!",
-                 f"Command: {err.cmd}", # interpolated strings
-                 f"Return code: {err.returncode}"
-                 f"Process output: {err.output}",
-        ]
-    # FIXMEFIXMEFIXME this is not done
-
     if demux.debug: # DEBUG DEBUG DEBUG
         print ( f"/usr/bin/md5deep -r {directory} | {sed_command} | /usr/bin/grep -v md5sum | /usr/bin/grep -v script > md5deep_out " )
         exit( )
-    else:
-        command = f"/usr/bin/md5deep -r {directory} | {sed_command} | /usr/bin/grep -v md5sum | /usr/bin/grep -v script > md5deep_out "
-        #argv    = 
-        try:
-            # FIXME check if folder_or_file exists
-            # EXAMPLE: /bin/md5deep -r directory | sed_command | grep -v md5sum | grep -v script > md5deep_out
-            result = subprocess.run( command, argv, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
-        except ChildProcessError as err: 
-            text = [ "Caught exception!",
-                     f"Command: {err.cmd}",           # interpolated strings
-                     f"Return code: {err.returncode}"
-                     f"Process output: {err.output}",
-            ]
+
+    try:
+        # FIXME check if folder_or_file exists
+        # EXAMPLE: /bin/md5deep -r directory | sed_command | grep -v md5sum | grep -v script > md5deep_out
+        result = subprocess.run( command, argv, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+    except ChildProcessError as err: 
+        text = [ "Caught exception!",
+                 f"Command: {err.cmd}",           # interpolated strings
+                 f"Return code: {err.returncode}"
+                 f"Process output: {err.output}",
+        ]
 
 
 
@@ -747,12 +792,14 @@ def main( RunId ):
         projectNewList.append( f"{RunIDShort}.{project}" )
 
     qualityCheck( newFileList, DemultiplexRunIdDirNewName, RunIDShort, projectNewList )
-    change_permissions( DemultiplexRunIdDirNewName , demultiplex_out_file ) # need only base dir, everything else is recursively changed.
-    sys.exit( )
+    calcmd5hash( DemultiplexRunIdDir )        # create .md5 checksum files for every file under DemultiplexRunIdDir
+    changePermissions( DemultiplexRunIdDir  ) # need only base dir, everything else should be recursively changed.
 
     for project in project_list:
 
-        create_md5deep( DemultiplexRunIdDirNewName )
+       
+        sys.exit( )
+
         prepare_delivery(  project_name, DemultiplexRunIdDirNewName, tar_file, md5_file )
         change_permission( tar_file )
         change_permission( md5_file )
