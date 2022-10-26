@@ -9,7 +9,7 @@ import glob
 import inspect
 import stat
 import hashlib
-from pathlib import Path
+import pathlib
 
 # INPUTS:
 #   - Run name eg python /mnt/data/demultiplex/scripts/demultiplex_script_v2.py 200306_M06578_0015_000000000-CWLBG
@@ -57,6 +57,8 @@ class demux:
     QCDirSuffix             = '_QC'
     tarSuffix               = '.tar'
     md5Suffix               = '.md5'
+    sha512Suffix            = '.sha512'
+    zipSuffix               = '.zip'
     CompressedFastqSuffix   = 'fastq.gz' 
     ######################################################
     bcl2fastq_bin           = f"{DataRootDirPath}/bin/bcl2fastq"
@@ -73,7 +75,9 @@ class demux:
     MiSeq                   = 'M06578'   # if we get more than one, turn this into an array
     NextSeq                 = 'NB552450' # if we get more than one, turn this into an array
     logfileLocation         = 'bin/cron_out.log'
-    #cron_out_file           = open( os.path.join( DataDir, logfileLocation ), 'a')
+    DecodeScheme            = "utf-8"
+    footarfile              = f"foo{tarSuffix}"
+    barzipfile              = f"zip{zipSuffix}"
 
 
     def __init__( self, RunId ):
@@ -118,7 +122,7 @@ class demux:
         # analysis_index = ''
         project_list   = []
 
-        for line in open( SampleSheetFilePath, 'r', encoding="utf-8" ):
+        for line in open( SampleSheetFilePath, 'r', encoding= demux.DecodeScheme ):
             line = line.rstrip()
             if project_line_check == True:
                 project_list.append(line.split(',')[project_index] )# + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
@@ -218,7 +222,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
-        result =  subprocess.run( argv, capture_output = True, text = True, cwd = SequenceRunOriginDir, check = True, encoding = "utf-8" )
+        result =  subprocess.run( argv, capture_output = True, text = True, cwd = SequenceRunOriginDir, check = True, encoding = demux.DecodeScheme )
     except ChildProcessError as err: 
         text = [ "Caught exception!",
             f"Command: {err.cmd}", # interpolated strings
@@ -387,7 +391,7 @@ def FastQC( newFileList ):
 
     try:
         # EXAMPLE: /usr/local/bin/fastqc -t 4 {DemultiplexRunIdDir}/{project}/*fastq.gz > DemultiplexRunIdDir/demultiplex_log/04_fastqc.log
-        result = subprocess.run( argv, capture_output = True, cwd = demultiplexRunIdDir, check = True, encoding = "utf-8" )
+        result = subprocess.run( argv, capture_output = True, cwd = demultiplexRunIdDir, check = True, encoding = demux.DecodeScheme )
     except ChildProcessError as err: 
             text = [ "Caught exception!",
                      f"Command: {err.cmd}", # interpolated strings
@@ -470,7 +474,7 @@ def MultiQC( DemultiplexRunIdDir, projectNewList ):
 
     try:
         # EXAMPLE: /usr/local/bin/multiqc {DemultiplexRunIdDir} -o {DemultiplexRunIdDir} 2> {DemultiplexRunIdDir}/demultiplex_log/05_multiqc.log
-        result = subprocess.run( argv, capture_output = True, cwd = DemultiplexRunIdDir, check = True, encoding = "utf-8" )
+        result = subprocess.run( argv, capture_output = True, cwd = DemultiplexRunIdDir, check = True, encoding = demux.DecodeScheme )
     except ChildProcessError as err: 
         text = [ "Caught exception!",
             f"Command:\t{err.cmd}", # interpolated strings
@@ -543,7 +547,8 @@ def changePermissions( path ):
     print( "4/5 Tasks: Changing Permissions started\n")
 
     if demux.debug:
-        print( '= walk the file tree ======================')
+        print( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
+
     for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
     
         # change ownership and access mode of files
@@ -582,7 +587,7 @@ def changePermissions( path ):
 
     # change ownership and access mode of directories
     if demux.debug:
-        print( '= walk the dir tree ======================')
+        print( f'= walk the dir tree, {inspect.stack()[0][3]}() ======================')
     for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
 
         for name in dirnames:
@@ -622,36 +627,71 @@ def changePermissions( path ):
 
 
 ########################################################################
-# calcmd5hash
+# calcFileHash
 ########################################################################
 
-def calcmd5hash( DemultiplexRunIdDir ):
+def calcFileHash( DemultiplexRunIdDir ):
     """
-        Calculate the md5 sum for files which are meant to be delivered:
-            .tar
-            .zip
-            .fasta.gz
+    Calculate the md5 sum for files which are meant to be delivered:
+        .tar
+        .zip
+        .fasta.gz
+
+    ORIGINAL EXAMPLE: /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
+
+    what we do here:
+        walk the tree
+        find relevant file
+        hash it
+    
+    Disadvantages: this function is memory heavy, because it reads the contents of the files into memory
+
+    ORIGINAL EXAMPLE: /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
+
     """
 
     print( "4/5 Tasks: Calculating md5 sums for .tar and .gz files started\n")
 
-
-    if demux.debug: # DEBUG DEBUG DEBUG
+    if demux.debug:
         print ( f"/usr/bin/md5deep -r {DemultiplexRunIdDir} | /usr/bin/sed s {DemultiplexRunIdDir}  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script" )
+        print( f"for debug puproses, creating empty files {DemultiplexRunIdDir}/foo.tar and {DemultiplexRunIdDir}/bar.zip" )
+        pathlib.Path( f"{DemultiplexRunIdDir}/{demux.footarfile}" ).touch( )
+        pathlib.Path( f"{DemultiplexRunIdDir}/{demux.barzipfile}" ).touch( )
 
-    sys.exit( )
 
-    try:
-        # FIXME check if folder_or_file exists
-        #                                                                                              # get rid of the filepath / could also be done with basename (3)                      # ignore files already having .md5sub and 'script' as part of their filename
-        # EXAMPLE /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
-        result = subprocess.run( argv, capture_output = True, cwd = DemultiplexRunIdDir, check = True, encoding = "utf-8" )
-    except ChildProcessError as err: 
-        text = [ "Caught exception!",
-                 f"Command: {err.cmd}",           # interpolated strings
-                 f"Return code: {err.returncode}"
-                 f"Process output: {err.output}",
-        ]
+    # build the filetree
+    if demux.debug:
+        print( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
+    for directoryRoot, dirnames, filenames, in os.walk( DemultiplexRunIdDir, followlinks = False ):
+
+        # change ownership and access mode of files
+        for file in filenames:
+            if not any( var in file for var in [ demux.CompressedFastqSuffix, demux.zipSuffix, demux.tarSuffix ] ): # grab only .zip, .fasta.gz and .tar files
+                continue
+
+            filepath = os.path.join( directoryRoot, file )
+
+            if not os.path.isfile( filepath ):
+                print( f"{filepath} is not a file. Exiting.")
+                sys.exit( )
+
+            if os.path.getsize( filepath ) == 0 : # make sure it's not a zero length file 
+                print( f"file {filepath} has zero length. Skipping.")
+                continue
+        
+            filehandle     = open( filepath, 'rb' )
+            filetobehashed = filehandle.read( )
+            md5sum         = hashlib.md5( filetobehashed ).hexdigest( )
+            sha512sum      = hashlib.sha256( filetobehashed ).hexdigest( ) 
+            if demux.debug:
+                print( f"md5sum: {md5sum} | sha512sum: {sha512sum}\t| filepath: {filepath}" )
+
+            fh = open( f"{filepath}{demux.md5Suffix}", "w" )
+            fh.write( f"{md5sum}\n" )
+            fh.close( )
+            fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
+            fh.write( f"{sha512sum}\n" )
+            fh.close( )
 
     print( "4/5 Tasks: Calculating md5 sums for .tar and .gz files finished\n")
 
@@ -802,16 +842,13 @@ def main( RunId ):
         projectNewList.append( f"{RunIDShort}.{project}" )
 
     qualityCheck( newFileList, DemultiplexRunIdDirNewName, RunIDShort, projectNewList )
-    calcmd5hash( DemultiplexRunIdDir )        # create .md5 checksum files for every file under DemultiplexRunIdDir
-    changePermissions( DemultiplexRunIdDir  ) # need only base dir, everything else should be recursively changed.
+    calcFileHash( DemultiplexRunIdDir )        # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
+    changePermissions( DemultiplexRunIdDir  )  # need only base dir, everything else should be recursively changed.
 
-    for project in project_list:
-       
-        sys.exit( )
+    sys.exit( )
 
-        prepare_delivery(  project_name, DemultiplexRunIdDirNewName, tar_file, md5_file )
-        change_permission( tar_file )
-        change_permission( md5_file )
+    prepareDelivery(  project_name, DemultiplexRunIdDirNewName, tar_file, md5_file )
+    calcFileHash( DemultiplexRunIdDir )        # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
 
     prepare_delivery(  RunIDShort + QCDirSuffix, DemultiplexRunIdDirNewName, QC_tar_file, QC_md5_file )
     change_permission( QC_tar_file )
