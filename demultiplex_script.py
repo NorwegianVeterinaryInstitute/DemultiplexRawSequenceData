@@ -47,7 +47,7 @@ class demux:
     RawDataDirName          = 'rawdata'
     DemultiplexDirName      = "demultiplex"
     ForTransferDirName      = 'for_transfer'
-    git@github.com:NorwegianVeterinaryInstitute/DemultiplexRawSequenceData.git
+    logfileLocation         = 'bin/cron_out.log'
     ######################################################
     DemultiplexDirSuffix    = '_demultiplex'
     DemultiplexLogDir       = 'demultiplex_log'
