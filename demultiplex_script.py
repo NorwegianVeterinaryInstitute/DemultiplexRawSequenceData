@@ -47,6 +47,7 @@ class demux:
     RawDataDirName          = 'rawdata'
     DemultiplexDirName      = "demultiplex"
     ForTransferDirName      = 'for_transfer'
+    logfileLocation         = 'bin/cron_out.log'
     ######################################################
     DemultiplexDirSuffix    = '_demultiplex'
     DemultiplexLogDir       = 'demultiplex_log'
@@ -69,8 +70,10 @@ class demux:
     Bcl2FastqLogFileName    = '02_demultiplex.log'
     DemultiplexCompleteFile = 'DemultiplexComplete.txt'
     md5File                 = 'md5sum.txt'
-
-
+    MiSeq                   = 'M06578'   # if we get more than one, turn this into an array
+    NextSeq                 = 'NB552450' # if we get more than one, turn this into an array
+    logfileLocation         = 'bin/cron_out.log'
+    #cron_out_file           = open( os.path.join( DataDir, logfileLocation ), 'a')
 
 
     def __init__( self, RunId ):
