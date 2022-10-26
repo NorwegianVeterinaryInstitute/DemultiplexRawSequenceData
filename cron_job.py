@@ -44,22 +44,8 @@ import demultiplex_script
 #               /data/bin/cron_out.log
 
 
-DataDir              = '/data'
-RawDir               = '/data/scratch'
-DemultiplexDir       = '/data/demultiplex'
-logfileLocation      = 'bin/cron_out.log'
-cron_out_file        = open( os.path.join( DataDir, logfileLocation ), 'a')
-MiSeq                = 'M06578'   # if we get more than one, turn this into an array
-NextSeq              = 'NB552450' # if we get more than one, turn this into an array
-DemuxDirectorySuffix = '_demultiplex'
-RTACompleteFilename  = 'RTAComplete.txt'
-SampleSheetFilename  = 'SampleSheet.csv'
-
-
-
 RunList = []
-for foldername in os.listdir( RawDir ): # add directory names from the raw generated data directory
-    # if ( ( MiSeq in foldername ) or ( NextSeq in foldername ) ) and  ( DemuxDirectorySuffix in foldername ):
+for foldername in os.listdir( demux.RawDir ): # add directory names from the raw generated data directory
     if ( MiSeq or NextSeq ) in foldername and ( DemuxDirectorySuffix not in foldername ): # ignore directories that have no sequncer tag; ignore any _demux dirs
         RunList.append(foldername)
 

@@ -47,6 +47,7 @@ class demux:
     RawDataDirName          = 'rawdata'
     DemultiplexDirName      = "demultiplex"
     ForTransferDirName      = 'for_transfer'
+    git@github.com:NorwegianVeterinaryInstitute/DemultiplexRawSequenceData.git
     ######################################################
     DemultiplexDirSuffix    = '_demultiplex'
     DemultiplexLogDir       = 'demultiplex_log'
@@ -68,8 +69,10 @@ class demux:
     Sample_Project          = 'Sample_Project'
     Bcl2FastqLogFileName    = '02_demultiplex.log'
     DemultiplexCompleteFile = 'DemultiplexComplete.txt'
-
-
+    MiSeq                   = 'M06578'   # if we get more than one, turn this into an array
+    NextSeq                 = 'NB552450' # if we get more than one, turn this into an array
+    logfileLocation         = 'bin/cron_out.log'
+    cron_out_file           = open( os.path.join( DataDir, logfileLocation ), 'a')
 
 
     def __init__( self, RunId ):
