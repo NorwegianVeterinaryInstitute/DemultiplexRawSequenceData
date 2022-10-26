@@ -68,6 +68,7 @@ class demux:
     Sample_Project          = 'Sample_Project'
     Bcl2FastqLogFileName    = '02_demultiplex.log'
     DemultiplexCompleteFile = 'DemultiplexComplete.txt'
+    md5File                 = 'md5sum.txt'
 
 
 
@@ -623,27 +624,33 @@ def changePermissions( path ):
 
 def calcmd5hash( DemultiplexRunIdDir ):
     """
-        Calculate the md5 sum for files which are meant to be delivered.
+        Calculate the md5 sum for files which are meant to be delivered:
+            .tar
+            .zip
+            .fasta.gz
     """
-    md5File     = 'md5sum.txt'
-    md5deep_out = os.path.join( directory, md5File )
-    sed_bin     = '/usr/bin/sed'
-    sed_command = [ sed_bin , f"s {directory}/  g" ]
+
+    print( "4/5 Tasks: Calculating md5 sums for .tar and .gz files started\n")
+
 
     if demux.debug: # DEBUG DEBUG DEBUG
-        print ( f"/usr/bin/md5deep -r {directory} | {sed_command} | /usr/bin/grep -v md5sum | /usr/bin/grep -v script > md5deep_out " )
-        exit( )
+        print ( f"/usr/bin/md5deep -r {DemultiplexRunIdDir} | /usr/bin/sed s {DemultiplexRunIdDir}  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script" )
+
+    sys.exit( )
 
     try:
         # FIXME check if folder_or_file exists
-        # EXAMPLE: /bin/md5deep -r directory | sed_command | grep -v md5sum | grep -v script > md5deep_out
-        result = subprocess.run( command, argv, stdout = demultiplex_out_file, capture_output = True, cwd = RawDir, check = True, encoding = "utf-8" )
+        #                                                                                              # get rid of the filepath / could also be done with basename (3)                      # ignore files already having .md5sub and 'script' as part of their filename
+        # EXAMPLE /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
+        result = subprocess.run( argv, capture_output = True, cwd = DemultiplexRunIdDir, check = True, encoding = "utf-8" )
     except ChildProcessError as err: 
         text = [ "Caught exception!",
                  f"Command: {err.cmd}",           # interpolated strings
                  f"Return code: {err.returncode}"
                  f"Process output: {err.output}",
         ]
+
+    print( "4/5 Tasks: Calculating md5 sums for .tar and .gz files finished\n")
 
 
 
@@ -796,7 +803,6 @@ def main( RunId ):
     changePermissions( DemultiplexRunIdDir  ) # need only base dir, everything else should be recursively changed.
 
     for project in project_list:
-
        
         sys.exit( )
 
