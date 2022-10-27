@@ -290,7 +290,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
             filesize = os.path.getsize( Bcl2FastqLogFile )
             print( f"Bcl2FastqLogFile:\t\t\t\t{Bcl2FastqLogFile} is {filesize} bytes.\n")
 
-    print( "2/5 Tasks: Demultiplexing finished\n" )
+    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Demultiplexing finished ==\n" )
 
 
 ########################################################################
