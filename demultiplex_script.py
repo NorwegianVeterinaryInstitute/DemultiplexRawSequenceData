@@ -264,7 +264,6 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
     ]
     Bcl2FastqLogFile     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDir, demux.Bcl2FastqLogFileName )
     if demux.debug:
-        print( f"Bcl2FastqLogFile:\t\t\t\t{Bcl2FastqLogFile}")
         print( f"Command to execute:\t\t\t\t" + " ".join( argv ) )
 
     try:
