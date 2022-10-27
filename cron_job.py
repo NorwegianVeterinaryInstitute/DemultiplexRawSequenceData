@@ -51,7 +51,7 @@ for foldername in os.listdir( demultiplex_script.demux.RawDataDir ): # add direc
 
 DemultiplexList = [] 
 for foldername in os.listdir( demultiplex_script.demux.DemultiplexDir ):
-    if ( demultiplex_script.demux.MiSeq or demultiplex_script.demux.NextSeq ) in foldername and ( demultiplex_script.demux.addendum in foldername ): # ignore directories that have no sequncer tag; require any _demux dirs
+    if ( demultiplex_script.demux.MiSeq or demultiplex_script.demux.NextSeq ) in foldername and ( demultiplex_script.demux.DemultiplexDirSuffix in foldername ): # ignore directories that have no sequncer tag; require any _demux dirs
         DemultiplexList.append( foldername.replace( demultiplex_script.demux.DemultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
 
 # Right now the script operates on only one run at a time, but in the future we might want to run miltiple things at a time
@@ -75,17 +75,14 @@ if NewRunID:
     print(' Need to work on this: ' + NewRunID ) # caution: if the corresponding _demux directory is somehow corrupted (wrong data in SampleSheetFilename or incomplete files), this will be printed over and over in the log file
 
     # essential condition to process is that RTAComplete.txt and SampleSheet.csv
-    if demultiplex_script.demux.RTACompleteFilename in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ) and SampleSheetFilename in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ):
+    if demultiplex_script.demux.RTACompleteFile in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ) and demultiplex_script.demux.SampleSheetFileName in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ):
 
-        ScriptFilePath = "/data/bin/demultiplex_script.py"
-
-        cron_out_file.write('\n' + python_bin + ' ' + ' ' + '\n') # format and write out the
 
         if demultiplex_script.demux.debug: 
-            print( f"{python_bin} {ScriptFilePath} {NewRunID}")
+            print( f"{demultiplex_script.demux.python3_bin} {demultiplex_script.demux.ScriptFilePath} {NewRunID}")
 
-        if not os.path.exists( ScriptFilePath ):
-            print( f"{ScriptFilePath} does not exist!" )
+        if not os.path.exists( demultiplex_script.demux.ScriptFilePath ):
+            print( f"{demultiplex_script.demux.ScriptFilePath} does not exist!" )
             exit( )
 
         # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
