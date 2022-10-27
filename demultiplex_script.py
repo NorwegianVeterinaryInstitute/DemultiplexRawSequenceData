@@ -527,7 +527,7 @@ def MultiQC( DemultiplexRunIdDir, projectNewList ):
     args    = " ".join(argv[1:])
 
     if demux.debug:
-        print( f"Command to execute:\t\t\t\t{command} {args[1:]} " )
+        print( f"Command to execute:\t\t\t\t{command} {args[1:]}\n" )
 
     try:
         # EXAMPLE: /usr/local/bin/multiqc {DemultiplexRunIdDir} -o {DemultiplexRunIdDir} 2> {DemultiplexRunIdDir}/demultiplex_log/05_multiqc.log
