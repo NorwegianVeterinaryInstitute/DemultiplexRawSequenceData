@@ -45,15 +45,14 @@ import demultiplex_script
 
 
 RunList = []
-for foldername in os.listdir( demux.RawDir ): # add directory names from the raw generated data directory
-    if ( MiSeq or NextSeq ) in foldername and ( DemuxDirectorySuffix not in foldername ): # ignore directories that have no sequncer tag; ignore any _demux dirs
+for foldername in os.listdir( demultiplex_script.demux.RawDataDir ): # add directory names from the raw generated data directory
+    if ( demultiplex_script.demux.MiSeq or demultiplex_script.demux.NextSeq ) in foldername and ( demultiplex_script.demux.DemultiplexDirSuffix not in foldername ): # ignore directories that have no sequncer tag; ignore any _demux dirs
         RunList.append(foldername)
 
 DemultiplexList = [] 
-for foldername in os.listdir(DemultiplexDir):
-    # if ( ( MiSeq in foldername ) or ( NextSeq in foldername ) ) and  ( DemuxDirectorySuffix in foldername ):
-    if ( MiSeq or NextSeq ) in foldername and ( addendum in foldername ): # ignore directories that have no sequncer tag; require any _demux dirs
-        DemultiplexList.append( foldername.replace( DemuxDirectorySuffix, '' ) ) # null _demultiplex so we can compare the two lists below
+for foldername in os.listdir( demultiplex_script.demux.DemultiplexDir ):
+    if ( demultiplex_script.demux.MiSeq or demultiplex_script.demux.NextSeq ) in foldername and ( demultiplex_script.demux.addendum in foldername ): # ignore directories that have no sequncer tag; require any _demux dirs
+        DemultiplexList.append( foldername.replace( demultiplex_script.demux.DemultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
 
 # Right now the script operates on only one run at a time, but in the future we might want to run miltiple things at a time
 
