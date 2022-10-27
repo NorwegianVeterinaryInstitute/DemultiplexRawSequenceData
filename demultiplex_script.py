@@ -93,7 +93,6 @@ class demux:
     bcl2fastq_bin           = f"{DataRootDirPath}/bin/bcl2fastq"
     fastqc_bin              = f"{DataRootDirPath}/bin/fastqc"
     mutliqc_bin             = f"{DataRootDirPath}/bin/multiqc"
-    user                    = 'sambauser01'
     group                   = 'sambagroup'
     ######################################################
     TestProject             = 'FOO-blahblah-BAR'
