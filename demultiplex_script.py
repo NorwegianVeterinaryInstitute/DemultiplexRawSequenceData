@@ -10,32 +10,58 @@ import inspect
 import stat
 import hashlib
 import pathlib
+import ast
 
-# INPUTS:
-#   - Run name eg python /mnt/data/demultiplex/scripts/demultiplex_script_v2.py 200306_M06578_0015_000000000-CWLBG
-#
-# OUTPUTS:
-#   - .fastq files for the run
-#
-#
-# WHAT DOES THIS SCRIPT DO
-#
-#
-# HOW DOES THE  SCRIPT DO WHAT IT DOES
-#   - script returns output to calling script via pipe
-#
-# LIMITATIONS
-#   - Can demultipex one directory at a time only
-#   - No sanity checking to see if a demultiplexed directory is correctly demux'ed
-#       - Relies only on output directory name and does not verify contents
-#
-#
-# Needs: 
-#   turn stuff into an object
-#       then module
-#   log to syslog
-# 
-#
+"""
+demux module:
+    A "pythonized" Obj-Oriented approach to demultiplexing Illumina bcl files and prepearing them for delivery to the individual NVI systems for subprocessing
+
+    Module can run on its own, without needing to include in a library as such:
+
+    /usr/bin/python3     /data/bin/demultiplex_script.py  200306_M06578_0015_000000000-CWLBG
+
+    python interpreter | path to script                 | RunID directory from /data/rawdata
+
+INPUTS:
+    - RunID directory from /data/rawdata
+
+OUTPUTS:
+    - fastq.gz files that are used by FastQC and MultiQC
+    - MultiQC creates .zip files which are included in the QC tar file
+    - .tar files for the fastq.gz and .md5/.sha512 hashes
+    - [Future feature] Upload files to VIGASP
+    - [Future feature] Archive files to NIRD
+
+WHAT DOES THIS SCRIPT DO
+    This script does the following things
+    - Demultiplex the raw BCL illumina files
+    - Creates the hierarchy of the current run based on each Sample_Project included in Sample_Sheet.csv
+    - Performs QC using FastQC
+    - Performs QC using MultiQC
+    - Hashes via md5/sha512 all the files that are supposed to be delivered
+    - Packages output results into two files .tar and _QC.tar, ready to be archived.
+    - [Future feature] Upload files to VIGASP
+    - [Future feature] Archive files to NIRD
+
+
+HOW DOES THE SCRIPT DO WHAT IT DOES
+    - uses Illumina's blc2fastq tool     ( https://emea.support.illumina.com/downloads/bcl2fastq-conversion-software-v2-20.html )
+    - uses FastQ                         ( https://www.bioinformatics.babraham.ac.uk/projects/download.html#fastqc )
+    - uses MultiQC                       ( as root, pip3 install multiqc )
+    - hashing is done by the internal Python3 hashlib library (do not need any external or OS level packages)
+        - hashing can be memory intensive as the entire file is read to memory
+        - should be ok, unless we start sequencing large genomes
+
+LIMITATIONS
+    - Can demultipex one directory at a time only
+    - No sanity checking to see if a demultiplexed directory is correctly demux'ed
+        - Relies only on output directory name and does not verify contents
+
+Needs: 
+    log to syslog
+    log to file
+
+"""
 
 class demux:
     """
