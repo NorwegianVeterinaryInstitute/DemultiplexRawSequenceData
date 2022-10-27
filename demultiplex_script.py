@@ -837,12 +837,33 @@ def deliverFilesToNIRD(  ):
     """
     Make connection to NIRD and upload the data
     """
+    demux.n = demux.n + 1
     print( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for archiving to NIRD started\n")
 
 
     print( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for archiving to NIRD finished\n")
 
 #
+
+
+
+########################################################################
+# detectNewRuns
+########################################################################
+
+def detectNewRuns(  ):
+    """
+    Detect if a new run has been uploaded to /data/rawdata
+    """
+    demux.n = demux.n + 1
+    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Detecting if new runs exist started\n")
+
+
+    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Detecting if new runs exist finished\n")
+
+#
+
+
 
 ########################################################################
 # MAIN
