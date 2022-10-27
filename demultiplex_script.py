@@ -71,8 +71,11 @@ class demux:
     ######################################################
     DataRootDirPath         = '/data'
     RawDataDirName          = 'rawdata'
+    RawDataDir              =  os.path.join( DataRootDirPath, RawDataDirName )
     DemultiplexDirName      = "demultiplex"
+    DemultiplexDir          = os.path.join( DataRootDirPath, DemultiplexDirName )
     ForTransferDirName      = 'for_transfer'
+    ForTransferDir          = os.path.join( DataRootDirPath, ForTransferDirName )
     logfileLocation         = 'bin/cron_out.log'
     ######################################################
     DemultiplexDirSuffix    = '_demultiplex'
