@@ -88,12 +88,14 @@ class demux:
     md5Suffix               = '.md5'
     sha512Suffix            = '.sha512'
     zipSuffix               = '.zip'
-    CompressedFastqSuffix   = 'fastq.gz' 
+    CompressedFastqSuffix   = '.fastq.gz' 
     ######################################################
     bcl2fastq_bin           = f"{DataRootDirPath}/bin/bcl2fastq"
     fastqc_bin              = f"{DataRootDirPath}/bin/fastqc"
     mutliqc_bin             = f"{DataRootDirPath}/bin/multiqc"
+    python3_bin             = f"/usr/bin/python3"
     group                   = 'sambagroup'
+    ScriptFilePath          = __file__
     ######################################################
     TestProject             = 'FOO-blahblah-BAR'
     Sample_Project          = 'Sample_Project'
@@ -164,14 +166,15 @@ class demux:
         print( f"==> {demux.n}/{demux.TotalTasks} tasks: Get project name from {SampleSheetFilePath} started ==\n" )
 
         project_line_check = False
-        project_index  = ''
+        project_index  = 0
         # analysis_index = ''
         project_list   = []
 
         for line in open( SampleSheetFilePath, 'r', encoding= demux.DecodeScheme ):
             line = line.rstrip()
-            if project_line_check == True:
-                project_list.append(line.split(',')[project_index] )# + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
+            item = line.split(',')[project_index]
+            if project_line_check == True and item not in project_list :
+                project_list.append( item )# + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
             if demux.Sample_Project in line: # Sample_Project reflects the string it is assigned. Do not change.
                 project_index      = line.split(',').index( demux.Sample_Project )
                 project_line_check = True
@@ -335,10 +338,11 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
         if demux.debug:
             print( f"CompressedFastQfilesDir:\t\t\t{CompressedFastQfilesDir}")
 
-        CompressedFastQfiles = glob.glob( f'{CompressedFastQfilesDir}/sample*.{demux.CompressedFastqSuffix}' ) # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
+        filesToSearchFor     = f'{CompressedFastQfilesDir}/*{demux.CompressedFastqSuffix}'
+        CompressedFastQfiles = glob.glob( filesToSearchFor ) # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
 
         if demux.debug:
-            print( f"fastq files for {project}:\t\t{CompressedFastQfilesDir}/sample*.{demux.CompressedFastqSuffix}" )
+            print( f"fastq files for {project}:\t\t{filesToSearchFor}" )
             for index, item in enumerate( CompressedFastQfiles ):
                 print( f"CompressedFastQfiles[{index}]:\t\t\t{item}" )
 
@@ -362,10 +366,15 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 print( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}" )
             
 
+            print( "\n" )
+
             # make sure oldname files exist
             # make sure newname files do not exist
             oldfileExists = os.path.isfile( oldname )
             newfileExists = os.path.isfile( newname )
+
+            if newfoo not in newNameList:
+                newNameList.append( newfoo ) # save it to return the list, so we will not have to recreate the filenames
 
             if oldfileExists and not newfileExists:
                 try: 
@@ -378,7 +387,6 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                     print( "err.filename2: {err.filename2}" )
                     print( "Exiting!" )
 
-                newNameList.append( newfoo ) # save it to return the list, so we will not have to recreate the filenames
 
         DemultiplexRunIdDirNewNameList = [ ]
 
@@ -406,9 +414,12 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 print( "Exiting!")
 
             if demux.debug:
-                print( f"sRenaming {oldname} to {newname}" )
+                print( f"Renaming {oldname} to {newname}" )
                 for index, item in enumerate( newNameList ):
-                    print( f"newNameList[{index}]:\t\t\t\t\t{item}")
+                    if index < 10:
+                        print( f"newNameList[{index}]:\t\t\t\t\t{item}") # make sure the debugging output is all lined up.
+                    else:
+                        print( f"newNameList[{index}]:\t\t\t\t{item}")     
                 for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
                     print( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}\n")
 
