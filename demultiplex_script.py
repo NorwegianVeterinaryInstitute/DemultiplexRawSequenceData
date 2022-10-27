@@ -104,21 +104,36 @@ class demux:
     NextSeq                 = 'NB552450' # if we get more than one, turn this into an array
     logfileLocation         = 'bin/cron_out.log'
     DecodeScheme            = "utf-8"
-    footarfile              = f"foo{tarSuffix}"
+    footarfile              = f"foo{tarSuffix}"      # class variable shared by all instances
     barzipfile              = f"zip{zipSuffix}"
+    TotalTasks              = 0  
+    with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize TotalTasks to it
+        tree = ast.parse( f.read( ) )
+        TotalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body )
+    n                       = 0 # counter for current task
 
 
-    def __init__( self, RunId ):
+    def __init__( self, RunID ):
         """
         __init__
             Check for existance of RunID
                 Complain if not
             Checks to see if debug or not is set
         """
-        self.RunID = RunId # this needs more reading, about globals and init'ing
+        self.RunID = RunID # variables in __init___ are unique to each instance
         self.debug = True
-        #self.debug = True
-        # self.demultiplex_out_file = 
+
+    def writeVigasFile( ):
+        """
+        Write the file for the uploading of files to VIGASP
+        """
+
+        demux.n = demux.n + 1
+        print( f"{demux.n}/{demux.TotalTasks} tasks: writing VIGASP uploadder file started\n")
+
+
+        print( f"{demux.n}/{demux.TotalTasks} tasks: writing VIGASP uploadder file finished\n")
+
 
 
     ########################################################################
