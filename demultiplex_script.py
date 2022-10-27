@@ -879,7 +879,7 @@ def main( RunID ):
         ForTransferProjNames.append( f"{DemultiplexRunIdDir}/{RunIDShort}.{project}" )
 
 
-    print( f"\nsTo rerun this script run /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n")
+    print( f"\nTo rerun this script run\n\tclear; rm -rf {DemultiplexRunIdDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n")
     if demux.debug: # print the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
         print( "=============================================================================")
         print( f"RunID:\t\t\t\t{RunID}")
