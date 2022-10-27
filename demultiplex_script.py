@@ -915,7 +915,7 @@ def main( RunID ):
     #   check if sequencing run has completed, exit if not
     #       Completion of sequencing run is signaled by the existance of the file {RTACompleteFilePath} ( SequenceRunOriginDir}/{demux.RTACompleteFile} )
     if not os.path.isfile( f"{RTACompleteFilePath}" ):
-        print( f"{RunId} is not finished sequencing yet!" ) 
+        print( f"{RunID} is not finished sequencing yet!" ) 
         sys.exit()
 
     #   check if {DemultiplexDirRoot} exists
@@ -973,5 +973,5 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     # FIXMEFIXME add named arguments
-    RunId = sys.argv[1]
-    main(RunId)
+    RunID = sys.argv[1]
+    main( RunID )
