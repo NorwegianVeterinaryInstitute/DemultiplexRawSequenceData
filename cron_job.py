@@ -29,7 +29,7 @@ import demultiplex_script
 #       Initializes a new variable
 #           fills it up with the var from RunList
 #           but removes the _demultiplex part
-#               demultiplexList.append(foldername.replace('_demultiplex',''))
+#               demultiplexList.append(dirName.replace('_demultiplex',''))
 #       Differentiates the new item to run by comparing with the os.listdir(DemultiplexDir)
 #           FIXME comparison needs revision, inefficient
 #
