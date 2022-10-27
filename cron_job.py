@@ -65,21 +65,19 @@ for item in RunList: # iterate over RunList to see if there a new item in Demult
         NewRunID = item # any RunList item that is not in the demux list, gets processed
 
 
-cron_out_file.write( strftime( "%Y-%m-%d %H:%M:%S", localtime() ) + ' - ' )
-cron_out_file.write( str( len( RunList ) ) + ' in scratch and ' + str( len( DemultiplexList ) ) + ' in demultiplex : ')
+print( strftime( "%Y-%m-%d %H:%M:%S", localtime() ) + ' - ' )
+print( str( len( RunList ) ) + ' in scratch and ' + str( len( DemultiplexList ) ) + ' in demultiplex : ')
 
 if count == len( RunList ): # no new items in DemultiplexList, therefore count == len( RunList )
-     cron_out_file.write( 'all the runs have been demultiplexed\n' )
+     print( 'all the runs have been demultiplexed\n' )
 
 if NewRunID:
-    cron_out_file.write(' Need to work on this: ' + NewRunID ) # caution: if the corresponding _demux directory is somehow corrupted (wrong data in SampleSheetFilename or incomplete files), this will be printed over and over in the log file
+    print(' Need to work on this: ' + NewRunID ) # caution: if the corresponding _demux directory is somehow corrupted (wrong data in SampleSheetFilename or incomplete files), this will be printed over and over in the log file
 
     # essential condition to process is that RTAComplete.txt and SampleSheet.csv
-    if RTACompleteFilename in os.listdir( os.path.join( RawDir, NewRunID ) ) and SampleSheetFilename in os.listdir( os.path.join( RawDir, NewRunID ) ):
+    if demultiplex_script.demux.RTACompleteFilename in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ) and SampleSheetFilename in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ):
 
-        python_bin     = "/usr/bin/python3"
         ScriptFilePath = "/data/bin/demultiplex_script.py"
-        argv           = [ python_bin, ScriptFilePath , NewRunID ]
 
         cron_out_file.write('\n' + python_bin + ' ' + ' ' + '\n') # format and write out the
 
@@ -93,8 +91,6 @@ if NewRunID:
         # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
         demultiplex_script.main( NewRunID )
 
-        cron_out_file.write('completed\n')
+        print( 'completed\n' )
     else:
-        cron_out_file.write(', waiting for the run to complete\n')
-
-cron_out_file.close()
+        print( ', waiting for the run to complete\n' )
