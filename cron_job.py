@@ -77,22 +77,27 @@ print( f"==> Getting demultiplexed directories finished ==\n")
 # Right now the script operates on only one run at a time, but in the future we might want to run miltiple things at a time
 
 count = 0
+NewRunList = [ ]
 NewRunID = '' # turn this into an array
 for item in RunList: # iterate over RunList to see if there a new item in DemultiplexList, effectively comparing the contents of the two directories
     if item in DemultiplexList:
         count += 1
     else:
+        NewRunList.append( item )
         NewRunID = item # any RunList item that is not in the demux list, gets processed
 
-
-print( strftime( "%Y-%m-%d %H:%M:%S", localtime() ) + ' - ' )
-print( str( len( RunList ) ) + ' in scratch and ' + str( len( DemultiplexList ) ) + ' in demultiplex : ')
+localTime = strftime( "%Y-%m-%d %H:%M:%S", localtime( ) ) 
+print( f"{ localTime } - { len( RunList ) } in scratch and { len( DemultiplexList ) } in demultiplex: ")
 
 if count == len( RunList ): # no new items in DemultiplexList, therefore count == len( RunList )
      print( 'all the runs have been demultiplexed\n' )
 
 if NewRunID:
-    print(' Need to work on this: ' + NewRunID ) # caution: if the corresponding _demux directory is somehow corrupted (wrong data in SampleSheetFilename or incomplete files), this will be printed over and over in the log file
+
+    flatNewRunList = ", ".join( NewRunList )
+    print( f"{len(NewRunList)} new items to demux: {flatNewRunList}")
+
+    print( f"Will work on this RunID: {NewRunID}\n" ) # caution: if the corresponding _demux directory is somehow corrupted (wrong data in SampleSheetFilename or incomplete files), this will be printed over and over in the log file
 
     # essential condition to process is that RTAComplete.txt and SampleSheet.csv
     if demultiplex_script.demux.RTACompleteFile in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ) and demultiplex_script.demux.SampleSheetFileName in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ):

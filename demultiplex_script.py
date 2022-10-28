@@ -63,6 +63,8 @@ Needs:
 
 """
 
+
+
 class demux:
     """
     demux: make an object of the entire demultiplex process.
@@ -77,6 +79,8 @@ class demux:
     ForTransferDirName      = 'for_transfer'
     ForTransferDir          = os.path.join( DataRootDirPath, ForTransferDirName )
     logfileLocation         = 'bin/cron_out.log'
+    SampleSheetDirName      = 'SampleSheets'
+    SampleSheetDirPath      = os.path.join( DataRootDirPath, SampleSheetDirName )
     ######################################################
     DemultiplexDirSuffix    = '_demultiplex'
     DemultiplexLogDir       = 'demultiplex_log'
@@ -89,6 +93,7 @@ class demux:
     sha512Suffix            = '.sha512'
     zipSuffix               = '.zip'
     CompressedFastqSuffix   = '.fastq.gz' 
+    CSVSuffix               = '.csv'
     ######################################################
     bcl2fastq_bin           = f"{DataRootDirPath}/bin/bcl2fastq"
     fastqc_bin              = f"{DataRootDirPath}/bin/fastqc"
@@ -96,6 +101,7 @@ class demux:
     python3_bin             = f"/usr/bin/python3"
     group                   = 'sambagroup'
     ScriptFilePath          = __file__
+    # SampleSheetFilePath     = os.path.join( SampleSheetDirPath, RunID, SampleSheetFileName )
     ######################################################
     TestProject             = 'FOO-blahblah-BAR'
     Sample_Project          = 'Sample_Project'
@@ -115,6 +121,7 @@ class demux:
     n                       = 0 # counter for current task
 
 
+
     def __init__( self, RunID ):
         """
         __init__
@@ -124,6 +131,7 @@ class demux:
         """
         self.RunID = RunID # variables in __init___ are unique to each instance
         self.debug = True
+
 
     def writeVigasFile( ):
         """
@@ -184,6 +192,7 @@ class demux:
 
         print( f"==< {demux.n}/{demux.TotalTasks} tasks: Get project name from {SampleSheetFilePath} finished ==\n" )
         return( set( project_list ) )
+
 
 
 
@@ -855,6 +864,13 @@ def detectNewRuns(  ):
     """
     Detect if a new run has been uploaded to /data/rawdata
     """
+
+# TODO TODO TODO
+#
+#   new feature: print out all the new runs detected
+#       mention which one is being processed
+#       mention which one are remaining
+#########
     demux.n = demux.n + 1
     print( f"==> {demux.n}/{demux.TotalTasks} tasks: Detecting if new runs exist started\n")
 
@@ -874,6 +890,8 @@ def main( RunID ):
     Main function for the demultiplex script.
     All actions are coordinated through here
     """
+
+    # setattr( demux, RunID, RunID )
 
     # RunID
     RunIDShort             = '_'.join(RunID.split('_')[0:2]) # this should be turned into a setter in the demux object
@@ -970,6 +988,16 @@ def main( RunID ):
         print( f"==> {demux.n}/{demux.TotalTasks} tasks: {demux.SampleSheetFileName} copied to {DemultiplexRunIdDir}\n")
     except Exception as err:
         print( err )
+        exit( )
+    try:
+        # Request by Cathrine: Copy the SampleSheet file to /data/SampleSheet automatically
+        demux.n = demux.n + 1
+        SampleSheetArchiveFilePath = os.path.join( demux.SampleSheetDirPath, f"{RunID}{demux.CSVSuffix}" ) # .dot is included in CSVsuffix
+        shutil.copy2( SampleSheetFilePath, SampleSheetArchiveFilePath )
+        print( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {SampleSheetFilePath} to {SampleSheetArchiveFilePath} ==\n" )
+    except Exception as err:
+        print( err )
+        exit( )
 
     demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir )
     newFileList, DemultiplexRunIdDirNewName = renameFiles( DemultiplexRunIdDir, RunIDShort, project_list )
