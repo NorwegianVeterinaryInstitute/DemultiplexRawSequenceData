@@ -507,7 +507,7 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
             print( f"DemultiplexRunIdDir/project/*html: {DemultiplexRunIdDir}/{project}/*html"  )
 
     sourcefiles = [ *zipFiles, *HTLMfiles ]
-    destination = f"{DemultiplexRunIdDir}/{RunIDShort}{demux.QCDirSuffix}"  # destination folder
+    destination = f"{DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"  # destination folder
     textsource  = " ".join(sourcefiles)
 
     if demux.debug:
