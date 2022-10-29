@@ -788,21 +788,142 @@ def changePermissions( path ):
 # prepare_delivery
 ########################################################################
 
-def prepare_delivery( folder, DemultiplexDir , tar_file, md5_file, demultiplex_out_file ):
+def prepareDelivery( RunID ):
     """
-    Prepare the appropirate tar files for transfer and write the appropirate .md5/.sha512 checksum files
+    Prepare the appropiarate tar files for transfer and write the appropirate .md5/.sha512 checksum files
+    Preparing has the following steps:
+        tar the entire DemultiplexRunIdDir
+        tar the QC directory
+        make the DemultiplexRunIdDir/temp directory
+        copy all tar/md5/sha512 files into DemultiplexRunIdDir/temp
+        md5/sha512 the DemultiplexRunIdDir tar file
+        md5/sha512 the QC tar file
+        make the /data/for_delivery/RunID directory
+        copy the resulting Demux and QC tar files along with the associated .md5/.sha512 files to /data/for_transfer/RunID
+        run clean up
+            delete the DemultiplexRunIdDir/temp directory
+
+    Original commands:
+        EXAMPLE: /bin/tar -cvf tar_file -C DemultiplexDir folder 
+        EXAMPLE: /bin/md5sum tar_file | sed_command > md5_file
     """
 
     demux.n = demux.n + 1
     print( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery started ==\n")
 
-    # EXAMPLE: /bin/tar -cvf tar_file -C DemultiplexDir folder 
-    execute('/bin/tar -cvf ' + tar_file + ' -C ' + DemultiplexDir + ' ' + folder , demultiplex_out_file)
-    #sed_command = '/bin/sed "s /mnt/data/demultiplex/for_transfer/  g" '
-    sed_command = '/bin/sed "s /data/for_transfer/  g" '
-    # EXAMPLE: /bin/md5sum tar_file | sed_command > md5_file
-    execute('/bin/md5sum ' + tar_file + ' | ' + sed_command + ' > ' + md5_file, demultiplex_out_file)
+    DemultiplexRunIdDir        = os.path.join( demux.DemultiplexDirRoot, f"{RunID}{DemultiplexDirSuffix}" ) # This needs to be moved to __init__
+    ForTransferRunIdDir        = os.path.join( demux.ForTransferDir, RunID )                                # This needs to be moved to __init__
+    tarFile                    = os.path.join( ForTransferRunIdDir, f"{RunID}{tarSuffix}" )                 # This needs to be moved to __init__
+    tarQCFile                  = os.path.join( ForTransferRunIdDir, f"{RunID}{QCSuffix}{tarSuffix}" )
+    demultiplexTempDir         = os.path.join( DemultiplexRunIdDir, demux.temp )
+    forTransferTarMD5File      = os.path.join( demultiplexTempDir, f"{RunID}{tarSuffix}{md5Suffix}" )
+    forTransferTarSHA512File   = os.path.join( demultiplexTempDir, f"{RunID}{tarSuffix}{sha512Suffix}" )
+    forTransferQCMD5tarFile    = os.path.join( demultiplexTempDir, f"{RunID}{QCSuffix}{tarSuffix}{md5Suffix}" )
+    forTransferQCSHA512tarFile = os.path.join( demultiplexTempDir, f"{RunID}{QCSuffix}{tarSuffix}{sha512Suffix}" )
+    currentWorkingDir          = os.getdir( )
 
+    try:
+        os.chdir( DemultiplexRunIdDir )
+        if demux.debug:
+            print( f"Original current working directory: { os.getcwd( ) }" )
+    except FileNotFoundError:
+        print( f"Directory: {DemultiplexRunIdDir} does not exist. Existing." )
+        sys.exit( )
+    except NotADirectoryError:
+        print( f"{DemultiplexRunIdDir} is not a directory. Exiting." )
+        sys.exit( )
+    except DemultiplexRunIdDir:
+        print( f"You do not have permissions to change to {DemultiplexRunIdDir}" )
+        sys.exit( )
+
+
+    if demux.debug:
+        print( f"DemultiplexRunIdDir:\t{DemultiplexRunIdDir}" )
+        print( f"ForTransferRunIdDir:\t{ForTransferRunIdDir}" )
+        print( f"tarFile:\t\t\t{tarFile}" )
+        print( f"tarQCFile:\t\t\t{tarQCFile}" )
+        print( f"currentWorkingDir:\t{currentWorkingDir}" )
+        print( f"demultiplexTempDir:\t{demultiplexTempDir}" )
+        print( f"forTransferTarFile:\t\t\t{forTransferTarFile}" )
+        print( f"forTransferTarMD5File:\t\t\t{forTransferTarMD5File}" )
+        print( f"forTransferTarSHA512File:\t\t\t{forTransferTarSHA512File}" )
+        print( f"forTransferQCtarFile:\t\t\t{forTransferTarFile}" )
+        print( f"forTransferQCMD5tarFile:\t\t\t{forTransferTarFile}" )
+        print( f"forTransferQCSHA512tarFile:\t\t\t{forTransferTarFile}" )
+
+
+    if not tarfile.is_tarfile( tarFile ):
+        tarFileHandle = tarfile.open( tarFile, "w:" )
+    else:
+        printf( f"{tarFile} exists. Please investigate or delete. Exiting." )
+        sys.exit( )
+###########################################################
+# What to put inside the tar file
+###########################################################
+
+
+
+    if not tarfile.is_tarfile( tarQCFile ):
+        tarQCFileHandle = tarfile.open( tarQCFile, "w:" )
+    else:
+        printf( f"{tarQCFile} exists. Please investigate or delete. Exiting." )
+        sys.exit( )
+###########################################################
+# What to put inside the QC file
+###########################################################
+
+
+
+    tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
+    tarQCFileHandle.close( )    # whatever happens make sure we have closed the handle before moving on
+    
+
+    # Make {ForTransferRunIdDir} directory
+    if not os.path.isdir( ForTransferRunIdDir ):
+        os.mkdir( ForTransferRunIdDir )
+    else:
+        print( f"{ForTransferRunIdDir} exists, this is not supposed to exist, please investiage and re-run the demux. Exiting." )
+        os.exit( )
+
+    # Make {DemultiplexRunIdDir}/temp directory, move files there to be hashed
+    if not os.path.isdir( DemultiplexRunIdDir ):
+        os.mkdir( DemultiplexRunIdDir )
+    else:
+        print( f"{DemultiplexRunIdDir} exists, this is not supposed to exist, please investiage and re-run the demux. Exiting." )
+        os.exit( )
+
+    # assuming nobody was able to create the files in a milisecond worth of amount of time
+    source      = [ tarFile, tarQCFile ]
+    destination = demultiplexTempDir
+    shutil.copy2( source, destination )
+    ###########################################################
+    # md5/sha512 the tar and the QC file
+    ###########################################################
+    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Hashing tar and QC files started ==\n")
+    calcFileHash( demultiplexTempDir )
+    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Hashing tar and QC files finished ==\n")
+
+    ###########################################################
+    # move tar/QC/md5/sha512
+    ###########################################################
+
+    source = [ forTransferTarFile, forTransferTarMD5File, forTransferTarSHA512File, forTransferQCtarFile, forTransferQCMD5tarFile, forTransferQCSHA512tarFile ]
+    destination = ForTransferRunIdDir
+    shutil.copy2( source, destination )
+
+    if not os.path.isdir( ForTransferRunIdDir ):
+        print( f"{ForTransferRunIdDir} exists, this is not supposed to exist, please investiage and re-run the demux. Exiting." )
+        os.exit( )
+
+    ###########################################################
+    # cleanup
+    ###########################################################
+    try:
+        shutil.rmtree( demultiplexTempDir )
+    except OSError as error:
+        print( f"{demultiplexTempDir} cannot be removed. Exiting." )
+        os.exit( )
+ 
     print( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery finished ==\n")
 
 
@@ -811,7 +932,7 @@ def prepare_delivery( folder, DemultiplexDir , tar_file, md5_file, demultiplex_o
 # script_completion_file
 ########################################################################
 
-def script_completion_file( DemultiplexDir, demultiplex_out_file ):
+def scriptComplete( DemultiplexDir):
     """
     Create the {DemultiplexDir}/{demux.DemultiplexCompleteFile} file to signal that this script has finished
     """
