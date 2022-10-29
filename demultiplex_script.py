@@ -11,6 +11,7 @@ import stat
 import hashlib
 import pathlib
 import ast
+import tarfile
 
 """
 demux module:
