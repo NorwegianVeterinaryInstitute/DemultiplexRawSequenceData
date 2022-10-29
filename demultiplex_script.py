@@ -226,7 +226,7 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
         .
         {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{RunIDShort}.project_list[ len(project_list) -1 ]
         {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{DemultiplexLogDir}
-        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{RunIDShort}{demux.QCDirSuffix}
+        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{RunIDShort}{demux.QCSuffix}
         {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/Reports      # created by bcl2fastq
         {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/Stats        # created by bcl2fastq
     """
@@ -235,7 +235,7 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
     print( f"==> {demux.n}/{demux.TotalTasks} tasks: Create directory structure started ==\n" )
 
     DemultiplexLogDir     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDir ) 
-    DemuxQCDirectoryName  = f"{RunIDShort}{demux.QCDirSuffix}"                    # QCDirSuffix is defined in object demux
+    DemuxQCDirectoryName  = f"{RunIDShort}{demux.QCSuffix}"                    # QCSuffix is defined in object demux
     DemuxQCDirectoryPath  = os.path.join( DemultiplexRunIdDir, DemuxQCDirectoryName  )
 
     if demux.debug:
@@ -955,7 +955,7 @@ def scriptComplete( DemultiplexDir):
     except Exception as e:
         print( e.error )
         print( f"{DemultiplexDir}/{DemultiplexCompleteFile} already exists. Please delete it before running demux.\n")
-        exit( )
+        sys.exit( )
         # FIXMEFIXME notify_warning_system_that_error_occured( )
 
     print( f"{demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery finished\n")
