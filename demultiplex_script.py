@@ -1047,7 +1047,7 @@ def main( RunID ):
     DemultiplexRunIdDir    = os.path.join( DemultiplexDirRoot, RunID + demux.DemultiplexDirSuffix ) 
     DemultiplexLogDirPath  = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDir )
     DemultiplexLogFilePath = os.path.join( DemultiplexLogDirPath, demux.ScriptLogFile )
-    DemultiplexQCDirPath   = f"{DemultiplexRunIdDir}/{RunIDShort}{demux.QCDirSuffix}"
+    DemultiplexQCDirPath   = f"{DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"
     DemultiplexProjSubDirs = [ ]
 ######################################################
 
@@ -1055,15 +1055,15 @@ def main( RunID ):
     ForTransferDir         = os.path.join ( ForTransferDirRoot, RunID )
     ForTransferProjNames   = []
 ######################################################
-    QC_tar_file_source     = f"{DemultiplexRunIdDir}/{RunIDShort}{demux.QCDirSuffix}{demux.tarSuffix}" # dot is included in demux.tarSuffix string
-    QC_md5_file_source     = f"{QC_tar_file_source}{demux.md5Suffix}" # dot is included in demux.md5Suffix string
-    QC_tar_file_dest       = f"{ForTransferDirRoot}/{RunID}/{RunIDShort}{demux.QCDirSuffix}{demux.tarSuffix}" # dot is included in demux.tarSuffix string
-    QC_md5_file_dest       = f"{QC_tar_file_dest}{demux.md5Suffix}"   # dot is included in demux.md5Suffix string
+    QC_tar_file_source     = f"{DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}{demux.tarSuffix}"        # dot is included in demux.tarSuffix string
+    QC_md5_file_source     = f"{QC_tar_file_source}{demux.md5Suffix}"                                      # dot is included in demux.md5Suffix string
+    QC_tar_file_dest       = f"{ForTransferDirRoot}/{RunID}/{RunIDShort}{demux.QCSuffix}{demux.tarSuffix}" # dot is included in demux.tarSuffix string
+    QC_md5_file_dest       = f"{QC_tar_file_dest}{demux.md5Suffix}"                                        # dot is included in demux.md5Suffix string
 
     project_list           = demux.getProjectName( SampleSheetFilePath )
     if demux.debug and len(project_list) == 1:
         project_list.add( demux.TestProject ) # if debug, have at least two project names to ensure multiple paths are being created
-    for project_name in project_list: # build the full list of subdirectories to make under {DemultiplexRunIdDir}
+    for project_name in project_list:         # build the full list of subdirectories to make under {DemultiplexRunIdDir}
         DemultiplexProjSubDirs.append( f"{DemultiplexRunIdDir}/{RunIDShort}.{project_name}" )
 
     # Build the paths for each of the projects. example: /data/for_transfer/{RunID}/{item}
