@@ -33,6 +33,14 @@ OUTPUTS:
     - [Future feature] Upload files to VIGASP
     - [Future feature] Archive files to NIRD
 
+WHAT DO THE FASTQ.GZ FILES CONTAIN
+WHAT DO THE ZIP FILES CONTAIN
+WHAT DOES THE TAR FILE CONTAIN
+WHAT DOES THAT QC TAR FILE CONTAIN
+
+WHY NOT USE MD5 ANY MORE AND PREFER SHA512
+
+
 WHAT DOES THIS SCRIPT DO
     This script does the following things
     - Demultiplex the raw BCL illumina files
