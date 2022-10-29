@@ -644,7 +644,7 @@ def calcFileHash( DemultiplexRunIdDir ):
     print( f"==> {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==\n")
 
     if demux.debug:
-        print ( f"/usr/bin/md5deep -r {DemultiplexRunIdDir} | /usr/bin/sed s {DemultiplexRunIdDir}  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script" )
+        print ( f"Original use: /usr/bin/md5deep -r {DemultiplexRunIdDir} | /usr/bin/sed s {DemultiplexRunIdDir}  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script" )
         print( f"for debug puproses, creating empty files {DemultiplexRunIdDir}/foo.tar and {DemultiplexRunIdDir}/bar.zip" )
         pathlib.Path( f"{DemultiplexRunIdDir}/{demux.footarfile}" ).touch( )
         pathlib.Path( f"{DemultiplexRunIdDir}/{demux.barzipfile}" ).touch( )
