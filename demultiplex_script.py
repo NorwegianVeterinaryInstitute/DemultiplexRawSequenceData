@@ -33,13 +33,55 @@ OUTPUTS:
     - [Future feature] Upload files to VIGASP
     - [Future feature] Archive files to NIRD
 
+WHY DOES THIS PROGRAM EXIST
 WHAT DO THE FASTQ.GZ FILES CONTAIN
 WHAT DO THE ZIP FILES CONTAIN
 WHAT DOES THE TAR FILE CONTAIN
-WHAT DOES THAT QC TAR FILE CONTAIN
+    Each .tar file contains the files under each Sample_Project in each run.
+    for example:
+    221014_M06578_0118_000000000-KMYV8_demultiplex contains: 
+        221014_M06578.12150-114-Utbrudd/
+        221014_M06578.APEC-Nortura/
+        221014_M06578.AMR-biofilm/
+        221014_M06578.APEC-Samvirkekylling/
+        221014_M06578.Norwegian-Airways/
+        221014_M06578.Ringtest-listeria-EURL/
+        221014_M06578.SEQ-TECH-Providencia/
+        221014_M06578.Salmonella-overvaakning-NRL/
+
+    Then under /data/for_transfer/221014_M06578_0118_000000000-KMYV8 , there should be
+        221014_M06578.12150-114-Utbrudd.tar
+        221014_M06578.12150-114-Utbrudd.md5
+        221014_M06578.12150-114-Utbrudd.sha512
+        221014_M06578.APEC-Nortura.tar
+        221014_M06578.APEC-Nortura.md5
+        221014_M06578.APEC-Nortura.sha512
+        21014_M06578.AMR-biofilm.tar
+        21014_M06578.AMR-biofilm.md5
+        21014_M06578.AMR-biofilm.sha512
+        221014_M06578.APEC-Samvirkekylling.tar
+        221014_M06578.APEC-Samvirkekylling.md5
+        221014_M06578.APEC-Samvirkekylling.sha512
+        221014_M06578.Norwegian-Airways.tar
+        221014_M06578.Norwegian-Airways.md5
+        221014_M06578.Norwegian-Airways.sha512
+        221014_M06578.Ringtest-listeria-EURL.tar
+        221014_M06578.Ringtest-listeria-EURL.md5
+        221014_M06578.Ringtest-listeria-EURL.sha512
+        221014_M06578.SEQ-TECH-Providencia.tar
+        221014_M06578.SEQ-TECH-Providencia.md5
+        221014_M06578.SEQ-TECH-Providencia.sha512
+        221014_M06578.Salmonella-overvaakning-NRL.tar
+        221014_M06578.Salmonella-overvaakning-NRL.md5
+        221014_M06578.Salmonella-overvaakning-NRL.sha512
+
+
+WHAT DOES THE QC TAR FILE CONTAIN
+    [RunIDShort}_QC directory contains all the .zip and .html files for all projects, as each filename is unique. So for the QC tar file, we iterate through all the Sample_Projects and stuff their files in a single tar file
 
 WHY NOT USE MD5 ANY MORE AND PREFER SHA512
 
+WHY THIS PROGRAM SHOULD EVENTUALLY BE A DAEMON
 
 WHAT DOES THIS SCRIPT DO
     This script does the following things
@@ -71,6 +113,13 @@ Needs:
     log to file
     When turned into an object, this program should detect if it has a RunID argument and demultiplex that only
     If there are no arguments, the program should detect how many new runs are there
+    turn into daemon
+        being able to query status via api:
+            demultiplexted
+            rawdata
+            completed
+            how many in Que
+            RecentNewOnes
 
 """
 
