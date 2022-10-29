@@ -632,7 +632,8 @@ def calcFileHash( DemultiplexRunIdDir ):
     what we do here:
         walk the tree
         find relevant file
-        hash it
+        check if the file already has an .md5 file related to it
+        if not, hash it
     
     Disadvantages: this function is memory heavy, because it reads the contents of the files into memory
 
