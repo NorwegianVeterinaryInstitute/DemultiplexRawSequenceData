@@ -1151,12 +1151,12 @@ def main( RunID ):
     qualityCheck( newFileList, DemultiplexRunIdDirNewName, RunIDShort, projectNewList )
     calcFileHash( DemultiplexRunIdDir )                                                                 # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
     changePermissions( DemultiplexRunIdDir  )                                                           # change permissions for the files about to be included in the tar files 
-
-    prepareDelivery(  project_name, DemultiplexRunIdDirNewName, tar_file, md5_file )                    # prepair the main delivery files
     sys.exit( )
 
+    prepareDelivery(  RunID )                                 # prepare the main delivery files
+
     calcFileHash( DemultiplexRunIdDir )                                                                 # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
-    prepare_delivery(  RunIDShort + QCDirSuffix, DemultiplexRunIdDirNewName, QC_tar_file, QC_md5_file ) # prepare the QC files
+    prepare_delivery(  RunIDShort + QCSuffix, DemultiplexRunIdDirNewName, QC_tar_file, QC_md5_file ) # prepare the QC files
     change_permission( QC_tar_file )                                                                    # change permissions for all the delivery files, including QC
     change_permission( QC_md5_file )
     deliverFilesToVIGASP( )
