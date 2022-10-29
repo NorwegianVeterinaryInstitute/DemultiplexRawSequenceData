@@ -60,6 +60,8 @@ LIMITATIONS
 Needs: 
     log to syslog
     log to file
+    When turned into an object, this program should detect if it has a RunID argument and demultiplex that only
+    If there are no arguments, the program should detect how many new runs are there
 
 """
 
@@ -665,12 +667,20 @@ def calcFileHash( DemultiplexRunIdDir ):
             if demux.debug:
                 print( f"md5sum: {md5sum} | sha512sum: {sha512sum}\t| filepath: {filepath}" )
 
-            fh = open( f"{filepath}{demux.md5Suffix}", "w" )
-            fh.write( f"{md5sum}\n" )
-            fh.close( )
-            fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
-            fh.write( f"{sha512sum}\n" )
-            fh.close( )
+
+            if not os.path.isfile( f"{filepath}{demux.md5Suffix}" ):
+                fh = open( f"{filepath}{demux.md5Suffix}", "w" )
+                fh.write( f"{md5sum}\n" )
+                fh.close( )
+            else:
+                print( f"{filepath}{demux.md5Suffix} exists, skipping" )
+                continue
+            if not os.path.isfile( f"{filepath}{demux.sha512Suffix}" ):
+                fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
+                fh.write( f"{sha512sum}\n" )
+                fh.close( )
+            else:
+                continue
 
     print( f"==< {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files finished ==\n")
 
@@ -1010,9 +1020,9 @@ def main( RunID ):
     calcFileHash( DemultiplexRunIdDir )                                                                 # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
     changePermissions( DemultiplexRunIdDir  )                                                           # change permissions for the files about to be included in the tar files 
 
+    prepareDelivery(  project_name, DemultiplexRunIdDirNewName, tar_file, md5_file )                    # prepair the main delivery files
     sys.exit( )
 
-    prepareDelivery(  project_name, DemultiplexRunIdDirNewName, tar_file, md5_file )                    # prepair the main delivery files
     calcFileHash( DemultiplexRunIdDir )                                                                 # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
     prepare_delivery(  RunIDShort + QCDirSuffix, DemultiplexRunIdDirNewName, QC_tar_file, QC_md5_file ) # prepare the QC files
     change_permission( QC_tar_file )                                                                    # change permissions for all the delivery files, including QC
