@@ -108,7 +108,7 @@ LIMITATIONS
     - No sanity checking to see if a demultiplexed directory is correctly demux'ed
         - Relies only on output directory name and does not verify contents
 
-Needs: 
+New Features Requests: 
     log to syslog
     log to file
     When turned into an object, this program should detect if it has a RunID argument and demultiplex that only
@@ -120,6 +120,9 @@ Needs:
             completed
             how many in Que
             RecentNewOnes
+    Loop detection: if over the same run three times but no banana, send notificaiotn
+        tighter in-between runs time requirement: not ever half an hour, but ever 10 minutes
+
 
 """
 
