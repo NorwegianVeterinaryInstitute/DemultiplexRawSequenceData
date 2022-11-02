@@ -36,8 +36,18 @@ OUTPUTS:
     - [Future feature] Archive files to NIRD
 
 WHY DOES THIS PROGRAM EXIST
+    Illumina does not provide a complete pipeline for what you want to do with your data. They provide the basics: bcl2fastq, a demultiplex tool written in C++ . 
+    Everythinng else, including automation of processing and delivery is up to the end customer, and in this case NVI
+
+    So, essentially, this script is an attempt at automation workflow:
+        sequencing -> demultiplexing -> quality checking -> delivering the results of the demultiplexing and the QC to the appropriate places, in the case of NVI, VIGASP and NIRD
+
 WHAT DO THE FASTQ.GZ FILES CONTAIN
+    The .fastq.gz contain all the fastq files from the blc2fastq demultiplexing
+
 WHAT DO THE ZIP FILES CONTAIN
+    The .zip files are the result of the qualitative analysis of the fastq.gz files. They contain the analysis in html and pictures and some fastqc files (qc files for fasta files)
+
 WHAT DOES THE TAR FILE CONTAIN
     Each .tar file contains the files under each Sample_Project in each run.
     for example:
