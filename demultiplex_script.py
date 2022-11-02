@@ -407,8 +407,8 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
     if demux.debug:
         print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}")
         print( f"RunIDShort:\t\t\t\t\t{RunIDShort}")
-        for index, item in enumerate( project_list ):
-            print( f"project_list[{index}]:\t\t\t\t\t{project_list[index]}")
+        # for index, item in enumerate( project_list ):
+        print( f"project_list:\t\t\t\t\t{project_list}")
 
     for project in project_list: # rename files in each project directory
 
@@ -498,7 +498,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 print( "Exiting!")
 
             if demux.debug:
-                print( termcolor.colored( f"Renaming {oldname} to {newname}", color=cyan, attrs=["undeline"] ) )
+                print( termcolor.colored( f"Renaming {oldname} to {newname}", color="cyan", attrs=["reverse"] ) )
                 for index, item in enumerate( newProjectFileList ):
                     if index < 10:
                         print( f"newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
@@ -514,7 +514,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
 
     print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n", color="red", attrs=["bold"] ) )
 
-    return newProjectNameList, DemultiplexRunIdDirNewNameList
+    return newProjectFileList, DemultiplexRunIdDirNewNameList
 
 
 ########################################################################
