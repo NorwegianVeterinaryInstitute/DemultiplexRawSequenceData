@@ -1259,7 +1259,7 @@ def main( RunID ):
         print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: {demux.SampleSheetFileName} copied to {DemultiplexRunIdDir}\n", color="green" ) )
     except Exception as err:
         print( err )
-        exit( )
+        sys.exit( )
     try:
         # Request by Cathrine: Copy the SampleSheet file to /data/SampleSheet automatically
         demux.n = demux.n + 1
@@ -1268,7 +1268,7 @@ def main( RunID ):
         print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {SampleSheetFilePath} to {SampleSheetArchiveFilePath} ==\n", color="green" ) )
     except Exception as err:
         print( err )
-        exit( )
+        sys.exit( )
 
     demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir )
     newFileList, DemultiplexRunIdDirNewName = renameFiles( DemultiplexRunIdDir, RunIDShort, project_list )
