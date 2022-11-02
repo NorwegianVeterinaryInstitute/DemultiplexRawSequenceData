@@ -124,7 +124,6 @@ Needs:
 """
 
 
-
 class demux:
     """
     demux: make an object of the entire demultiplex process.
@@ -155,6 +154,7 @@ class demux:
     zipSuffix               = '.zip'
     CompressedFastqSuffix   = '.fastq.gz' 
     CSVSuffix               = '.csv'
+    htmlSuffix              = '.html'
     ######################################################
     bcl2fastq_bin           = f"{DataRootDirPath}/bin/bcl2fastq"
     fastqc_bin              = f"{DataRootDirPath}/bin/fastqc"
@@ -393,9 +393,16 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
 
     demux.n = demux.n + 1
     print( f"==> {demux.n}/{demux.TotalTasks} tasks: Renaming files started ==\n" )
-    oldname = ""
-    newname = ""
-    newNameList = [ ]
+
+    oldname            = ""
+    newname            = ""
+    newProjectNameList = [ ]
+
+    if demux.debug:
+        print( f"DemultiplexRunIdDir:\t{DemultiplexRunIdDir}")
+        print( f"RunIDShort:\t\t\t{RunIDShort}")
+        for index, item in enumerate( project_list ):
+            print( f"DemultiplexRunIdDir[{index}]:\t{DemultiplexRunIdDir[index]}")
 
     for project in project_list: # rename files in each project directory
 
@@ -443,8 +450,8 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             oldfileExists = os.path.isfile( oldname )
             newfileExists = os.path.isfile( newname )
 
-            if newfoo not in newNameList:
-                newNameList.append( newfoo ) # save it to return the list, so we will not have to recreate the filenames
+            if newfoo not in newProjectNameList:
+                newProjectNameList.append( newfoo ) # save it to return the list, so we will not have to recreate the filenames
 
             if oldfileExists and not newfileExists:
                 try: 
@@ -485,17 +492,17 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
 
             if demux.debug:
                 print( f"Renaming {oldname} to {newname}" )
-                for index, item in enumerate( newNameList ):
+                for index, item in enumerate( newProjectNameList ):
                     if index < 10:
-                        print( f"newNameList[{index}]:\t\t\t\t\t{item}") # make sure the debugging output is all lined up.
+                        print( f"newProjectNameList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
                     else:
-                        print( f"newNameList[{index}]:\t\t\t\t{item}")     
+                        print( f"newProjectNameList[{index}]:\t\ts\t{item}")     
                 for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
                     print( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}\n")
 
     print( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n" )
 
-    return newNameList, DemultiplexRunIdDirNewNameList
+    return newProjectNameList, DemultiplexRunIdDirNewNameList
 
 
 ########################################################################
@@ -552,8 +559,8 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
         zipFiles  = glob.glob( f"{DemultiplexRunIdDir}/{project}/*zip"  ) # source zip files
         HTLMfiles = glob.glob( f"{DemultiplexRunIdDir}/{project}/*html" ) # source html files
         if demux.debug:
-            print( f"DemultiplexRunIdDir/project/*zip:  {DemultiplexRunIdDir}/{project}/*zip"  )
-            print( f"DemultiplexRunIdDir/project/*html: {DemultiplexRunIdDir}/{project}/*html"  )
+            print( f"DemultiplexRunIdDir/project/*zip:\t\t{DemultiplexRunIdDir}/{project}/*zip"  )
+            print( f"DemultiplexRunIdDir/project/*html:\t\t{DemultiplexRunIdDir}/{project}/*html"  )
 
     sourcefiles = [ *zipFiles, *HTLMfiles ]
     destination = f"{DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"  # destination folder
@@ -588,7 +595,7 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
     print( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC finished ==\n" )
 
 
-def MultiQC( DemultiplexRunIdDir, projectNewList ):
+def MultiQC( DemultiplexRunIdDir ):
     """
     Run /data/bin/multiqc against the project list.
 
@@ -605,10 +612,10 @@ def MultiQC( DemultiplexRunIdDir, projectNewList ):
     argv    = [ command, DemultiplexRunIdDir,
                '-o', DemultiplexRunIdDir 
               ]
-    args    = " ".join(argv[1:])
+    args    = " ".join(argv[1:]) # ignore the command part so we can print this string below, fresh all the time, in case we change tool command name
 
     if demux.debug:
-        print( f"Command to execute:\t\t\t\t{command} {args[1:]}\n" )
+        print( f"Command to execute:\t\t\t\t{command} {args}\n" )
 
     try:
         # EXAMPLE: /usr/local/bin/multiqc {DemultiplexRunIdDir} -o {DemultiplexRunIdDir} 2> {DemultiplexRunIdDir}/demultiplex_log/05_multiqc.log
@@ -627,7 +634,7 @@ def MultiQC( DemultiplexRunIdDir, projectNewList ):
 # qc
 ########################################################################
 
-def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, projectNewList ):
+def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newProjectNameList ):
     """
     Run QC on the sequence run files
 
@@ -646,18 +653,18 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, proje
         print( f"newFileList:\t\t\t\t\t{newFileList}" )
         print( f"DemultiplexRunIdDirNewNameList:\t\t\t{DemultiplexRunIdDirNewNameList}" )
         print( f"RunIDShort:\t\t\t\t\t{RunIDShort}" )
-        print( f"projectNewList:\t\t\t\t\t{projectNewList}" )
+        print( f"newProjectNameList:\t\t\t\t{newProjectNameList}" )
         print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}\n" )
 
-    for project in projectNewList: 
+    for project in newProjectNameList: 
         if f"{RunIDShort}.{demux.TestProject}" == project:
             if demux.debug:
                 print( f"{demux.TestProject} test project detected. Skipping." )
             continue
 
     FastQC( newFileList )
-    prepareMultiQC( DemultiplexRunIdDir, projectNewList, RunIDShort )
-    MultiQC( DemultiplexRunIdDir, projectNewList )
+    prepareMultiQC( DemultiplexRunIdDir, newProjectNameList, RunIDShort )
+    MultiQC( DemultiplexRunIdDir )
 
 
     print( f"==< {demux.n}/{demux.TotalTasks} tasks: Quality Check finished ==\n")
@@ -686,7 +693,8 @@ def calcFileHash( DemultiplexRunIdDir ):
     
     Disadvantages: this function is memory heavy, because it reads the contents of the files into memory
 
-    ORIGINAL EXAMPLE: /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
+    ORIGINAL COMMAND: /usr/bin/md5deep -r {DemultiplexRunIdDir} | /usr/bin/sed s {DemultiplexRunIdDir}  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
+    EXAMPLE: /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
 
     """
 
@@ -694,7 +702,6 @@ def calcFileHash( DemultiplexRunIdDir ):
     print( f"==> {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==\n")
 
     if demux.debug:
-        print ( f"Original use: /usr/bin/md5deep -r {DemultiplexRunIdDir} | /usr/bin/sed s {DemultiplexRunIdDir}  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script" )
         print( f"for debug puproses, creating empty files {DemultiplexRunIdDir}/foo.tar and {DemultiplexRunIdDir}/bar.zip" )
         pathlib.Path( f"{DemultiplexRunIdDir}/{demux.footarfile}" ).touch( )
         pathlib.Path( f"{DemultiplexRunIdDir}/{demux.barzipfile}" ).touch( )
@@ -705,7 +712,6 @@ def calcFileHash( DemultiplexRunIdDir ):
         print( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
     for directoryRoot, dirnames, filenames, in os.walk( DemultiplexRunIdDir, followlinks = False ):
 
-        # change ownership and access mode of files
         for file in filenames:
             if not any( var in file for var in [ demux.CompressedFastqSuffix, demux.zipSuffix, demux.tarSuffix ] ): # grab only .zip, .fasta.gz and .tar files
                 continue
@@ -862,6 +868,12 @@ def prepareDelivery( RunID ):
         run clean up
             delete the DemultiplexRunIdDir/temp directory
 
+    TRICK IN THIS FUNCTION:
+        os.mkdir( ForTransferRunIdDir )
+        move all the tar files in there
+            one directory per project
+        calcFileHash( ForTransferRunIdDir ) # use a temp dir to re-use the same function we used earlier, so I will not have to write a new function to do the same thing
+
     Original commands:
         EXAMPLE: /bin/tar -cvf tar_file -C DemultiplexDir folder 
         EXAMPLE: /bin/md5sum tar_file | sed_command > md5_file
@@ -870,86 +882,147 @@ def prepareDelivery( RunID ):
     demux.n = demux.n + 1
     print( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery started ==\n")
 
-    DemultiplexRunIdDir        = os.path.join( demux.DemultiplexDirRoot, f"{RunID}{DemultiplexDirSuffix}" ) # This needs to be moved to __init__
-    ForTransferRunIdDir        = os.path.join( demux.ForTransferDir, RunID )                                # This needs to be moved to __init__
-    tarFile                    = os.path.join( ForTransferRunIdDir, f"{RunID}{tarSuffix}" )                 # This needs to be moved to __init__
-    tarQCFile                  = os.path.join( ForTransferRunIdDir, f"{RunID}{QCSuffix}{tarSuffix}" )
-    demultiplexTempDir         = os.path.join( DemultiplexRunIdDir, demux.temp )
-    forTransferTarMD5File      = os.path.join( demultiplexTempDir, f"{RunID}{tarSuffix}{md5Suffix}" )
-    forTransferTarSHA512File   = os.path.join( demultiplexTempDir, f"{RunID}{tarSuffix}{sha512Suffix}" )
-    forTransferQCMD5tarFile    = os.path.join( demultiplexTempDir, f"{RunID}{QCSuffix}{tarSuffix}{md5Suffix}" )
-    forTransferQCSHA512tarFile = os.path.join( demultiplexTempDir, f"{RunID}{QCSuffix}{tarSuffix}{sha512Suffix}" )
-    currentWorkingDir          = os.getdir( )
+    DemultiplexRunIdDir        = os.path.join( demux.DemultiplexDir, f"{RunID}{demux.DemultiplexDirSuffix}" )   # This needs to be moved to __init__
+    ForTransferRunIdDir        = os.path.join( demux.ForTransferDir, RunID )                                    # This needs to be moved to __init__
+    # forTransferTarMD5File      = os.path.join( demultiplexTempDir, f"{RunID}{tarSuffix}{md5Suffix}" )
+    # forTransferTarSHA512File   = os.path.join( demultiplexTempDir, f"{RunID}{tarSuffix}{sha512Suffix}" )
+    forTransferQCtarFile       = os.path.join( ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
+    forTransferQCMD5tarFile    = os.path.join( ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}{demux.md5Suffix}" )
+    forTransferQCSHA512tarFile = os.path.join( ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}{demux.sha512Suffix}" )
+    counter = 0
 
+    if demux.debug:
+        print( f"Current working directory:\t{DemultiplexRunIdDir}")
+        print( f"DemultiplexRunIdDir:\t\t{DemultiplexRunIdDir}" )
+        print( f"ForTransferRunIdDir:\t\t{ForTransferRunIdDir}" )
+        # print( f"tarFile:\t\t\t{tarFile}" )
+        # print( f"tarQCFile:\t\t\t{tarQCFile}" )
+        # print( f"forTransferTarFile:\t\t\t{forTransferTarFile}" )
+        # print( f"forTransferTarMD5File:\t\t\t{forTransferTarMD5File}" )
+        # print( f"forTransferTarSHA512File:\t\t\t{forTransferTarSHA512File}" )
+        print( f"forTransferQCtarFile:\t\t{forTransferQCtarFile}" )
+        print( f"forTransferQCMD5tarFile:\t{forTransferQCMD5tarFile}" )
+        print( f"forTransferQCSHA512tarFile:\t{forTransferQCSHA512tarFile}" )
+
+    if demux.debug:
+        print( f"Original working directory:\t{ os.getcwd( ) }" )
+
+    # Switch to the Demultiplex directory we will be archiving
     try:
         os.chdir( DemultiplexRunIdDir )
-        if demux.debug:
-            print( f"Original current working directory: { os.getcwd( ) }" )
     except FileNotFoundError:
-        print( f"Directory: {DemultiplexRunIdDir} does not exist. Existing." )
+        print( f"Directory: {DemultiplexRunIdDir} does not exist. Exiting." )
         sys.exit( )
     except NotADirectoryError:
         print( f"{DemultiplexRunIdDir} is not a directory. Exiting." )
         sys.exit( )
     except DemultiplexRunIdDir:
-        print( f"You do not have permissions to change to {DemultiplexRunIdDir}" )
+        print( f"You do not have permissions to change to {DemultiplexRunIdDir}. Exiting." )
         sys.exit( )
-
 
     if demux.debug:
-        print( f"DemultiplexRunIdDir:\t{DemultiplexRunIdDir}" )
-        print( f"ForTransferRunIdDir:\t{ForTransferRunIdDir}" )
-        print( f"tarFile:\t\t\t{tarFile}" )
-        print( f"tarQCFile:\t\t\t{tarQCFile}" )
-        print( f"currentWorkingDir:\t{currentWorkingDir}" )
-        print( f"demultiplexTempDir:\t{demultiplexTempDir}" )
-        print( f"forTransferTarFile:\t\t\t{forTransferTarFile}" )
-        print( f"forTransferTarMD5File:\t\t\t{forTransferTarMD5File}" )
-        print( f"forTransferTarSHA512File:\t\t\t{forTransferTarSHA512File}" )
-        print( f"forTransferQCtarFile:\t\t\t{forTransferTarFile}" )
-        print( f"forTransferQCMD5tarFile:\t\t\t{forTransferTarFile}" )
-        print( f"forTransferQCSHA512tarFile:\t\t\t{forTransferTarFile}" )
+        print( f"Changed into directory\t\t{DemultiplexRunIdDir}")
 
-
-    if not tarfile.is_tarfile( tarFile ):
-        tarFileHandle = tarfile.open( tarFile, "w:" )
+    # Make {ForTransferRunIdDir} directory
+    if not os.path.isdir( ForTransferRunIdDir ):
+        os.mkdir( ForTransferRunIdDir )
     else:
-        printf( f"{tarFile} exists. Please investigate or delete. Exiting." )
+        print( f"{ForTransferRunIdDir} exists, this is not supposed to exist, please investigate and re-run the demux. Exiting." )
         sys.exit( )
-###########################################################
-# What to put inside the tar file
-###########################################################
 
 
+    projectList = os.listdir( "." )                     # get the contents of the DemultiplexRunIdDir directory
+    if demux.debug:
+        print( f"{DemultiplexRunIdDir} directory contents: {projectList}" ) 
+
+    projectsToProcess = [ ]
+    for project in projectList:                       # itterate over said DemultiplexRunIdDir contents
+        if any( var in project for var in [ demux.TestProject ] ):          # skip the test project, 'FOO-blahblah-BAR'
+            continue
+        if any( var in project for var in [ demux.NextSeq, demux.MiSeq ] ): # if there is a nextseq or misqeq tag, add the directory to the newProjectNameList
+            projectsToProcess.append( project )
+
+    print( f"projectsToProcess:\t\t{ projectsToProcess }" )
+    print( f"len(projectsToProcess):\t\t{len(projectsToProcess)}")
+
+    for project in projectsToProcess:
+
+        if demux.TestProject in project:       # disregard the debug Test Project # This is extra, but just in case.
+            if demux.debug:
+                print( f"\"{demux.TestProject}\" test project found. Skipping." )
+            continue
+        if demux.temp in project:              # disregard the temp directory # This is extra, but just in case.
+            if demux.debug:
+                print( f"\"{demux.temp}\" directory found. Skipping." )
+            continue
+        if demux.DemultiplexLogDir in project: # disregard demultiplex_log
+            if demux.debug:
+                print( f"\"{demux.DemultiplexLogDir}\" directory found. Skipping." )
+            continue
+        if demux.QCSuffix in project:          # disregard '_QC'
+            if demux.debug:
+                print( f"\"{demux.QCSuffix}\" directory found. Skipping." )
+            continue
+
+
+        try:
+            os.mkdir( f"{ForTransferRunIdDir}/{project}" )  # we save each tar file into its own directory
+        except FileExistsError as err:
+            print( f"Error while trying to mkdir {ForTransferRunIdDir}/{project}")
+            print( f"Error message: {err}")
+            print ( "Exiting.")
+            sys.exit( )
+
+        tarFile = os.path.join( ForTransferRunIdDir, project )
+        tarFile = os.path.join ( tarFile, f"{project}{demux.tarSuffix}" )
+        if demux.debug:
+            print( f"tarFile: {tarFile}")
+
+        if not os.path.isfile( tarFile ) :
+            tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
+        else:
+            printf( f"{tarFile} exists. Please investigate or delete. Exiting." )
+            sys.exit( )
+
+
+        # we iterrate through all the renamed Sample_Project directories and make a single tar file for each directory
+        # build the filetree
+        if demux.debug:
+            print( f"\n== walk the file tree, {inspect.stack()[0][3]}() ======================\n" )
+
+        counter = counter + 1
+        print( f"==> Archiving {project} ({counter} out of {len(projectsToProcess)} projects ) ==================" )
+        for directoryRoot, dirnames, filenames, in os.walk( os.path.join( DemultiplexRunIdDir, project ), followlinks = False ): 
+             for file in filenames:
+                # add one file at a time so we can give visual feedback to the user that the script is processing files
+                # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
+                # of output that make users uncomfortable
+                filenameToTar = os.path.join( project, file )
+                tarFileHandle.add( name = filenameToTar, recursive = False )
+                print( filenameToTar )
+
+        tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
+        print( f'==< Archived {project} ({counter} out of {len(projectsToProcess)} projects ) ==================\n' )
+
+    sys.exit( )
 
     if not tarfile.is_tarfile( tarQCFile ):
         tarQCFileHandle = tarfile.open( tarQCFile, "w:" )
     else:
         printf( f"{tarQCFile} exists. Please investigate or delete. Exiting." )
         sys.exit( )
-###########################################################
-# What to put inside the QC file
-###########################################################
+    ###########################################################
+    # What to put inside the QC file
+    ###########################################################
+    # stuff *.zip and *.html into a giant flat tar file. 
+    #       all filenames are guaranteed to be unique
+    # build the filetree
+    if demux.debug:
+        print( f"= walk the file tree, {inspect.stack()[0][3]}() ======================\n")
+    # for directoryRoot, dirnames, filenames, in os.walk( DemultiplexRunIdDir, followlinks = False ):
 
-
-
-    tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
+    tarQCFileHandle.write( )
     tarQCFileHandle.close( )    # whatever happens make sure we have closed the handle before moving on
-    
-
-    # Make {ForTransferRunIdDir} directory
-    if not os.path.isdir( ForTransferRunIdDir ):
-        os.mkdir( ForTransferRunIdDir )
-    else:
-        print( f"{ForTransferRunIdDir} exists, this is not supposed to exist, please investiage and re-run the demux. Exiting." )
-        os.exit( )
-
-    # Make {DemultiplexRunIdDir}/temp directory, move files there to be hashed
-    if not os.path.isdir( DemultiplexRunIdDir ):
-        os.mkdir( DemultiplexRunIdDir )
-    else:
-        print( f"{DemultiplexRunIdDir} exists, this is not supposed to exist, please investiage and re-run the demux. Exiting." )
-        os.exit( )
 
     # assuming nobody was able to create the files in a milisecond worth of amount of time
     source      = [ tarFile, tarQCFile ]
@@ -1099,7 +1172,6 @@ def main( RunID ):
     DemultiplexQCDirPath   = f"{DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"
     DemultiplexProjSubDirs = [ ]
 ######################################################
-
     ForTransferDirRoot     = os.path.join ( demux.DataRootDirPath, demux.ForTransferDirName )
     ForTransferDir         = os.path.join ( ForTransferDirRoot, RunID )
     ForTransferProjNames   = []
@@ -1120,7 +1192,7 @@ def main( RunID ):
         ForTransferProjNames.append( f"{DemultiplexRunIdDir}/{RunIDShort}.{project}" )
 
 
-    print( f"\nTo rerun this script run\n\tclear; rm -rf {DemultiplexRunIdDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n")
+    print( f"\nTo rerun this script run\n\tclear; rm -rf {DemultiplexRunIdDir} && rm -rf {ForTransferDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n")
     if demux.debug: # print the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
         print( "=============================================================================")
         print( f"RunID:\t\t\t\t{RunID}")
@@ -1193,16 +1265,15 @@ def main( RunID ):
     demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir )
     newFileList, DemultiplexRunIdDirNewName = renameFiles( DemultiplexRunIdDir, RunIDShort, project_list )
 
-    projectNewList = [ ]                                                                                # FIXMEFIXME do i really need this projectNewList ?
+    newProjectNamelist = [ ]
     for project in project_list:
-        projectNewList.append( f"{RunIDShort}.{project}" )
-
-    qualityCheck( newFileList, DemultiplexRunIdDirNewName, RunIDShort, projectNewList )
+        newProjectNamelist.append( f"{RunIDShort}.{project}")
+    
+    qualityCheck( newFileList, DemultiplexRunIdDirNewName, RunIDShort, newProjectNamelist )
     calcFileHash( DemultiplexRunIdDir )                                                                 # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
     changePermissions( DemultiplexRunIdDir  )                                                           # change permissions for the files about to be included in the tar files 
+    prepareDelivery( RunID )                                                                            # prepare the main delivery files
     sys.exit( )
-
-    prepareDelivery(  RunID )                                 # prepare the main delivery files
 
     calcFileHash( DemultiplexRunIdDir )                                                                 # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
     prepare_delivery(  RunIDShort + QCSuffix, DemultiplexRunIdDirNewName, QC_tar_file, QC_md5_file ) # prepare the QC files
