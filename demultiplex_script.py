@@ -937,6 +937,8 @@ def prepareDelivery( RunID ):
 
     projectsToProcess = [ ]
     for project in projectList:                       # itterate over said DemultiplexRunIdDir contents
+        if any( var in project for var in [ demux.QCSuffix ] ):             # skip anything that includes '_QC'
+            continue
         if any( var in project for var in [ demux.TestProject ] ):          # skip the test project, 'FOO-blahblah-BAR'
             continue
         if any( var in project for var in [ demux.NextSeq, demux.MiSeq ] ): # if there is a nextseq or misqeq tag, add the directory to the newProjectNameList
@@ -976,7 +978,7 @@ def prepareDelivery( RunID ):
         tarFile = os.path.join( ForTransferRunIdDir, project )
         tarFile = os.path.join ( tarFile, f"{project}{demux.tarSuffix}" )
         if demux.debug:
-            print( f"tarFile: {tarFile}")
+            print( f"tarFile:\t\t\t{tarFile}")
 
         if not os.path.isfile( tarFile ) :
             tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
