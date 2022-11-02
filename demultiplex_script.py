@@ -454,8 +454,8 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             oldfileExists = os.path.isfile( oldname )
             newfileExists = os.path.isfile( newname )
 
-            if newfoo not in newProjectNameList:
-                newProjectNameList.append( newfoo ) # save it to return the list, so we will not have to recreate the filenames
+            if newfoo not in newProjectFileList:
+                newProjectFileList.append( newfoo ) # save it to return the list, so we will not have to recreate the filenames
 
             if oldfileExists and not newfileExists:
                 try: 
