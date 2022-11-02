@@ -402,13 +402,13 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
 
     oldname            = ""
     newname            = ""
-    newProjectNameList = [ ]
+    newProjectFileList = [ ]
 
     if demux.debug:
-        print( f"DemultiplexRunIdDir:\t{DemultiplexRunIdDir}")
-        print( f"RunIDShort:\t\t\t{RunIDShort}")
+        print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}")
+        print( f"RunIDShort:\t\t\t\t\t{RunIDShort}")
         for index, item in enumerate( project_list ):
-            print( f"DemultiplexRunIdDir[{index}]:\t{DemultiplexRunIdDir[index]}")
+            print( f"project_list[{index}]:\t\t\t\t\t{project_list[index]}")
 
     for project in project_list: # rename files in each project directory
 
@@ -425,7 +425,11 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
         CompressedFastQfiles = glob.glob( filesToSearchFor ) # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
 
         if demux.debug:
-            print( f"fastq files for {project}:\t\t{filesToSearchFor}" )
+            if len( f"fastq files for {project}:" ) > 40:
+                print( f"fastq files for {project}:\t\t{filesToSearchFor}" )
+            else:
+                print( f"fastq files for {project}:\t\t\t{filesToSearchFor}" )
+
             for index, item in enumerate( CompressedFastQfiles ):
                 print( f"CompressedFastQfiles[{index}]:\t\t\t{item}" )
 
