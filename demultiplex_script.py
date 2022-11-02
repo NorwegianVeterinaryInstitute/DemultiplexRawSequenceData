@@ -12,6 +12,8 @@ import hashlib
 import pathlib
 import ast
 import tarfile
+import termcolor
+
 
 """
 demux module:
@@ -23,7 +25,7 @@ demux module:
 
     python interpreter | path to script                 | RunID directory from /data/rawdata
 
-INPUTS:
+INPUTS
     - RunID directory from /data/rawdata
 
 OUTPUTS:
@@ -95,13 +97,14 @@ WHAT DOES THIS SCRIPT DO
     - [Future feature] Archive files to NIRD
 
 
-HOW DOES THE SCRIPT DO WHAT IT DOES
+PREREQUISITES
     - uses Illumina's blc2fastq tool     ( https://emea.support.illumina.com/downloads/bcl2fastq-conversion-software-v2-20.html )
     - uses FastQ                         ( https://www.bioinformatics.babraham.ac.uk/projects/download.html#fastqc )
     - uses MultiQC                       ( as root, pip3 install multiqc )
     - hashing is done by the internal Python3 hashlib library (do not need any external or OS level packages)
         - hashing can be memory intensive as the entire file is read to memory
         - should be ok, unless we start sequencing large genomes
+    - dnf install python3-termcolor python3-xtermcolor
 
 LIMITATIONS
     - Can demultipex one directory at a time only
@@ -235,7 +238,7 @@ class demux:
         """
 
         demux.n = demux.n + 1
-        print( f"==> {demux.n}/{demux.TotalTasks} tasks: Get project name from {SampleSheetFilePath} started ==\n" )
+        print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Get project name from {SampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
 
         project_line_check = False
         project_index  = 0
@@ -254,7 +257,7 @@ class demux:
         print( f"project_list: {project_list}\n" )
 
 
-        print( f"==< {demux.n}/{demux.TotalTasks} tasks: Get project name from {SampleSheetFilePath} finished ==\n" )
+        print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Get project name from {SampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] ) )
         return( set( project_list ) )
 
 
@@ -284,7 +287,7 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Create directory structure started ==\n" )
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
 
     DemultiplexLogDir     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDir ) 
     DemuxQCDirectoryName  = f"{RunIDShort}{demux.QCSuffix}"                    # QCSuffix is defined in object demux
@@ -293,13 +296,13 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
     if demux.debug:
             print( f"DemultiplexRunIdDir\t\t\t\t{DemultiplexRunIdDir}" )
             print( f"DemultiplexRunIdDir/DemultiplexLogDir:\t\t{DemultiplexLogDir}" )
-            print( f"DemultiplexRunIdDir/DemuxQCDirectory:\t\t{DemuxQCDirectoryPath}\n" )
+            print( f"DemultiplexRunIdDir/DemuxQCDirectory:\t\t{DemuxQCDirectoryPath}" )
 
     os.mkdir( DemultiplexRunIdDir )                                          # root directory for run
     os.mkdir( DemultiplexLogDir )    # log directory for run
     os.mkdir( DemuxQCDirectoryPath ) # QC directory  for run
 
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Create directory structure finished ==\n" )
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Create directory structure finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -329,7 +332,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Demultiplexing started ==\n" )
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Demultiplexing started ==\n", color="green", attrs=["bold"] ) )
 
     argv = [ demux.bcl2fastq_bin,
          "--no-lane-splitting",
@@ -366,7 +369,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
             filesize = os.path.getsize( Bcl2FastqLogFile )
             print( f"Bcl2FastqLogFile:\t\t\t\t{Bcl2FastqLogFile} is {filesize} bytes.\n")
 
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Demultiplexing finished ==\n" )
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Demultiplexing finished ==\n", color="red", attrs=["bold"] ) )
 
 
 ########################################################################
@@ -395,7 +398,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Renaming files started ==\n" )
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Renaming files started ==", color="green", attrs=["bold"] ) )
 
     oldname            = ""
     newname            = ""
@@ -411,7 +414,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
 
         if project == demux.TestProject:
             if demux.debug:
-                print( f"Test project '{demux.TestProject}' detected. Skipping.\n" )
+                print( f"Test project '{demux.TestProject}' detected. Skipping." )
                 continue
 
         CompressedFastQfilesDir = f"{DemultiplexRunIdDir}/{project}"
@@ -435,6 +438,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             # get the base filename. We picked up sample*.{CompressedFastqSuffix} and we have to rename it to {RunIDShort}sample*.{CompressedFastqSuffix}
             baseFileName = os.path.basename( file )
             if demux.debug:
+                print( "-----------------")
                 print( f"baseFilename:\t\t\t\t\t{baseFileName}")
 
             oldname = f"{file}"
@@ -445,9 +449,6 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 print( f"file:\t\t\t\t\t\t{file}")
                 print( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}" )
             
-
-            print( "\n" )
-
             # make sure oldname files exist
             # make sure newname files do not exist
             oldfileExists = os.path.isfile( oldname )
@@ -467,10 +468,9 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                     print( "err.filename2: {err.filename2}" )
                     print( "Exiting!" )
 
+    print( "-----------------")
 
-        DemultiplexRunIdDirNewNameList = [ ]
-
-
+    DemultiplexRunIdDirNewNameList = [ ]
     for project in project_list: # rename the project directories
 
         oldname = f"{DemultiplexRunIdDir}/{project}"
@@ -494,16 +494,21 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 print( "Exiting!")
 
             if demux.debug:
-                print( f"Renaming {oldname} to {newname}" )
-                for index, item in enumerate( newProjectNameList ):
+                print( termcolor.colored( f"Renaming {oldname} to {newname}", color=cyan, attrs=["undeline"] ) )
+                for index, item in enumerate( newProjectFileList ):
                     if index < 10:
-                        print( f"newProjectNameList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
+                        print( f"newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
+                    elif 100 < index  and index >= 10:
+                        print( f"newProjectFileList[{index}]:\t\t\t{item}")
+                    elif 1000 < index and index >= 100:
+                        print( f"newProjectFileList[{index}]:\t\t{item}")
                     else:
-                        print( f"newProjectNameList[{index}]:\t\ts\t{item}")     
-                for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
-                    print( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}\n")
+                        print( f"newProjectFileList[{index}]:\t{item}")       # if we got more than 1000 files, well, frak me...  ## NOTE THIS IS AN INTERESTING STATISTIC: HOW MANY FILES PRODUCED (MEAN, AVERAGE) FOR EACH RUN 
 
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n" )
+                for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
+                    print( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}")
+
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n", color="red", attrs=["bold"] ) )
 
     return newProjectNameList, DemultiplexRunIdDirNewNameList
 
@@ -518,7 +523,7 @@ def FastQC( newFileList ):
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: FastQC started ==\n" )
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: FastQC started ==", color="green", attrs=["bold"] ) )
 
     command             = demux.fastqc_bin
     argv                = [ command, '-t', '4', *newFileList ] # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
@@ -528,7 +533,7 @@ def FastQC( newFileList ):
         print( f"argv:\t\t\t\t\t\t{argv}")
         arguments = " ".join( argv[1:] )
         print( f"Command to execute:\t\t\t\t{command} {arguments}") # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
-        print( f"demultiplexRunIdDir:\t\t\t\t{demultiplexRunIdDir}\n")
+        print( f"demultiplexRunIdDir:\t\t\t\t{demultiplexRunIdDir}")
 
     try:
         # EXAMPLE: /usr/local/bin/fastqc -t 4 {DemultiplexRunIdDir}/{project}/*fastq.gz > DemultiplexRunIdDir/demultiplex_log/04_fastqc.log
@@ -540,7 +545,7 @@ def FastQC( newFileList ):
                      f"Process output: {err.output}",
             ]
 
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: FastQC complete ==\n" )
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: FastQC complete ==\n", color="red", attrs=["bold"] )  )
 
 
 def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
@@ -550,7 +555,7 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC started ==\n" )
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC started ==", color="green", attrs=["bold"] ) )
 
     zipFiles  = [ ]
     HTLMfiles = [ ]
@@ -576,7 +581,7 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
         print( f"zipFiles:\t\t\t\t\t{zipFiles}"                     )
         print( f"HTLMfiles:\t\t\t\t\t{HTLMfiles}"                   )
         print( f"sourcefiles:\t\t\t\t\t{sourcefiles}"               ) # textual representation of the source files.
-        print( f"Command to execute:\t\t\t\t/usr/bin/cp {textsource} {destination}\n" )
+        print( f"Command to execute:\t\t\t\t/usr/bin/cp {textsource} {destination}" )
 
     if not os.path.isdir( destination ) :
         print( f"Directory {destination} does not exist. Please check the logs, delete {DemultiplexRunIdDir} and try again." )
@@ -595,7 +600,7 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
         print( f"\tfilename2:\t{err.filename2}"                    )
         sys.exit( )
 
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC finished ==\n" )
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC finished ==\n", color="red", attrs=["bold"] ) )
 
 
 def MultiQC( DemultiplexRunIdDir ):
@@ -606,7 +611,7 @@ def MultiQC( DemultiplexRunIdDir ):
     """ 
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: MultiQC started ==\n")
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: MultiQC started ==", color="green", attrs=["bold"] ) )
 
     if demux.debug:
         print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}" )
@@ -618,7 +623,7 @@ def MultiQC( DemultiplexRunIdDir ):
     args    = " ".join(argv[1:]) # ignore the command part so we can print this string below, fresh all the time, in case we change tool command name
 
     if demux.debug:
-        print( f"Command to execute:\t\t\t\t{command} {args}\n" )
+        print( f"Command to execute:\t\t\t\t{command} {args}" )
 
     try:
         # EXAMPLE: /usr/local/bin/multiqc {DemultiplexRunIdDir} -o {DemultiplexRunIdDir} 2> {DemultiplexRunIdDir}/demultiplex_log/05_multiqc.log
@@ -630,7 +635,7 @@ def MultiQC( DemultiplexRunIdDir ):
             f"Process output: {err.output}",
         ]
 
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: MultiQC finished ==\n")
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: MultiQC finished ==\n", color="red", attrs=["bold"] ) )
 
 
 ########################################################################
@@ -648,7 +653,7 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newPr
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Quality Check started ==\n")
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Quality Check started ==", color="green", attrs=["bold"] ) )
 
     DemultiplexRunIdDir = os.path.dirname( DemultiplexRunIdDirNewNameList[0] )
 
@@ -657,12 +662,12 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newPr
         print( f"DemultiplexRunIdDirNewNameList:\t\t\t{DemultiplexRunIdDirNewNameList}" )
         print( f"RunIDShort:\t\t\t\t\t{RunIDShort}" )
         print( f"newProjectNameList:\t\t\t\t{newProjectNameList}" )
-        print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}\n" )
+        print( f"DemultiplexRunIdDir:\t\t\t\t{DemultiplexRunIdDir}" )
 
     for project in newProjectNameList: 
         if f"{RunIDShort}.{demux.TestProject}" == project:
             if demux.debug:
-                print( f"{demux.TestProject} test project detected. Skipping." )
+                print( f"{demux.TestProject} test project detected. Skipping.\n" )
             continue
 
     FastQC( newFileList )
@@ -670,7 +675,7 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newPr
     MultiQC( DemultiplexRunIdDir )
 
 
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Quality Check finished ==\n")
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Quality Check finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -702,10 +707,10 @@ def calcFileHash( DemultiplexRunIdDir ):
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==\n")
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==", color="green", attrs=["bold"] ) )
 
     if demux.debug:
-        print( f"for debug puproses, creating empty files {DemultiplexRunIdDir}/foo.tar and {DemultiplexRunIdDir}/bar.zip" )
+        print( f"for debug puproses, creating empty files {DemultiplexRunIdDir}/foo.tar and {DemultiplexRunIdDir}/bar.zip\n" )
         pathlib.Path( f"{DemultiplexRunIdDir}/{demux.footarfile}" ).touch( )
         pathlib.Path( f"{DemultiplexRunIdDir}/{demux.barzipfile}" ).touch( )
 
@@ -722,11 +727,11 @@ def calcFileHash( DemultiplexRunIdDir ):
             filepath = os.path.join( directoryRoot, file )
 
             if not os.path.isfile( filepath ):
-                print( f"{filepath} is not a file. Exiting.")
+                print( f"{filepath} is not a file. Exiting." )
                 sys.exit( )
 
             if os.path.getsize( filepath ) == 0 : # make sure it's not a zero length file 
-                print( f"file {filepath} has zero length. Skipping.")
+                print( f"file {filepath} has zero length. Skipping." )
                 continue
         
             filehandle     = open( filepath, 'rb' )
@@ -751,7 +756,7 @@ def calcFileHash( DemultiplexRunIdDir ):
             else:
                 continue
 
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files finished ==\n")
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -770,10 +775,10 @@ def changePermissions( path ):
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Changing Permissions started ==\n")
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Changing Permissions started ==", color="green", attrs=["bold"] ) )
 
     if demux.debug:
-        print( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
+        print( termcolor.colored( f"= walk the file tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
 
     for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
     
@@ -813,7 +818,7 @@ def changePermissions( path ):
 
     # change ownership and access mode of directories
     if demux.debug:
-        print( f'= walk the dir tree, {inspect.stack()[0][3]}() ======================')
+        print( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
     for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
 
         for name in dirnames:
@@ -848,7 +853,7 @@ def changePermissions( path ):
                 print( f"\tfilename2:\t{err.filename2}"                    )
                 sys.exit( )
 
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Changing Permissions finished ==\n")
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Changing Permissions finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -883,7 +888,7 @@ def prepareDelivery( RunID ):
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery started ==\n")
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery started ==", color="green", attrs=["bold"] ) )
 
     DemultiplexRunIdDir        = os.path.join( demux.DemultiplexDir, f"{RunID}{demux.DemultiplexDirSuffix}" )   # This needs to be moved to __init__
     ForTransferRunIdDir        = os.path.join( demux.ForTransferDir, RunID )                                    # This needs to be moved to __init__
@@ -993,10 +998,10 @@ def prepareDelivery( RunID ):
         # we iterrate through all the renamed Sample_Project directories and make a single tar file for each directory
         # build the filetree
         if demux.debug:
-            print( f"\n== walk the file tree, {inspect.stack()[0][3]}() ======================\n" )
+            print( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {os.getcwd( )}/{project} ======================", attrs=["bold"] ) )
 
         counter = counter + 1
-        print( f"==> Archiving {project} ({counter} out of {len(projectsToProcess)} projects ) ==================" )
+        print( termcolor.colored( f"==> Archiving {project} ({counter} out of {len(projectsToProcess)} projects ) ==================", color="yellow", attrs=["bold"] ) )
         for directoryRoot, dirnames, filenames, in os.walk( os.path.join( DemultiplexRunIdDir, project ), followlinks = False ): 
              for file in filenames:
                 # add one file at a time so we can give visual feedback to the user that the script is processing files
@@ -1007,7 +1012,7 @@ def prepareDelivery( RunID ):
                 print( filenameToTar )
 
         tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
-        print( f'==< Archived {project} ({counter} out of {len(projectsToProcess)} projects ) ==================\n' )
+        print( termcolor.colored( f'==< Archived {project} ({counter} out of {len(projectsToProcess)} projects ) ==================\n', color="yellow", attrs=["bold"] ) )
 
     sys.exit( )
 
@@ -1022,10 +1027,7 @@ def prepareDelivery( RunID ):
     # stuff *.zip and *.html into a giant flat tar file. 
     #       all filenames are guaranteed to be unique
     # build the filetree
-    if demux.debug:
-        print( f"= walk the file tree, {inspect.stack()[0][3]}() ======================\n")
-    # for directoryRoot, dirnames, filenames, in os.walk( DemultiplexRunIdDir, followlinks = False ):
-
+ 
     tarQCFileHandle.write( )
     tarQCFileHandle.close( )    # whatever happens make sure we have closed the handle before moving on
 
@@ -1061,7 +1063,7 @@ def prepareDelivery( RunID ):
         print( f"{demultiplexTempDir} cannot be removed. Exiting." )
         os.exit( )
  
-    print( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery finished ==\n")
+    print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -1197,7 +1199,8 @@ def main( RunID ):
         ForTransferProjNames.append( f"{DemultiplexRunIdDir}/{RunIDShort}.{project}" )
 
 
-    print( f"\nTo rerun this script run\n\tclear; rm -rf {DemultiplexRunIdDir} && rm -rf {ForTransferDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n")
+    print( f"To rerun this script run\n" )
+    print( termcolor.colored( f"\tclear; rm -rf {DemultiplexRunIdDir} && rm -rf {ForTransferDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n", attrs=["bold"] ) )
     if demux.debug: # print the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
         print( "=============================================================================")
         print( f"RunID:\t\t\t\t{RunID}")
@@ -1253,7 +1256,7 @@ def main( RunID ):
     try:
         demux.n = demux.n + 1
         shutil.copy2( SampleSheetFilePath, DemultiplexRunIdDir )
-        print( f"==> {demux.n}/{demux.TotalTasks} tasks: {demux.SampleSheetFileName} copied to {DemultiplexRunIdDir}\n")
+        print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: {demux.SampleSheetFileName} copied to {DemultiplexRunIdDir}\n", color="green" ) )
     except Exception as err:
         print( err )
         exit( )
@@ -1262,7 +1265,7 @@ def main( RunID ):
         demux.n = demux.n + 1
         SampleSheetArchiveFilePath = os.path.join( demux.SampleSheetDirPath, f"{RunID}{demux.CSVSuffix}" ) # .dot is included in CSVsuffix
         shutil.copy2( SampleSheetFilePath, SampleSheetArchiveFilePath )
-        print( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {SampleSheetFilePath} to {SampleSheetArchiveFilePath} ==\n" )
+        print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {SampleSheetFilePath} to {SampleSheetArchiveFilePath} ==\n", color="green" ) )
     except Exception as err:
         print( err )
         exit( )
@@ -1301,4 +1304,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # FIXMEFIXME add named arguments
     RunID = sys.argv[1]
+    RunID = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
     main( RunID )
