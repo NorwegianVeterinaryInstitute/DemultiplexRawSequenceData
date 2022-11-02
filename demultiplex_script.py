@@ -1121,23 +1121,23 @@ def prepareDelivery( RunID ):
 # script_completion_file
 ########################################################################
 
-def scriptComplete( DemultiplexDir):
+def scriptComplete( DemultiplexRunIdDir ):
     """
     Create the {DemultiplexDir}/{demux.DemultiplexCompleteFile} file to signal that this script has finished
     """
 
     demux.n = demux.n + 1
-    print( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery started ==\n")
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Finishing up script ==", color="green", attrs=["bold"] ) )
 
-    try: 
-        Path( os.path.join ( DemultiplexDir, demux.DemultiplexCompleteFile )).touch( mode=644, exist_ok=False)
+    try:
+        file = os.path.join( DemultiplexRunIdDir, demux.DemultiplexCompleteFile )
+        pathlib.Path( file ).touch( mode=644, exist_ok=False)
     except Exception as e:
-        print( e.error )
-        print( f"{DemultiplexDir}/{DemultiplexCompleteFile} already exists. Please delete it before running demux.\n")
+        print( f"{file} already exists. Please delete it before running {__file__}.\n")
         sys.exit( )
-        # FIXMEFIXME notify_warning_system_that_error_occured( )
 
-    print( f"{demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery finished\n")
+    print( f"DemultiplexCompleteFile {file} created.")
+    print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Finishing up script ==", color="red", attrs=["bold"] ) )
 
 
 
@@ -1324,14 +1324,12 @@ def main( RunID ):
     changePermissions( demux.DemultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
     prepareDelivery( RunID )                                                                            # prepare the delivery files
     calcFileHash( demux.ForTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
-    sys.exit( )
-    change_permission( QC_tar_file )                                                                    # change permissions for all the delivery files, including QC
-    change_permission( QC_md5_file )
+    changePermissions( demux.ForTransferRunIdDir  )                                                                    # change permissions for all the delivery files, including QC
     deliverFilesToVIGASP( )
     deliverFilesToNIRD( )
-    script_completion_file( DemultiplexDir )
+    scriptComplete( demux.DemultiplexRunIdDir )
 
-    printf( "\n====== All done! ======\n" )
+    print( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
 
 
 
