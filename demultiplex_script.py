@@ -227,6 +227,8 @@ class demux:
     ######################################################
     multiQCLogFilePath      = ""
     ######################################################
+    fastQCLogFilePath       = ""
+    ######################################################
     with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize TotalTasks to it
         tree = ast.parse( f.read( ) )
         TotalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body ) + 2
@@ -605,6 +607,14 @@ def FastQC( newFileList ):
                      f"Return code: {err.returncode}"
                      f"Process output: {err.output}",
             ]
+
+    # log FastQC output
+    demux.fastQCLogFilePath   = os.path.join( demux.DemultiplexLogDirPath, demux.fastqcLogFileName )
+    fastQCLogFileHandle = open( demux.fastQCLogFilePath, "x" ) # fail if file exists
+    if demux.debug:
+        print( f"fastQCLogFilePath:\t\t\t\t{demux.fastQCLogFilePath}")
+    fastQCLogFileHandle.write( result.stdout ) 
+    fastQCLogFileHandle.close( )
 
     print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: FastQC complete ==\n", color="red", attrs=["bold"] )  )
 
