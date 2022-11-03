@@ -178,6 +178,7 @@ class demux:
     DemultiplexDirSuffix    = '_demultiplex'
     DemultiplexLogDirName   = 'demultiplex_log'
     multiqc_data            = 'multiqc_data'
+    fastqcLogFileName       = '03_fastqcLogFile.log'
     multiqcLogFileName      = '04_multiqcLogFile.log'
     SampleSheetFileName     = 'SampleSheet.csv'
     RTACompleteFile         = 'RTAComplete.txt'
