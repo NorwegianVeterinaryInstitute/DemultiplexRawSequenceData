@@ -176,8 +176,9 @@ class demux:
     SampleSheetDirPath      = os.path.join( DataRootDirPath, SampleSheetDirName )
     ######################################################
     DemultiplexDirSuffix    = '_demultiplex'
-    DemultiplexLogDir       = 'demultiplex_log'
+    DemultiplexLogDirName   = 'demultiplex_log'
     multiqc_data            = 'multiqc_data'
+    multiqcLogFileName      = '04_multiqcLogFile.log'
     SampleSheetFileName     = 'SampleSheet.csv'
     RTACompleteFile         = 'RTAComplete.txt'
     temp                    = 'temp'
@@ -215,9 +216,16 @@ class demux:
     TotalTasks              = 0  
     ######################################################
     DemultiplexRunIdDir     = ""
+    DemultiplexLogDirPath   = ""
+    DemultiplexLogFilePath  = ""
+    DemuxQCDirectoryPath    = ""
+    DemuxQCDirectoryName    = ""
+    DemuxQCDirectoryPath    = ""
     ######################################################
     ForTransferRunIdDir     = ""
     forTransferQCtarFile    = ""
+    ######################################################
+    multiQCLogFilePath      = ""
     ######################################################
     with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize TotalTasks to it
         tree = ast.parse( f.read( ) )
@@ -338,18 +346,18 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
     demux.n = demux.n + 1
     print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
 
-    DemultiplexLogDir     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDir ) 
-    DemuxQCDirectoryName  = f"{RunIDShort}{demux.QCSuffix}"                    # QCSuffix is defined in object demux
-    DemuxQCDirectoryPath  = os.path.join( DemultiplexRunIdDir, DemuxQCDirectoryName  )
+    demux.DemultiplexLogDirPath = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDirName ) 
+    demux.DemuxQCDirectoryName  = f"{RunIDShort}{demux.QCSuffix}" # QCSuffix is defined in object demux
+    demux.DemuxQCDirectoryPath  = os.path.join( DemultiplexRunIdDir, demux.DemuxQCDirectoryName  )
 
     if demux.debug:
             print( f"DemultiplexRunIdDir\t\t\t\t{demux.DemultiplexRunIdDir}" )
-            print( f"DemultiplexRunIdDir/DemultiplexLogDir:\t\t{DemultiplexLogDir}" )
-            print( f"DemultiplexRunIdDir/DemuxQCDirectory:\t\t{DemuxQCDirectoryPath}" )
+            print( f"DemultiplexRunIdDir/DemultiplexLogDir:\t\t{demux.DemultiplexLogDirPath}" )
+            print( f"DemultiplexRunIdDir/DemuxQCDirectory:\t\t{demux.DemuxQCDirectoryPath}" )
 
-    os.mkdir( DemultiplexRunIdDir )                                          # root directory for run
-    os.mkdir( DemultiplexLogDir )    # log directory for run
-    os.mkdir( DemuxQCDirectoryPath ) # QC directory  for run
+    os.mkdir( demux.DemultiplexRunIdDir )   # root directory for run
+    os.mkdir( demux.DemultiplexLogDirPath ) # log directory for run
+    os.mkdir( demux.DemuxQCDirectoryPath )  # QC directory  for run
 
     print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Create directory structure finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -390,7 +398,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
          "--output-dir",
         f"{demux.DemultiplexRunIdDir}"
     ]
-    Bcl2FastqLogFile     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDir, demux.Bcl2FastqLogFileName )
+    Bcl2FastqLogFile     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
     if demux.debug:
         print( f"Command to execute:\t\t\t\t" + " ".join( argv ) )
 
@@ -687,6 +695,14 @@ def MultiQC( DemultiplexRunIdDir ):
             f"Return code:\t{err.returncode}"
             f"Process output: {err.output}",
         ]
+
+    # log multiqc output
+    demux.mutliQCLogFilePath   = os.path.join( demux.DemultiplexLogDirPath, demux.multiqcLogFileName )
+    multiQCLogFileHandle = open( demux.mutliQCLogFilePath, "x" ) # fail if file exists
+    if demux.debug:
+        print( f"mutliQCLogFilePath:\t\t\t\t{demux.mutliQCLogFilePath}")
+    multiQCLogFileHandle.write( result.stderr ) # The MultiQC people are special: They write output to stderr
+    multiQCLogFileHandle.close( )
 
     print( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: MultiQC finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -996,7 +1012,7 @@ def prepareDelivery( RunID ):
             projectsToProcess.append( project )
 
     print( f"projectsToProcess:\t\t{ projectsToProcess }" )
-    print( f"len(projectsToProcess):\t\t{len(projectsToProcess)}")
+    print( f"len(projectsToProcess):\t\t{len( projectsToProcess  ) }" )
 
     for project in projectsToProcess:
 
@@ -1008,9 +1024,9 @@ def prepareDelivery( RunID ):
             if demux.debug:
                 print( f"\"{demux.temp}\" directory found. Skipping." )
             continue
-        if demux.DemultiplexLogDir in project: # disregard demultiplex_log
+        if demux.DemultiplexLogDirPath in project: # disregard demultiplex_log
             if demux.debug:
-                print( f"\"{demux.DemultiplexLogDir}\" directory found. Skipping." )
+                print( f"\"{demux.DemultiplexLogDirPath}\" directory found. Skipping." )
             continue
         if demux.QCSuffix in project:          # disregard '_QC'
             if demux.debug:
@@ -1225,8 +1241,8 @@ def main( RunID ):
 ######################################################
     DemultiplexDirRoot     = os.path.join( demux.DataRootDirPath, demux.DemultiplexDirName )
     demux.DemultiplexRunIdDir    = os.path.join( DemultiplexDirRoot, RunID + demux.DemultiplexDirSuffix ) 
-    DemultiplexLogDirPath  = os.path.join( demux.DemultiplexRunIdDir, demux.DemultiplexLogDir )
-    DemultiplexLogFilePath = os.path.join( DemultiplexLogDirPath, demux.ScriptLogFile )
+    demux.DemultiplexLogDirPath  = os.path.join( demux.DemultiplexRunIdDir, demux.DemultiplexLogDirName )
+    demux.DemultiplexLogFilePath = os.path.join( demux.DemultiplexLogDirPath, demux.ScriptLogFile )
     DemultiplexQCDirPath   = f"{demux.DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"
     DemultiplexProjSubDirs = [ ]
 ######################################################
@@ -1264,8 +1280,8 @@ def main( RunID ):
         print( "=============================================================================")
         print( f"DemultiplexDirRoot:\t\t{DemultiplexDirRoot}" )
         print( f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}" )
-        print( f"DemultiplexLogDirPath:\t\t{DemultiplexLogDirPath}" )
-        print( f"DemultiplexLogFilePath:\t\t{DemultiplexLogFilePath}" )
+        print( f"DemultiplexLogDirPath:\t\t{demux.DemultiplexLogDirPath}" )
+        print( f"DemultiplexLogFilePath:\t\t{demux.DemultiplexLogFilePath}" )
         print( f"DemultiplexQCDirPath:\t\t{DemultiplexQCDirPath}" )
         for index, directory in enumerate( DemultiplexProjSubDirs):
             print( f"DemultiplexProjSubDirs[{index}]:\t{directory}")
