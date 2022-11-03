@@ -149,6 +149,9 @@ New Features Requests:
             RecentNewOnes
     Loop detection: if over the same run three times but no banana, send notificaiotn
         tighter in-between runs time requirement: not ever half an hour, but ever 10 minutes
+    The ability to check if demux is happening already
+        that way we can limit how simmultansious demultiplexing scripts can run
+        and limit resource usage
 
 """
 
@@ -218,7 +221,7 @@ class demux:
     ######################################################
     with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize TotalTasks to it
         tree = ast.parse( f.read( ) )
-        TotalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body )
+        TotalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body ) + 2
     n                       = 0 # counter for current task
 
 
