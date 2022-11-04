@@ -15,9 +15,7 @@ Software requirements
 
 or newer
 
-## Directory structure
-
-Hostname: seqtech01.vetinst.no
+## Directory structure on seqtech01.vetinst.no
 
     /data/
           ├── bin                                 # Contains the cron job and demultiplexing scripts
@@ -47,40 +45,33 @@ Hostname: seqtech01.vetinst.no
 ```
 
 ## Things we need to think about
+
 ### Backups
 * Backups, lack of, discuss
 
 ### Deletion protocol
+
 * _scratch_
 * _demultiplex_
 
 ### Automated Transfer to VIGASP
 
 TBD
-
 TODO: decide account which we will use to automate the "Transfer To VIGASP" process
 
 
 ### Automated Transfer to SAGA
 
 TBD
-
 TODO: decide account which we will use to automate the "Transfer To SAGA" process
 
 ### Automated Transfer the demultiplexed run folder from seqtch01.vetinst.no to NIRD 
 
 For now, archiving to NIRD is done by hand, after a lab technician reviews the QC results. The transfer is done this way (replace relevant bits)
-
 ```
 $ rsync --progress --info=progress2 --no-inc-recursive -arvpe ssh  sambauser01@seqtech:/data/for_transfer/<RunID>/  NIRDUSERNAME@nird.sigma2.no@/nird/projects/NS9305K/SEQ-TECH/data_delivery
 ```
-
 TODO: decide account which we will use to automate the "Transfer To NIRD" process
-
---
-
-### All tasks completed!!!
-
 
 ## Regarding SampleSheet.csv:
 
