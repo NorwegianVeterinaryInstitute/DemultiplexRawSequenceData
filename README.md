@@ -23,7 +23,7 @@ Software requirements
           ├── rawdata                             # MiSeq writes the Runs here; Mounted on MiSeq as Z:\
               ├── SampleSheets                    # Copy of all SampleSheets
           ├── demultiplex                         # Demultiplex data goes here
-          ├── for_transfer                        # The procesed data to be trnasfered goes here; Mounted on MiSeq as Y:\
+          ├── for_transfer                        # The procesed data to be transfered goes here; Mounted on MiSeq as Y:\
 
 
 ## Procedure
