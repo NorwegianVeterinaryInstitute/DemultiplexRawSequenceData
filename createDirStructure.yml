@@ -1,0 +1,2 @@
+empty playbook for ansible to create directory structure
+you can run it again and again, it will not delete what exists already
