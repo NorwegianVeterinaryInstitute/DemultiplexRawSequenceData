@@ -4,7 +4,7 @@ Demutliplex a MiSEQ or NextSEQ run, perform QC using FastQC and MultiQC and deli
 
 Replace <RunId> with relevant run id. Example <RunID>: "190912_M06578_0001_000000000-CNNTP". RunID breaks down like this (date +%y%m%d/yymmdd_MACHINE-SERIAL-NUMBER_AUTOINCREASING-NUMBER-OF-RUN_10-digit-number-assigned-by-machine_CHECKSUM . 
 
-    Note: don't bother with enforcing ISO dates of the directory name. It is an Illumina standard and they do not care.
+    Note: don't bother with enforcing ISO dates for the directory name. It is an Illumina standard and they do not care.
 
 Software requirements
 
@@ -13,14 +13,13 @@ Software requirements
     FastQC    ( https://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )
     MultiQC   ( pip3 install multiqc )
 
-or newer
 
 ## Directory structure on seqtech01.vetinst.no
 
     /data/
           ├── bin                                 # Contains the cron job and demultiplexing scripts
-              ├── cron_job.py
-              ├── demultiplex_script.py
+              ├── cron_job.py                     # launch script, gets launched by cron every 30 minutes, checks if there are new runs, then either executes demultiplexing_script.py or exists
+              ├── demultiplex_script.py           # the script that does all the heavy lifting
           ├── rawdata                             # MiSeq writes the Runs here; Mounted on MiSeq as Z:\
               ├── SampleSheets                    # Copy of all SampleSheets
           ├── demultiplex                         # Demultiplex data goes here
