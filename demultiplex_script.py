@@ -152,6 +152,9 @@ New Features Requests:
     The ability to check if demux is happening already
         that way we can limit how simmultansious demultiplexing scripts can run
         and limit resource usage
+    SampleSheet.csv validation
+        Check for commas == specific number ( ex: There are too many commas between ‘A1’ and ‘RRBS-NMBU’ )
+        Check for missing commas: state machine and report if state N is missing comma after transitioning to N+1 state ( ex: a comma was missing between ’Sample1’ and ‘LPRSSBASNMBU1 )
 
 """
 
