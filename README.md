@@ -2,7 +2,7 @@
 
 Demutliplex a MiSEQ or NextSEQ run, perform QC using FastQC and MultiQC and deliver files either to VIGASP for analysis or NIRD for archiving
 
-Replace <RunId> with relevant run id. Example <RunID>: "190912_M06578_0001_000000000-CNNTP". RunID breaks down like this (date +%y%m%d/yymmdd_MACHINE-SERIAL-NUMBER_AUTOINCREASING-NUMBER-OF-RUN_10-digit-number-assigned-by-machine_CHECKSUM . 
+Replace <RunId> with relevant run id. Example <RunID>: "190912_M06578_0001_000000000-CNNTP". RunID breaks down like this (date +%y%m%d/yymmdd_MACHINE-SERIAL-NUMBER_AUTOINCREASING-NUMBER-OF-RUN_000000000-FlowcellID-used-for-this-run . 
 
     Note: don't bother with enforcing ISO dates for the directory name. It is an Illumina standard and they do not care.
 
