@@ -21,7 +21,7 @@ Software requirements
               ├── cron_job.py                     # launch script, gets launched by cron every 30 minutes, checks if there are new runs, then either executes demultiplexing_script.py or exists
               ├── demultiplex_script.py           # the script that does all the heavy lifting
           ├── rawdata                             # MiSeq writes the Runs here; Mounted on MiSeq as Z:\
-              ├── SampleSheets                    # Copy of all SampleSheets
+          ├── SampleSheets                        # Copy of all SampleSheets, named as the {RunID}.csv
           ├── demultiplex                         # Demultiplex data goes here
           ├── for_transfer                        # The procesed data to be transfered goes here; Mounted on MiSeq as Y:\
 
