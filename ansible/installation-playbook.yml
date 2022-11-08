@@ -1,2 +1,25 @@
+################################################################################
+#
+# ansible playbook to easily re-create the nessecary directory structure plus
+#   install required the tools for you
+#
+# required tools
+#   - Illumina's blc2fastq tool     ( https://emea.support.illumina.com/downloads/bcl2fastq-conversion-software-v2-20.html )
+#   - FastQ                         ( https://www.bioinformatics.babraham.ac.uk/projects/download.html#fastqc )
+#     - chmod +x /data/bin/FastQC/fastqc
+#   - MultiQC                       ( as root, pip3 install multiqc )
+#   - dnf install python3-termcolor python3-xtermcolor ( for colorful output )
+#
+# DIRECTORY STRUCTURE
+#   /data/
+#     ├── bin                           # Contains the cron job and demultiplexing scripts
+#       ├── FastQC                      # save fastqc tool here
+#   ├── rawdata                         # MiSeq/NextSeq writes the Runs here; Mounted on MiSeq as Z:\
+#   ├── SampleSheets                    # Copy of all SampleSheets
+#   ├── demultiplex                     # Demultiplex data goes here
+#   ├── for_transfer                    # The procesed data to be transfered goes here; Mounted on MiSeq as Y:\
+#
+# ln -s all required tools under /data/bin
+#
+################################################################################
 
-chmod +x /data/bin/FastQC/fastqc
