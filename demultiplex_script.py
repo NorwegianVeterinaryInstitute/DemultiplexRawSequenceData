@@ -410,7 +410,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
-        result =  subprocess.run( argv, capture_output = True, text = True, cwd = SequenceRunOriginDir, check = True, encoding = demux.DecodeScheme )
+        result =  subprocess.run( argv, capture_output = True, cwd = SequenceRunOriginDir, check = True, encoding = demux.DecodeScheme )
     except ChildProcessError as err: 
         text = [ "Caught exception!",
             f"Command: {err.cmd}", # interpolated strings
