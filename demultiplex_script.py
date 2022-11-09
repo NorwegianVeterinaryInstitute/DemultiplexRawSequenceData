@@ -156,6 +156,11 @@ New Features Requests:
     SampleSheet.csv validation
         Check for commas == specific number ( ex: There are too many commas between ‘A1’ and ‘RRBS-NMBU’ )
         Check for missing commas: state machine and report if state N is missing comma after transitioning to N+1 state ( ex: a comma was missing between ’Sample1’ and ‘LPRSSBASNMBU1 )
+    *****************
+    check if the SampleSheet has changed and then demultiplex the run again
+        make it clear that we are re-demultiplexing the run in the log file
+        copy new samplesheet in /data/SampleSheets with filename RunID-ISODATE.csv
+    *****************
 
 """
 
