@@ -1,16 +1,17 @@
 #!/bin/env /bin/python3
 
-import os
-import sys
-import shutil
-import subprocess
 import argparse
-import glob
-import inspect
-import stat
-import hashlib
-import pathlib
 import ast
+import glob
+import hashlib
+import inspect
+import logging
+import os
+import pathlib
+import shutil
+import stat
+import subprocess
+import sys
 import tarfile
 import termcolor
 
@@ -167,71 +168,73 @@ class demux:
     ######################################################
     debug = True
     ######################################################
-    DataRootDirPath         = '/data'
-    RawDataDirName          = 'rawdata'
-    RawDataDir              =  os.path.join( DataRootDirPath, RawDataDirName )
-    DemultiplexDirName      = "demultiplex"
-    DemultiplexDir          = os.path.join( DataRootDirPath, DemultiplexDirName )
-    ForTransferDirName      = 'for_transfer'
-    ForTransferDir          = os.path.join( DataRootDirPath, ForTransferDirName )
-    logfileLocation         = 'bin/cron_out.log'
-    SampleSheetDirName      = 'SampleSheets'
-    SampleSheetDirPath      = os.path.join( DataRootDirPath, SampleSheetDirName )
+    DataRootDirPath                 = '/data'
+    RawDataDirName                  = 'rawdata'
+    RawDataDir                      =  os.path.join( DataRootDirPath, RawDataDirName )
+    DemultiplexDirName              = "demultiplex"
+    DemultiplexDir                  = os.path.join( DataRootDirPath, DemultiplexDirName )
+    ForTransferDirName              = 'for_transfer'
+    ForTransferDir                  = os.path.join( DataRootDirPath, ForTransferDirName )
+    logfileLocation                 = 'bin/cron_out.log'
+    SampleSheetDirName              = 'SampleSheets'
+    SampleSheetDirPath              = os.path.join( DataRootDirPath, SampleSheetDirName )
     ######################################################
-    DemultiplexDirSuffix    = '_demultiplex'
-    DemultiplexLogDirName   = 'demultiplex_log'
-    multiqc_data            = 'multiqc_data'
-    fastqcLogFileName       = '03_fastqcLogFile.log'
-    multiqcLogFileName      = '04_multiqcLogFile.log'
-    SampleSheetFileName     = 'SampleSheet.csv'
-    RTACompleteFile         = 'RTAComplete.txt'
-    temp                    = 'temp'
-    ScriptLogFile           = 'script.log'
-    QCSuffix                = '_QC'
-    tarSuffix               = '.tar'
-    md5Suffix               = '.md5'
-    sha512Suffix            = '.sha512'
-    zipSuffix               = '.zip'
-    CompressedFastqSuffix   = '.fastq.gz' 
-    CSVSuffix               = '.csv'
-    htmlSuffix              = '.html'
+    DemultiplexDirSuffix            = '_demultiplex'
+    DemultiplexLogDirName           = 'demultiplex_log'
+    multiqc_data                    = 'multiqc_data'
+    fastqcLogFileName               = '03_fastqcLogFile.log'
+    multiqcLogFileName              = '04_multiqcLogFile.log'
+    SampleSheetFileName             = 'SampleSheet.csv'
+    RTACompleteFile                 = 'RTAComplete.txt'
+    temp                            = 'temp'
+    ScriptLogFile                   = '01_script.log'
+    QCSuffix                        = '_QC'
+    tarSuffix                       = '.tar'
+    md5Suffix                       = '.md5'
+    sha512Suffix                    = '.sha512'
+    zipSuffix                       = '.zip'
+    CompressedFastqSuffix           = '.fastq.gz' 
+    CSVSuffix                       = '.csv'
+    htmlSuffix                      = '.html'
     ######################################################
-    bcl2fastq_bin           = f"{DataRootDirPath}/bin/bcl2fastq"
-    fastqc_bin              = f"{DataRootDirPath}/bin/fastqc"
-    mutliqc_bin             = f"{DataRootDirPath}/bin/multiqc"
-    python3_bin             = f"/usr/bin/python3"
-    group                   = 'sambagroup'
-    ScriptFilePath          = __file__
+    bcl2fastq_bin                   = f"{DataRootDirPath}/bin/bcl2fastq"
+    fastqc_bin                      = f"{DataRootDirPath}/bin/fastqc"
+    mutliqc_bin                     = f"{DataRootDirPath}/bin/multiqc"
+    python3_bin                     = f"/usr/bin/python3"
+    group                           = 'sambagroup'
+    ScriptFilePath                  = __file__
     ######################################################
-    ForTransferRunIdDir     = ""
-    forTransferQCtarFile    = ""
+    ForTransferRunIdDir             = ""
+    forTransferQCtarFile            = ""
     ######################################################
-    TestProject             = 'FOO-blahblah-BAR'
-    Sample_Project          = 'Sample_Project'
-    Bcl2FastqLogFileName    = '02_demultiplex.log'
-    DemultiplexCompleteFile = 'DemultiplexComplete.txt'
-    md5File                 = 'md5sum.txt'
-    MiSeq                   = 'M06578'   # if we get more than one, turn this into an array
-    NextSeq                 = 'NB552450' # if we get more than one, turn this into an array
-    logfileLocation         = 'bin/cron_out.log'
-    DecodeScheme            = "utf-8"
-    footarfile              = f"foo{tarSuffix}"      # class variable shared by all instances
-    barzipfile              = f"zip{zipSuffix}"
-    TotalTasks              = 0  
+    TestProject                     = 'FOO-blahblah-BAR'
+    Sample_Project                  = 'Sample_Project'
+    Bcl2FastqLogFileName            = '02_demultiplex.log'
+    DemultiplexCompleteFile         = 'DemultiplexComplete.txt'
+    md5File                         = 'md5sum.txt'
+    MiSeq                           = 'M06578'   # if we get more than one, turn this into an array
+    NextSeq                         = 'NB552450' # if we get more than one, turn this into an array
+    logfileLocation                 = 'bin/cron_out.log'
+    DecodeScheme                    = "utf-8"
+    footarfile                      = f"foo{tarSuffix}"      # class variable shared by all instances
+    barzipfile                      = f"zip{zipSuffix}"
+    TotalTasks                      = 0  
     ######################################################
-    DemultiplexRunIdDir     = ""
-    DemultiplexLogDirPath   = ""
-    DemultiplexLogFilePath  = ""
-    DemuxQCDirectoryPath    = ""
-    DemuxQCDirectoryName    = ""
-    DemuxQCDirectoryPath    = ""
+    DemultiplexRunIdDir             = ""
+    DemultiplexLogDirPath           = ""
+    DemultiplexScriptLogFilePath    = ""
+    DemuxQCDirectoryPath            = ""
+    DemuxQCDirectoryName            = ""
+    DemuxQCDirectoryPath            = ""
     ######################################################
-    ForTransferRunIdDir     = ""
-    forTransferQCtarFile    = ""
+    ForTransferRunIdDir             = ""
+    forTransferQCtarFile            = ""
     ######################################################
-    multiQCLogFilePath      = ""
+    multiQCLogFilePath              = ""
     ######################################################
-    fastQCLogFilePath       = ""
+    fastQCLogFilePath               = ""
+    ######################################################
+    LoggingLevel                    = logging.DEBUG
     ######################################################
     with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize TotalTasks to it
         tree = ast.parse( f.read( ) )
@@ -1206,7 +1209,6 @@ def deliverFilesToNIRD(  ):
 
     print( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for archiving to NIRD finished\n")
 
-#
 
 
 
@@ -1219,6 +1221,7 @@ def detectNewRuns(  ):
     Detect if a new run has been uploaded to /data/rawdata
     """
 
+#########
 # TODO TODO TODO
 #
 #   new feature: print out all the new runs detected
@@ -1231,7 +1234,6 @@ def detectNewRuns(  ):
 
     print( f"==< {demux.n}/{demux.TotalTasks} tasks: Detecting if new runs exist finished\n")
 
-#
 
 
 
@@ -1246,27 +1248,34 @@ def main( RunID ):
     """
 
     # RunID
-    RunIDShort             = '_'.join(RunID.split('_')[0:2]) # this should be turned into a setter in the demux object
+    RunIDShort                          = '_'.join(RunID.split('_')[0:2]) # this should be turned into a setter in the demux object
  ######################################################
-    RawDataLocationDirRoot = os.path.join( demux.DataRootDirPath, demux.RawDataDirName )
-    SequenceRunOriginDir   = os.path.join( RawDataLocationDirRoot, RunID )
-    SampleSheetFilePath    = os.path.join( SequenceRunOriginDir, demux.SampleSheetFileName )
-    RTACompleteFilePath    = f"{SequenceRunOriginDir}/{demux.RTACompleteFile}"
+    RawDataLocationDirRoot              = os.path.join( demux.DataRootDirPath, demux.RawDataDirName )
+    SequenceRunOriginDir                = os.path.join( RawDataLocationDirRoot, RunID )
+    SampleSheetFilePath                 = os.path.join( SequenceRunOriginDir, demux.SampleSheetFileName )
+    RTACompleteFilePath                 = f"{SequenceRunOriginDir}/{demux.RTACompleteFile}"
 ######################################################
-    DemultiplexDirRoot     = os.path.join( demux.DataRootDirPath, demux.DemultiplexDirName )
-    demux.DemultiplexRunIdDir    = os.path.join( DemultiplexDirRoot, RunID + demux.DemultiplexDirSuffix ) 
-    demux.DemultiplexLogDirPath  = os.path.join( demux.DemultiplexRunIdDir, demux.DemultiplexLogDirName )
-    demux.DemultiplexLogFilePath = os.path.join( demux.DemultiplexLogDirPath, demux.ScriptLogFile )
-    DemultiplexQCDirPath   = f"{demux.DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"
-    DemultiplexProjSubDirs = [ ]
+    DemultiplexDirRoot                  = os.path.join( demux.DataRootDirPath, demux.DemultiplexDirName )
+    demux.DemultiplexRunIdDir           = os.path.join( DemultiplexDirRoot, RunID + demux.DemultiplexDirSuffix ) 
+    demux.DemultiplexLogDirPath         = os.path.join( demux.DemultiplexRunIdDir, demux.DemultiplexLogDirName )
+    demux.DemultiplexScriptLogFilePath  = os.path.join( demux.DemultiplexLogDirPath, demux.ScriptLogFile )
+    DemultiplexQCDirPath                = f"{demux.DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"
+    DemultiplexProjSubDirs              = [ ]
 ######################################################
-    ForTransferDirRoot     = os.path.join ( demux.DataRootDirPath, demux.ForTransferDirName )
-    ForTransferDir         = os.path.join ( ForTransferDirRoot, RunID )
-    demux.ForTransferRunIdDir    = os.path.join( demux.ForTransferDir, RunID )
-    demux.forTransferQCtarFile   = os.path.join( demux.ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
+    ForTransferDirRoot                  = os.path.join ( demux.DataRootDirPath, demux.ForTransferDirName )
+    ForTransferDir                      = os.path.join ( ForTransferDirRoot, RunID )
+    demux.ForTransferRunIdDir           = os.path.join( demux.ForTransferDir, RunID )
+    demux.forTransferQCtarFile          = os.path.join( demux.ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
+######################################################
+    ForTransferProjNames                = []
+######################################################
 
-    ForTransferProjNames   = []
-######################################################
+    # configure logging
+    # logging.basicConfig( filename = demux.DemultiplexScriptLogFilePath, encoding = demux.DecodeScheme, filemode='w', level = demux.LoggingLevel ) # encoding argument available only from python 3.9 and above
+    logging.basicConfig( filename = demux.DemultiplexScriptLogFilePath, filemode='w', level = demux.LoggingLevel ) # make sure the log file for the particular run, is innitiated anew every time
+    # TODO: we also need a way to write to a global file, for all runs, that is appended each time 
+
+
 
     project_list           = demux.getProjectName( SampleSheetFilePath )
     if demux.debug and len(project_list) == 1:
@@ -1295,7 +1304,7 @@ def main( RunID ):
         print( f"DemultiplexDirRoot:\t\t{DemultiplexDirRoot}" )
         print( f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}" )
         print( f"DemultiplexLogDirPath:\t\t{demux.DemultiplexLogDirPath}" )
-        print( f"DemultiplexLogFilePath:\t\t{demux.DemultiplexLogFilePath}" )
+        print( f"DemultiplexScriptLogFilePath:\t\t{demux.DemultiplexScriptLogFilePath}" )
         print( f"DemultiplexQCDirPath:\t\t{DemultiplexQCDirPath}" )
         for index, directory in enumerate( DemultiplexProjSubDirs):
             print( f"DemultiplexProjSubDirs[{index}]:\t{directory}")
