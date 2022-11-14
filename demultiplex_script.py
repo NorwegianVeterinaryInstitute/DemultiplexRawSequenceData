@@ -180,7 +180,10 @@ New Features Requests:
         RunIDDir/Logs/05_VIGASP.log
         /data/Logs/RunID.log ( copy of RunIDDir/Logs/00_script.log / symlink to RunID/Logs/00_script.log ? )
         /data/Logs/script.log ( copy of RunIDDir/Logs/00_script.log - gets rotated/overwritten with each run )
-        /data/Logs/current_run.log ( symlink to script.log )
+        /data/Logs/current_run_00.log
+            /data/Logs/current_run_01.log if _00 exists and so on
+            Only for current run(s), file(s) do not get saved
+            overwrite when starting a new run
         /data/Logs/script_cumulative.log ( cummulative - does not get rotated, append )
 
     Actions taken
@@ -194,6 +197,9 @@ New Features Requests:
         Email on completion of NIRD upload
         Email on completion of VIGASP upload
         Email on completion of LIMS upload
+        ######################################
+        If debug run, indicate so in email
+        ######################################
     
     if you run the script interactivelly:
         Color:
