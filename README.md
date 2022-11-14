@@ -24,6 +24,7 @@ Software requirements
           ├── SampleSheets                        # Copy of all SampleSheets, named as the {RunID}.csv
           ├── demultiplex                         # Demultiplex data goes here
           ├── for_transfer                        # The procesed data to be transfered goes here; Mounted on MiSeq as Y:\
+          ├── Logs                                # Keep the full logs for individual runs as RunID.log
 
 
 ## Procedure
