@@ -162,6 +162,63 @@ New Features Requests:
         copy new samplesheet in /data/SampleSheets with filename RunID-ISODATE.csv
     *****************
 
+######################################################################################################################################
+# THOUGHTS ABOUT LOGGING
+######################################################################################################################################
+    Logging should be done on every step
+    if you set demux.debug on the object, you will get debug information
+    Logging happens on stdout, not stderr
+    Errors are logged on stderr, only
+
+    Files created:
+        RunIDDir/Logs
+        RunIDDir/Logs/00_script.log
+        RunIDDir/Logs/01_blc2fastq.log
+        RunIDDir/Logs/02_FastQC.log
+        RunIDDir/Logs/03_MultiQC.log
+        RunIDDir/Logs/04_NIRD.log
+        RunIDDir/Logs/05_VIGASP.log
+        /data/Logs/RunID.log ( copy of RunIDDir/Logs/00_script.log / symlink to RunID/Logs/00_script.log ? )
+        /data/Logs/script.log ( copy of RunIDDir/Logs/00_script.log - gets rotated/overwritten with each run )
+        /data/Logs/current_run.log ( symlink to script.log )
+        /data/Logs/script_cumulative.log ( cummulative - does not get rotated, append )
+
+    Actions taken
+        Email on parsing configuration file
+        Email send on completion
+        Email sent on error
+            run did not complete (specific step)
+            disk full (no, belongs to nagios)
+        Email sent on run looping detected
+        Email sent on parsing error of SampleSheet.csv
+        Email on completion of NIRD upload
+        Email on completion of VIGASP upload
+        Email on completion of LIMS upload
+    
+    if you run the script interactivelly:
+        Color:
+            Console: console has color
+            Files:   files do not have color
+        Timestamps:
+            Console: console has "Time since started" and "time since started this step"
+                save to SQL database each time stamp?
+            Files:   files get regular current timestamp on each step
+    
+    if you run the script non-interactively
+        Color:
+            Console: no console
+            Files:   files do not have color
+        Timestamps:
+            Console: no console
+            Files:   files get regular current timestamp on each step
+            
+    End of logging:
+        Time:
+            how much time the whole procedure took
+            how much each step
+                save times to SQL database?
+        
+
 """
 
 
