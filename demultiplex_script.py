@@ -169,6 +169,10 @@ New Features Requests:
     if you set demux.debug on the object, you will get debug information
     Logging happens on stdout, not stderr
     Errors are logged on stderr, only
+    Log to syslog
+        stdout as   INFO
+        stderr as   WARNING
+        sys.exit as CRITICAL
 
     Files created:
         RunIDDir/Logs
