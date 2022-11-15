@@ -398,7 +398,7 @@ class demux:
         But do it quietly, no need for output other than an OK/FAIL
         """
 
-    def has_beenDemultiplexed( RunID )
+    def has_beenDemultiplexed( RunID ):
         """
         Check if run has been demultiplexed before
 
@@ -413,7 +413,7 @@ class demux:
 
 
 
-    def reDemultiplex( RunID )
+    def reDemultiplex( RunID ):
         """
         setup nessecary paths:
             RunID_demupltiplex-ISODATETIME
@@ -421,7 +421,7 @@ class demux:
         Demultiplex RunID again
         """
 
-    def checkSampleSheetForMistakes( RunID )
+    def checkSampleSheetForMistakes( RunID ):
         """
         Check SampleSheet.csv for common human mistakes
 
