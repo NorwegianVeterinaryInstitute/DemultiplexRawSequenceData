@@ -1379,12 +1379,6 @@ def main( RunID ):
     ForTransferProjNames                = []
 ######################################################
 
-    # configure logging
-    # logging.basicConfig( filename = demux.DemultiplexScriptLogFilePath, encoding = demux.DecodeScheme, filemode='w', level = demux.LoggingLevel ) # encoding argument available only from python 3.9 and above
-    logging.basicConfig( filename = demux.DemultiplexScriptLogFilePath, filemode='w', level = demux.LoggingLevel ) # make sure the log file for the particular run, is innitiated anew every time
-    # TODO: we also need a way to write to a global file, for all runs, that is appended each time 
-
-
 
     project_list           = demux.getProjectName( SampleSheetFilePath )
     if demux.debug and len(project_list) == 1:
@@ -1445,6 +1439,12 @@ def main( RunID ):
 
     #   create {DemultiplexDirRoot} directory structrure
     createDemultiplexDirectoryStructure( demux.DemultiplexRunIdDir, RunIDShort, project_list  )
+
+    # configure logging
+    # logging.basicConfig( filename = demux.DemultiplexScriptLogFilePath, encoding = demux.DecodeScheme, filemode='w', level = demux.LoggingLevel ) # encoding argument available only from python 3.9 and above
+    logging.basicConfig( filename = demux.DemultiplexScriptLogFilePath, filemode='w', level = demux.LoggingLevel ) # make sure the log file for the particular run, is innitiated anew every time
+    # TODO: we also need a way to write to a global file, for all runs, that is appended each time 
+
     #   copy SampleSheet.csv from {SampleSheetFilePath} to {demux.DemultiplexRunIdDir} . bcl2fastq uses the file for demultiplexing
     try:
         demux.n = demux.n + 1
