@@ -1,4 +1,4 @@
-#!/bin/env /bin/python3
+#!/bin/env /bin/python3.9
 
 import argparse
 import ast
@@ -430,8 +430,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
-        # result =  subprocess.run( argv, capture_output = True, cwd = SequenceRunOriginDir, check = True, encoding = demux.DecodeScheme )
-        result =  subprocess.run( argv, cwd = SequenceRunOriginDir, check = True, encoding = demux.DecodeScheme )
+        result =  subprocess.run( argv, capture_output = True, cwd = SequenceRunOriginDir, check = True, encoding = demux.DecodeScheme )
     except ChildProcessError as err: 
         text = [ "Caught exception!",
             f"Command: {err.cmd}", # interpolated strings
@@ -441,10 +440,11 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
         ]
         print( '\n'.join( text ) )
 
-    file = open( Bcl2FastqLogFile, "w" )
-    if len( result.stdout ) == 0:
-        print( f"result.stdout has zero lenth. exiting at {inspect.currentframe().f_code.co_name}" )
+    if not result.stderr:
+        print( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
         sys.exit( )
+
+    file = open( Bcl2FastqLogFile, "w" )
     file.write( result.stderr )
     file.close( )
 
@@ -1405,6 +1405,12 @@ def main( RunID ):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
+
+    if sys.hexversion < 50923248: # Require Python 3.9 or newer
+        sys.exit( "Python 3.9 or newer is required to run this program." )
+
+
+
     # FIXMEFIXME add named arguments
     RunID = sys.argv[1]
     RunID = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
