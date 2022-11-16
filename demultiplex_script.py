@@ -534,6 +534,9 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
         print( '\n'.join( text ) )
 
     file = open( Bcl2FastqLogFile, "w" )
+    if len( result.stdout ) == 0:
+        print( f"result.stdout has zero lenth. exiting at {inspect.currentframe().f_code.co_name}" )
+        sys.exit( )
     file.write( result.stderr )
     file.close( )
 
