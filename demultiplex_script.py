@@ -1449,6 +1449,8 @@ def main( RunID ):
     #   copy SampleSheet.csv from {SampleSheetFilePath} to {demux.DemultiplexRunIdDir} . bcl2fastq uses the file for demultiplexing
     try:
         demux.n = demux.n + 1
+        currentPermissions = stat.S_IMODE(os.lstat( SampleSheetFilePath ).st_mode )
+        os.chmod( SampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
         shutil.copy2( SampleSheetFilePath, demux.DemultiplexRunIdDir )
         print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: {demux.SampleSheetFileName} copied to {demux.DemultiplexRunIdDir}\n", color="green" ) )
     except Exception as err:
