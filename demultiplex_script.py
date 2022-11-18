@@ -1469,7 +1469,7 @@ def main( RunID ):
         shutil.copy2( SampleSheetFilePath, demux.DemultiplexRunIdDir )
         print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: {demux.SampleSheetFileName} copied to {demux.DemultiplexRunIdDir}\n", color="green" ) )
     except Exception as err:
-        print( err )
+        print( err )    # FIXME FIXME this needs more detail
         sys.exit( )
     try:
         # Request by Cathrine: Copy the SampleSheet file to /data/SampleSheet automatically
@@ -1478,7 +1478,7 @@ def main( RunID ):
         shutil.copy2( SampleSheetFilePath, SampleSheetArchiveFilePath )
         print( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {SampleSheetFilePath} to {SampleSheetArchiveFilePath} ==\n", color="green" ) )
     except Exception as err:
-        print( err )
+        print( err )    # FIXME FIXME this needs more detail
         sys.exit( )
 
     demultiplex( SequenceRunOriginDir, demux.DemultiplexRunIdDir )
