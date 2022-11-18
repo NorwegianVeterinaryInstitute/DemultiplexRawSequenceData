@@ -1301,8 +1301,11 @@ def main( RunID ):
         sys.exit( )
     project_list           = demux.getProjectName( SampleSheetFilePath )
 
+    if len( project_list ) == 0:
+        print( "List project_list contains no projects/zero length! Exiting.")
 
-    if demux.debug and len(project_list) == 1:
+
+    if demux.debug and len(project_list) == 1: 
         project_list.add( demux.TestProject ) # if debug, have at least two project names to ensure multiple paths are being created
     for project_name in project_list:         # build the full list of subdirectories to make under {demux.DemultiplexRunIdDir}
         DemultiplexProjSubDirs.append( f"{demux.DemultiplexRunIdDir}/{RunIDShort}.{project_name}" )
