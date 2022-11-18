@@ -393,7 +393,6 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
 # demultiplex
 ########################################################################
 
-# def demultiplex( SequenceRunOriginDir, DemultiplexDir, demultiplex_out_file):
 def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
     """
     Use Illumina's blc2fastq linux command-line tool to demultiplex each lane into an appropriate fastq file
