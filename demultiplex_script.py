@@ -1292,7 +1292,16 @@ def main( RunID ):
 ######################################################
 
 
+    if not os.path.exists( SampleSheetFilePath ):
+        print( f"{SampleSheetFilePath} does not exist! Demultiplexing cannot continue. Exiting." ) 
+        sys.exit( )
+
+    if not os.path.isfile( SampleSheetFilePath ):
+        print( f"{SampleSheetFilePath} is not a file! Exiting." )
+        sys.exit( )
     project_list           = demux.getProjectName( SampleSheetFilePath )
+
+
     if demux.debug and len(project_list) == 1:
         project_list.add( demux.TestProject ) # if debug, have at least two project names to ensure multiple paths are being created
     for project_name in project_list:         # build the full list of subdirectories to make under {demux.DemultiplexRunIdDir}
