@@ -1298,7 +1298,8 @@ def main( RunID ):
     if not os.path.isfile( SampleSheetFilePath ):
         print( f"{SampleSheetFilePath} is not a file! Exiting." )
         sys.exit( )
-    project_list           = demux.getProjectName( SampleSheetFilePath )
+
+    project_list           = demux.getProjectName( SampleSheetFilePath ) # get the list of projects in this current run
 
     if len( project_list ) == 0:
         print( "List project_list contains no projects/zero length! Exiting.")
