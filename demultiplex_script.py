@@ -1423,7 +1423,7 @@ def main( RunID ):
         print( f"DemultiplexDirRoot:\t\t{DemultiplexDirRoot}" )
         print( f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}" )
         print( f"DemultiplexLogDirPath:\t\t{demux.DemultiplexLogDirPath}" )
-        print( f"DemultiplexScriptLogFilePath:\t\t{demux.DemultiplexScriptLogFilePath}" )
+        print( f"DemultiplexScriptLogFilePath:\t{demux.DemultiplexScriptLogFilePath}" )
         print( f"DemultiplexQCDirPath:\t\t{DemultiplexQCDirPath}" )
         for index, directory in enumerate( DemultiplexProjSubDirs):
             print( f"DemultiplexProjSubDirs[{index}]:\t{directory}")
