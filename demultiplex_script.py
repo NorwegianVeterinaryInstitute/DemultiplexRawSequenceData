@@ -1303,6 +1303,7 @@ def main( RunID ):
 
     if len( project_list ) == 0:
         print( "List project_list contains no projects/zero length! Exiting.")
+        sys.exit( )
 
 
     if demux.debug and len(project_list) == 1: 
