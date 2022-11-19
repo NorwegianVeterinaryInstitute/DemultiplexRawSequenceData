@@ -279,7 +279,10 @@ class demux:
         # analysis_index = ''
         project_list   = []
 
-        for line in open( SampleSheetFilePath, 'r', encoding= demux.DecodeScheme ):
+        SampleSheetFileHandle  = open( SampleSheetFilePath, 'r', encoding= demux.DecodeScheme ):
+        SampleSheetContents    = SampleSheetFileHandle.read( )
+
+        for line in SampleSheetContents:
             line = line.rstrip()
             item = line.split(',')[project_index]
             if project_line_check == True and item not in project_list :
