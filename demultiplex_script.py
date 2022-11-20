@@ -194,7 +194,6 @@ class demux:
     md5File                         = 'md5sum.txt'
     MiSeq                           = 'M06578'   # if we get more than one, turn this into an array
     NextSeq                         = 'NB552450' # if we get more than one, turn this into an array
-    logfileLocation                 = 'bin/cron_out.log'
     DecodeScheme                    = "utf-8"
     footarfile                      = f"foo{tarSuffix}"      # class variable shared by all instances
     barzipfile                      = f"zip{zipSuffix}"
