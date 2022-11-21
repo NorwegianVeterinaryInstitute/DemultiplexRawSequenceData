@@ -146,7 +146,8 @@ class demux:
     """
 
     ######################################################
-    debug = True
+    debug     = True
+    verbosity = 1
     ######################################################
     DataRootDirPath                 = '/data'
     RawDataDirName                  = 'rawdata'
@@ -275,20 +276,45 @@ class demux:
 
         project_line_check = False
         project_index  = 0
-        # analysis_index = ''
         project_list   = []
+        SampleSheetContents = [ ]
 
-        SampleSheetFileHandle  = open( SampleSheetFilePath, 'r', encoding= demux.DecodeScheme ):
-        SampleSheetContents    = SampleSheetFileHandle.read( )
+        SampleSheetFileHandle = open( SampleSheetFilePath, 'r', encoding= demux.DecodeScheme )
+        SampleSheetContent    = SampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
+
+        if demux.debug and demux.verbosity == 2:
+            print(f"SampleSheetContents:\n{SampleSheetContent}") # print it
+
+        SampleSheetContents   = SampleSheetContent.split( '\n' )  # then split it in lines
+
 
         for line in SampleSheetContents:
-            line = line.rstrip()
-            item = line.split(',')[project_index]
+
+            if demux.debug and demux.verbosity == 2:
+                print( f"procesing line '{line}'")
+
+            if line != '': # line != '' is not the same as 'not line'
+                line = line.rstrip()
+                if demux.debug and demux.verbosity == 2:
+                    print( f"project_index: {project_index}" )
+                item = line.split(',')[project_index]
+            else:
+                break
+
             if project_line_check == True and item not in project_list :
+                if demux.debug and demux.verbosity == 2:
+                    print( f"item:\t\t\t\t\t\t{item}")
                 project_list.append( item )# + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
-            if demux.Sample_Project in line: # Sample_Project reflects the string it is assigned. Do not change.
+
+            elif demux.Sample_Project in line: # demux.Sample_Project is defined in class demux:
+
                 project_index      = line.split(',').index( demux.Sample_Project )
+                if demux.debug and demux.verbosity == 2:
+                    print( f"project_index:\t\t\t\t{project_index}")
+
                 project_line_check = True
+            else:
+                continue
 
         print( f"project_list: {project_list}\n" )
 
@@ -1301,15 +1327,16 @@ def main( RunID ):
         print( f"{SampleSheetFilePath} is not a file! Exiting." )
         sys.exit( )
 
+    if demux.debug and demux.verbosity == 2:
+        print( f"SampleSheetFilePath:\t\t      {SampleSheetFilePath}")   # spaces align 
     project_list           = demux.getProjectName( SampleSheetFilePath ) # get the list of projects in this current run
 
     if len( project_list ) == 0:
         print( "List project_list contains no projects/zero length! Exiting.")
         sys.exit( )
-
-
-    if demux.debug and len(project_list) == 1: 
+    elif demux.debug and len(project_list) == 1: 
         project_list.add( demux.TestProject ) # if debug, have at least two project names to ensure multiple paths are being created
+
     for project_name in project_list:         # build the full list of subdirectories to make under {demux.DemultiplexRunIdDir}
         DemultiplexProjSubDirs.append( f"{demux.DemultiplexRunIdDir}/{RunIDShort}.{project_name}" )
 
