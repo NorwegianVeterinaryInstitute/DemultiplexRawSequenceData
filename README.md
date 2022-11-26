@@ -87,3 +87,12 @@ https://github.com/brwnj/bcl2fastq/blob/master/data/SampleSheet.csv
 
 In this script, the essential part for NVI is that we are using Python's native slicing and indexing to grab the values of [Sample_Project] to use during demultiplexing.
 
+# Notifications
+
+WRITE MORE ABOUT SYSLOG & WORKPLACE NOTIFICATIONS 
+
+Should expand more on this about:
+
+- what notifications happen
+- where to
+- when
