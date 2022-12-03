@@ -157,7 +157,7 @@ class demux:
     ForTransferDirName              = 'for_transfer'
     ForTransferDir                  = os.path.join( DataRootDirPath, ForTransferDirName )
     logfileLocation                 = 'bin/cron_out.log'
-    SampleSheetDirName              = 'SampleSheets'
+    SampleSheetDirName              = 'samplesheets'
     SampleSheetDirPath              = os.path.join( DataRootDirPath, SampleSheetDirName )
     ######################################################
     DemultiplexDirSuffix            = '_demultiplex'
@@ -926,17 +926,17 @@ def changePermissions( path ):
                 print( f"{filepath} is not a file. Exiting.")
                 sys.exit( )
 
-            try:
-                # shutil.chown( filepath, user = demux.user, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup filepath
-                shutil.chown( filepath, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup filepath
-                                                              # chown user is not available for non-root users
-            except FileNotFoundError as err:                  # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                print( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
-                print( f"\terrno:\t{err.errno}"                            )
-                print( f"\tstrerror:\t{err.strerror}"                      )
-                print( f"\tfilename:\t{err.filename}"                      )
-                print( f"\tfilename2:\t{err.filename2}"                    )
-                sys.exit( )
+            # try:
+            #     # shutil.chown( filepath, user = demux.user, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup filepath
+            #     shutil.chown( filepath, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup filepath
+            #                                                   # chown user is not available for non-root users
+            # except FileNotFoundError as err:                  # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+            #     print( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
+            #     print( f"\terrno:\t{err.errno}"                            )
+            #     print( f"\tstrerror:\t{err.strerror}"                      )
+            #     print( f"\tfilename:\t{err.filename}"                      )
+            #     print( f"\tfilename2:\t{err.filename2}"                    )
+            #     sys.exit( )
 
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
@@ -965,16 +965,16 @@ def changePermissions( path ):
                 print( f"{dirpath} is not a directory. Exiting.")
                 sys.exit( )
 
-            try:
-                shutil.chown( dirpath, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup dirpath
-                                                              # chown user is not available for non-root users
-            except FileNotFoundError as err:                  # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                print( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
-                print( f"\terrno:\t{err.errno}"                            )
-                print( f"\tstrerror:\t{err.strerror}"                      )
-                print( f"\tfilename:\t{err.filename}"                      )
-                print( f"\tfilename2:\t{err.filename2}"                    )
-                sys.exit( )
+            # try:
+            #     shutil.chown( dirpath, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup dirpath
+            #                                                   # chown user is not available for non-root users
+            # except FileNotFoundError as err:                  # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+            #     print( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
+            #     print( f"\terrno:\t{err.errno}"                            )
+            #     print( f"\tstrerror:\t{err.strerror}"                      )
+            #     print( f"\tfilename:\t{err.filename}"                      )
+            #     print( f"\tfilename2:\t{err.filename2}"                    )
+            #     sys.exit( )
 
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
