@@ -1034,41 +1034,39 @@ def prepareDelivery( RunID ):
     counter = 0
 
     if demux.debug:
-        logging.info( f"Current working directory:\t{os.getcwd( )}")
-        logging.info( f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}" )
-        logging.info( f"ForTransferRunIdDir:\t\t{demux.ForTransferRunIdDir}" )
-        logging.info( f"forTransferQCtarFile:\t\t{demux.forTransferQCtarFile}" )
-
-    if demux.debug:
-        logging.info( f"Original working directory:\t{ os.getcwd( ) }" )
+        logging.debug( f"Current working directory:\t{os.getcwd( )}")
+        logging.debug( f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}" )
+        logging.debug( f"ForTransferRunIdDir:\t\t{demux.ForTransferRunIdDir}" )
+        logging.debug( f"forTransferQCtarFile:\t\t{demux.forTransferQCtarFile}" )
+        logging.debug( f"Original working directory:\t{ os.getcwd( ) }" )
 
     # Switch to the Demultiplex directory we will be archiving
     try:
         os.chdir( demux.DemultiplexRunIdDir )
     except FileNotFoundError:
-        logging.info( f"Directory: {demux.DemultiplexRunIdDir} does not exist. Exiting." )
+        logging.critical( f"Directory: {demux.DemultiplexRunIdDir} does not exist. Exiting." )
         sys.exit( )
     except NotADirectoryError:
-        logging.info( f"{demux.DemultiplexRunIdDir} is not a directory. Exiting." )
+        logging.critical( f"{demux.DemultiplexRunIdDir} is not a directory. Exiting." )
         sys.exit( )
     except Exception as e:
-        logging.info( f"You do not have permissions to change to {demux.DemultiplexRunIdDir}. Exiting." )
+        logging.critical( f"You do not have permissions to change to {demux.DemultiplexRunIdDir}. Exiting." )
         sys.exit( )
 
     if demux.debug:
-        logging.info( f"Changed into directory\t\t{demux.DemultiplexRunIdDir}")
+        logging.debug( f"Changed into directory\t\t{demux.DemultiplexRunIdDir}")
 
     # Make {demux.ForTransferRunIdDir} directory
     if not os.path.isdir( demux.ForTransferRunIdDir ):
         os.mkdir( demux.ForTransferRunIdDir )
     else:
-        logging.info( f"{demux.ForTransferRunIdDir} exists, this is not supposed to exist, please investigate and re-run the demux. Exiting." )
+        logging.critical( f"{demux.ForTransferRunIdDir} exists, this is not supposed to exist, please investigate and re-run the demux. Exiting." )
         sys.exit( )
 
 
     projectList = os.listdir( "." )                                         # get the contents of the demux.DemultiplexRunIdDir directory
     if demux.debug:
-        logging.info( f"{demux.DemultiplexRunIdDir} directory contents: {projectList}" ) 
+        logging.debug( f"{demux.DemultiplexRunIdDir} directory contents: {projectList}" ) 
 
     projectsToProcess = [ ]
     for project in projectList:                                             # itterate over said demux.DemultiplexRunIdDirs contents
@@ -1079,35 +1077,36 @@ def prepareDelivery( RunID ):
         if any( var in project for var in [ demux.NextSeq, demux.MiSeq ] ): # if there is a nextseq or misqeq tag, add the directory to the newProjectNameList
             projectsToProcess.append( project )
 
-    logging.info( f"projectsToProcess:\t\t{ projectsToProcess }" )
-    logging.info( f"len(projectsToProcess):\t\t{len( projectsToProcess  ) }" )
+    if demux.debug:
+        logging.debug( f"projectsToProcess:\t\t{ projectsToProcess }" )
+        logging.debug( f"len(projectsToProcess):\t\t{len( projectsToProcess  )}" )
 
     for project in projectsToProcess:
 
         if demux.TestProject in project:       # disregard the debug Test Project # This is extra, but just in case.
             if demux.debug:
-                logging.info( f"\"{demux.TestProject}\" test project found. Skipping." )
+                logging.debug( f"\"{demux.TestProject}\" test project found. Skipping." )
             continue
         if demux.temp in project:              # disregard the temp directory # This is extra, but just in case.
             if demux.debug:
-                logging.info( f"\"{demux.temp}\" directory found. Skipping." )
+                logging.debug( f"\"{demux.temp}\" directory found. Skipping." )
             continue
         if demux.DemultiplexLogDirPath in project: # disregard demultiplex_log
             if demux.debug:
-                logging.info( f"\"{demux.DemultiplexLogDirPath}\" directory found. Skipping." )
+                logging.debug( f"\"{demux.DemultiplexLogDirPath}\" directory found. Skipping." )
             continue
         if demux.QCSuffix in project:          # disregard '_QC'
             if demux.debug:
-                logging.info( f"\"{demux.QCSuffix}\" directory found. Skipping." )
+                logging.debug( f"\"{demux.QCSuffix}\" directory found. Skipping." )
             continue
 
 
         try:
             os.mkdir( f"{demux.ForTransferRunIdDir}/{project}" )  # we save each tar file into its own directory
         except FileExistsError as err:
-            logging.info( f"Error while trying to mkdir {demux.ForTransferRunIdDir}/{project}")
-            logging.info( f"Error message: {err}")
-            logging.info ( "Exiting.")
+            logging.critical( f"Error while trying to mkdir {demux.ForTransferRunIdDir}/{project}")
+            logging.critical( f"Error message: {err}")
+            logging.critical ( "Exiting.")
             sys.exit( )
 
         tarFile = os.path.join( demux.ForTransferRunIdDir, project )
@@ -1118,14 +1117,14 @@ def prepareDelivery( RunID ):
         if not os.path.isfile( tarFile ) :
             tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
         else:
-            logging.infof( f"{tarFile} exists. Please investigate or delete. Exiting." )
+            logging.critical( f"{tarFile} exists. Please investigate or delete. Exiting." )
             sys.exit( )
 
 
         # we iterrate through all the renamed Sample_Project directories and make a single tar file for each directory
         # build the filetree
         if demux.debug:
-            logging.info( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {os.getcwd( )}/{project} ======================", attrs=["bold"] ) )
+            logging.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {os.getcwd( )}/{project} ======================", attrs=["bold"] ) )
 
         counter = counter + 1
         logging.info( termcolor.colored( f"==> Archiving {project} ({counter} out of {len(projectsToProcess)} projects ) ==================", color="yellow", attrs=["bold"] ) )
@@ -1136,7 +1135,7 @@ def prepareDelivery( RunID ):
                 # of output that make users uncomfortable
                 filenameToTar = os.path.join( project, file )
                 tarFileHandle.add( name = filenameToTar, recursive = False )
-                logging.info( filenameToTar )
+                logging.info( f"filenameToTar:\t\t{filenameToTar}" )
 
         tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
         logging.info( termcolor.colored( f'==< Archived {project} ({counter} out of {len(projectsToProcess)} projects ) ==================\n', color="yellow", attrs=["bold"] ) )
@@ -1151,9 +1150,9 @@ def prepareDelivery( RunID ):
     QCDir           = f"{RunIDShort}{demux.QCSuffix}"
     multiQCDir      = demux.multiqc_data
     if demux.debug:
-        logging.info( f"RunIDShort (reconstructed, not global: {RunIDShort}" )
-        logging.info( f"QCDir:\t\t\t\t{QCDir}")
-        logging.info( f"multiQCDir:\t\t\t{multiQCDir}")
+        logging.debug( f"RunIDShort (reconstructed, not global: {RunIDShort}" )
+        logging.debug( f"QCDir:\t\t\t\t{QCDir}")
+        logging.debug( f"multiQCDir:\t\t\t{multiQCDir}")
     
 
     ################################################################################
@@ -1164,7 +1163,7 @@ def prepareDelivery( RunID ):
     if not os.path.isfile( demux.forTransferQCtarFile ):
         tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "w:" )
     else:
-        logging.infof( f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting." )
+        logging.critical( f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting." )
         sys.exit( )
     logging.info( termcolor.colored( f"==> Archiving {QCDir} projects ) ==================", color="yellow", attrs=["bold"] ) )
     for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.DemultiplexRunIdDir, QCDir ), followlinks = False ): 
@@ -1174,7 +1173,7 @@ def prepareDelivery( RunID ):
             # of output that make users uncomfortable
             filenameToTar = os.path.join( QCDir, file )
             tarQCFileHandle.add( name = filenameToTar, recursive = False )
-            logging.info( filenameToTar )
+            logging.info( f"filenameToTar:\t\t{filenameToTar}" )
 
     logging.info( termcolor.colored( f"==> Archived {QCDir} ==================", color="yellow", attrs=["bold"] ) )
 
@@ -1189,7 +1188,7 @@ def prepareDelivery( RunID ):
             # of output that make users uncomfortable
             filenameToTar = os.path.join( multiQCDir, file )
             tarQCFileHandle.add( name = filenameToTar, recursive = False )
-            logging.info( filenameToTar )
+            logging.info( f"filenameToTar:\t\t{filenameToTar}" )
 
     # both {RunIDShort}_QC and multidata_qc go in the same tar file
     tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
@@ -1220,10 +1219,10 @@ def scriptComplete( DemultiplexRunIdDir ):
         file = os.path.join( DemultiplexRunIdDir, demux.DemultiplexCompleteFile )
         pathlib.Path( file ).touch( mode=644, exist_ok=False)
     except Exception as e:
-        logging.info( f"{file} already exists. Please delete it before running {__file__}.\n")
+        logging.critical( f"{file} already exists. Please delete it before running {__file__}.\n")
         sys.exit( )
 
-    logging.info( f"DemultiplexCompleteFile {file} created.")
+    logging.debug( f"DemultiplexCompleteFile {file} created.")
     logging.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Finishing up script ==", color="red", attrs=["bold"] ) )
 
 
@@ -1237,7 +1236,7 @@ def deliverFilesToVIGASP(  ):
     Write the uploader file needed to upload the data to VIGASP and then
         upload the relevant files.
     """
-
+    demux.n = demux.n + 1
     logging.info( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for uploading to VIGASP started\n")
 
 
