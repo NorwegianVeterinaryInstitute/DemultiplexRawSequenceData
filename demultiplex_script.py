@@ -616,12 +616,18 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 DemultiplexRunIdDirNewNameList.append( newname ) # EXAMPLE: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH
                 os.rename( oldname, newname )
             except FileNotFoundError as err:
-                logging.info( f"Error during renaming {oldname}:")
-                logging.info( f"oldname: {oldname}\noldfileExists: {oldfileExists}" )
-                logging.info( f"newfile: {newname}\nnewfileExists: {newfileExists}" )
-                logging.info( "err.filename:  {err.filename}")
-                logging.info( "err.filename2: {err.filename2}")
-                logging.info( "Exiting!")
+                text = [    f"Error during renaming {oldname}:", 
+                            f"oldname: {oldname}",
+                            f"oldfileExists: {oldfileExists}",
+                            f"newfile: {newname}",
+                            f"newfileExists: {newfileExists}",
+                            f"err.filename:  {err.filename}",
+                            f"err.filename2: {err.filename2}",
+                            f"Exiting!"
+                        ]
+                text = '\n'.join( text )
+                logging.critical( print( f"{ text }" ) )
+                sys.exit( )
 
             if demux.debug:
                 logging.debug( termcolor.colored( f"Renaming {oldname} to {newname}", color="cyan", attrs=["reverse"] ) )
@@ -673,10 +679,11 @@ def FastQC( newFileList ):
                      f"Command: {err.cmd}", # interpolated strings
                      f"Return code: {err.returncode}"
                      f"Process output: {err.output}",
-                    f"Exiting."
+                     f"Exiting."
                 ]
             text = '\n'.join( text )
             logging.critical( print( f"{ text }" ) )
+            sys.exit( )
 
     # log FastQC output
     demux.FastQCLogFilePath   = os.path.join( demux.DemultiplexLogDirPath, demux.FastqcLogFileName )  #### FIXME FIXME FIXME ADJUST AND TAKE OUT
@@ -739,8 +746,8 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
                  f"\tstrerror:\t{err.strerror}",
                  f"\tfilename:\t{err.filename}",
                  f"\tfilename2:\t{err.filename2}",
-                f"Exiting."
-                 ]
+                 f"Exiting."
+               ]
         text = '\n'.join( text )
         logging.critical( print( f"{ text }" ) )
         sys.exit( )
@@ -782,6 +789,7 @@ def MultiQC( DemultiplexRunIdDir ):
                 ]
         text = '\n'.join( text )
         logging.critical( print( f"{ text }" ) )
+        sys.exit( )
 
     # log multiqc output
     demux.MutliQCLogFilePath  = os.path.join( demux.DemultiplexLogDirPath, demux.MultiqcLogFileName ) ############# FIXME FIXME FIXME FIXME take out
@@ -1090,10 +1098,16 @@ def prepareDelivery( RunID ):
     projectsToProcess = [ ]
     for project in projectList:                                             # itterate over said demux.DemultiplexRunIdDirs contents
         if any( var in project for var in [ demux.QCSuffix ] ):             # skip anything that includes '_QC'
+            if demux.debug:
+                logging.warning( f"{demux.QCSuffix} directory found in projects. Skipping." )
             continue
         if any( var in project for var in [ demux.TestProject ] ):          # skip the test project, 'FOO-blahblah-BAR'
+            if demux.debug:
+                logging.warning( f"{demux.TestProject} test project directory found in projects. Skipping." )
             continue
         if any( var in project for var in [ demux.NextSeq, demux.MiSeq ] ): # if there is a nextseq or misqeq tag, add the directory to the newProjectNameList
+            if demux.debug:
+                logging.warning( f"Now processing {project} project." )
             projectsToProcess.append( project )
 
     if demux.debug:
@@ -1104,19 +1118,19 @@ def prepareDelivery( RunID ):
 
         if demux.TestProject in project:       # disregard the debug Test Project # This is extra, but just in case.
             if demux.debug:
-                logging.debug( f"\"{demux.TestProject}\" test project found. Skipping." )
+                logging.warning( f"\"{demux.TestProject}\" test project found. Skipping." )
             continue
         if demux.temp in project:              # disregard the temp directory # This is extra, but just in case.
             if demux.debug:
-                logging.debug( f"\"{demux.temp}\" directory found. Skipping." )
+                logging.warning( f"{demux.temp} directory found. Skipping." )
             continue
         if demux.DemultiplexLogDirPath in project: # disregard demultiplex_log
             if demux.debug:
-                logging.debug( f"\"{demux.DemultiplexLogDirPath}\" directory found. Skipping." )
+                logging.warning( f"{demux.DemultiplexLogDirPath} directory found. Skipping." )
             continue
         if demux.QCSuffix in project:          # disregard '_QC'
             if demux.debug:
-                logging.debug( f"\"{demux.QCSuffix}\" directory found. Skipping." )
+                logging.warning( f"{demux.QCSuffix} directory found. Skipping." )
             continue
 
 
@@ -1131,7 +1145,7 @@ def prepareDelivery( RunID ):
         tarFile = os.path.join( demux.ForTransferRunIdDir, project )
         tarFile = os.path.join( tarFile, f"{project}{demux.tarSuffix}" )
         if demux.debug:
-            logging.info( f"tarFile:\t\t\t{tarFile}")
+            logging.debug( f"tarFile:\t\t\t{tarFile}")
 
         if not os.path.isfile( tarFile ) :
             tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
@@ -1349,13 +1363,14 @@ def main( RunID ):
 
 
 ######################################################
-    if not os.path.isdir( demux.LogDirPath ) :
+    if not os.path.isdir( demux.LogDirPath ) :  # make sure that the /data/log directory exists.
         sys.exit( f"{demux.LogDirPath} does not exist. Exiting." )
     # if os.path.isfile( demux.LogFilePath ) :
     #     print( f"{demux.LogFilePath} is already a file. Cannot continue, exiting.")
     #     sys.exit( )
 
     logging.basicConfig( level = demux.LoggingLevel, filename = demux.DemuxLogFilePath, filemode = 'a', format="%(asctime)s %(name)s %(levelname)s %(message)s" ) # asctime is in the format '2003-07-08 16:49:45,896' by default
+
 
 
     if not os.path.exists( SampleSheetFilePath ):
@@ -1447,7 +1462,7 @@ def main( RunID ):
         shutil.copy2( SampleSheetFilePath, demux.DemultiplexRunIdDir )
         logging.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: {demux.SampleSheetFileName} copied to {demux.DemultiplexRunIdDir}\n", color="green" ) )
     except Exception as err:
-        logging.info( err )    # FIXME FIXME this needs more detail
+        logging.critical( err )    # FIXME FIXME this needs more detail
         sys.exit( )
     try:
         # Request by Cathrine: Copy the SampleSheet file to /data/SampleSheet automatically
@@ -1456,7 +1471,7 @@ def main( RunID ):
         shutil.copy2( SampleSheetFilePath, SampleSheetArchiveFilePath )
         logging.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {SampleSheetFilePath} to {SampleSheetArchiveFilePath} ==\n", color="green" ) )
     except Exception as err:
-        logging.info( err )    # FIXME FIXME this needs more detail
+        logging.critical( err )    # FIXME FIXME this needs more detail
         sys.exit( )
 
     demultiplex( SequenceRunOriginDir, demux.DemultiplexRunIdDir )
