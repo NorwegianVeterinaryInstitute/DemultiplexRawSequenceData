@@ -895,7 +895,7 @@ def calcFileHash( DemultiplexRunIdDir ):
             md5sum         = hashlib.md5( filetobehashed ).hexdigest( )
             sha512sum      = hashlib.sha256( filetobehashed ).hexdigest( ) 
             if demux.debug:
-                logging.debug( f"md5sum: {md5sum} | sha512sum: {sha512sum}\t| filepath: {filepath}" )
+                logging.debug( f"md5sum: {md5sum} | sha512sum: {sha512sum} | filepath: {filepath}" )
 
 
             if not os.path.isfile( f"{filepath}{demux.md5Suffix}" ):
@@ -1350,11 +1350,12 @@ def main( RunID ):
 
 ######################################################
     if not os.path.isdir( demux.LogDirPath ) :
-        sys.exit( f"{demux.LogDirPath} does not exist. Existing" )
-    if os.path.isfile( demux.LogFilePath ) :
-        print( f"{demux.LogFilePath} ")
+        sys.exit( f"{demux.LogDirPath} does not exist. Exiting." )
+    # if os.path.isfile( demux.LogFilePath ) :
+    #     print( f"{demux.LogFilePath} is already a file. Cannot continue, exiting.")
+    #     sys.exit( )
 
-    logging.basicConfig( level = demux.LoggingLevel, filename = demux.DemuxLogFilePath, filemode = 'a' )
+    logging.basicConfig( level = demux.LoggingLevel, filename = demux.DemuxLogFilePath, filemode = 'a', format="%(asctime)s %(name)s %(levelname)s %(message)s" ) # asctime is in the format '2003-07-08 16:49:45,896' by default
 
 
     if not os.path.exists( SampleSheetFilePath ):
