@@ -171,8 +171,8 @@ class demux:
     zipSuffix                       = '.zip'
     CompressedFastqSuffix           = '.fastq.gz' 
     CSVSuffix                       = '.csv'
-    htmlSuffix                      = '.html'
-    logSuffix                       = '.log'
+    HTMLSuffix                      = '.html'
+    LogSuffix                       = '.log'
     ######################################################
     bcl2fastq_bin                   = f"{DataRootDirPath}/bin/bcl2fastq"
     fastqc_bin                      = f"{DataRootDirPath}/bin/fastqc"
@@ -205,7 +205,7 @@ class demux:
     ForTransferRunIdDir             = ""
     forTransferQCtarFile            = ""
     ######################################################
-    LogDir                          = 'log'
+    LogDirName                      = 'log'
     DemuxGlobalLogFile              = 'demultiplex.log'
     DemultiplexLogDirName           = 'demultiplex_log'
     ScriptRunLogFileName            = '00_script.log'
@@ -214,6 +214,8 @@ class demux:
     MultiqcLogFileName              = '03_multiqcLogFile.log'
     LoggingLevel                    = logging.DEBUG
     ######################################################
+    LogDirPath                      = ""
+    LogFilePath                     = ""
     ScriptRunLogFile                = ""
     DemuxBcl2FastqLogFilePath       = ""
     MultiQCLogFilePath              = ""
@@ -667,7 +669,7 @@ def FastQC( newFileList ):
             ]
 
     # log FastQC output
-    demux.FastQCLogFilePath   = os.path.join( demux.DemultiplexLogDirPath, demux.fastqcLogFileName )  #### FIXME FIXME FIXME ADJUST AND TAKE OUT
+    demux.FastQCLogFilePath   = os.path.join( demux.DemultiplexLogDirPath, demux.FastqcLogFileName )  #### FIXME FIXME FIXME ADJUST AND TAKE OUT
     fastQCLogFileHandle = open( demux.FastQCLogFilePath, "x" ) # fail if file exists
     if demux.debug:
         logging.info( f"FastQCLogFilePath:\t\t\t\t{demux.FastQCLogFilePath}")
@@ -765,10 +767,10 @@ def MultiQC( DemultiplexRunIdDir ):
         ]
 
     # log multiqc output
-    demux.MutliQCLogFilePath   = os.path.join( demux.DemultiplexLogDirPath, demux.MultiqcLogFileName ) ############# FIXME FIXME FIXME FIXME take out
-    multiQCLogFileHandle = open( demux.MutliQCLogFilePath, "x" ) # fail if file exists
+    demux.MutliQCLogFilePath  = os.path.join( demux.DemultiplexLogDirPath, demux.MultiqcLogFileName ) ############# FIXME FIXME FIXME FIXME take out
+    multiQCLogFileHandle      = open( demux.MutliQCLogFilePath, "x" ) # fail if file exists
     if demux.debug:
-        logging.info( f"mutliQCLogFilePath:\t\t\t\t{demux.mutliQCLogFilePath}")
+        logging.debug( f"MutliQCLogFilePath:\t\t\t\t{demux.MutliQCLogFilePath}")
     multiQCLogFileHandle.write( result.stderr ) # The MultiQC people are special: They write output to stderr
     multiQCLogFileHandle.close( )
 
@@ -847,14 +849,14 @@ def calcFileHash( DemultiplexRunIdDir ):
     logging.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==", color="green", attrs=["bold"] ) )
 
     if demux.debug:
-        logging.info( f"for debug puproses, creating empty files {demux.DemultiplexRunIdDir}/foo.tar and {demux.DemultiplexRunIdDir}/bar.zip\n" )
+        logging.debug( f"for debug puproses, creating empty files {demux.DemultiplexRunIdDir}/foo.tar and {demux.DemultiplexRunIdDir}/bar.zip\n" )
         pathlib.Path( f"{demux.DemultiplexRunIdDir}/{demux.footarfile}" ).touch( )
         pathlib.Path( f"{demux.DemultiplexRunIdDir}/{demux.barzipfile}" ).touch( )
 
 
     # build the filetree
     if demux.debug:
-        logging.info( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
+        logging.debug( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
     for directoryRoot, dirnames, filenames, in os.walk( DemultiplexRunIdDir, followlinks = False ):
 
         for file in filenames:
@@ -864,7 +866,7 @@ def calcFileHash( DemultiplexRunIdDir ):
             filepath = os.path.join( directoryRoot, file )
 
             if not os.path.isfile( filepath ):
-                logging.info( f"{filepath} is not a file. Exiting." )
+                logging.critical( f"{filepath} is not a file. Exiting." )
                 sys.exit( )
 
             if os.path.getsize( filepath ) == 0 : # make sure it's not a zero length file 
@@ -915,7 +917,7 @@ def changePermissions( path ):
     logging.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Changing Permissions started ==", color="green", attrs=["bold"] ) )
 
     if demux.debug:
-        logging.info( termcolor.colored( f"= walk the file tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
+        logging.debug( termcolor.colored( f"= walk the file tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
 
     for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
     
@@ -923,10 +925,10 @@ def changePermissions( path ):
         for file in filenames:
             filepath = os.path.join( directoryRoot, file )
             if demux.debug:
-                logging.info( filepath )
+                logging.debug( filepath )
 
             if not os.path.isfile( filepath ):
-                logging.info( f"{filepath} is not a file. Exiting.")
+                logging.critical( f"{filepath} is not a file. Exiting.")
                 sys.exit( )
 
             # try:
@@ -945,27 +947,27 @@ def changePermissions( path ):
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
                 os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
             except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                logging.info( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
-                logging.info( f"\terrno:\t{err.errno}"                            )
-                logging.info( f"\tstrerror:\t{err.strerror}"                      )
-                logging.info( f"\tfilename:\t{err.filename}"                      )
-                logging.info( f"\tfilename2:\t{err.filename2}"                    )
+                logging.critical( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
+                logging.critical( f"\terrno:\t{err.errno}"                            )
+                logging.critical( f"\tstrerror:\t{err.strerror}"                      )
+                logging.critical( f"\tfilename:\t{err.filename}"                      )
+                logging.critical( f"\tfilename2:\t{err.filename2}"                    )
                 sys.exit( )
 
 
     # change ownership and access mode of directories
     if demux.debug:
-        logging.info( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
-    for directoryRoot, dirnames, file`names, in os.walk( path, followlinks = False ):
+        logging.debug( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
+    for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
 
         for name in dirnames:
             dirpath = os.path.join( directoryRoot, name )
 
             if demux.debug:
-                logging.info( dirpath )
+                logging.debug( dirpath )
 
             if not os.path.isdir( dirpath ):
-                logging.info( f"{dirpath} is not a directory. Exiting.")
+                logging.critical( f"{dirpath} is not a directory. Exiting.")
                 sys.exit( )
 
             # try:
@@ -983,11 +985,11 @@ def changePermissions( path ):
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
                 os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
             except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                logging.info( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
-                logging.info( f"\terrno:\t{err.errno}"                            )
-                logging.info( f"\tstrerror:\t{err.strerror}"                      )
-                logging.info( f"\tfilename:\t{err.filename}"                      )
-                logging.info( f"\tfilename2:\t{err.filename2}"                    )
+                logging.critical( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
+                logging.critical( f"\terrno:\t{err.errno}"                            )
+                logging.critical( f"\tstrerror:\t{err.strerror}"                      )
+                logging.critical( f"\tfilename:\t{err.filename}"                      )
+                logging.critical( f"\tfilename2:\t{err.filename2}"                    )
                 sys.exit( )
 
     logging.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Changing Permissions finished ==\n", color="red", attrs=["bold"] ) )
@@ -1319,8 +1321,8 @@ def main( RunID ):
 ######################################################
 
     # set up
-    DemuxLogDir                        = os.path.join( DataRootDirPath, LogDir )
-    demux.DemuxLogFilePath             = os.path.join( DemuxLogDir, RunID + demux.LogSuffix )
+    demux.LogDirPath                   = os.path.join( demux.DataRootDirPath, demux.LogDirName )
+    demux.DemuxLogFilePath             = os.path.join( demux.LogDirPath, RunID + demux.LogSuffix )
 
     demux.DemultiplexLogDirPath        = os.path.join( demux.DemultiplexRunIdDir, demux.DemultiplexLogDirName )
     demux.DemultiplexScriptLogFilePath = os.path.join( demux.DemultiplexLogDirPath, demux.ScriptRunLogFileName )
@@ -1330,10 +1332,12 @@ def main( RunID ):
 
 
 ######################################################
+    if not os.path.isdir( demux.LogDirPath ) :
+        sys.exit( f"{demux.LogDirPath} does not exist. Existing" )
+    if os.path.isfile( demux.LogFilePath ) :
+        print( f"{demux.LogFilePath} ")
+
     logging.basicConfig( level = demux.LoggingLevel, filename = demux.DemuxLogFilePath, filemode = 'a' )
-
-
-
 
 
     if not os.path.exists( SampleSheetFilePath ):
