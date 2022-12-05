@@ -288,7 +288,7 @@ class demux:
         SampleSheetContent    = SampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
 
         if demux.debug and demux.verbosity == 2:
-            logging.info(f"SampleSheetContents:\n{SampleSheetContent}") # logging.info it
+            logging.debug(f"SampleSheetContents:\n{SampleSheetContent}") # logging.info it
 
         SampleSheetContents   = SampleSheetContent.split( '\n' )  # then split it in lines
 
@@ -296,26 +296,26 @@ class demux:
         for line in SampleSheetContents:
 
             if demux.debug and demux.verbosity == 2:
-                logging.info( f"procesing line '{line}'")
+                logging.debug( f"procesing line '{line}'")
 
             if line != '': # line != '' is not the same as 'not line'
                 line = line.rstrip()
                 if demux.debug and demux.verbosity == 2:
-                    logging.info( f"project_index: {project_index}" )
+                    logging.debug( f"project_index: {project_index}" )
                 item = line.split(',')[project_index]
             else:
                 break
 
             if project_line_check == True and item not in project_list :
                 if demux.debug and demux.verbosity == 2:
-                    logging.info( f"item:\t\t\t\t\t\t{item}")
+                    logging.debug( f"item:\t\t\t\t\t\t{item}")
                 project_list.append( item )# + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
 
             elif demux.Sample_Project in line: # demux.Sample_Project is defined in class demux:
 
                 project_index      = line.split(',').index( demux.Sample_Project )
                 if demux.debug and demux.verbosity == 2:
-                    logging.info( f"project_index:\t\t\t\t{project_index}")
+                    logging.debug( f"project_index:\t\t\t\t{project_index}")
 
                 project_line_check = True
             else:
@@ -410,9 +410,9 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
     demux.DemuxQCDirectoryPath  = os.path.join( DemultiplexRunIdDir, demux.DemuxQCDirectoryName  )
 
     if demux.debug:
-            logging.info( f"DemultiplexRunIdDir\t\t\t\t{demux.DemultiplexRunIdDir}" )
-            logging.info( f"DemultiplexRunIdDir/DemultiplexLogDir:\t\t{demux.DemultiplexLogDirPath}" )
-            logging.info( f"DemultiplexRunIdDir/DemuxQCDirectory:\t\t{demux.DemuxQCDirectoryPath}" )
+            logging.debug( f"DemultiplexRunIdDir\t\t\t\t{demux.DemultiplexRunIdDir}" )
+            logging.debug( f"DemultiplexRunIdDir/DemultiplexLogDir:\t\t{demux.DemultiplexLogDirPath}" )
+            logging.debug( f"DemultiplexRunIdDir/DemuxQCDirectory:\t\t{demux.DemuxQCDirectoryPath}" )
 
     os.mkdir( demux.DemultiplexRunIdDir )   # root directory for run
     os.mkdir( demux.DemultiplexLogDirPath ) # log directory for run
@@ -458,22 +458,25 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
     ]
     Bcl2FastqLogFile     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
     if demux.debug:
-        logging.info( f"Command to execute:\t\t\t\t" + " ".join( argv ) )
+        logging.debug( f"Command to execute:\t\t\t\t" + " ".join( argv ) )
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
         result =  subprocess.run( argv, capture_output = True, cwd = SequenceRunOriginDir, check = True, encoding = demux.DecodeScheme )
     except ChildProcessError as err: 
-        text = [ "Caught exception!",
-            f"Command: {err.cmd}", # interpolated strings
-            f"Return code: {err.returncode}"
-            f"Process output: {err.stdout}",
-            f"Process error:  {err.stderr}"
-        ]
-        logging.info( '\n'.join( text ) )
+        text = [    f"Caught exception!",
+                    f"Command: {err.cmd}", # interpolated strings
+                    f"Return code: {err.returncode}"
+                    f"Process output: {err.stdout}",
+                    f"Process error:  {err.stderr}",
+                    f"Exiting."
+                 ]
+        text = '\n'.join( text )
+        logging.critical( print( f"{ text }" ) )
+        sys.exit( )
 
     if not result.stderr:
-        logging.info( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
+        logging.critical( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
         sys.exit( )
 
     file = open( Bcl2FastqLogFile, "w" )
@@ -482,11 +485,11 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
 
     if demux.debug:
         if not os.path.isfile( Bcl2FastqLogFile ):
-            logging.info( f"{Bcl2FastqLogFile} did not get written to disk. Exiting.")
+            logging.debug( f"{Bcl2FastqLogFile} did not get written to disk. Exiting.")
             sys.exit( )
         else:
             filesize = os.path.getsize( Bcl2FastqLogFile )
-            logging.info( f"Bcl2FastqLogFile:\t\t\t\t{Bcl2FastqLogFile} is {filesize} bytes.\n")
+            logging.debug( f"Bcl2FastqLogFile:\t\t\t\t{Bcl2FastqLogFile} is {filesize} bytes.\n")
 
     logging.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Demultiplexing finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -524,36 +527,36 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
     newProjectFileList = [ ]
 
     if demux.debug:
-        logging.info( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}")
-        logging.info( f"RunIDShort:\t\t\t\t\t{RunIDShort}")
+        logging.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}")
+        logging.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}")
         # for index, item in enumerate( project_list ):
-        logging.info( f"project_list:\t\t\t\t\t{project_list}")
+        logging.debug( f"project_list:\t\t\t\t\t{project_list}")
 
     for project in project_list: # rename files in each project directory
 
         if project == demux.TestProject:
             if demux.debug:
-                logging.info( f"Test project '{demux.TestProject}' detected. Skipping." )
+                logging.debug( f"Test project '{demux.TestProject}' detected. Skipping." )
                 continue
 
         CompressedFastQfilesDir = f"{demux.DemultiplexRunIdDir}/{project}"
         if demux.debug:
-            logging.info( f"CompressedFastQfilesDir:\t\t\t{CompressedFastQfilesDir}")
+            logging.debug( f"CompressedFastQfilesDir:\t\t\t{CompressedFastQfilesDir}")
 
         filesToSearchFor     = f'{CompressedFastQfilesDir}/*{demux.CompressedFastqSuffix}'
         CompressedFastQfiles = glob.glob( filesToSearchFor ) # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
 
         if demux.debug:
             if len( f"fastq files for {project}:" ) > 30:
-                logging.info( f"fastq files for {project}:\t\t{filesToSearchFor}" )
+                logging.debug( f"fastq files for {project}:\t\t{filesToSearchFor}" )
             else:
-                logging.info( f"fastq files for {project}:\t\t\t{filesToSearchFor}" )
+                logging.debug( f"fastq files for {project}:\t\t\t{filesToSearchFor}" )
 
             for index, item in enumerate( CompressedFastQfiles ):
-                logging.info( f"CompressedFastQfiles[{index}]:\t\t\t{item}" )
+                logging.debug( f"CompressedFastQfiles[{index}]:\t\t\t{item}" )
 
         if not CompressedFastQfiles: # if array is empty
-            logging.info( f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}(). Exiting. ")
+            logging.critical( f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}(). Exiting. ")
             sys.exit( )
 
         for file in CompressedFastQfiles:
@@ -561,16 +564,16 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             # get the base filename. We picked up sample*.{CompressedFastqSuffix} and we have to rename it to {RunIDShort}sample*.{CompressedFastqSuffix}
             baseFileName = os.path.basename( file )
             if demux.debug:
-                logging.info( "-----------------")
-                logging.info( f"baseFilename:\t\t\t\t\t{baseFileName}")
+                logging.debug( "-----------------")
+                logging.debug( f"baseFilename:\t\t\t\t\t{baseFileName}")
 
             oldname = f"{file}"
             newname = f"{demux.DemultiplexRunIdDir}/{project}/{RunIDShort}.{baseFileName}"
             newfoo  = f"{demux.DemultiplexRunIdDir}/{RunIDShort}.{project}/{RunIDShort}.{baseFileName}" # saving this var to pass locations of new directories
 
             if demux.debug:
-                logging.info( f"file:\t\t\t\t\t\t{file}")
-                logging.info( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}" )
+                logging.debug( f"file:\t\t\t\t\t\t{file}")
+                logging.debug( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}" )
             
             # make sure oldname files exist
             # make sure newname files do not exist
@@ -584,12 +587,16 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 try: 
                     os.rename( oldname, newname )
                 except FileNotFoundError as err:
-                    logging.info( f"Error during renaming {oldname}:")
-                    logging.info( f"oldname: {oldname}\noldfileExists: {oldfileExists}" )
-                    logging.info( f"newname: {newname}\nnewfileExists: {newfileExists}" )
-                    logging.info( "err.filename:  {err.filename}" )
-                    logging.info( "err.filename2: {err.filename2}" )
-                    logging.info( "Exiting!" )
+                    text = [    f"Error during renaming {oldname}:",
+                                f"oldname: {oldname}\noldfileExists: {oldfileExists}",
+                                f"newname: {newname}\nnewfileExists: {newfileExists}",
+                                f"err.filename:  {err.filename}",
+                                f"err.filename2: {err.filename2}",
+                                f"Exiting!"
+                         ]
+                    text = '\n'.join( text )
+                    logging.critical( print( f"{ text }" ) )
+                    sys.exit( )
 
     logging.info( "-----------------")
 
@@ -617,16 +624,16 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 logging.info( "Exiting!")
 
             if demux.debug:
-                logging.info( termcolor.colored( f"Renaming {oldname} to {newname}", color="cyan", attrs=["reverse"] ) )
+                logging.debug( termcolor.colored( f"Renaming {oldname} to {newname}", color="cyan", attrs=["reverse"] ) )
                 for index, item in enumerate( newProjectFileList ):
                     if index < 10:
-                        logging.info( f"newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
+                        logging.debug( f"newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
                     elif 100 < index  and index >= 10:
-                        logging.info( f"newProjectFileList[{index}]:\t\t\t{item}")
+                        logging.debug( f"newProjectFileList[{index}]:\t\t\t{item}")
                     elif 1000 < index and index >= 100:
-                        logging.info( f"newProjectFileList[{index}]:\t\t{item}")
+                        logging.debug( f"newProjectFileList[{index}]:\t\t{item}")
                     else:
-                        logging.info( f"newProjectFileList[{index}]:\t{item}")       # if we got more than 1000 files, well, frak me...  ## NOTE THIS IS AN INTERESTING STATISTIC: HOW MANY FILES PRODUCED (MEAN, AVERAGE) FOR EACH RUN 
+                        logging.debug( f"newProjectFileList[{index}]:\t{item}")       # if we got more than 1000 files, well, frak me...  ## NOTE THIS IS AN INTERESTING STATISTIC: HOW MANY FILES PRODUCED (MEAN, AVERAGE) FOR EACH RUN 
 
                 for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
                     logging.info( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}")
@@ -653,10 +660,10 @@ def FastQC( newFileList ):
     demultiplexRunIdDir = os.path.dirname( os.path.dirname( newFileList[0] ) )
 
     if demux.debug:
-        logging.info( f"argv:\t\t\t\t\t\t{argv}")
+        logging.debug( f"argv:\t\t\t\t\t\t{argv}")
         arguments = " ".join( argv[1:] )
-        logging.info( f"Command to execute:\t\t\t\t{command} {arguments}") # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
-        logging.info( f"demultiplexRunIdDir:\t\t\t\t{demultiplexRunIdDir}")
+        logging.debug( f"Command to execute:\t\t\t\t{command} {arguments}") # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
+        logging.debug( f"demultiplexRunIdDir:\t\t\t\t{demultiplexRunIdDir}")
 
     try:
         # EXAMPLE: /usr/local/bin/fastqc -t 4 {demux.DemultiplexRunIdDir}/{project}/*fastq.gz > DemultiplexRunIdDir/demultiplex_log/04_fastqc.log
@@ -666,13 +673,16 @@ def FastQC( newFileList ):
                      f"Command: {err.cmd}", # interpolated strings
                      f"Return code: {err.returncode}"
                      f"Process output: {err.output}",
-            ]
+                    f"Exiting."
+                ]
+            text = '\n'.join( text )
+            logging.critical( print( f"{ text }" ) )
 
     # log FastQC output
     demux.FastQCLogFilePath   = os.path.join( demux.DemultiplexLogDirPath, demux.FastqcLogFileName )  #### FIXME FIXME FIXME ADJUST AND TAKE OUT
     fastQCLogFileHandle = open( demux.FastQCLogFilePath, "x" ) # fail if file exists
     if demux.debug:
-        logging.info( f"FastQCLogFilePath:\t\t\t\t{demux.FastQCLogFilePath}")
+        logging.debug( f"FastQCLogFilePath:\t\t\t\t{demux.FastQCLogFilePath}")
     fastQCLogFileHandle.write( result.stdout ) 
     fastQCLogFileHandle.close( )
 
@@ -693,29 +703,29 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
     for project in projectNewNameList:
         if f"{RunIDShort}.{demux.TestProject}" == project:
             if demux.debug:
-                logging.info( f"Test project '{RunIDShort}.{demux.TestProject}' detected. Skipping.")
+                logging.debug( f"Test project '{RunIDShort}.{demux.TestProject}' detected. Skipping.")
             continue
         zipFiles  = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*zip"  ) # source zip files
         HTLMfiles = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*html" ) # source html files
         if demux.debug:
-            logging.info( f"DemultiplexRunIdDir/project/*zip:\t\t{demux.DemultiplexRunIdDir}/{project}/*zip"  )
-            logging.info( f"DemultiplexRunIdDir/project/*html:\t\t{demux.DemultiplexRunIdDir}/{project}/*html"  )
+            logging.debug( f"DemultiplexRunIdDir/project/*zip:\t\t{demux.DemultiplexRunIdDir}/{project}/*zip"  )
+            logging.debug( f"DemultiplexRunIdDir/project/*html:\t\t{demux.DemultiplexRunIdDir}/{project}/*html"  )
 
     sourcefiles = [ *zipFiles, *HTLMfiles ]
     destination = f"{demux.DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"  # destination folder
     textsource  = " ".join(sourcefiles)
 
     if demux.debug:
-        logging.info( f"RunIDShort:\t\t\t\t\t{RunIDShort}"                 )
-        logging.info( f"projectNewNameList:\t\t\t\t{projectNewNameList}"   )
-        logging.info( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
-        logging.info( f"zipFiles:\t\t\t\t\t{zipFiles}"                     )
-        logging.info( f"HTLMfiles:\t\t\t\t\t{HTLMfiles}"                   )
-        logging.info( f"sourcefiles:\t\t\t\t\t{sourcefiles}"               ) # textual representation of the source files.
-        logging.info( f"Command to execute:\t\t\t\t/usr/bin/cp {textsource} {destination}" )
+        logging.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}"                 )
+        logging.debug( f"projectNewNameList:\t\t\t\t{projectNewNameList}"   )
+        logging.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
+        logging.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                     )
+        logging.debug( f"HTLMfiles:\t\t\t\t\t{HTLMfiles}"                   )
+        logging.debug( f"sourcefiles:\t\t\t\t\t{sourcefiles}"               ) # textual representation of the source files.
+        logging.debug( f"Command to execute:\t\t\t\t/usr/bin/cp {textsource} {destination}" )
 
     if not os.path.isdir( destination ) :
-        logging.info( f"Directory {destination} does not exist. Please check the logs, delete {demux.DemultiplexRunIdDir} and try again." )
+        logging.critical( f"Directory {destination} does not exist. Please check the logs, delete {demux.DemultiplexRunIdDir} and try again." )
         sys.exit( )
 
 
@@ -724,11 +734,15 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
         for source in sourcefiles:
             shutil.copy2( source, destination )    # destination has to be a directory
     except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-        logging.info( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
-        logging.info( f"\terrno:\t{err.errno}"                            )
-        logging.info( f"\tstrerror:\t{err.strerror}"                      )
-        logging.info( f"\tfilename:\t{err.filename}"                      )
-        logging.info( f"\tfilename2:\t{err.filename2}"                    )
+        text = [ f"\tFileNotFoundError in {inspect.stack()[0][3]}()" ,
+                 f"\terrno:\t{err.errno}",
+                 f"\tstrerror:\t{err.strerror}",
+                 f"\tfilename:\t{err.filename}",
+                 f"\tfilename2:\t{err.filename2}",
+                f"Exiting."
+                 ]
+        text = '\n'.join( text )
+        logging.critical( print( f"{ text }" ) )
         sys.exit( )
 
     logging.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC finished ==\n", color="red", attrs=["bold"] ) )
@@ -745,26 +759,29 @@ def MultiQC( DemultiplexRunIdDir ):
     logging.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: MultiQC started ==", color="green", attrs=["bold"] ) )
 
     if demux.debug:
-        logging.info( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
+        logging.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
 
     command = demux.mutliqc_bin
     argv    = [ command, DemultiplexRunIdDir,
                '-o', DemultiplexRunIdDir 
               ]
-    args    = " ".join(argv[1:]) # ignore the command part so we can logging.info this string below, fresh all the time, in case we change tool command name
+    args    = " ".join(argv[1:]) # ignore the command part so we can logging.debug this string below, fresh all the time, in case we change tool command name
 
     if demux.debug:
-        logging.info( f"Command to execute:\t\t\t\t{command} {args}" )
+        logging.debug( f"Command to execute:\t\t\t\t{command} {args}" )
 
     try:
         # EXAMPLE: /usr/local/bin/multiqc {demux.DemultiplexRunIdDir} -o {demux.DemultiplexRunIdDir} 2> {demux.DemultiplexRunIdDir}/demultiplex_log/05_multiqc.log
         result = subprocess.run( argv, capture_output = True, cwd = DemultiplexRunIdDir, check = True, encoding = demux.DecodeScheme )
     except ChildProcessError as err: 
-        text = [ "Caught exception!",
-            f"Command:\t{err.cmd}", # interpolated strings
-            f"Return code:\t{err.returncode}"
-            f"Process output: {err.output}",
-        ]
+        text = [    f"Caught exception!",
+                    f"Command:\t{err.cmd}", # interpolated strings
+                    f"Return code:\t{err.returncode}"
+                    f"Process output: {err.output}",
+                    f"Exiting."
+                ]
+        text = '\n'.join( text )
+        logging.critical( print( f"{ text }" ) )
 
     # log multiqc output
     demux.MutliQCLogFilePath  = os.path.join( demux.DemultiplexLogDirPath, demux.MultiqcLogFileName ) ############# FIXME FIXME FIXME FIXME take out
@@ -797,16 +814,16 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newPr
     DemultiplexRunIdDir = os.path.dirname( DemultiplexRunIdDirNewNameList[0] )
 
     if demux.debug:
-        logging.info( f"newFileList:\t\t\t\t\t{newFileList}" )
-        logging.info( f"DemultiplexRunIdDirNewNameList:\t\t\t{DemultiplexRunIdDirNewNameList}" )
-        logging.info( f"RunIDShort:\t\t\t\t\t{RunIDShort}" )
-        logging.info( f"newProjectNameList:\t\t\t\t{newProjectNameList}" )
-        logging.info( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
+        logging.debug( f"newFileList:\t\t\t\t\t{newFileList}" )
+        logging.debug( f"DemultiplexRunIdDirNewNameList:\t\t\t{DemultiplexRunIdDirNewNameList}" )
+        logging.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}" )
+        logging.debug( f"newProjectNameList:\t\t\t\t{newProjectNameList}" )
+        logging.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
 
     for project in newProjectNameList: 
         if f"{RunIDShort}.{demux.TestProject}" == project:
             if demux.debug:
-                logging.info( f"{demux.TestProject} test project detected. Skipping.\n" )
+                logging.debug( f"{demux.TestProject} test project detected. Skipping.\n" )
             continue
 
     FastQC( newFileList )
@@ -870,7 +887,7 @@ def calcFileHash( DemultiplexRunIdDir ):
                 sys.exit( )
 
             if os.path.getsize( filepath ) == 0 : # make sure it's not a zero length file 
-                logging.info( f"file {filepath} has zero length. Skipping." )
+                logging.warning( f"file {filepath} has zero length. Skipping." )
                 continue
         
             filehandle     = open( filepath, 'rb' )
@@ -878,7 +895,7 @@ def calcFileHash( DemultiplexRunIdDir ):
             md5sum         = hashlib.md5( filetobehashed ).hexdigest( )
             sha512sum      = hashlib.sha256( filetobehashed ).hexdigest( ) 
             if demux.debug:
-                logging.info( f"md5sum: {md5sum} | sha512sum: {sha512sum}\t| filepath: {filepath}" )
+                logging.debug( f"md5sum: {md5sum} | sha512sum: {sha512sum}\t| filepath: {filepath}" )
 
 
             if not os.path.isfile( f"{filepath}{demux.md5Suffix}" ):
@@ -886,7 +903,7 @@ def calcFileHash( DemultiplexRunIdDir ):
                 fh.write( f"{md5sum}\n" )
                 fh.close( )
             else:
-                logging.info( f"{filepath}{demux.md5Suffix} exists, skipping" )
+                logging.warning( f"{filepath}{demux.md5Suffix} exists, skipping" )
                 continue
             if not os.path.isfile( f"{filepath}{demux.sha512Suffix}" ):
                 fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
