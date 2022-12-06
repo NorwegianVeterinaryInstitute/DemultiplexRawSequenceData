@@ -65,13 +65,19 @@ TODO: decide account which we will use to automate the "Transfer To VIGASP" proc
 TBD
 TODO: decide account which we will use to automate the "Transfer To SAGA" process
 
-### Automated Transfer the demultiplexed run folder from seqtch01.vetinst.no to NIRD 
+### Non-Automated Transfer of demultiplexed run folder from seqtch01.vetinst.no to NIRD 
 
 For now, archiving to NIRD is done by hand, after a lab technician reviews the QC results. The transfer is done this way (replace relevant bits)
+
 ```
-$ rsync --progress --info=progress2 --no-inc-recursive -arvpe ssh  sambauser01@seqtech:/data/for_transfer/<RunID>/  NIRDUSERNAME@nird.sigma2.no@/nird/projects/NS9305K/SEQ-TECH/data_delivery
+[sambauser@seqtech01 ~]$ /usr/bin/rsync --progress --info=progress2 --no-inc-recursive -arvpe ssh  /data/for_transfer/<RunID>.*  NIRDUSERNAME@nird.sigma2.no@/nird/projects/NS9305K/SEQ-TECH/data_delivery
 ```
 TODO: decide account which we will use to automate the "Transfer To NIRD" process
+
+### How to create the md5 checksum of a file
+```
+sambauser@seqtech01 ~]$ /usr/bin/md5sum
+```
 
 ## Regarding SampleSheet.csv:
 
