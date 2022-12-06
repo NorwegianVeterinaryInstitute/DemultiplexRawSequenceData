@@ -76,8 +76,18 @@ TODO: decide account which we will use to automate the "Transfer To NIRD" proces
 
 ### How to create the md5 checksum of a file
 ```
-sambauser@seqtech01 ~]$ /usr/bin/md5sum
+sambauser@seqtech01 ~]$ /usr/bin/md5sum /path/to/file
 ```
+
+### How to create the sha512 checksum of a file
+```
+sambauser@seqtech01 ~]$ /usr/bin/sha512sum /path/to/file
+```
+
+md5 is not considered a secure hash any more, too many collisions https://stackoverflow.com/questions/2117732/reasons-why-sha512-is-superior-to-md5
+
+> Thirdly, similar to messages, you can also generate different files that hash to the same value so using MD5 as a file checksum is 'broken'.
+
 
 ## Regarding SampleSheet.csv:
 
