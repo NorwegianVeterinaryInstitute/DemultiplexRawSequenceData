@@ -6,12 +6,14 @@ import glob
 import hashlib
 import inspect
 import logging
+import logging.handlers
 import os
 import pathlib
 import shutil
 import stat
 import subprocess
 import sys
+import syslog
 import tarfile
 import termcolor
 
@@ -221,10 +223,19 @@ class demux:
     MultiQCLogFilePath              = ""
     FastQCLogFilePath               = ""
     ######################################################
+    mailhost                        = 'seqtech01.vetinst.no'
+    fromAddress                     = 'demultiplex@seqtech01.vetinst.no'
+    toAddress                       = 'visequencing@vetinst.no'
+    subjectFailure                  = 'Demultiplexing has failed'
+    subjectSuccess                  = 'Demultiplexing has finished successfuly'
+    ######################################################
+    httpsHandlerHost                = 'veterinaerinstituttet307.workplace.com'
+    httpsHandlerUrl                 = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
+    ######################################################
     with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize TotalTasks to it
         tree = ast.parse( f.read( ) )
-        TotalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body ) + 2
-    n                       = 0 # counter for current task
+        TotalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body ) + 2 # + 2 adjust as needed
+    n = 0 # counter for keeping track of the number of the current task
 
 
 
@@ -1353,7 +1364,7 @@ def main( RunID ):
 
     # set up
     demux.LogDirPath                   = os.path.join( demux.DataRootDirPath, demux.LogDirName )
-    demux.DemuxLogFilePath             = os.path.join( demux.LogDirPath, RunID + demux.LogSuffix )
+    demux.DemuxRunLogFilePath          = os.path.join( demux.LogDirPath, RunID + demux.LogSuffix )
 
     demux.DemultiplexLogDirPath        = os.path.join( demux.DemultiplexRunIdDir, demux.DemultiplexLogDirName )
     demux.DemultiplexScriptLogFilePath = os.path.join( demux.DemultiplexLogDirPath, demux.ScriptRunLogFileName )
@@ -1365,12 +1376,28 @@ def main( RunID ):
 ######################################################
     if not os.path.isdir( demux.LogDirPath ) :  # make sure that the /data/log directory exists.
         sys.exit( f"{demux.LogDirPath} does not exist. Exiting." )
-    # if os.path.isfile( demux.LogFilePath ) :
-    #     print( f"{demux.LogFilePath} is already a file. Cannot continue, exiting.")
-    #     sys.exit( )
 
-    logging.basicConfig( level = demux.LoggingLevel, filename = demux.DemuxLogFilePath, filemode = 'a', format="%(asctime)s %(name)s %(levelname)s %(message)s" ) # asctime is in the format '2003-07-08 16:49:45,896' by default
+    # # set up logging for /data/log/RunID.log
+    # demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(name)s %(levelname)s %(message)s" ) # %(asctime)s needs tro be formated as date without a 
+    # demuxFileLogHandler   = logging.FileHandler( demux.DemuxRunLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
+    # demuxFileLogLogger    = logging.getLogger( __name__ )
+    # demuxFileLogHandler.setFormatter( demuxFileLogFormatter )
+    # demuxFileLogLogger.addHandler( demuxFileLogHandler )
+    # demuxFileLogLogger.setLevel( demux.LoggingLevel )
 
+
+    # setup loging for console
+    # # demuxConsoleLoghandler = logging.handlers.ConsoleHandler( __name__ )
+
+    # # setup logging for syslog
+    # demuxSyslogLogger  = logging.handlers.SysLogHandler( address = '/dev/log', facility = syslog.LOG_USER ) # setup the syslog logger
+
+    # # setup logging for email
+    # demuxSMTPfailureLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectFailure, credentials = None, secure = None, timeout = 1.0 )
+    # demuxSMTPsuccessLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectSuccess, credentials = None, secure = None, timeout = 1.0 )
+
+    # # setup logging for messaging over Workplace
+    # demuxHttpsLogHandler       = logging.handlers.HTTPHandler( demux.httpsHandlerHost, demux.httpsHandlerUrl, method = 'GET', secure = True, credentials = None, context = None ) # FIXME later
 
 
     if not os.path.exists( SampleSheetFilePath ):
@@ -1403,9 +1430,9 @@ def main( RunID ):
     logging.info( termcolor.colored( f"\tclear; rm -rf {demux.DemultiplexRunIdDir} && rm -rf {ForTransferDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n", attrs=["bold"] ) )
     if demux.debug: # logging.info the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
         logging.debug( "=============================================================================")
-        logging.debug( f"RunID:\t\t\t\t{RunID}")
-        logging.debug( f"RunIDShort:\t\t\t{RunIDShort}")
-        logging.debug( f"project_list:\t\t\t{project_list}")
+        logging.debug( f"RunID:\t\t\t\t\t\t{RunID}")
+        logging.debug( f"RunIDShort:\t\t\t\t\t\t\t{RunIDShort}")
+        logging.debug( f"project_list:\t\t\t\t{project_list}")
         logging.debug( "=============================================================================")
         logging.debug( f"RawDataLocationDirRoot:\t\t{RawDataLocationDirRoot}" )
         logging.debug( f"SequenceRunOriginDir:\t\t{SequenceRunOriginDir}" )
@@ -1424,12 +1451,13 @@ def main( RunID ):
         logging.debug( f"ForTransferDir:\t\t\t{ForTransferDir}" )
         for index, directory in enumerate( ForTransferProjNames):
             logging.debug( f"ForTransferProjNames[{index}]:\t{directory}")
+        print( f"DemultiplexScriptLogFilePath:\t\t\t{demux.DemultiplexScriptLogFilePath}")
         logging.debug( "=============================================================================\n")
 
     # init:
 
     #   check if sequencing run has completed, exit if not
-    #       Completion of sequencing run is signaled by the existance of the file {RTACompleteFilePath} ( SequenceRunOriginDir}/{demux.RTACompleteFile} )
+    #       Completion of sequencing run is signaled by the existance of the file {RTACompleteFilePath} ( {SequenceRunOriginDir}/{demux.RTACompleteFile} )
     if not os.path.isfile( f"{RTACompleteFilePath}" ):
         logging.critical( f"{RunID} is not finished sequencing yet!" ) 
         sys.exit()
@@ -1449,10 +1477,11 @@ def main( RunID ):
     #   create {DemultiplexDirRoot} directory structrure
     createDemultiplexDirectoryStructure( demux.DemultiplexRunIdDir, RunIDShort, project_list  )
 
-    # configure logging
-    # logging.basicConfig( filename = demux.DemultiplexScriptLogFilePath, encoding = demux.DecodeScheme, filemode='w', level = demux.LoggingLevel ) # encoding argument available only from python 3.9 and above
-    logging.basicConfig( filename = demux.DemultiplexScriptLogFilePath, filemode='w', level = demux.LoggingLevel ) # make sure the log file for the particular run, is innitiated anew every time
-    # TODO: we also need a way to write to a global file, for all runs, that is appended each time 
+    # set up basic logging for /data/demultiplex/RunID/demultiplex_log/00_script.log
+    # TODO modify to add originating host/ip address
+    logging.basicConfig( filename = "/data/log/220314_M06578_0091_000000000-DFM6K.log", filemode='w', level = demux.LoggingLevel, format ="%(asctime)s %(name)s %(levelname)s %(message)s" ) # datefmt  = "%Y-%m-%d %H:%M",  encoding = demux.DecodeScheme )  
+
+
 
     #   copy SampleSheet.csv from {SampleSheetFilePath} to {demux.DemultiplexRunIdDir} . bcl2fastq uses the file for demultiplexing
     try:
@@ -1492,6 +1521,7 @@ def main( RunID ):
     scriptComplete( demux.DemultiplexRunIdDir )
 
     logging.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
+    logging.shutdown( )
 
 
 
@@ -1507,9 +1537,10 @@ if __name__ == '__main__':
     if sys.hexversion < 50923248: # Require Python 3.9 or newer
         sys.exit( "Python 3.9 or newer is required to run this program." )
 
-
-
     # FIXMEFIXME add named arguments
+    if len(sys.argv) == 1:
+        sys.exit( "No RunID argument present. Exiting." )
+
     RunID = sys.argv[1]
     RunID = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
 
