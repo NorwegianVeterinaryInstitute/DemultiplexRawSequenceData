@@ -1482,7 +1482,6 @@ def main( RunID ):
     logging.basicConfig( filename = "/data/log/220314_M06578_0091_000000000-DFM6K.log", filemode='w', level = demux.LoggingLevel, format ="%(asctime)s %(name)s %(levelname)s %(message)s" ) # datefmt  = "%Y-%m-%d %H:%M",  encoding = demux.DecodeScheme )  
 
 
-
     #   copy SampleSheet.csv from {SampleSheetFilePath} to {demux.DemultiplexRunIdDir} . bcl2fastq uses the file for demultiplexing
     try:
         demux.n = demux.n + 1
@@ -1491,18 +1490,23 @@ def main( RunID ):
         shutil.copy2( SampleSheetFilePath, demux.DemultiplexRunIdDir )
         logging.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: {demux.SampleSheetFileName} copied to {demux.DemultiplexRunIdDir}\n", color="green" ) )
     except Exception as err:
-        logging.critical( err )    # FIXME FIXME this needs more detail
+        logging.critical( f"Copying {SampleSheetFilePath} to {demux.DemultiplexRunIdDir} failed." )
+        logging.critical( err )
+        logging.critical( "Exiting.")
         sys.exit( )
     try:
-        # Request by Cathrine: Copy the SampleSheet file to /data/SampleSheet automatically
+        # Request by Cathrine: Copy the SampleSheet file to /data/samplesheet automatically
         demux.n = demux.n + 1
         SampleSheetArchiveFilePath = os.path.join( demux.SampleSheetDirPath, f"{RunID}{demux.CSVSuffix}" ) # .dot is included in CSVsuffix
         shutil.copy2( SampleSheetFilePath, SampleSheetArchiveFilePath )
         logging.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {SampleSheetFilePath} to {SampleSheetArchiveFilePath} ==\n", color="green" ) )
     except Exception as err:
-        logging.critical( err )    # FIXME FIXME this needs more detail
+        logging.critical( f"Archiving {SampleSheetFilePath} to {SampleSheetArchiveFilePath} failed." )
+        logging.critical( err )
+        logging.critical( "Exiting.")
         sys.exit( )
 
+    # action starts from here
     demultiplex( SequenceRunOriginDir, demux.DemultiplexRunIdDir )
     newFileList, DemultiplexRunIdDirNewNameList = renameFiles( demux.DemultiplexRunIdDir, RunIDShort, project_list )
 
