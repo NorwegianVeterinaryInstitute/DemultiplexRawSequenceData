@@ -1451,7 +1451,6 @@ def main( RunID ):
         logging.debug( f"ForTransferDir:\t\t\t{ForTransferDir}" )
         for index, directory in enumerate( ForTransferProjNames):
             logging.debug( f"ForTransferProjNames[{index}]:\t{directory}")
-        print( f"DemultiplexScriptLogFilePath:\t\t\t{demux.DemultiplexScriptLogFilePath}")
         logging.debug( "=============================================================================\n")
 
     # init:
