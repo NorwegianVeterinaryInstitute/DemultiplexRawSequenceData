@@ -1,4 +1,4 @@
-#!/bin/env /bin/python3.9
+#!/bin/env /bin/python3.11
 
 import argparse
 import ast
@@ -422,8 +422,8 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
 
     if demux.debug:
             logging.debug( f"DemultiplexRunIdDir\t\t\t\t{demux.DemultiplexRunIdDir}" )
-            logging.debug( f"DemultiplexRunIdDir/DemultiplexLogDir:\t\t{demux.DemultiplexLogDirPath}" )
-            logging.debug( f"DemultiplexRunIdDir/DemuxQCDirectory:\t\t{demux.DemuxQCDirectoryPath}" )
+            logging.debug( f"DemultiplexRunIdDir/DemultiplexLogDir:\t{demux.DemultiplexLogDirPath}" )
+            logging.debug( f"DemultiplexRunIdDir/DemuxQCDirectory:\t{demux.DemuxQCDirectoryPath}" )
 
     os.mkdir( demux.DemultiplexRunIdDir )   # root directory for run
     os.mkdir( demux.DemultiplexLogDirPath ) # log directory for run
@@ -541,7 +541,8 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
         logging.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}")
         logging.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}")
         # for index, item in enumerate( project_list ):
-        logging.debug( f"project_list:\t\t\t\t\t{project_list}")
+        if demux.verbosity == 2:
+            logging.debug( f"project_list:\t\t\t\t{project_list}")
 
     for project in project_list: # rename files in each project directory
 
@@ -576,14 +577,14 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             baseFileName = os.path.basename( file )
             if demux.debug:
                 logging.debug( "-----------------")
-                logging.debug( f"baseFilename:\t\t\t\t\t{baseFileName}")
+                logging.debug( f"baseFilename:\t\t\t\t{baseFileName}")
 
             oldname = f"{file}"
             newname = f"{demux.DemultiplexRunIdDir}/{project}/{RunIDShort}.{baseFileName}"
             newfoo  = f"{demux.DemultiplexRunIdDir}/{RunIDShort}.{project}/{RunIDShort}.{baseFileName}" # saving this var to pass locations of new directories
 
             if demux.debug:
-                logging.debug( f"file:\t\t\t\t\t\t{file}")
+                logging.debug( f"file:\t\t\t\t\t{file}")
                 logging.debug( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}" )
             
             # make sure oldname files exist
@@ -644,16 +645,16 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 logging.debug( termcolor.colored( f"Renaming {oldname} to {newname}", color="cyan", attrs=["reverse"] ) )
                 for index, item in enumerate( newProjectFileList ):
                     if index < 10:
-                        logging.debug( f"newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
+                        logging.debug( f"newProjectFileList[{index}]:\t\t\t{item}") # make sure the debugging output is all lined up.
                     elif 100 < index  and index >= 10:
-                        logging.debug( f"newProjectFileList[{index}]:\t\t\t{item}")
+                        logging.debug( f"newProjectFileList[{index}]:\t{item}")
                     elif 1000 < index and index >= 100:
-                        logging.debug( f"newProjectFileList[{index}]:\t\t{item}")
+                        logging.debug( f"newProjectFileList[{index}]:\t{item}")
                     else:
                         logging.debug( f"newProjectFileList[{index}]:\t{item}")       # if we got more than 1000 files, well, frak me...  ## NOTE THIS IS AN INTERESTING STATISTIC: HOW MANY FILES PRODUCED (MEAN, AVERAGE) FOR EACH RUN 
 
                 for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
-                    logging.info( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}")
+                    logging.info( f"DemultiplexRunIdDirNewNameList[{index}]:\t{item}")
 
     logging.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -677,7 +678,7 @@ def FastQC( newFileList ):
     demultiplexRunIdDir = os.path.dirname( os.path.dirname( newFileList[0] ) )
 
     if demux.debug:
-        logging.debug( f"argv:\t\t\t\t\t\t{argv}")
+        logging.debug( f"argv:\t\t\t\t\t{argv}")
         arguments = " ".join( argv[1:] )
         logging.debug( f"Command to execute:\t\t\t\t{command} {arguments}") # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
         logging.debug( f"demultiplexRunIdDir:\t\t\t\t{demultiplexRunIdDir}")
@@ -834,7 +835,7 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newPr
 
     if demux.debug:
         logging.debug( f"newFileList:\t\t\t\t\t{newFileList}" )
-        logging.debug( f"DemultiplexRunIdDirNewNameList:\t\t\t{DemultiplexRunIdDirNewNameList}" )
+        logging.debug( f"DemultiplexRunIdDirNewNameList:\t\t{DemultiplexRunIdDirNewNameList}" )
         logging.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}" )
         logging.debug( f"newProjectNameList:\t\t\t\t{newProjectNameList}" )
         logging.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
@@ -1075,7 +1076,7 @@ def prepareDelivery( RunID ):
         logging.debug( f"Current working directory:\t{os.getcwd( )}")
         logging.debug( f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}" )
         logging.debug( f"ForTransferRunIdDir:\t\t{demux.ForTransferRunIdDir}" )
-        logging.debug( f"forTransferQCtarFile:\t\t{demux.forTransferQCtarFile}" )
+        logging.debug( f"forTransferQCtarFile:\t{demux.forTransferQCtarFile}" )
         logging.debug( f"Original working directory:\t{ os.getcwd( ) }" )
 
     # Switch to the Demultiplex directory we will be archiving
@@ -1092,7 +1093,7 @@ def prepareDelivery( RunID ):
         sys.exit( )
 
     if demux.debug:
-        logging.debug( f"Changed into directory\t\t{demux.DemultiplexRunIdDir}")
+        logging.debug( f"Changed into directory\t{demux.DemultiplexRunIdDir}")
 
     # Make {demux.ForTransferRunIdDir} directory
     if not os.path.isdir( demux.ForTransferRunIdDir ):
@@ -1195,7 +1196,7 @@ def prepareDelivery( RunID ):
     multiQCDir      = demux.multiqc_data
     if demux.debug:
         logging.debug( f"RunIDShort (reconstructed, not global: {RunIDShort}" )
-        logging.debug( f"QCDir:\t\t\t\t{QCDir}")
+        logging.debug( f"QCDir:\t\t\t{QCDir}")
         logging.debug( f"multiQCDir:\t\t\t{multiQCDir}")
     
 
@@ -1209,10 +1210,10 @@ def prepareDelivery( RunID ):
     else:
         logging.critical( f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting." )
         sys.exit( )
-    logging.info( termcolor.colored( f"==> Archiving {QCDir} projects ) ==================", color="yellow", attrs=["bold"] ) )
+    logging.info( termcolor.colored( f"==> Archiving {QCDir} ==================", color="yellow", attrs=["bold"] ) )
     for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.DemultiplexRunIdDir, QCDir ), followlinks = False ): 
          for file in filenames:
-            # add one file at a time so we can give visual feedback to the user that the script is processing files
+            # add one file at a time so we can give visual feedback to the Archivinguser that the script is processing files
             # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
             # of output that make users uncomfortable
             filenameToTar = os.path.join( QCDir, file )
@@ -1377,6 +1378,8 @@ def main( RunID ):
     if not os.path.isdir( demux.LogDirPath ) :  # make sure that the /data/log directory exists.
         sys.exit( f"{demux.LogDirPath} does not exist. Exiting." )
 
+    logging.basicConfig( filename = demux.DemuxRunLogFilePath, encoding = 'utf-8', level = demux.LoggingLevel )
+
     # # set up logging for /data/log/RunID.log
     # demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(name)s %(levelname)s %(message)s" ) # %(asctime)s needs tro be formated as date without a 
     # demuxFileLogHandler   = logging.FileHandler( demux.DemuxRunLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
@@ -1430,27 +1433,27 @@ def main( RunID ):
     logging.info( termcolor.colored( f"\tclear; rm -rf {demux.DemultiplexRunIdDir} && rm -rf {ForTransferDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n", attrs=["bold"] ) )
     if demux.debug: # logging.info the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
         logging.debug( "=============================================================================")
-        logging.debug( f"RunID:\t\t\t\t\t\t{RunID}")
-        logging.debug( f"RunIDShort:\t\t\t\t\t\t\t{RunIDShort}")
+        logging.debug( f"RunID:\t\t\t\t\t{RunID}")
+        logging.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}")
         logging.debug( f"project_list:\t\t\t\t{project_list}")
         logging.debug( "=============================================================================")
-        logging.debug( f"RawDataLocationDirRoot:\t\t{RawDataLocationDirRoot}" )
-        logging.debug( f"SequenceRunOriginDir:\t\t{SequenceRunOriginDir}" )
-        logging.debug( f"SampleSheetFilePath:\t\t{SampleSheetFilePath}" )
-        logging.debug( f"RTACompleteFilePath:\t\t{SequenceRunOriginDir}/{demux.RTACompleteFile}" )
+        logging.debug( f"RawDataLocationDirRoot:\t\t\t{RawDataLocationDirRoot}" )
+        logging.debug( f"SequenceRunOriginDir:\t\t\t{SequenceRunOriginDir}" )
+        logging.debug( f"SampleSheetFilePath:\t\t\t\t{SampleSheetFilePath}" )
+        logging.debug( f"RTACompleteFilePath:\t\t\t\t{SequenceRunOriginDir}/{demux.RTACompleteFile}" )
         logging.debug( "=============================================================================")
-        logging.debug( f"DemultiplexDirRoot:\t\t{DemultiplexDirRoot}" )
-        logging.debug( f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}" )
-        logging.debug( f"DemultiplexLogDirPath:\t\t{demux.DemultiplexLogDirPath}" )
-        logging.debug( f"DemultiplexScriptLogFilePath:\t{demux.DemultiplexScriptLogFilePath}" )
-        logging.debug( f"DemultiplexQCDirPath:\t\t{DemultiplexQCDirPath}" )
+        logging.debug( f"DemultiplexDirRoot:\t\t\t\t{DemultiplexDirRoot}" )
+        logging.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
+        logging.debug( f"DemultiplexLogDirPath:\t\t\t{demux.DemultiplexLogDirPath}" )
+        logging.debug( f"DemultiplexScriptLogFilePath:\t\t{demux.DemultiplexScriptLogFilePath}" )
+        logging.debug( f"DemultiplexQCDirPath:\t\t\t{DemultiplexQCDirPath}" )
         for index, directory in enumerate( DemultiplexProjSubDirs):
-            logging.debug( f"DemultiplexProjSubDirs[{index}]:\t{directory}")
+            logging.debug( f"DemultiplexProjSubDirs[{index}]:\t\t\t{directory}")
         logging.debug( "=============================================================================")
-        logging.debug( f"ForTransferDirRoot:\t\t{ForTransferDirRoot}" )
-        logging.debug( f"ForTransferDir:\t\t\t{ForTransferDir}" )
+        logging.debug( f"ForTransferDirRoot:\t\t\t\t{ForTransferDirRoot}" )
+        logging.debug( f"ForTransferDir:\t\t\t\t{ForTransferDir}" )
         for index, directory in enumerate( ForTransferProjNames):
-            logging.debug( f"ForTransferProjNames[{index}]:\t{directory}")
+            logging.debug( f"ForTransferProjNames[{index}]:\t\t\t{directory}")
         logging.debug( "=============================================================================\n")
 
     # init:
