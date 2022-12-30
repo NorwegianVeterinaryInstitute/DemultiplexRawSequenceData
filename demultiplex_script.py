@@ -1124,7 +1124,7 @@ def prepareDelivery( RunID ):
 
     if demux.debug:
         logging.debug( f"projectsToProcess:\t\t{ projectsToProcess }" )
-        logging.debug( f"len(projectsToProcess):\t\t{len( projectsToProcess  )}" )
+        logging.debug( f"len(projectsToProcess):\t{len( projectsToProcess  )}" )
 
     for project in projectsToProcess:
 
@@ -1172,7 +1172,7 @@ def prepareDelivery( RunID ):
             logging.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {os.getcwd( )}/{project} ======================", attrs=["bold"] ) )
 
         counter = counter + 1
-        logging.info( termcolor.colored( f"==> Archiving {project} ({counter} out of {len(projectsToProcess)} projects ) ==================", color="yellow", attrs=["bold"] ) )
+        logging.info( termcolor.colored( f"==> Archiving {project} ({counter} out of { len( projectsToProcess ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
         for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.DemultiplexRunIdDir, project ), followlinks = False ): 
              for file in filenames:
                 # add one file at a time so we can give visual feedback to the user that the script is processing files
@@ -1183,7 +1183,7 @@ def prepareDelivery( RunID ):
                 logging.info( f"filenameToTar:\t\t{filenameToTar}" )
 
         tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
-        logging.info( termcolor.colored( f'==< Archived {project} ({counter} out of {len(projectsToProcess)} projects ) ==================\n', color="yellow", attrs=["bold"] ) )
+        logging.info( termcolor.colored( f'==< Archived {project} ({counter} out of { len( projectsToProcess ) } projects ) ==================\n', color="yellow", attrs=["bold"] ) )
 
     ###########################################################
     #
