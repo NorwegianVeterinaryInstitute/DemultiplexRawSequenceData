@@ -1378,10 +1378,10 @@ def main( RunID ):
     if not os.path.isdir( demux.LogDirPath ) :  # make sure that the /data/log directory exists.
         sys.exit( f"{demux.LogDirPath} does not exist. Exiting." )
 
-    logging.basicConfig( filename = demux.DemuxRunLogFilePath, encoding = 'utf-8', level = demux.LoggingLevel )
+    logging.basicConfig( filename = demux.DemuxRunLogFilePath, filemode = 'w', format = "%(asctime)s %(name)s %(levelname)s %(message)s", datefmt = "%Y-%m-%d %H:%M:%S", encoding = demux.DecodeScheme, level = demux.LoggingLevel )
 
     # # set up logging for /data/log/RunID.log
-    # demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(name)s %(levelname)s %(message)s" ) # %(asctime)s needs tro be formated as date without a 
+    # demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(name)s %(levelname)s %(message)s" ) # %(asctime)s needs to be formated as date without a 
     # demuxFileLogHandler   = logging.FileHandler( demux.DemuxRunLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
     # demuxFileLogLogger    = logging.getLogger( __name__ )
     # demuxFileLogHandler.setFormatter( demuxFileLogFormatter )
