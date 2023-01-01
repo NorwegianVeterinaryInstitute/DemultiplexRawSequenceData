@@ -1379,24 +1379,26 @@ def main( RunID ):
     if not os.path.isdir( demux.LogDirPath ) :  # make sure that the /data/log directory exists.
         sys.exit( f"{demux.LogDirPath} does not exist. Exiting." )
 
-    # logging.basicConfig( filename = demux.DemuxRunLogFilePath, filemode = 'w', format = "%(asctime)s %(name)s %(levelname)s %(message)s", datefmt = "%Y-%m-%d %H:%M:%S", encoding = demux.DecodeScheme, level = demux.LoggingLevel )
-    #logging.basicConfig( filename = demux.DemuxRunLogFilePath, filemode = 'w', format = "%(asctime)s %(filename)s %(levelname)s %(message)s", datefmt = "%Y-%m-%d %H:%M:%S", encoding = demux.DecodeScheme, level = demux.LoggingLevel ) # , extra = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
-
     # # set up logging for /data/log/RunID.log
     demuxFileLogHandler   = logging.FileHandler( demux.DemuxRunLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
     demuxLogger.setLevel( demux.LoggingLevel )
 
 
-    # demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(name)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) # %(asctime)s needs to be formated as date without a 
-    # demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(name)s %(levelname)s %(message)s" ) # %(asctime)s needs to be formated as date without a 
-    # demuxFileLogHandler.setFormatter( demuxFileLogFormatter )
-    demuxLogger.addHandler( demuxFileLogHandler )
+    # demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
+    demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(name)s       %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
+    demuxFileLogHandler.setFormatter( demuxFileLogFormatter )
 
     # setup loging for console
-    # # demuxConsoleLoghandler = logging.handlers.ConsoleHandler( __name__ )
+    demuxConsoleLogHandler    = logging.StreamHandler( stream = sys.stderr )
+    demuxConsoleLogFormatter  = logging.Formatter( "%(asctime)s %(dns)s %(name)s   %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } )
+    demuxConsoleLogHandler.setFormatter( demuxConsoleLogFormatter )
 
     # # setup logging for syslog
     # demuxSyslogLogger  = logging.handlers.SysLogHandler( address = '/dev/log', facility = syslog.LOG_USER ) # setup the syslog logger
+
+    demuxLogger.addHandler( demuxFileLogHandler )
+    demuxLogger.addHandler( demuxConsoleLogHandler )
+
 
     # # setup logging for email
     # demuxSMTPfailureLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectFailure, credentials = None, secure = None, timeout = 1.0 )
@@ -1482,6 +1484,13 @@ def main( RunID ):
 
     #   create {DemultiplexDirRoot} directory structrure
     createDemultiplexDirectoryStructure( demux.DemultiplexRunIdDir, RunIDShort, project_list  )
+    # setup logging for /data/bin/demultiplex/RunID/demultiplex_log/00_script.log
+    demuxScriptLogHandler   = logging.FileHandler( demux.DemultiplexScriptLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
+    demuxScriptLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(name)s     %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
+    demuxScriptLogHandler.setFormatter( demuxScriptLogFormatter )
+    demuxLogger.addHandler( demuxScriptLogHandler )
+
+
 
     #   copy SampleSheet.csv from {SampleSheetFilePath} to {demux.DemultiplexRunIdDir} . bcl2fastq uses the file for demultiplexing
     try:
