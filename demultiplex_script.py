@@ -1384,21 +1384,22 @@ def main( RunID ):
     demuxLogger.setLevel( demux.LoggingLevel )
 
 
-    # demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
-    demuxFileLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(name)s       %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
-    demuxFileLogHandler.setFormatter( demuxFileLogFormatter )
+    # demuxLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
+    demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } )
+    demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
+    demuxFileLogHandler.setFormatter( demuxLogFormatter )
 
     # setup loging for console
     demuxConsoleLogHandler    = logging.StreamHandler( stream = sys.stderr )
-    demuxConsoleLogFormatter  = logging.Formatter( "%(asctime)s %(dns)s %(name)s   %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } )
-    demuxConsoleLogHandler.setFormatter( demuxConsoleLogFormatter )
+    demuxConsoleLogHandler.setFormatter( demuxLogFormatter )
 
     # # setup logging for syslog
-    # demuxSyslogLogger  = logging.handlers.SysLogHandler( address = '/dev/log', facility = syslog.LOG_USER ) # setup the syslog logger
+    demuxSyslogLogger  = logging.handlers.SysLogHandler( address = '/dev/log', facility = syslog.LOG_USER ) # setup the syslog logger
+    demuxSyslogLogger.setFormatter( demuxSyslogFormatter )
 
+    demuxLogger.addHandler( demuxSyslogLogger )
     demuxLogger.addHandler( demuxFileLogHandler )
     demuxLogger.addHandler( demuxConsoleLogHandler )
-
 
     # # setup logging for email
     # demuxSMTPfailureLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectFailure, credentials = None, secure = None, timeout = 1.0 )
@@ -1486,8 +1487,7 @@ def main( RunID ):
     createDemultiplexDirectoryStructure( demux.DemultiplexRunIdDir, RunIDShort, project_list  )
     # setup logging for /data/bin/demultiplex/RunID/demultiplex_log/00_script.log
     demuxScriptLogHandler   = logging.FileHandler( demux.DemultiplexScriptLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
-    demuxScriptLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(name)s     %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
-    demuxScriptLogHandler.setFormatter( demuxScriptLogFormatter )
+    demuxScriptLogHandler.setFormatter( demuxLogFormatter )
     demuxLogger.addHandler( demuxScriptLogHandler )
 
 
