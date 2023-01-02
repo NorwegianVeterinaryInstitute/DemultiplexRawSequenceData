@@ -1385,7 +1385,7 @@ def main( RunID ):
 
 
     # demuxLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
-    demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } )
+    demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
     demuxFileLogHandler.setFormatter( demuxLogFormatter )
 
