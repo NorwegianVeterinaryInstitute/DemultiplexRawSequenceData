@@ -1394,23 +1394,26 @@ def main( RunID ):
     demuxConsoleLogHandler.setFormatter( demuxLogFormatter )
 
     # # setup logging for syslog
-    demuxSyslogLogger  = logging.handlers.SysLogHandler( address = '/dev/log', facility = syslog.LOG_USER ) # setup the syslog logger
+    demuxSyslogLogger       = logging.handlers.SysLogHandler( address = '/dev/log', facility = syslog.LOG_USER ) # setup the syslog logger
+    demuxSyslogLogger.ident = f"{os.path.basename(__file__)} "
     demuxSyslogLogger.setFormatter( demuxSyslogFormatter )
 
     demuxLogger.addHandler( demuxSyslogLogger )
     demuxLogger.addHandler( demuxFileLogHandler )
     demuxLogger.addHandler( demuxConsoleLogHandler )
 
-    # # setup logging for email
-    # demuxSMTPfailureLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectFailure, credentials = None, secure = None, timeout = 1.0 )
-    # demuxSMTPsuccessLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectSuccess, credentials = None, secure = None, timeout = 1.0 )
+    # # setup email notifications
+    demuxSMTPfailureLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectFailure, credentials = None, secure = None, timeout = 1.0 )
+    demuxEmailFailureLogger.addHandler( demuxSMTPfailureLoghandler )
+    demuxSMTPsuccessLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectSuccess, credentials = None, secure = None, timeout = 1.0 )
+    demuxEmailSuccessLogger.addHandler( demuxSMTPsuccessLoghandler )
 
     # # setup logging for messaging over Workplace
     # demuxHttpsLogHandler       = logging.handlers.HTTPHandler( demux.httpsHandlerHost, demux.httpsHandlerUrl, method = 'GET', secure = True, credentials = None, context = None ) # FIXME later
 
 
     if not os.path.exists( SampleSheetFilePath ):
-        demuxLoggercritical( f"{SampleSheetFilePath} does not exist! Demultiplexing cannot continue. Exiting." ) 
+        demuxLoggercritical( f"{SampleSheetFilePath} does not exist! Demultiplexing cannot continudemuxSyslogLoggere. Exiting." ) 
         sys.exit( )
 
     if not os.path.isfile( SampleSheetFilePath ):
@@ -1555,7 +1558,9 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         sys.exit( "No RunID argument present. Exiting." )
 
-    demuxLogger = logging.getLogger( __name__ )
+    demuxLogger             = logging.getLogger( __name__ )
+    demuxEmailSuccessLogger = logging.getLogger( 'emailSuccessLogger' )
+    demuxEmailFailureLogger = logging.getLogger( 'emailFailureLogger' )
     RunID       = sys.argv[1]
     RunID       = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
 
