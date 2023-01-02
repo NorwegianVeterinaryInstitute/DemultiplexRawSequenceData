@@ -197,6 +197,7 @@ class demux:
     footarfile                      = f"foo{tarSuffix}"      # class variable shared by all instances
     barzipfile                      = f"zip{zipSuffix}"
     TotalTasks                      = 0  
+
     ######################################################
     DemultiplexRunIdDir             = ""
     DemultiplexLogDirPath           = ""
@@ -209,7 +210,7 @@ class demux:
     forTransferQCtarFile            = ""
     ######################################################
     LogDirName                      = 'log'
-    DemuxGlobalLogFile              = 'demultiplex.log'
+    DemuxCumulativeLogFileName      = 'demultiplex.log'
     DemultiplexLogDirName           = 'demultiplex_log'
     ScriptRunLogFileName            = '00_script.log'
     Bcl2FastqLogFileName            = '01_demultiplex.log'
@@ -223,6 +224,7 @@ class demux:
     DemuxBcl2FastqLogFilePath       = ""
     MultiQCLogFilePath              = ""
     FastQCLogFilePath               = ""
+    DemuxCumulativeLogFilePath      = ""
     ######################################################
     mailhost                        = 'seqtech01.vetinst.no'
     fromAddress                     = 'demultiplex@seqtech01.vetinst.no'
@@ -1367,7 +1369,7 @@ def main( RunID ):
     # set up
     demux.LogDirPath                   = os.path.join( demux.DataRootDirPath, demux.LogDirName )
     demux.DemuxRunLogFilePath          = os.path.join( demux.LogDirPath, RunID + demux.LogSuffix )
-
+    demux.DemuxCumulativeLogFilePath   = os.path.join( demux.LogDirPath, demux.DemuxCumulativeLogFileName )
     demux.DemultiplexLogDirPath        = os.path.join( demux.DemultiplexRunIdDir, demux.DemultiplexLogDirName )
     demux.DemultiplexScriptLogFilePath = os.path.join( demux.DemultiplexLogDirPath, demux.ScriptRunLogFileName )
     demux.DemuxBcl2FastqLogFilePath    = os.path.join( demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
@@ -1383,11 +1385,14 @@ def main( RunID ):
     demuxFileLogHandler   = logging.FileHandler( demux.DemuxRunLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
     demuxLogger.setLevel( demux.LoggingLevel )
 
-
     # demuxLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
     demuxFileLogHandler.setFormatter( demuxLogFormatter )
+
+    # set up cummulative logging in /data/log/RunID.log
+    demuxFileCumulativeLogHandler   = logging.FileHandler( demux.DemuxCumulativeLogFilePath, mode = 'a', encoding = demux.DecodeScheme )
+    demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
 
     # setup loging for console
     demuxConsoleLogHandler    = logging.StreamHandler( stream = sys.stderr )
@@ -1401,6 +1406,7 @@ def main( RunID ):
     demuxLogger.addHandler( demuxSyslogLogger )
     demuxLogger.addHandler( demuxFileLogHandler )
     demuxLogger.addHandler( demuxConsoleLogHandler )
+    demuxLogger.addHandler( demuxFileCumulativeLogHandler )
 
     # # setup email notifications
     demuxSMTPfailureLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectFailure, credentials = None, secure = None, timeout = 1.0 )
@@ -1421,7 +1427,7 @@ def main( RunID ):
         sys.exit( )
 
     if demux.debug and demux.verbosity == 2:
-        demuxLogger.debug( f"SampleSheetFilePath:\t\t      {SampleSheetFilePath}")   # spaces align 
+        demuxLogger.debug( f"SampleSheetFilePath:\t\t      {SampleSheetFilePath}" )   # spaces align 
     project_list           = demux.getProjectName( SampleSheetFilePath ) # get the list of projects in this current run
 
     if len( project_list ) == 0:
