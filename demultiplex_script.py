@@ -12,6 +12,7 @@ import pathlib
 import shutil
 import socket
 import stat
+import string
 import subprocess
 import sys
 import syslog
@@ -226,7 +227,8 @@ class demux:
     FastQCLogFilePath               = ""
     DemuxCumulativeLogFilePath      = ""
     ######################################################
-    mailhost                        = 'seqtech01.vetinst.no'
+    # mailhost                        = 'seqtech01.vetinst.no'
+    mailhost                        = 'localhost'
     fromAddress                     = 'demultiplex@seqtech01.vetinst.no'
     toAddress                       = 'visequencing@vetinst.no'
     subjectFailure                  = 'Demultiplexing has failed'
@@ -1385,7 +1387,7 @@ def main( RunID ):
     demuxFileLogHandler   = logging.FileHandler( demux.DemuxRunLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
     demuxLogger.setLevel( demux.LoggingLevel )
 
-    # demuxLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
+    # demuxLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(name)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
     demuxFileLogHandler.setFormatter( demuxLogFormatter )
@@ -1394,32 +1396,33 @@ def main( RunID ):
     demuxFileCumulativeLogHandler   = logging.FileHandler( demux.DemuxCumulativeLogFilePath, mode = 'a', encoding = demux.DecodeScheme )
     demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
 
+
     # setup loging for console
     demuxConsoleLogHandler    = logging.StreamHandler( stream = sys.stderr )
     demuxConsoleLogHandler.setFormatter( demuxLogFormatter )
 
     # # setup logging for syslog
-    demuxSyslogLogger       = logging.handlers.SysLogHandler( address = '/dev/log', facility = syslog.LOG_USER ) # setup the syslog logger
-    demuxSyslogLogger.ident = f"{os.path.basename(__file__)} "
-    demuxSyslogLogger.setFormatter( demuxSyslogFormatter )
+    demuxSyslogLoggerHandler       = logging.handlers.SysLogHandler( address = '/dev/log', facility = syslog.LOG_USER ) # setup the syslog logger
+    demuxSyslogLoggerHandler.ident = f"{os.path.basename(__file__)} "
+    demuxSyslogLoggerHandler.setFormatter( demuxSyslogFormatter )
 
-    demuxLogger.addHandler( demuxSyslogLogger )
+    # # setup email notifications
+    demuxSMTPfailureLogHandler = BufferingSMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectFailure )
+    demuxSMTPsuccessLogHandler = BufferingSMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectSuccess )
+
+    demuxLogger.addHandler( demuxSyslogLoggerHandler )
     demuxLogger.addHandler( demuxFileLogHandler )
     demuxLogger.addHandler( demuxConsoleLogHandler )
     demuxLogger.addHandler( demuxFileCumulativeLogHandler )
-
-    # # setup email notifications
-    demuxSMTPfailureLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectFailure, credentials = None, secure = None, timeout = 1.0 )
-    demuxEmailFailureLogger.addHandler( demuxSMTPfailureLoghandler )
-    demuxSMTPsuccessLoghandler = logging.handlers.SMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectSuccess, credentials = None, secure = None, timeout = 1.0 )
-    demuxEmailSuccessLogger.addHandler( demuxSMTPsuccessLoghandler )
+    demuxLogger.addHandler( demuxSMTPfailureLogHandler )
+    demuxLogger.addHandler( demuxSMTPsuccessLogHandler )
 
     # # setup logging for messaging over Workplace
     # demuxHttpsLogHandler       = logging.handlers.HTTPHandler( demux.httpsHandlerHost, demux.httpsHandlerUrl, method = 'GET', secure = True, credentials = None, context = None ) # FIXME later
 
 
     if not os.path.exists( SampleSheetFilePath ):
-        demuxLoggercritical( f"{SampleSheetFilePath} does not exist! Demultiplexing cannot continudemuxSyslogLoggere. Exiting." ) 
+        demuxLoggercritical( f"{SampleSheetFilePath} does not exist! Demultiplexing cannot continue. Exiting." ) 
         sys.exit( )
 
     if not os.path.isfile( SampleSheetFilePath ):
@@ -1549,6 +1552,39 @@ def main( RunID ):
 
 
 ########################################################################
+# BufferingSMTPHandlerft3
+########################################################################
+
+
+class BufferingSMTPHandler(logging.handlers.BufferingHandler):
+    def __init__(self, mailhost, fromaddr, toaddrs, subject ):
+        logging.handlers.BufferingHandler.__init__(self, capacity = 9999999 )
+        self.mailhost = mailhost
+        self.mailport = None
+        self.fromaddr = fromaddr
+        self.toaddrs = toaddrs
+        self.subject = subject
+        self.setFormatter( logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } ) )
+
+    def flush(self):
+        if len(self.buffer) > 0:
+            import smtplib
+            port = self.mailport
+            if not port:
+                port = smtplib.SMTP_PORT
+            smtp = smtplib.SMTP(self.mailhost, port)
+            msg = f"From: {self.fromaddr}\r\nTo: {self.toaddrs}\r\nSubject: {self.subject}\r\n\r\n"
+            for record in self.buffer:
+                s = self.format(record)
+                print( s )
+                msg = msg + s + '\r\n'
+            msg = msg + '\r\n\r\n'
+            smtp.sendmail(self.fromaddr, self.toaddrs, msg)
+            smtp.quit()
+            self.buffer = []
+
+
+########################################################################
 # MAIN
 ########################################################################
 
@@ -1565,9 +1601,7 @@ if __name__ == '__main__':
         sys.exit( "No RunID argument present. Exiting." )
 
     demuxLogger             = logging.getLogger( __name__ )
-    demuxEmailSuccessLogger = logging.getLogger( 'emailSuccessLogger' )
-    demuxEmailFailureLogger = logging.getLogger( 'emailFailureLogger' )
-    RunID       = sys.argv[1]
-    RunID       = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
+    RunID                   = sys.argv[1]
+    RunID                   = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
 
     main( RunID )
