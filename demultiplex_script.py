@@ -230,7 +230,7 @@ class demux:
     # mailhost                        = 'seqtech01.vetinst.no'
     mailhost                        = 'localhost'
     fromAddress                     = 'demultiplex@seqtech01.vetinst.no'
-    toAddress                       = 'visequencing@vetinst.no'
+    toAddress                       = 'gmarselis@localhost'
     subjectFailure                  = 'Demultiplexing has failed'
     subjectSuccess                  = 'Demultiplexing has finished successfuly'
     ######################################################
