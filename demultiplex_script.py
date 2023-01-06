@@ -1414,8 +1414,10 @@ def main( RunID ):
     demuxLogger.addHandler( demuxFileLogHandler )
     demuxLogger.addHandler( demuxConsoleLogHandler )
     demuxLogger.addHandler( demuxFileCumulativeLogHandler )
-    demuxLogger.addHandler( demuxSMTPfailureLogHandler )
     demuxLogger.addHandler( demuxSMTPsuccessLogHandler )
+
+    # this has to be in a separate logger because we are only logging to it when we fail
+    demuxFailureLogger.addHandler( demuxSMTPfailureLogHandler )
 
     # # setup logging for messaging over Workplace
     # demuxHttpsLogHandler       = logging.handlers.HTTPHandler( demux.httpsHandlerHost, demux.httpsHandlerUrl, method = 'GET', secure = True, credentials = None, context = None ) # FIXME later
@@ -1601,6 +1603,7 @@ if __name__ == '__main__':
         sys.exit( "No RunID argument present. Exiting." )
 
     demuxLogger             = logging.getLogger( __name__ )
+    demuxFailureLogger      = logging.getLogger( "SMTPFailureLogger")
     RunID                   = sys.argv[1]
     RunID                   = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
 
