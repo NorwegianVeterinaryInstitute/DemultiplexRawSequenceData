@@ -1,0 +1,156 @@
+1
+2022-03-14T20:01:44.6119951Z,Header,Platform,"MiSeq",S,,
+2022-03-14T20:01:44.6119951Z,Header,MachineSerialNumber,"M06578",S,,
+2022-03-14T20:01:44.6119951Z,Header,UserRunName,"MiSeqRun",S,,
+2022-03-14T20:01:44.6119951Z,Header,ApplicationRunId,"220314_M06578_0091_000000000-DFM6K",S,,
+2022-03-14T20:01:44.6179925Z,YMotor,DirectMoveTarget,75.33473,D,RunCycle,74
+2022-03-14T20:01:49.1661403Z,YMotor,DirectMoveError,0.001465,D,RunCycle,74
+2022-03-14T20:01:49.1751342Z,Temperature.FlowcellTEC,TempSetC,60,F,RunCycle,74
+2022-03-14T20:01:49.1751342Z,FlowcellTEC,ServoEnabled,T,B,RunCycle,74
+2022-03-14T20:01:49.1821304Z,ReagentValve,MoveToPosition,3,I,RunCycle,74
+2022-03-14T20:01:49.4833587Z,ReagentValve,PositionErrorSteps,36,I,RunCycle,74
+2022-03-14T20:01:49.5424427Z,ReagentValve,MoveStatus,"Ok",S,RunCycle,74
+2022-03-14T20:01:49.7527336Z,LanePump,Aspirate.Reagent,3,I,RunCycle,74
+2022-03-14T20:01:49.7527336Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:01:49.7527336Z,LanePump,Aspirate.Steps,720,I,RunCycle,74
+2022-03-14T20:01:49.7527336Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:01:54.5857956Z,BubbleSensor,BubbleCountR2,1,I,RunCycle,74
+2022-03-14T20:01:56.1175035Z,ReagentValve,MoveToPosition,4,I,RunCycle,74
+2022-03-14T20:01:56.2497963Z,ReagentValve,PositionErrorSteps,0,I,RunCycle,74
+2022-03-14T20:01:56.3083428Z,ReagentValve,MoveStatus,"Ok",S,RunCycle,74
+2022-03-14T20:01:56.4387856Z,LanePump,Aspirate.Reagent,4,I,RunCycle,74
+2022-03-14T20:01:56.4387856Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:01:56.4387856Z,LanePump,Aspirate.Steps,360,I,RunCycle,74
+2022-03-14T20:01:56.4387856Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:01:59.5858689Z,BubbleSensor,BubbleCountR2,8,I,RunCycle,74
+2022-03-14T20:02:01.0046103Z,ReagentValve,MoveToPosition,3,I,RunCycle,74
+2022-03-14T20:02:01.1633802Z,ReagentValve,PositionErrorSteps,35,I,RunCycle,74
+2022-03-14T20:02:01.2212600Z,ReagentValve,MoveStatus,"Ok",S,RunCycle,74
+2022-03-14T20:02:01.3535347Z,LanePump,Aspirate.Reagent,3,I,RunCycle,74
+2022-03-14T20:02:01.3535347Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:02:01.3535347Z,LanePump,Aspirate.Steps,132,I,RunCycle,74
+2022-03-14T20:02:01.3535347Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:02:04.5861383Z,BubbleSensor,BubbleCountR1,3,I,RunCycle,74
+2022-03-14T20:02:13.5388442Z,LanePump,Aspirate.Reagent,3,I,RunCycle,74
+2022-03-14T20:02:13.5388442Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:02:13.5388442Z,LanePump,Aspirate.Steps,1500,I,RunCycle,74
+2022-03-14T20:02:13.5388442Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:02:19.5865858Z,BubbleSensor,BubbleCountR1,7,I,RunCycle,74
+2022-03-14T20:02:19.5865858Z,BubbleSensor,BubbleCountR2,1,I,RunCycle,74
+2022-03-14T20:02:23.8001406Z,ReagentValve,MoveToPosition,1,I,RunCycle,74
+2022-03-14T20:02:24.0051585Z,ReagentValve,PositionErrorSteps,-1,I,RunCycle,74
+2022-03-14T20:02:24.0630421Z,ReagentValve,MoveStatus,"Ok",S,RunCycle,74
+2022-03-14T20:02:24.1944742Z,LanePump,Aspirate.Reagent,1,I,RunCycle,74
+2022-03-14T20:02:24.1944742Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:02:24.1944742Z,LanePump,Aspirate.Steps,270,I,RunCycle,74
+2022-03-14T20:02:24.1944742Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:02:24.5871056Z,BubbleSensor,BubbleCountR1,19,I,RunCycle,74
+2022-03-14T20:02:24.5871056Z,BubbleSensor,BubbleCountR2,14,I,RunCycle,74
+2022-03-14T20:02:28.4201326Z,ReagentValve,MoveToPosition,3,I,RunCycle,74
+2022-03-14T20:02:28.6494990Z,ReagentValve,PositionErrorSteps,34,I,RunCycle,74
+2022-03-14T20:02:28.7075810Z,ReagentValve,MoveStatus,"Ok",S,RunCycle,74
+2022-03-14T20:02:29.5872413Z,BubbleSensor,BubbleCountR1,13,I,RunCycle,74
+2022-03-14T20:02:29.5872413Z,BubbleSensor,BubbleCountR2,22,I,RunCycle,74
+2022-03-14T20:02:33.8057179Z,LanePump,Move.Target,0,I,RunCycle,74
+2022-03-14T20:02:33.8057179Z,LanePump,Move.Rate,2500,I,RunCycle,74
+2022-03-14T20:02:46.2865537Z,LanePump,Aspirate.Reagent,3,I,RunCycle,74
+2022-03-14T20:02:46.2865537Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:02:46.2865537Z,LanePump,Aspirate.Steps,120,I,RunCycle,74
+2022-03-14T20:02:46.2865537Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:02:48.2754160Z,Temperature.FlowcellTEC,TempSetC,65,F,RunCycle,74
+2022-03-14T20:02:48.2754160Z,FlowcellTEC,ServoEnabled,T,B,RunCycle,74
+2022-03-14T20:02:49.5884355Z,BubbleSensor,BubbleCountR2,1,I,RunCycle,74
+2022-03-14T20:03:08.4249954Z,LanePump,Aspirate.Reagent,3,I,RunCycle,74
+2022-03-14T20:03:08.4249954Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:03:08.4249954Z,LanePump,Aspirate.Steps,30,I,RunCycle,74
+2022-03-14T20:03:08.4249954Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:03:09.9605711Z,Temperature.FlowcellTEC,TempReadC,65.014,F,RunCycle,74
+2022-03-14T20:03:09.9605711Z,Temperature.FlowcellTECHeatSink,TempReadC,24.049,F,RunCycle,74
+2022-03-14T20:03:09.9605711Z,Temperature.Ambient,TempReadC,22.954,F,RunCycle,74
+2022-03-14T20:03:09.9605711Z,Temperature.Chiller,TempReadC,7.742,F,RunCycle,74
+2022-03-14T20:03:09.9605711Z,Temperature.ChillerTECColdSink,TempReadC,4.49,F,RunCycle,74
+2022-03-14T20:03:10.0725977Z,LanePump,Dispense.Reagent,3,I,RunCycle,74
+2022-03-14T20:03:10.0725977Z,LanePump,Dispense.Port,OutputPort,E,RunCycle,74
+2022-03-14T20:03:10.0725977Z,LanePump,Dispense.Rate,7500,I,RunCycle,74
+2022-03-14T20:03:30.0834050Z,Temperature.FlowcellTEC,TempSetC,22,F,RunCycle,74
+2022-03-14T20:03:30.0834050Z,FlowcellTEC,ServoEnabled,T,B,RunCycle,74
+2022-03-14T20:03:30.1196882Z,LanePump,Aspirate.Reagent,3,I,RunCycle,74
+2022-03-14T20:03:30.1196882Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:03:30.1196882Z,LanePump,Aspirate.Steps,720,I,RunCycle,74
+2022-03-14T20:03:30.1196882Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:03:34.5898177Z,BubbleSensor,BubbleCountR1,1,I,RunCycle,74
+2022-03-14T20:03:34.5898177Z,BubbleSensor,BubbleCountR2,1,I,RunCycle,74
+2022-03-14T20:03:36.4853976Z,ReagentValve,MoveToPosition,2,I,RunCycle,74
+2022-03-14T20:03:36.6417090Z,ReagentValve,PositionErrorSteps,35,I,RunCycle,74
+2022-03-14T20:03:36.7003984Z,ReagentValve,MoveStatus,"Ok",S,RunCycle,74
+2022-03-14T20:03:36.8313226Z,LanePump,Aspirate.Reagent,2,I,RunCycle,74
+2022-03-14T20:03:36.8313226Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:03:36.8313226Z,LanePump,Aspirate.Steps,360,I,RunCycle,74
+2022-03-14T20:03:36.8313226Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:03:41.3957740Z,ReagentValve,MoveToPosition,3,I,RunCycle,74
+2022-03-14T20:03:41.5519375Z,ReagentValve,PositionErrorSteps,35,I,RunCycle,74
+2022-03-14T20:03:41.6098346Z,ReagentValve,MoveStatus,"Ok",S,RunCycle,74
+2022-03-14T20:03:41.7412779Z,LanePump,Aspirate.Reagent,3,I,RunCycle,74
+2022-03-14T20:03:41.7412779Z,LanePump,Aspirate.Port,InputPort,E,RunCycle,74
+2022-03-14T20:03:41.7412779Z,LanePump,Aspirate.Steps,120,I,RunCycle,74
+2022-03-14T20:03:41.7412779Z,LanePump,Aspirate.Rate,2000,I,RunCycle,74
+2022-03-14T20:03:43.7285122Z,LanePump,Dispense.Reagent,3,I,RunCycle,74
+2022-03-14T20:03:43.7285122Z,LanePump,Dispense.Port,OutputPort,E,RunCycle,74
+2022-03-14T20:03:43.7285122Z,LanePump,Dispense.Rate,7500,I,RunCycle,74
+2022-03-14T20:03:58.7373635Z,ReagentValve,MoveToPosition,24,I,RunCycle,74
+2022-03-14T20:03:59.0388791Z,ReagentValve,PositionErrorSteps,36,I,RunCycle,74
+2022-03-14T20:03:59.0957960Z,ReagentValve,MoveStatus,"Ok",S,RunCycle,74
+2022-03-14T20:03:59.1016066Z,LED,CurrentSetRedMa,1187,F,RunCycle,74
+2022-03-14T20:03:59.1016066Z,LED,DACSetRed,530,I,RunCycle,74
+2022-03-14T20:03:59.6739415Z,LED,ADCReadRed,16428,I,RunCycle,74
+2022-03-14T20:03:59.6739415Z,LED,PowerReadRedMw,205.1425,F,RunCycle,74
+2022-03-14T20:03:59.6789388Z,LED,CurrentSetGreenMa,6468,F,RunCycle,74
+2022-03-14T20:03:59.6789388Z,LED,DACSetGreen,2888,I,RunCycle,74
+2022-03-14T20:03:59.6856825Z,LED,ADCReadGreen,2279,I,RunCycle,74
+2022-03-14T20:03:59.6856825Z,LED,PowerReadGreenMw,184.4591,F,RunCycle,74
+2022-03-14T20:04:00.2163744Z,YMotor,DirectMoveTarget,60.93922,D,RunCycle,74
+2022-03-14T20:04:04.7299445Z,YMotor,DirectMoveError,-0.003906,D,RunCycle,74
+2022-03-14T20:04:04.8908943Z,LED,CurrentSetRedMa,1187,F,RunCycle,74
+2022-03-14T20:04:04.8908943Z,LED,DACSetRed,530,I,RunCycle,74
+2022-03-14T20:04:04.8908943Z,LED,CurrentSetGreenMa,6468,F,RunCycle,74
+2022-03-14T20:04:04.8908943Z,LED,DACSetGreen,2888,I,RunCycle,74
+2022-03-14T20:04:06.3104703Z,ImagingModule,BestZPositionTopFocusTileUm,-180.3165,F,RunCycle,74
+2022-03-14T20:04:06.3104703Z,ImagingModule,LogBestZPositionTopTile1Um,-180.3165,F,RunCycle,74
+2022-03-14T20:04:06.3114696Z,ImagingModule.ExcitationLED.A,ExposureTimeMs,640,I,RunCycle,74
+2022-03-14T20:04:06.3114696Z,ImagingModule.ExcitationLED.G,ExposureTimeMs,308,I,RunCycle,74
+2022-03-14T20:04:06.3114696Z,ImagingModule.ExcitationLED.T,ExposureTimeMs,308,I,RunCycle,74
+2022-03-14T20:04:06.3114696Z,ImagingModule.ExcitationLED.C,ExposureTimeMs,640,I,RunCycle,74
+2022-03-14T20:04:06.5132761Z,LED,CurrentSetRedMa,1187,F,RunCycle,74
+2022-03-14T20:04:06.5132761Z,LED,DACSetRed,530,I,RunCycle,74
+2022-03-14T20:04:06.5142754Z,LED,CurrentSetGreenMa,6468,F,RunCycle,74
+2022-03-14T20:04:06.5142754Z,LED,DACSetGreen,2888,I,RunCycle,74
+2022-03-14T20:04:08.2455808Z,ImagingModule,LogBestZPositionTopTile2Um,-179.2913,F,RunCycle,74
+2022-03-14T20:04:08.4891236Z,YMotor,TableMoveTarget,61.997219,D,RunCycle,74
+2022-03-14T20:04:09.5558221Z,YMotor,TableMoveError,-0.010254,D,RunCycle,74
+2022-03-14T20:04:09.9105991Z,LED,CurrentSetRedMa,1187,F,RunCycle,74
+2022-03-14T20:04:09.9105991Z,LED,DACSetRed,530,I,RunCycle,74
+2022-03-14T20:04:09.9105991Z,LED,CurrentSetGreenMa,6468,F,RunCycle,74
+2022-03-14T20:04:09.9105991Z,LED,DACSetGreen,2888,I,RunCycle,74
+2022-03-14T20:04:11.9358462Z,Temperature.LED,TempReadC,26.821,F,RunCycle,74
+2022-03-14T20:04:11.9468443Z,LED,ADCReadGreen,3,I,RunCycle,74
+2022-03-14T20:04:11.9468443Z,LED,PowerReadGreenMw,8.388543,F,RunCycle,74
+2022-03-14T20:04:12.0008113Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:01:46 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0018108Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:01:52 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0028115Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:01:52 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0038093Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:02:12 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0048084Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:02:12 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0068091Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:02:16 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0078068Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:02:32 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0088078Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:02:32 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0098053Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:02:46 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0108047Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:02:52 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0118041Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:02:52 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0128041Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:03:12 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0148027Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:03:12 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0158019Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:03:16 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0168011Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:03:32 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0178008Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:03:32 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0188018Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:03:46 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0198005Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:03:52 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0207996Z,Windows.Event,Warning,"{""TimeCreated"": ""3/14/2022 9:03:52 PM"", ""ProviderName"": ""Microsoft-Windows-DeliveryOptimization"",""FormatDescription"": ""The policy 'DODownloadMode' was set with the value '64', which is invalid and will be ignored.""}",S,RunCycle,74
+2022-03-14T20:04:12.0913862Z,Run.Details,CycleDuration,147.4793911,R,RunCycle,74

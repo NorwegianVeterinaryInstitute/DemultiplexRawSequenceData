@@ -337,8 +337,13 @@ class demux:
             else:
                 continue
 
-        demuxLogger.info( f"project_list: {project_list}\n" )
-
+        if len( project_list ) == 0:
+            demuxFailureLogger.critical( "project_list is empty! Exiting!" )
+            demuxLogger.critical( "project_list is empty! Exiting!" )
+            logging.shutdown( )
+            sys.exit( )
+        else:
+            demuxLogger.info( f"project_list: {project_list}\n" )
 
         demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Get project name from {SampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] ) )
         return( set( project_list ) )
@@ -430,9 +435,21 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
             demuxLogger.debug( f"DemultiplexRunIdDir/DemultiplexLogDir:\t{demux.DemultiplexLogDirPath}" )
             demuxLogger.debug( f"DemultiplexRunIdDir/DemuxQCDirectory:\t{demux.DemuxQCDirectoryPath}" )
 
-    os.mkdir( demux.DemultiplexRunIdDir )   # root directory for run
-    os.mkdir( demux.DemultiplexLogDirPath ) # log directory for run
-    os.mkdir( demux.DemuxQCDirectoryPath )  # QC directory  for run
+    try:
+        os.mkdir( demux.DemultiplexRunIdDir )   # root directory for run
+        os.mkdir( demux.DemultiplexLogDirPath ) # log directory for run
+        os.mkdir( demux.DemuxQCDirectoryPath )  # QC directory  for run
+    except FileExistsError as err:
+        demuxFailureLogger.critical( f"File already exists! Exiting!\n{err}" )
+        demuxLogger.critical( f"File already exists! Exiting!\n{err}" )
+        logging.shutdown( )
+        sys.exit( )
+    except FileNotFoundError as err:
+        demuxFailureLogger.critical( f"A component of the passed path is missing! Exiting!\n{err}" )
+        demuxLogger.critical( f"A component of the passed path is missing! Exiting!\n{err}" )
+        logging.shutdown( )
+        sys.exit( )
+
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Create directory structure finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -488,20 +505,40 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
                     f"Exiting."
                  ]
         text = '\n'.join( text )
+        demuxFailureLogger.critical( text )
         demuxLogger.critical( print( f"{ text }" ) )
+        logging.shutdown( )
         sys.exit( )
 
     if not result.stderr:
         demuxLogger.critical( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
+        demuxFailureLogger.critical( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
+        logging.shutdown( )
         sys.exit( )
 
-    file = open( Bcl2FastqLogFile, "w" )
-    file.write( result.stderr )
-    file.close( )
+    try: 
+        file = open( Bcl2FastqLogFile, "w" )    # fileObject https://docs.python.org/3/library/exceptions.html#exception-groups
+        file.write( result.stderr )             # fileObject https://docs.python.org/3/library/exceptions.html#exception-groups
+        file.close( )                           # fileObject https://docs.python.org/3/library/exceptions.html#exception-groups
+    except OSError as err:
+        text = [    f"Caught exception!",
+                    f"Command: {err.cmd}", # interpolated strings
+                    f"Return code: {err.returncode}"
+                    f"Process output: {err.stdout}",
+                    f"Process error:  {err.stderr}",
+                    f"Exiting."
+                 ]
+        text = '\n'.join( text )
+        demuxFailureLogger.critical( text )
+        demuxLogger.critical( print( f"{ text }" ) )
+        logging.shutdown( )
+        sys.exit( )
 
     if demux.debug:
         if not os.path.isfile( Bcl2FastqLogFile ):
-            demuxLogger.debug( f"{Bcl2FastqLogFile} did not get written to disk. Exiting.")
+            demuxFailureLogger.critical( f"{Bcl2FastqLogFile} did not get written to disk. Exiting." )
+            demuxLogger.debug( f"{Bcl2FastqLogFile} did not get written to disk. Exiting." )
+            logging.shutdown( )
             sys.exit( )
         else:
             filesize = os.path.getsize( Bcl2FastqLogFile )

@@ -1,0 +1,14 @@
+1
+2022-03-15T14:15:28.0378950Z,Header,Platform,"MiSeq",S,,
+2022-03-15T14:15:28.0378950Z,Header,MachineSerialNumber,"M06578",S,,
+2022-03-15T14:15:28.0378950Z,Header,UserRunName,"MiSeqRun",S,,
+2022-03-15T14:15:28.0378950Z,Header,ApplicationRunId,"220314_M06578_0091_000000000-DFM6K",S,,
+2022-03-15T14:15:28.0448907Z,YMotor,DirectMoveTarget,75.33473,D,RunChemistry,EndRead
+2022-03-15T14:15:32.6082501Z,YMotor,DirectMoveError,0.003906,D,RunChemistry,EndRead
+2022-03-15T14:15:32.6112485Z,ReagentValve,MoveToPosition,3,I,RunChemistry,EndRead
+2022-03-15T14:15:32.9140015Z,ReagentValve,PositionErrorSteps,36,I,RunChemistry,EndRead
+2022-03-15T14:15:32.9718242Z,ReagentValve,MoveStatus,"Ok",S,RunChemistry,EndRead
+2022-03-15T14:15:33.1024132Z,LanePump,Aspirate.Reagent,3,I,RunChemistry,EndRead
+2022-03-15T14:15:33.1024132Z,LanePump,Aspirate.Port,InputPort,E,RunChemistry,EndRead
+2022-03-15T14:15:33.1024132Z,LanePump,Aspirate.Steps,720,I,RunChemistry,EndRead
+2022-03-15T14:15:33.1024132Z,LanePump,Aspirate.Rate,2000,I,RunChemistry,EndRead

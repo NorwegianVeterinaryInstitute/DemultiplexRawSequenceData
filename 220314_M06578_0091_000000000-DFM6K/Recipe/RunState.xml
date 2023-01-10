@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<RecipeState xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="1">
+  <CurrentStep>9</CurrentStep>
+  <CurrentCycle>502</CurrentCycle>
+  <NumberOfCyclesCompleted>502</NumberOfCyclesCompleted>
+  <CurrentProtocolItem>0</CurrentProtocolItem>
+  <CurrentChemistryStep>1</CurrentChemistryStep>
+</RecipeState>

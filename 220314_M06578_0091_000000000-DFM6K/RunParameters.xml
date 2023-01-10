@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<RunParameters xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LineWashRequired="false">
+  <RunParametersVersion>MiSeq_1_2</RunParametersVersion>
+  <CopyManifests>false</CopyManifests>
+  <FlowcellRFIDTag>
+    <SerialNumber>000000000-DFM6K</SerialNumber>
+    <PartNumber>15035217</PartNumber>
+    <ExpirationDate>2022-12-01T00:00:00</ExpirationDate>
+    <LotNumber>20602685</LotNumber>
+  </FlowcellRFIDTag>
+  <PR2BottleRFIDTag>
+    <SerialNumber>MS3187799-00PR2</SerialNumber>
+    <PartNumber>15041807</PartNumber>
+    <ExpirationDate>2022-12-14T00:00:00</ExpirationDate>
+    <LotNumber>20606779</LotNumber>
+  </PR2BottleRFIDTag>
+  <ReagentKitRFIDTag>
+    <SerialNumber>MS3111903-500V2</SerialNumber>
+    <PartNumber>15033573</PartNumber>
+    <ExpirationDate>2022-11-07T00:00:00</ExpirationDate>
+    <LotNumber>20607492</LotNumber>
+  </ReagentKitRFIDTag>
+  <Resumable>true</Resumable>
+  <ManifestFiles />
+  <AfterRunWashMethod>Post-Run Wash</AfterRunWashMethod>
+  <Setup>
+    <SupportMultipleSurfacesInUI>false</SupportMultipleSurfacesInUI>
+    <ApplicationVersion>4.0.0.1769</ApplicationVersion>
+    <NumTilesPerSwath>2</NumTilesPerSwath>
+    <NumSwaths>1</NumSwaths>
+    <NumLanes>1</NumLanes>
+    <ApplicationName>MiSeq Control Software</ApplicationName>
+  </Setup>
+  <RunID>220314_M06578_0091_000000000-DFM6K</RunID>
+  <ScannerID>M06578</ScannerID>
+  <RunNumber>91</RunNumber>
+  <FPGAVersion>9.5.12</FPGAVersion>
+  <MCSVersion>4.0.0.1769</MCSVersion>
+  <RTAVersion>1.18.54.4</RTAVersion>
+  <Barcode>000000000-DFM6K</Barcode>
+  <PR2BottleBarcode>MS3187799-00PR2</PR2BottleBarcode>
+  <ReagentKitPartNumberEntered>15033573</ReagentKitPartNumberEntered>
+  <ReagentKitVersion>Version2</ReagentKitVersion>
+  <ReagentKitBarcode>MS3111903-500V2</ReagentKitBarcode>
+  <PreviousPR2BottleBarcode />
+  <PreviousReagentKitBarcode />
+  <ExperimentName>15035217</ExperimentName>
+  <Chemistry>Default</Chemistry>
+  <Username>sbsUser</Username>
+  <EnableAnalysis>false</EnableAnalysis>
+  <Reads>
+    <RunInfoRead Number="1" NumCycles="251" IsIndexedRead="N" />
+    <RunInfoRead Number="2" NumCycles="251" IsIndexedRead="N" />
+  </Reads>
+  <TempFolder>D:\Illumina\MiSeqTemp\220314_M06578_0091_000000000-DFM6K</TempFolder>
+  <RTATempFolder>D:\Illumina\RTATemp\220314_M06578_0091_000000000-DFM6K</RTATempFolder>
+  <AnalysisFolder>D:\Illumina\MiSeqAnalysis\220314_M06578_0091_000000000-DFM6K</AnalysisFolder>
+  <RunStartDate>220314</RunStartDate>
+  <MostRecentWashType>MissedPostRunWash</MostRecentWashType>
+  <RecipeFolder>C:\ProgramData\Illumina\MiSeq Control Software\Recipe</RecipeFolder>
+  <ILMNOnlyRecipeFolder>C:\program files\Illumina\MiSeq Control Software\Recipe</ILMNOnlyRecipeFolder>
+  <SampleSheetName>MS3111903-500V2</SampleSheetName>
+  <SampleSheetFolder />
+  <ManifestFolder>D:\Illumina\MiSeq Control Software\Manifests</ManifestFolder>
+  <OutputFolder>\\10.10.23.35\rawdata\220314_M06578_0091_000000000-DFM6K</OutputFolder>
+  <FocusMethod>AutoFocus</FocusMethod>
+  <SurfaceToScan>Top</SurfaceToScan>
+  <SaveFocusImages>false</SaveFocusImages>
+  <SaveScanImages>true</SaveScanImages>
+  <RunManagementType>Manual</RunManagementType>
+  <MAPRunId>0</MAPRunId>
+  <DxUserName />
+  <DxUserLevel />
+  <BaseSpaceMode>None</BaseSpaceMode>
+  <ManualFlowcellEntry>false</ManualFlowcellEntry>
+  <ManualReagentEntry>false</ManualReagentEntry>
+  <ManualPR2Entry>false</ManualPR2Entry>
+  <CopyServiceRunId>18E3D132FAE8CDA7</CopyServiceRunId>
+  <LocalRunManagerRunId>0</LocalRunManagerRunId>
+</RunParameters>
