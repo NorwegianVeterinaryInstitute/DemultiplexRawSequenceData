@@ -610,8 +610,9 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 demuxLogger.debug( f"CompressedFastQfiles[{index}]:\t\t\t{item}" )
 
         if not CompressedFastQfiles: # if array is empty
-            demuxFailureLogger.critical( f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}(). Exiting." )
-            demuxLogger.critical( f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}(). Exiting." )
+            text = f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}(). Exiting."
+            demuxFailureLogger.critical( text )
+            demuxLogger.critical( text )
             logging.shutdown( )
             sys.exit( )
 
@@ -1017,7 +1018,7 @@ def calcFileHash( DemultiplexRunIdDir ):
                     fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
                     fh.write( f"{sha512sum}\n" )
                     fh.close( )
-               except FileNotFoundError as err:
+                except FileNotFoundError as err:
                     text = [    f"Error writing sha512 sum file {filepath}{demux.sha512Suffix}:", 
                                 f"Exiting!"
                             ]
