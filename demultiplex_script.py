@@ -506,7 +506,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
                  ]
         text = '\n'.join( text )
         demuxFailureLogger.critical( text )
-        demuxLogger.critical( print( f"{ text }" ) )
+        demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
         sys.exit( )
 
@@ -530,7 +530,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
                  ]
         text = '\n'.join( text )
         demuxFailureLogger.critical( text )
-        demuxLogger.critical( print( f"{ text }" ) )
+        demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
         sys.exit( )
 
@@ -610,7 +610,9 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 demuxLogger.debug( f"CompressedFastQfiles[{index}]:\t\t\t{item}" )
 
         if not CompressedFastQfiles: # if array is empty
-            demuxLogger.critical( f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}(). Exiting. ")
+            demuxFailureLogger.critical( f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}(). Exiting." )
+            demuxLogger.critical( f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}(). Exiting." )
+            logging.shutdown( )
             sys.exit( )
 
         for file in CompressedFastQfiles:
@@ -649,7 +651,9 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                                 f"Exiting!"
                          ]
                     text = '\n'.join( text )
-                    demuxLogger.critical( print( f"{ text }" ) )
+                    demuxFailureLogger.critical( f"{ text }" )
+                    demuxLogger.critical( f"{ text }" )
+                    logging.shutdown( )
                     sys.exit( )
 
     demuxLogger.info( "-----------------")
@@ -680,7 +684,9 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                             f"Exiting!"
                         ]
                 text = '\n'.join( text )
-                demuxLogger.critical( print( f"{ text }" ) )
+                demuxFailureLogger.critical( f"{ text }" )
+                demuxLogger.critical( f"{ text }" )
+                logging.shutdown( )
                 sys.exit( )
 
             if demux.debug:
@@ -736,16 +742,30 @@ def FastQC( newFileList ):
                      f"Exiting."
                 ]
             text = '\n'.join( text )
-            demuxLogger.critical( print( f"{ text }" ) )
+            demuxFailureLogger.critical( f"{ text }" )
+            demuxLogger.critical( f"{ text }" )
+            logging.shutdown( )
             sys.exit( )
 
     # log FastQC output
     demux.FastQCLogFilePath   = os.path.join( demux.DemultiplexLogDirPath, demux.FastqcLogFileName )  #### FIXME FIXME FIXME ADJUST AND TAKE OUT
-    fastQCLogFileHandle = open( demux.FastQCLogFilePath, "x" ) # fail if file exists
-    if demux.debug:
-        demuxLogger.debug( f"FastQCLogFilePath:\t\t\t\t{demux.FastQCLogFilePath}")
-    fastQCLogFileHandle.write( result.stdout ) 
-    fastQCLogFileHandle.close( )
+    try: 
+        fastQCLogFileHandle = open( demux.FastQCLogFilePath, "x" ) # fail if file exists
+        if demux.debug:
+            demuxLogger.debug( f"FastQCLogFilePath:\t\t\t\t{demux.FastQCLogFilePath}")
+        fastQCLogFileHandle.write( result.stdout ) 
+        fastQCLogFileHandle.close( )
+    except FileNotFoundError as err:
+        text = [    f"Error opening FastQCLogFilePath {oldname}:", 
+                    f"FastQCLogFilePath: {demux.FastQCLogFilePath} does not exist",
+                    f"err.filename:  {err.filename}",
+                    f"Exiting!"
+                ]
+        text = '\n'.join( text )
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: FastQC complete ==\n", color="red", attrs=["bold"] )  )
 
@@ -786,7 +806,10 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
         demuxLogger.debug( f"Command to execute:\t\t\t\t/usr/bin/cp {textsource} {destination}" )
 
     if not os.path.isdir( destination ) :
-        demuxLogger.critical( f"Directory {destination} does not exist. Please check the logs, delete {demux.DemultiplexRunIdDir} and try again." )
+        text =  f"Directory {destination} does not exist. Please check the logs, delete {demux.DemultiplexRunIdDir} and try again."
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
         sys.exit( )
 
 
@@ -803,7 +826,9 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
                  f"Exiting."
                ]
         text = '\n'.join( text )
-        demuxLogger.critical( print( f"{ text }" ) )
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
         sys.exit( )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC finished ==\n", color="red", attrs=["bold"] ) )
@@ -842,16 +867,33 @@ def MultiQC( DemultiplexRunIdDir ):
                     f"Exiting."
                 ]
         text = '\n'.join( text )
-        demuxLogger.critical( print( f"{ text }" ) )
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
         sys.exit( )
 
     # log multiqc output
     demux.MutliQCLogFilePath  = os.path.join( demux.DemultiplexLogDirPath, demux.MultiqcLogFileName ) ############# FIXME FIXME FIXME FIXME take out
-    multiQCLogFileHandle      = open( demux.MutliQCLogFilePath, "x" ) # fail if file exists
-    if demux.debug:
-        demuxLogger.debug( f"MutliQCLogFilePath:\t\t\t\t{demux.MutliQCLogFilePath}")
-    multiQCLogFileHandle.write( result.stderr ) # The MultiQC people are special: They write output to stderr
-    multiQCLogFileHandle.close( )
+    try: 
+        multiQCLogFileHandle      = open( demux.MutliQCLogFilePath, "x" ) # fail if file exists
+        if demux.debug:
+            demuxLogger.debug( f"MutliQCLogFilePath:\t\t\t\t{demux.MutliQCLogFilePath}")
+        multiQCLogFileHandle.write( result.stderr ) # The MultiQC people are special: They write output to stderr
+        multiQCLogFileHandle.close( )
+    except OSError as err:
+        text = [    f"Caught exception!",
+                    f"Command: {err.cmd}", # interpolated strings
+                    f"Return code: {err.returncode}"
+                    f"Process output: {err.stdout}",
+                    f"Process error:  {err.stderr}",
+                    f"Exiting."
+                 ]
+        text = '\n'.join( text )
+        demuxFailureLogger.critical( text )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )    
+
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: MultiQC finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -945,7 +987,10 @@ def calcFileHash( DemultiplexRunIdDir ):
             filepath = os.path.join( directoryRoot, file )
 
             if not os.path.isfile( filepath ):
-                demuxLogger.critical( f"{filepath} is not a file. Exiting." )
+                text = f"{filepath} is not a file. Exiting."
+                demuxFailureLogger.critical( f"{ text }" )
+                demuxLogger.critical( f"{ text }" )
+                logging.shutdown( )
                 sys.exit( )
 
             if os.path.getsize( filepath ) == 0 : # make sure it's not a zero length file 
@@ -968,9 +1013,19 @@ def calcFileHash( DemultiplexRunIdDir ):
                 demuxLogger.warning( f"{filepath}{demux.md5Suffix} exists, skipping" )
                 continue
             if not os.path.isfile( f"{filepath}{demux.sha512Suffix}" ):
-                fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
-                fh.write( f"{sha512sum}\n" )
-                fh.close( )
+                try: 
+                    fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
+                    fh.write( f"{sha512sum}\n" )
+                    fh.close( )
+               except FileNotFoundError as err:
+                    text = [    f"Error writing sha512 sum file {filepath}{demux.sha512Suffix}:", 
+                                f"Exiting!"
+                            ]
+                    text = '\n'.join( text )
+                    demuxFailureLogger.critical( f"{ text }" )
+                    demuxLogger.critical( f"{ text }" )
+                    logging.shutdown( )
+                    sys.exit( )
             else:
                 continue
 
@@ -1007,7 +1062,10 @@ def changePermissions( path ):
                 demuxLogger.debug( filepath )
 
             if not os.path.isfile( filepath ):
-                demuxLogger.critical( f"{filepath} is not a file. Exiting.")
+                text = f"{filepath} is not a file. Exiting." 
+                demuxFailureLogger.critical( f"{ text }" )
+                demuxLogger.critical( f"{ text }" )
+                logging.shutdown( )
                 sys.exit( )
 
             # try:
@@ -1026,11 +1084,16 @@ def changePermissions( path ):
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
                 os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
             except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                demuxLogger.critical( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
-                demuxLogger.critical( f"\terrno:\t{err.errno}"                            )
-                demuxLogger.critical( f"\tstrerror:\t{err.strerror}"                      )
-                demuxLogger.critical( f"\tfilename:\t{err.filename}"                      )
-                demuxLogger.critical( f"\tfilename2:\t{err.filename2}"                    )
+                text = [    f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
+                            f"\terrno:\t{err.errno}",
+                            f"\tstrerror:\t{err.strerror}",
+                            f"\tfilename:\t{err.filename}",
+                            f"\tfilename2:\t{err.filename2}"
+                        ]
+                text = '\n'.join( text )
+                demuxFailureLogger.critical( f"{ text }" )
+                demuxLogger.critical( f"{ text }" )
+                logging.shutdown( )
                 sys.exit( )
 
 
@@ -1046,8 +1109,12 @@ def changePermissions( path ):
                 demuxLogger.debug( dirpath )
 
             if not os.path.isdir( dirpath ):
-                demuxLogger.critical( f"{dirpath} is not a directory. Exiting.")
+                text = f"{dirpath} is not a directory. Exiting."
+                demuxFailureLogger.critical( f"{ text }" )
+                demuxLogger.critical( f"{ text }" )
+                logging.shutdown( )
                 sys.exit( )
+
 
             # try:
             #     shutil.chown( dirpath, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup dirpath
@@ -1064,11 +1131,17 @@ def changePermissions( path ):
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
                 os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
             except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                demuxLogger.critical( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
-                demuxLogger.critical( f"\terrno:\t{err.errno}"                            )
-                demuxLogger.critical( f"\tstrerror:\t{err.strerror}"                      )
-                demuxLogger.critical( f"\tfilename:\t{err.filename}"                      )
-                demuxLogger.critical( f"\tfilename2:\t{err.filename2}"                    )
+                text = [
+                        f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
+                        f"\terrno:\t{err.errno}",
+                        f"\tstrerror:\t{err.strerror}",
+                        f"\tfilename:\t{err.filename}",
+                        f"\tfilename2:\t{err.filename2}"
+                ]
+                text = '\n'.join( text )
+                demuxFailureLogger.critical( f"{ text }" )
+                demuxLogger.critical( f"{ text }" )
+                logging.shutdown( )
                 sys.exit( )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Changing Permissions finished ==\n", color="red", attrs=["bold"] ) )
@@ -1125,13 +1198,22 @@ def prepareDelivery( RunID ):
     try:
         os.chdir( demux.DemultiplexRunIdDir )
     except FileNotFoundError:
-        demuxLogger.critical( f"Directory: {demux.DemultiplexRunIdDir} does not exist. Exiting." )
+        text = f"Directory: {demux.DemultiplexRunIdDir} does not exist. Exiting."
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
         sys.exit( )
     except NotADirectoryError:
-        demuxLogger.critical( f"{demux.DemultiplexRunIdDir} is not a directory. Exiting." )
+        text =  f"{demux.DemultiplexRunIdDir} is not a directory. Exiting."
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
         sys.exit( )
     except Exception as e:
-        demuxLogger.critical( f"You do not have permissions to change to {demux.DemultiplexRunIdDir}. Exiting." )
+        text = f"You do not have permissions to change to {demux.DemultiplexRunIdDir}. Exiting."
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
         sys.exit( )
 
     if demux.debug:
@@ -1141,9 +1223,11 @@ def prepareDelivery( RunID ):
     if not os.path.isdir( demux.ForTransferRunIdDir ):
         os.mkdir( demux.ForTransferRunIdDir )
     else:
-        demuxLogger.critical( f"{demux.ForTransferRunIdDir} exists, this is not supposed to exist, please investigate and re-run the demux. Exiting." )
+        text = f"{demux.ForTransferRunIdDir} exists, this is not supposed to exist, please investigate and re-run the demux. Exiting."
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
         sys.exit( )
-
 
     projectList = os.listdir( "." )                                         # get the contents of the demux.DemultiplexRunIdDir directory
     if demux.debug:
@@ -1191,10 +1275,17 @@ def prepareDelivery( RunID ):
         try:
             os.mkdir( f"{demux.ForTransferRunIdDir}/{project}" )  # we save each tar file into its own directory
         except FileExistsError as err:
-            demuxLogger.critical( f"Error while trying to mkdir {demux.ForTransferRunIdDir}/{project}")
-            demuxLogger.critical( f"Error message: {err}")
-            demuxLogger.critical ( "Exiting.")
+            text = [
+                f"Error while trying to mkdir {demux.ForTransferRunIdDir}/{project}",
+                f"Error message: {err}",
+                "Exiting."
+            ]
+            text = '\n'.join( text )
+            demuxFailureLogger.critical( f"{ text }" )
+            demuxLogger.critical( f"{ text }" )
+            logging.shutdown( )
             sys.exit( )
+
 
         tarFile = os.path.join( demux.ForTransferRunIdDir, project )
         tarFile = os.path.join( tarFile, f"{project}{demux.tarSuffix}" )
@@ -1204,7 +1295,10 @@ def prepareDelivery( RunID ):
         if not os.path.isfile( tarFile ) :
             tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
         else:
-            demuxLogger.critical( f"{tarFile} exists. Please investigate or delete. Exiting." )
+            text = f"{tarFile} exists. Please investigate or delete. Exiting."
+            demuxFailureLogger.critical( f"{ text }" )
+            demuxLogger.critical( f"{ text }" )
+            logging.shutdown( )
             sys.exit( )
 
 
@@ -1237,9 +1331,13 @@ def prepareDelivery( RunID ):
     QCDir           = f"{RunIDShort}{demux.QCSuffix}"
     multiQCDir      = demux.multiqc_data
     if demux.debug:
-        demuxLogger.debug( f"RunIDShort (reconstructed, not global: {RunIDShort}" )
-        demuxLogger.debug( f"QCDir:\t\t\t{QCDir}")
-        demuxLogger.debug( f"multiQCDir:\t\t\t{multiQCDir}")
+        text = [
+            f"RunIDShort (reconstructed, not global: {RunIDShort}",
+            f"QCDir:\t\t\t{QCDir}",
+            f"multiQCDir:\t\t\t{multiQCDir}"
+        ]
+        '\n'.join( text )
+        demuxLogger.debug( text )
     
 
     ################################################################################
@@ -1250,7 +1348,10 @@ def prepareDelivery( RunID ):
     if not os.path.isfile( demux.forTransferQCtarFile ):
         tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "w:" )
     else:
-        demuxLogger.critical( f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting." )
+        text = f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting."
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
         sys.exit( )
     demuxLogger.info( termcolor.colored( f"==> Archiving {QCDir} ==================", color="yellow", attrs=["bold"] ) )
     for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.DemultiplexRunIdDir, QCDir ), followlinks = False ): 
