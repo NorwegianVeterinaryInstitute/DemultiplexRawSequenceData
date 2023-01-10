@@ -338,8 +338,9 @@ class demux:
                 continue
 
         if len( project_list ) == 0:
-            demuxFailureLogger.critical( "project_list is empty! Exiting!" )
-            demuxLogger.critical( "project_list is empty! Exiting!" )
+            text = "project_list is empty! Exiting!"
+            demuxFailureLogger.critical( text  )
+            demuxLogger.critical( text )
             logging.shutdown( )
             sys.exit( )
         else:
@@ -1189,11 +1190,14 @@ def prepareDelivery( RunID ):
     counter = 0
 
     if demux.debug:
-        demuxLogger.debug( f"Current working directory:\t{os.getcwd( )}")
-        demuxLogger.debug( f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}" )
-        demuxLogger.debug( f"ForTransferRunIdDir:\t\t{demux.ForTransferRunIdDir}" )
-        demuxLogger.debug( f"forTransferQCtarFile:\t{demux.forTransferQCtarFile}" )
-        demuxLogger.debug( f"Original working directory:\t{ os.getcwd( ) }" )
+        text = [    f"Current working directory:\t{os.getcwd( )}",
+                    f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}",
+                    f"ForTransferRunIdDir:\t\t{demux.ForTransferRunIdDir}",
+                    f"forTransferQCtarFile:\t{demux.forTransferQCtarFile}",
+                    f"Original working directory:\t{ os.getcwd( ) }"
+                ]
+        '\n'.join( text )
+        demuxLogger.debug( text )
 
     # Switch to the Demultiplex directory we will be archiving
     try:
@@ -1563,11 +1567,18 @@ def main( RunID ):
 
 
     if not os.path.exists( SampleSheetFilePath ):
-        demuxLoggercritical( f"{SampleSheetFilePath} does not exist! Demultiplexing cannot continue. Exiting." ) 
+        text = f"{SampleSheetFilePath} does not exist! Demultiplexing cannot continue. Exiting."
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
         sys.exit( )
 
+
     if not os.path.isfile( SampleSheetFilePath ):
-        demuxLogger.critical( f"{SampleSheetFilePath} is not a file! Exiting." )
+        text = f"{SampleSheetFilePath} is not a file! Exiting."
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
         sys.exit( )
 
     if demux.debug and demux.verbosity == 2:
@@ -1575,7 +1586,10 @@ def main( RunID ):
     project_list           = demux.getProjectName( SampleSheetFilePath ) # get the list of projects in this current run
 
     if len( project_list ) == 0:
-        demuxLogger.critical( "List project_list contains no projects/zero length! Exiting.")
+        text = "List project_list contains no projects/zero length! Exiting." 
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
         sys.exit( )
     elif demux.debug and len(project_list) == 1: 
         project_list.add( demux.TestProject ) # if debug, have at least two project names to ensure multiple paths are being created
@@ -1621,20 +1635,33 @@ def main( RunID ):
     #   check if sequencing run has completed, exit if not
     #       Completion of sequencing run is signaled by the existance of the file {RTACompleteFilePath} ( {SequenceRunOriginDir}/{demux.RTACompleteFile} )
     if not os.path.isfile( f"{RTACompleteFilePath}" ):
-        demuxLogger.critical( f"{RunID} is not finished sequencing yet!" ) 
-        sys.exit()
+        text = f"{RunID} is not finished sequencing yet!"
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
+        sys.exit( )
 
     #   check if {DemultiplexDirRoot} exists
     #       exit if not
     if not os.path.exists( DemultiplexDirRoot ):
-        demuxLogger.critical( f"{DemultiplexDirRoot} is not present, please use the provided ansible file to create the root directory hierarchy")
+        text = f"{DemultiplexDirRoot} is not present, please use the provided ansible file to create the root directory hierarchy"
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
         sys.exit( )
+
     if not os.path.isdir( DemultiplexDirRoot ):
-        demuxLogger.critical( f"{DemultiplexDirRoot} is not a directory! Cannot stored demultiplex data in a non-directory structure! Exiting.")
+        text = f"{DemultiplexDirRoot} is not a directory! Cannot stored demultiplex data in a non-directory structure! Exiting." 
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
         sys.exit( )
     if os.path.exists( demux.DemultiplexRunIdDir ):
-        demuxLogger.critical( f"{demux.DemultiplexRunIdDir} exists. Delete the demultiplex folder before re-running the script" )
-        sys.exit()
+        text = f"{demux.DemultiplexRunIdDir} exists. Delete the demultiplex folder before re-running the script"
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
+        sys.exit( )
 
     #   create {DemultiplexDirRoot} directory structrure
     createDemultiplexDirectoryStructure( demux.DemultiplexRunIdDir, RunIDShort, project_list  )
@@ -1642,7 +1669,6 @@ def main( RunID ):
     demuxScriptLogHandler   = logging.FileHandler( demux.DemultiplexScriptLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
     demuxScriptLogHandler.setFormatter( demuxLogFormatter )
     demuxLogger.addHandler( demuxScriptLogHandler )
-
 
 
     #   copy SampleSheet.csv from {SampleSheetFilePath} to {demux.DemultiplexRunIdDir} . bcl2fastq uses the file for demultiplexing
@@ -1653,10 +1679,16 @@ def main( RunID ):
         shutil.copy2( SampleSheetFilePath, demux.DemultiplexRunIdDir )
         demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: {demux.SampleSheetFileName} copied to {demux.DemultiplexRunIdDir}\n", color="green" ) )
     except Exception as err:
-        demuxLogger.critical( f"Copying {SampleSheetFilePath} to {demux.DemultiplexRunIdDir} failed." )
-        demuxLogger.critical( err )
-        demuxLogger.critical( "Exiting.")
+        text = [    f"Copying {SampleSheetFilePath} to {demux.DemultiplexRunIdDir} failed.",
+                    err.tostring( ),
+                    "Exiting."
+        ]
+        '\n'.join( text )
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
         sys.exit( )
+
     try:
         # Request by Cathrine: Copy the SampleSheet file to /data/samplesheet automatically
         demux.n = demux.n + 1
@@ -1664,9 +1696,13 @@ def main( RunID ):
         shutil.copy2( SampleSheetFilePath, SampleSheetArchiveFilePath )
         demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {SampleSheetFilePath} to {SampleSheetArchiveFilePath} ==\n", color="green" ) )
     except Exception as err:
-        demuxLogger.critical( f"Archiving {SampleSheetFilePath} to {SampleSheetArchiveFilePath} failed." )
-        demuxLogger.critical( err )
-        demuxLogger.critical( "Exiting.")
+        text = [    f"Archiving {SampleSheetFilePath} to {SampleSheetArchiveFilePath} failed.",
+                    err.tostring( ),
+                    "Exiting.",
+        ]
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
         sys.exit( )
 
     # action starts from here
