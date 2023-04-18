@@ -1694,6 +1694,8 @@ def main( RunID ):
         demux.n = demux.n + 1
         SampleSheetArchiveFilePath = os.path.join( demux.SampleSheetDirPath, f"{RunID}{demux.CSVSuffix}" ) # .dot is included in CSVsuffix
         shutil.copy2( SampleSheetFilePath, SampleSheetArchiveFilePath )
+        currentPermissions = stat.S_IMODE(os.lstat( SampleSheetArchiveFilePath ).st_mode )
+        os.chmod( SampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "o=rw,g=r,o=r"
         demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {SampleSheetFilePath} to {SampleSheetArchiveFilePath} ==\n", color="green" ) )
     except Exception as err:
         text = [    f"Archiving {SampleSheetFilePath} to {SampleSheetArchiveFilePath} failed.",
