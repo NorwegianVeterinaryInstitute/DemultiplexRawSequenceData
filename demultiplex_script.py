@@ -432,7 +432,7 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
     demux.DemuxQCDirectoryPath  = os.path.join( DemultiplexRunIdDir, demux.DemuxQCDirectoryName  )
 
     if demux.debug:
-            demuxLogger.debug( f"DemultiplexRunIdDir\t\t\t\t{demux.DemultiplexRunIdDir}" )
+            demuxLogger.debug( f"DemultiplexRunIdDir\t\t\t{demux.DemultiplexRunIdDir}" )
             demuxLogger.debug( f"DemultiplexRunIdDir/DemultiplexLogDir:\t{demux.DemultiplexLogDirPath}" )
             demuxLogger.debug( f"DemultiplexRunIdDir/DemuxQCDirectory:\t{demux.DemuxQCDirectoryPath}" )
 
@@ -492,7 +492,7 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
     ]
     Bcl2FastqLogFile     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
     if demux.debug:
-        demuxLogger.debug( f"Command to execute:\t\t\t\t" + " ".join( argv ) )
+        demuxLogger.debug( f"Command to execute:\t\t\t" + " ".join( argv ) )
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + SequenceRunOriginDir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
@@ -1607,24 +1607,24 @@ def main( RunID ):
     if demux.debug: # logging.info the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
         demuxLogger.debug( "=============================================================================")
         demuxLogger.debug( f"RunID:\t\t\t\t\t{RunID}")
-        demuxLogger.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}")
+        demuxLogger.debug( f"RunIDShort:\t\t\t\t{RunIDShort}")
         demuxLogger.debug( f"project_list:\t\t\t\t{project_list}")
         demuxLogger.debug( "=============================================================================")
         demuxLogger.debug( f"RawDataLocationDirRoot:\t\t\t{RawDataLocationDirRoot}" )
         demuxLogger.debug( f"SequenceRunOriginDir:\t\t\t{SequenceRunOriginDir}" )
-        demuxLogger.debug( f"SampleSheetFilePath:\t\t\t\t{SampleSheetFilePath}" )
-        demuxLogger.debug( f"RTACompleteFilePath:\t\t\t\t{SequenceRunOriginDir}/{demux.RTACompleteFile}" )
+        demuxLogger.debug( f"SampleSheetFilePath:\t\t\t{SampleSheetFilePath}" )
+        demuxLogger.debug( f"RTACompleteFilePath:\t\t\t{SequenceRunOriginDir}/{demux.RTACompleteFile}" )
         demuxLogger.debug( "=============================================================================")
-        demuxLogger.debug( f"DemultiplexDirRoot:\t\t\t\t{DemultiplexDirRoot}" )
-        demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
+        demuxLogger.debug( f"DemultiplexDirRoot:\t\t\t{DemultiplexDirRoot}" )
+        demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t{demux.DemultiplexRunIdDir}" )
         demuxLogger.debug( f"DemultiplexLogDirPath:\t\t\t{demux.DemultiplexLogDirPath}" )
-        demuxLogger.debug( f"DemuxRunLogFilePath:\t\t\t\t{demux.DemuxRunLogFilePath}" )
+        demuxLogger.debug( f"DemuxRunLogFilePath:\t\t\t{demux.DemuxRunLogFilePath}" )
         demuxLogger.debug( f"DemultiplexScriptLogFilePath:\t\t{demux.DemultiplexScriptLogFilePath}" )
         demuxLogger.debug( f"DemultiplexQCDirPath:\t\t\t{DemultiplexQCDirPath}" )
         for index, directory in enumerate( DemultiplexProjSubDirs):
-            demuxLogger.debug( f"DemultiplexProjSubDirs[{index}]:\t\t\t{directory}")
+            demuxLogger.debug( f"DemultiplexProjSubDirs[{index}]:\t\t{directory}")
         demuxLogger.debug( "=============================================================================")
-        demuxLogger.debug( f"ForTransferDirRoot:\t\t\t\t{ForTransferDirRoot}" )
+        demuxLogger.debug( f"ForTransferDirRoot:\t\t\t{ForTransferDirRoot}" )
         demuxLogger.debug( f"ForTransferDir:\t\t\t\t{ForTransferDir}" )
         for index, directory in enumerate( ForTransferProjNames):
             demuxLogger.debug( f"ForTransferProjNames[{index}]:\t\t\t{directory}")
