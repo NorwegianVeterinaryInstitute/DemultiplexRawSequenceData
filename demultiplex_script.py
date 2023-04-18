@@ -700,7 +700,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                         demuxLogger.debug( f"newProjectFileList[{index}]:\t\t\t{item}") # make sure the debugging output is all lined up.
 
                 for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
-                    demuxLogger.info( f"DemultiplexRunIdDirNewNameList[{index}]:\t{item}")
+                    demuxLogger.info( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}")
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -724,9 +724,9 @@ def FastQC( newFileList ):
     demultiplexRunIdDir = os.path.dirname( os.path.dirname( newFileList[0] ) )
 
     if demux.debug:
-        demuxLogger.debug( f"argv:\t\t\t\t\t{argv}")
+        demuxLogger.debug( f"argv:\t\t\t\t\t\t{argv}")
         arguments = " ".join( argv[1:] )
-        demuxLogger.debug( f"Command to execute:\t\t\t\t{command} {arguments}") # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
+        demuxLogger.debug( f"Command to execute:\t\t\t\t\t{command} {arguments}") # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
         demuxLogger.debug( f"demultiplexRunIdDir:\t\t\t\t{demultiplexRunIdDir}")
 
     try:
@@ -917,7 +917,7 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newPr
 
     if demux.debug:
         demuxLogger.debug( f"newFileList:\t\t\t\t\t{newFileList}" )
-        demuxLogger.debug( f"DemultiplexRunIdDirNewNameList:\t\t{DemultiplexRunIdDirNewNameList}" )
+        demuxLogger.debug( f"DemultiplexRunIdDirNewNameList:\t\t\t\t {DemultiplexRunIdDirNewNameList}" )
         demuxLogger.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}" )
         demuxLogger.debug( f"newProjectNameList:\t\t\t\t{newProjectNameList}" )
         demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
