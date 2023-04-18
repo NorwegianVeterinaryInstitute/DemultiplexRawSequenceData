@@ -602,16 +602,13 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
         CompressedFastQfiles = glob.glob( filesToSearchFor ) # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
 
         if demux.debug:
-            if len( f"fastq files for {project}:" ) > 30:
-                demuxLogger.debug( f"fastq files for {project}:\t\t{filesToSearchFor}" )
-            else:
-                demuxLogger.debug( f"fastq files for {project}:\t\t\t{filesToSearchFor}" )
+            demuxLogger.debug( f"fastq files for {project}:\t\t\t{filesToSearchFor}" )
 
             for index, item in enumerate( CompressedFastQfiles ):
-                demuxLogger.debug( f"CompressedFastQfiles[{index}]:\t\t\t{item}" )
+                demuxLogger.debug( f"CompressedFastQfiles[{index}]:\t\t\t\t{item}" )
 
         if not CompressedFastQfiles: # if array is empty
-            text = f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}(). Exiting."
+            text = f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}() for project {project}. Exiting."
             demuxFailureLogger.critical( text )
             demuxLogger.critical( text )
             logging.shutdown( )
@@ -917,7 +914,7 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newPr
 
     if demux.debug:
         demuxLogger.debug( f"newFileList:\t\t\t\t\t{newFileList}" )
-        demuxLogger.debug( f"DemultiplexRunIdDirNewNameList:\t\t\t\t {DemultiplexRunIdDirNewNameList}" )
+        demuxLogger.debug( f"DemultiplexRunIdDirNewNameList:\t\t\t\t   {DemultiplexRunIdDirNewNameList}" )
         demuxLogger.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}" )
         demuxLogger.debug( f"newProjectNameList:\t\t\t\t{newProjectNameList}" )
         demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
