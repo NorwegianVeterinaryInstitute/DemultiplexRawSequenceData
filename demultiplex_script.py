@@ -623,14 +623,14 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             baseFileName = os.path.basename( file )
             if demux.debug:
                 demuxLogger.debug( "-----------------")
-                demuxLogger.debug( f"baseFilename:\t\t\t\t{baseFileName}")
+                demuxLogger.debug( f"baseFilename:\t\t\t\t\t{baseFileName}")
 
             oldname = f"{file}"
             newname = f"{demux.DemultiplexRunIdDir}/{project}/{RunIDShort}.{baseFileName}"
             newfoo  = f"{demux.DemultiplexRunIdDir}/{RunIDShort}.{project}/{RunIDShort}.{baseFileName}" # saving this var to pass locations of new directories
 
             if demux.debug:
-                demuxLogger.debug( f"file:\t\t\t\t\t{file}")
+                demuxLogger.debug( f"file:\t\t\t\t\t\t{file}")
                 demuxLogger.debug( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}" )
             
             # make sure oldname files exist
@@ -694,14 +694,10 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             if demux.debug:
                 demuxLogger.debug( termcolor.colored( f"Renaming {oldname} to {newname}", color="cyan", attrs=["reverse"] ) )
                 for index, item in enumerate( newProjectFileList ):
-                    if index < 10:
-                        demuxLogger.debug( f"newProjectFileList[{index}]:\t\t\t{item}") # make sure the debugging output is all lined up.
-                    elif 100 < index  and index >= 10:
-                        demuxLogger.debug( f"newProjectFileList[{index}]:\t\t{item}")
-                    elif 1000 < index and index >= 100:
-                        demuxLogger.debug( f"newProjectFileList[{index}]:\t{item}")
+                    if index > 99:
+                        demuxLogger.debug( f"newProjectFileList[{index}]:\t\t{item}") # make sure the debugging output is all lined up.
                     else:
-                        demuxLogger.debug( f"newProjectFileList[{index}]:\t{item}")       # if we got more than 1000 files, well, frak me...  ## NOTE THIS IS AN INTERESTING STATISTIC: HOW MANY FILES PRODUCED (MEAN, AVERAGE) FOR EACH RUN 
+                        demuxLogger.debug( f"newProjectFileList[{index}]:\t\t\t{item}") # make sure the debugging output is all lined up.
 
                 for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
                     demuxLogger.info( f"DemultiplexRunIdDirNewNameList[{index}]:\t{item}")
