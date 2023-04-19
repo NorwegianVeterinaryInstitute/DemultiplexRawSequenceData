@@ -191,6 +191,7 @@ class demux:
     TestProject                     = 'FOO-blahblah-BAR'
     Sample_Project                  = 'Sample_Project'
     DemultiplexCompleteFile         = 'DemultiplexComplete.txt'
+    vannControlNegativReport        = 'Negativ'
     md5File                         = 'md5sum.txt'
     MiSeq                           = 'M06578'   # if we get more than one, turn this into an array
     NextSeq                         = 'NB552450' # if we get more than one, turn this into an array
@@ -1231,19 +1232,16 @@ def prepareDelivery( RunID ):
         sys.exit( )
 
     projectList = os.listdir( "." )                                         # get the contents of the demux.DemultiplexRunIdDir directory
-    
-
-EXIT HERE. ALTER ABOVE TO CHECK IF A DIRECTORY HAS .tar.gz files . if not, do not include directory in list of files
-
-ADD A SUBSITUDE TAG LIKE 'EMPTY' or something, so when we process, we print the tar file path in the output, but place no tar file in the directory itself, but ouput a HUGE tag to say 
-"SORRY THE DAMN PROJECT HAD NO .fastq.gz files"
-
 
     if demux.debug:
         demuxLogger.debug( f"{demux.DemultiplexRunIdDir} directory contents: {projectList}" ) 
 
     projectsToProcess = [ ]
     for project in projectList:                                             # itterate over said demux.DemultiplexRunIdDirs contents
+        if demux.vannControlNegativ in project:
+            if demux.debug:
+                demuxLogger.warning( f"{demux.vannControlNegativ} water control directory found in projects. Skipping, it will be handled in vannControlNegativ( )." )
+            continue
         if any( var in project for var in [ demux.QCSuffix ] ):             # skip anything that includes '_QC'
             if demux.debug:
                 demuxLogger.warning( f"{demux.QCSuffix} directory found in projects. Skipping." )
@@ -1396,6 +1394,24 @@ ADD A SUBSITUDE TAG LIKE 'EMPTY' or something, so when we process, we print the 
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery finished ==\n", color="red", attrs=["bold"] ) )
 
+
+
+
+########################################################################
+# Water Control Negative report
+########################################################################
+
+def vannControlNegativReport ( RunID ):
+    """
+    This function creeates a report if any water control samples are submitted for sequence ( and subsequently, analysis )
+
+    If there are no water control samples, no report is generated.
+
+    If there are water control samples,
+        create the full report ONLY if any amplicons are found
+    Otherwise
+        just mention in green text that no results are detected (and move on)
+    """
 
 
 ########################################################################
@@ -1723,6 +1739,7 @@ def main( RunID ):
     prepareDelivery( RunID )                                                                            # prepare the delivery files
     calcFileHash( demux.ForTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
     changePermissions( demux.ForTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
+    vannControlNegativReport ( RunID )
     deliverFilesToVIGASP( )
     deliverFilesToNIRD( )
     scriptComplete( demux.DemultiplexRunIdDir )
