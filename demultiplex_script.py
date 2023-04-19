@@ -200,6 +200,7 @@ class demux:
     TotalTasks                      = 0  
 
     ######################################################
+    RunIDShort                      = ""
     DemultiplexRunIdDir             = ""
     DemultiplexLogDirPath           = ""
     DemultiplexScriptLogFilePath    = ""
@@ -928,7 +929,7 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, newProjectNameLis
             continue
 
     FastQC( newFileList )
-    prepareMultiQC( DemultiplexRunIdDir, newProjectNameList, demux.RunIDShort )
+    prepareMultiQC( DemultiplexRunIdDir, newProjectNameList )
     MultiQC( DemultiplexRunIdDir )
 
 
@@ -1334,11 +1335,11 @@ ADD A SUBSITUDE TAG LIKE 'EMPTY' or something, so when we process, we print the 
     #   QC.tar
     #
     ###########################################################
-    QCDir           = f"{RunIDShort}{demux.QCSuffix}"
+    QCDir           = f"{demux.RunIDShort}{demux.QCSuffix}"
     multiQCDir      = demux.multiqc_data
     if demux.debug:
         text = [
-            f"demux.RunIDShort:\t\t{RunIDShort}",
+            f"demux.RunIDShort:\t\t{demux.RunIDShort}",
             f"QCDir:\t\t\t{QCDir}",
             f"multiQCDir:\t\t\t{multiQCDir}"
         ]
