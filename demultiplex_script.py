@@ -608,11 +608,16 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
                 demuxLogger.debug( f"CompressedFastQfiles[{index}]:\t\t\t\t{item}" )
 
         if not CompressedFastQfiles: # if array is empty
-            text = f"CompressedFastQfiles var is empty in method {inspect.stack()[0][3]}() for project {project}. Exiting."
+            text = f"\n\nProject {project} does not contain any .fastq.gz entries."
+            if demux.debug:
+                text = f"{text} [ method {inspect.stack()[0][3]}() ]"
+            text = f"{text}\n\n"
+
             demuxFailureLogger.critical( text )
             demuxLogger.critical( text )
-            logging.shutdown( )
-            sys.exit( )
+            continue
+            # logging.shutdown( )
+            # sys.exit( )
 
         for file in CompressedFastQfiles:
     
@@ -691,10 +696,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
             if demux.debug:
                 demuxLogger.debug( termcolor.colored( f"Renaming {oldname} to {newname}", color="cyan", attrs=["reverse"] ) )
                 for index, item in enumerate( newProjectFileList ):
-                    if index > 99:
-                        demuxLogger.debug( f"newProjectFileList[{index}]:\t\t{item}") # make sure the debugging output is all lined up.
-                    else:
-                        demuxLogger.debug( f"newProjectFileList[{index}]:\t\t\t{item}") # make sure the debugging output is all lined up.
+                    demuxLogger.debug( f"newProjectFileList[{index}]:\t\t\t{item}") # make sure the debugging output is all lined up.
 
                 for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
                     demuxLogger.info( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}")
@@ -1228,6 +1230,14 @@ def prepareDelivery( RunID ):
         sys.exit( )
 
     projectList = os.listdir( "." )                                         # get the contents of the demux.DemultiplexRunIdDir directory
+    
+
+EXIT HERE. ALTER ABOVE TO CHECK IF A DIRECTORY HAS .tar.gz files . if not, do not include directory in list of files
+
+ADD A SUBSITUDE TAG LIKE 'EMPTY' or something, so when we process, we print the tar file path in the output, but place no tar file in the directory itself, but ouput a HUGE tag to say 
+"SORRY THE DAMN PROJECT HAD NO .fastq.gz files"
+
+
     if demux.debug:
         demuxLogger.debug( f"{demux.DemultiplexRunIdDir} directory contents: {projectList}" ) 
 
@@ -1330,6 +1340,9 @@ def prepareDelivery( RunID ):
     multiQCDir      = demux.multiqc_data
     if demux.debug:
         text = [
+ERHJEHRJEHRJEH 
+
+FUCKING FIX THIS , TOO
             f"RunIDShort (reconstructed, not global: {RunIDShort}",
             f"QCDir:\t\t\t{QCDir}",
             f"multiQCDir:\t\t\t{multiQCDir}"
