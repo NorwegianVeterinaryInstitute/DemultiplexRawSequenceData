@@ -99,7 +99,7 @@ WHAT DOES THE TAR FILE CONTAIN
 
 
 WHAT DOES THE QC TAR FILE CONTAIN
-    The QC tar file contains all the files under the {RunIDShort}_QC and multiqc_data directories 
+    The QC tar file contains all the files under the {demux.RunIDShort}_QC and multiqc_data directories 
     It is named as
         RunIDshort_QC, eg: 200624_M06578_QC
 
@@ -405,21 +405,21 @@ class demux:
 # createDirectory
 ########################################################################
 
-def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, project_list ):
+def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, project_list ):
     """
     If the Demultiplexing directory or any relevant directory does not exist, create it
-        RunIDShort format is in the pattern of (date +%y%m%d)_SEQUENCERSERIALNUMBER Example: 220314_M06578
+        demux.RunIDShort format is in the pattern of (date +%y%m%d)_SEQUENCERSERIALNUMBER Example: 220314_M06578
         {DemultiplexDirRoot} == "/data/demultiplex" # default
 
         {DemultiplexDirRoot}/{RunID}_{DemultiplexDirSuffix}/
-        {DemultiplexDirRoot}/{RunID}_{DemultiplexDirSuffix}/{RunIDShort}.project_list[0]
-        {DemultiplexDirRoot}/{RunID}_{DemultiplexDirSuffix}/{RunIDShort}.project_list[1]
+        {DemultiplexDirRoot}/{RunID}_{DemultiplexDirSuffix}/{demux.RunIDShort}.project_list[0]
+        {DemultiplexDirRoot}/{RunID}_{DemultiplexDirSuffix}/{demux.RunIDShort}.project_list[1]
         .
         .
         .
-        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{RunIDShort}.project_list[ len(project_list) -1 ]
+        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{demux.RunIDShort}.project_list[ len(project_list) -1 ]
         {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{DemultiplexLogDir}
-        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{RunIDShort}{demux.QCSuffix}
+        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{demux.RunIDShort}{demux.QCSuffix}
         {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/Reports      # created by bcl2fastq
         {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/Stats        # created by bcl2fastq
     """
@@ -428,7 +428,7 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir, RunIDShort, projec
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
 
     demux.DemultiplexLogDirPath = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDirName ) 
-    demux.DemuxQCDirectoryName  = f"{RunIDShort}{demux.QCSuffix}" # QCSuffix is defined in object demux
+    demux.DemuxQCDirectoryName  = f"{demux.RunIDShort}{demux.QCSuffix}" # QCSuffix is defined in object demux
     demux.DemuxQCDirectoryPath  = os.path.join( DemultiplexRunIdDir, demux.DemuxQCDirectoryName  )
 
     if demux.debug:
@@ -552,17 +552,17 @@ def demultiplex( SequenceRunOriginDir, DemultiplexRunIdDir ):
 # renameFiles( )
 ########################################################################
 
-def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
+def renameFiles( DemultiplexRunIdDir, project_list ):
     """
     Rename any [sample-1_S1_R1_001.fastq.gz, .. , sample-1_S1_Rn_001.fastq.gz ] files inside 
-        {demux.DemultiplexRunIdDir}/{RunIDShort}[{project_list[0]}, .. , {project_list[n]}] to match the pattern
-        {RunIDShort}.[sample-1_S1_R1_001.fastq.gz, .. , sample-1_S1_Rn_001.fastq.gz ]
+        {demux.DemultiplexRunIdDir}/{demux.RunIDShort}[{project_list[0]}, .. , {project_list[n]}] to match the pattern
+        {demux.RunIDShort}.[sample-1_S1_R1_001.fastq.gz, .. , sample-1_S1_Rn_001.fastq.gz ]
 
     Examples:
     
         DemultiplexRunIdDir: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/
         Sample_Project:      SAV-amplicon-MJH
-        RunIDShort:          220314_M06578
+        demux.RunIDShort:    220314_M06578
 
         1. Rename the files:
             /bin/mv /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/SAV-amplicon-MJH/sample-1_S1_R1_001.fastq.gz /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/SAV-amplicon-MJH/220314_M06578.sample-1_S1_R1_001.fastq.gz
@@ -582,7 +582,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
 
     if demux.debug:
         demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}")
-        demuxLogger.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}")
+        demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}")
         # for index, item in enumerate( project_list ):
         if demux.verbosity == 2:
             demuxLogger.debug( f"project_list:\t\t\t\t{project_list}")
@@ -621,15 +621,15 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
 
         for file in CompressedFastQfiles:
     
-            # get the base filename. We picked up sample*.{CompressedFastqSuffix} and we have to rename it to {RunIDShort}sample*.{CompressedFastqSuffix}
+            # get the base filename. We picked up sample*.{CompressedFastqSuffix} and we have to rename it to {demux.RunIDShort}sample*.{CompressedFastqSuffix}
             baseFileName = os.path.basename( file )
             if demux.debug:
                 demuxLogger.debug( "-----------------")
                 demuxLogger.debug( f"baseFilename:\t\t\t\t\t{baseFileName}")
 
             oldname = f"{file}"
-            newname = f"{demux.DemultiplexRunIdDir}/{project}/{RunIDShort}.{baseFileName}"
-            newfoo  = f"{demux.DemultiplexRunIdDir}/{RunIDShort}.{project}/{RunIDShort}.{baseFileName}" # saving this var to pass locations of new directories
+            newname = f"{demux.DemultiplexRunIdDir}/{project}/{demux.RunIDShort}.{baseFileName}"
+            newfoo  = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}/{demux.RunIDShort}.{baseFileName}" # saving this var to pass locations of new directories
 
             if demux.debug:
                 demuxLogger.debug( f"file:\t\t\t\t\t\t{file}")
@@ -666,7 +666,7 @@ def renameFiles( DemultiplexRunIdDir, RunIDShort, project_list ):
     for project in project_list: # rename the project directories
 
         oldname = f"{demux.DemultiplexRunIdDir}/{project}"
-        newname = f"{demux.DemultiplexRunIdDir}/{RunIDShort}.{project}"
+        newname = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}"
         # make sure oldname dir exists
         # make sure newname dir name does not exist
         olddirExists = os.path.isdir( oldname )
@@ -767,10 +767,10 @@ def FastQC( newFileList ):
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: FastQC complete ==\n", color="red", attrs=["bold"] )  )
 
 
-def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
+def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList ):
     """
     Preperation to run MultiQC:
-        copy *.zip and *.html from  {DemultiplexRunIdDirNewNamel}/{RunIDShort}_QC directory
+        copy *.zip and *.html from  {DemultiplexRunIdDirNewNamel}/{demux.RunIDShort}_QC directory
     """
 
     demux.n = demux.n + 1
@@ -779,9 +779,9 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
     zipFiles  = [ ]
     HTLMfiles = [ ]
     for project in projectNewNameList:
-        if f"{RunIDShort}.{demux.TestProject}" == project:
+        if f"{demux.RunIDShort}.{demux.TestProject}" == project:
             if demux.debug:
-                demuxLogger.debug( f"Test project '{RunIDShort}.{demux.TestProject}' detected. Skipping.")
+                demuxLogger.debug( f"Test project '{demux.RunIDShort}.{demux.TestProject}' detected. Skipping.")
             continue
         zipFiles  = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*zip"  ) # source zip files
         HTLMfiles = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*html" ) # source html files
@@ -790,11 +790,11 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
             demuxLogger.debug( f"DemultiplexRunIdDir/project/*html:\t\t{demux.DemultiplexRunIdDir}/{project}/*html"  )
 
     sourcefiles = [ *zipFiles, *HTLMfiles ]
-    destination = f"{demux.DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"  # destination folder
+    destination = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"  # destination folder
     textsource  = " ".join(sourcefiles)
 
     if demux.debug:
-        demuxLogger.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}"                 )
+        demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}"                 )
         demuxLogger.debug( f"projectNewNameList:\t\t\t\t{projectNewNameList}"   )
         demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
         demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                     )
@@ -811,7 +811,7 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList, RunIDShort ):
 
 
     try:
-        # EXAMPLE: /usr/bin/cp project/*zip project_f/*html DemultiplexDir/RunIDShort.short_QC # (destination is a directory)
+        # EXAMPLE: /usr/bin/cp project/*zip project_f/*html DemultiplexDir/demux.RunIDShort.short_QC # (destination is a directory)
         for source in sourcefiles:
             shutil.copy2( source, destination )    # destination has to be a directory
     except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
@@ -899,7 +899,7 @@ def MultiQC( DemultiplexRunIdDir ):
 # qc
 ########################################################################
 
-def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newProjectNameList ):
+def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, newProjectNameList ):
     """
     Run QC on the sequence run files
 
@@ -917,18 +917,18 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newPr
     if demux.debug:
         demuxLogger.debug( f"newFileList:\t\t\t\t\t{newFileList}" )
         demuxLogger.debug( f"DemultiplexRunIdDirNewNameList:\t\t\t\t   {DemultiplexRunIdDirNewNameList}" )
-        demuxLogger.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}" )
+        demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}" )
         demuxLogger.debug( f"newProjectNameList:\t\t\t\t{newProjectNameList}" )
         demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
 
     for project in newProjectNameList: 
-        if f"{RunIDShort}.{demux.TestProject}" == project:
+        if f"{demux.RunIDShort}.{demux.TestProject}" == project:
             if demux.debug:
                 demuxLogger.debug( f"{demux.TestProject} test project detected. Skipping.\n" )
             continue
 
     FastQC( newFileList )
-    prepareMultiQC( DemultiplexRunIdDir, newProjectNameList, RunIDShort )
+    prepareMultiQC( DemultiplexRunIdDir, newProjectNameList, demux.RunIDShort )
     MultiQC( DemultiplexRunIdDir )
 
 
@@ -1165,7 +1165,7 @@ def prepareDelivery( RunID ):
             delete the DemultiplexRunIdDir/temp directory
 
     WHAT TO PUT INSIDE THE QC FILE
-        {RunIDShort}_QC/
+        {demux.RunIDShort}_QC/
         multiqc_data/
 
     TRICK IN THIS FUNCTION:
@@ -1334,16 +1334,11 @@ ADD A SUBSITUDE TAG LIKE 'EMPTY' or something, so when we process, we print the 
     #   QC.tar
     #
     ###########################################################
-    tmparray        = RunID.split("_")[:2] # got to re-create RunIDShort # FIXME FIXME FIXME RunID/RunIDShort has to be turned into an instance property
-    RunIDShort      = "_".join( tmparray )
     QCDir           = f"{RunIDShort}{demux.QCSuffix}"
     multiQCDir      = demux.multiqc_data
     if demux.debug:
         text = [
-ERHJEHRJEHRJEH 
-
-FUCKING FIX THIS , TOO
-            f"RunIDShort (reconstructed, not global: {RunIDShort}",
+            f"demux.RunIDShort:\t\t{RunIDShort}",
             f"QCDir:\t\t\t{QCDir}",
             f"multiQCDir:\t\t\t{multiQCDir}"
         ]
@@ -1352,9 +1347,9 @@ FUCKING FIX THIS , TOO
     
 
     ################################################################################
-    # What to put inside the QC file: {RunIDShort}_QC and multiqc_data
+    # What to put inside the QC file: {demux.RunIDShort}_QC and multiqc_data
     ################################################################################
-    # {RunIDShort}_QC
+    # {demux.RunIDShort}_QC
     ################################################################################
     if not os.path.isfile( demux.forTransferQCtarFile ):
         tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "w:" )
@@ -1389,7 +1384,7 @@ FUCKING FIX THIS , TOO
             tarQCFileHandle.add( name = filenameToTar, recursive = False )
             demuxLogger.info( f"filenameToTar:\t\t{filenameToTar}" )
 
-    # both {RunIDShort}_QC and multidata_qc go in the same tar file
+    # both {demux.RunIDShort}_QC and multidata_qc go in the same tar file
     tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
     demuxLogger.info( termcolor.colored( f"==> Archived {multiQCDir} ==================", color="yellow", attrs=["bold"] ) )    
 
@@ -1497,7 +1492,7 @@ def main( RunID ):
     """
 
     # RunID
-    RunIDShort                          = '_'.join(RunID.split('_')[0:2]) # this should be turned into a setter in the demux object
+    demux.RunIDShort                    = '_'.join(RunID.split('_')[0:2]) # this should be turned into a setter in the demux object
 ######################################################
     RawDataLocationDirRoot              = os.path.join( demux.DataRootDirPath, demux.RawDataDirName )
     SequenceRunOriginDir                = os.path.join( RawDataLocationDirRoot, RunID )
@@ -1506,7 +1501,7 @@ def main( RunID ):
 ######################################################
     DemultiplexDirRoot                  = os.path.join( demux.DataRootDirPath, demux.DemultiplexDirName )
     demux.DemultiplexRunIdDir           = os.path.join( DemultiplexDirRoot, RunID + demux.DemultiplexDirSuffix ) 
-    DemultiplexQCDirPath                = f"{demux.DemultiplexRunIdDir}/{RunIDShort}{demux.QCSuffix}"
+    DemultiplexQCDirPath                = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"
     DemultiplexProjSubDirs              = [ ]
 ######################################################
     ForTransferDirRoot                  = os.path.join ( demux.DataRootDirPath, demux.ForTransferDirName )
@@ -1601,11 +1596,11 @@ def main( RunID ):
         project_list.add( demux.TestProject ) # if debug, have at least two project names to ensure multiple paths are being created
 
     for project_name in project_list:         # build the full list of subdirectories to make under {demux.DemultiplexRunIdDir}
-        DemultiplexProjSubDirs.append( f"{demux.DemultiplexRunIdDir}/{RunIDShort}.{project_name}" )
+        DemultiplexProjSubDirs.append( f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project_name}" )
 
     # Build the paths for each of the projects. example: /data/for_transfer/{RunID}/{item}
     for project in project_list: 
-        ForTransferProjNames.append( f"{demux.DemultiplexRunIdDir}/{RunIDShort}.{project}" )
+        ForTransferProjNames.append( f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}" )
 
 
     demuxLogger.info( f"To rerun this script run\n" )
@@ -1613,7 +1608,7 @@ def main( RunID ):
     if demux.debug: # logging.info the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
         demuxLogger.debug( "=============================================================================")
         demuxLogger.debug( f"RunID:\t\t\t\t\t\t{RunID}")
-        demuxLogger.debug( f"RunIDShort:\t\t\t\t\t{RunIDShort}")
+        demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}")
         demuxLogger.debug( f"project_list:\t\t\t\t\t{project_list}")
         demuxLogger.debug( "=============================================================================")
         demuxLogger.debug( f"RawDataLocationDirRoot:\t\t\t\t{RawDataLocationDirRoot}" )
@@ -1670,7 +1665,7 @@ def main( RunID ):
         sys.exit( )
 
     #   create {DemultiplexDirRoot} directory structrure
-    createDemultiplexDirectoryStructure( demux.DemultiplexRunIdDir, RunIDShort, project_list  )
+    createDemultiplexDirectoryStructure( demux.DemultiplexRunIdDir, project_list  )
     # setup logging for /data/bin/demultiplex/RunID/demultiplex_log/00_script.log
     demuxScriptLogHandler   = logging.FileHandler( demux.DemultiplexScriptLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
     demuxScriptLogHandler.setFormatter( demuxLogFormatter )
@@ -1715,13 +1710,13 @@ def main( RunID ):
 
     # action starts from here
     demultiplex( SequenceRunOriginDir, demux.DemultiplexRunIdDir )
-    newFileList, DemultiplexRunIdDirNewNameList = renameFiles( demux.DemultiplexRunIdDir, RunIDShort, project_list )
+    newFileList, DemultiplexRunIdDirNewNameList = renameFiles( demux.DemultiplexRunIdDir, project_list )
 
     newProjectNamelist = [ ]
     for project in project_list:
-        newProjectNamelist.append( f"{RunIDShort}.{project}")
+        newProjectNamelist.append( f"{demux.RunIDShort}.{project}")
     
-    qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, RunIDShort, newProjectNamelist )
+    qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, newProjectNamelist )
     calcFileHash( demux.DemultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
     changePermissions( demux.DemultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
     prepareDelivery( RunID )                                                                            # prepare the delivery files
