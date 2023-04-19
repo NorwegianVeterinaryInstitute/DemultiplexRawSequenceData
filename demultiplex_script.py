@@ -229,9 +229,9 @@ class demux:
     FastQCLogFilePath               = ""
     DemuxCumulativeLogFilePath      = ""
     ######################################################
-    # mailhost                        = 'seqtech01.vetinst.no'
+    # mailhost                        = 'seqtech00.vetinst.no'
     mailhost                        = 'localhost'
-    fromAddress                     = 'demultiplex@seqtech01.vetinst.no'
+    fromAddress                     = 'demultiplex@seqtech00.vetinst.no'
     toAddress                       = 'gmarselis@localhost'
     subjectFailure                  = 'Demultiplexing has failed'
     subjectSuccess                  = 'Demultiplexing has finished successfuly'
