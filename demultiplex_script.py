@@ -211,6 +211,8 @@ class demux:
     ######################################################
     tarFileStack                    = [ ]
     ######################################################
+    ControlProjects                 = [ "Negativ" ]
+    ######################################################
     ForTransferRunIdDir             = ""
     forTransferQCtarFile            = ""
     ######################################################
@@ -787,6 +789,11 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList ):
             if demux.debug:
                 demuxLogger.debug( f"Test project '{demux.RunIDShort}.{demux.TestProject}' detected. Skipping.")
             continue
+        if any( f"{var}" in project for var in [ demux.ControlProjects ] ):
+            if debug.demux:
+                demuxLogger.debug( f"{project} control directory name found in projects. Ignoring, will be handled via ControlProjectsQC( )" )
+            continue
+        demuxLogger.info ( f"Now working on project: {project}")
         zipFiles  = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*zip"  ) # source zip files
         HTLMfiles = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*html" ) # source html files
         if demux.debug:
@@ -830,7 +837,6 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList ):
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -933,6 +939,8 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, newProjectNameLis
 
     FastQC( newFileList )
     prepareMultiQC( DemultiplexRunIdDir, newProjectNameList )
+    sys.exit( )
+
     MultiQC( DemultiplexRunIdDir )
 
 
@@ -1172,6 +1180,12 @@ def prepareDelivery( RunID ):
         {demux.RunIDShort}_QC/
         multiqc_data/
 
+    WHAT TO IGNORE
+        From time to time, if the library to be sequenced has extra space, the lab includes a control sample
+        We are going to ignore them for the purpose of tarring and delivery and run QC separate.
+        The name of the projects are stored in demux.ControlProjects
+            would be a good idea to pull the control projects right out of irida or clarity.
+
     TRICK IN THIS FUNCTION:
         os.mkdir( ForTransferRunIdDir )
         move all the tar files in there
@@ -1239,10 +1253,10 @@ def prepareDelivery( RunID ):
         demuxLogger.debug( f"{demux.DemultiplexRunIdDir} directory contents: {projectList}" ) 
 
     projectsToProcess = [ ]
-    for project in projectList:                                             # itterate over said demux.DemultiplexRunIdDirs contents
-        if demux.vannControlNegativReport in project:
+    for project in projectList:                                             # itterate over said demux.DemultiplexRunIdDirs contents, take only the projects we need
+        if demux.ControlProjects in project:
             if demux.debug:
-                demuxLogger.warning( f"{demux.vannControlNegativ} water control directory found in projects. Skipping, it will be handled in vannControlNegativ( )." )
+                demuxLogger.warning( f"{demux.ControlProjectsQC} control project name found in projects. Skipping, it will be handled in ControlProjectsQC( )." )
             continue
         if any( var in project for var in [ demux.QCSuffix ] ):             # skip anything that includes '_QC'
             if demux.debug:
@@ -1405,7 +1419,7 @@ def prepareDelivery( RunID ):
 # Water Control Negative report
 ########################################################################
 
-def vannControlNegativReport ( RunID ):
+def ControlProjectsQC ( RunID ):
     """
     This function creeates a report if any water control samples are submitted for sequence ( and subsequently, analysis )
 
@@ -1782,7 +1796,7 @@ def main( RunID ):
     prepareDelivery( RunID )                                                                            # prepare the delivery files
     calcFileHash( demux.ForTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
     changePermissions( demux.ForTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
-    vannControlNegativReport ( RunID )
+    ControlProjectsQC ( RunID )
     tarFileQualityCheck( RunID )
     deliverFilesToVIGASP( RunID )
     deliverFilesToNIRD( RunID )
