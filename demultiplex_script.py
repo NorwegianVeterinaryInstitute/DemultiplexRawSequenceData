@@ -1240,7 +1240,7 @@ def prepareDelivery( RunID ):
 
     projectsToProcess = [ ]
     for project in projectList:                                             # itterate over said demux.DemultiplexRunIdDirs contents
-        if demux.vannControlNegativ in project:
+        if demux.vannControlNegativReport in project:
             if demux.debug:
                 demuxLogger.warning( f"{demux.vannControlNegativ} water control directory found in projects. Skipping, it will be handled in vannControlNegativ( )." )
             continue
@@ -1418,6 +1418,45 @@ def vannControlNegativReport ( RunID ):
     """
 
 
+
+
+
+########################################################################
+# Perform a sha512 comparision
+########################################################################
+
+def sha512FileQualityCheck ( RunID ):
+    """
+    re-perform (quietly) the sha512 calculation and compare that with the result on file for the specific file.
+    """
+    demux.n = demux.n + 1
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: sha512 files check started ==", color="green", attrs=["bold"] ) )
+
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: sha512 files check finished ==", color="red", attrs=["bold"] ) )
+
+
+
+
+########################################################################
+# Water Control Negative report
+########################################################################
+
+def tarFileQualityCheck ( RunID ):
+    """
+    Perform a final quality check on the tar files before uploading them.
+
+    If there are errors in the untarring or the sha512 check, halt.
+
+    If there are no errors, go ahead with the uploading
+    """
+    demux.n = demux.n + 1
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Tar files quaility check started ==", color="green", attrs=["bold"] ) )
+
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Tar files quaility check finished ==", color="red", attrs=["bold"] ) )
+
+
+
+
 ########################################################################
 # script_completion_file
 ########################################################################
@@ -1446,7 +1485,7 @@ def scriptComplete( DemultiplexRunIdDir ):
 # deliverFilesToVIGASP
 ########################################################################
 
-def deliverFilesToVIGASP(  ):
+def deliverFilesToVIGASP( RunID ):
     """
     Write the uploader file needed to upload the data to VIGASP and then
         upload the relevant files.
@@ -1464,7 +1503,7 @@ def deliverFilesToVIGASP(  ):
 # deliverFilesToNIRD
 ########################################################################
 
-def deliverFilesToNIRD(  ):
+def deliverFilesToNIRD( RunID ):
     """
     Make connection to NIRD and upload the data
     """
@@ -1632,7 +1671,7 @@ def main( RunID ):
         demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}")
         demuxLogger.debug( f"project_list:\t\t\t\t\t{project_list}")
         demuxLogger.debug( "=============================================================================")
-        demuxLogger.debug( f"RawDataLocationDirRoot:\t\t\t\t{RawDataLocationDirRoot}" )
+        demuxLogger.debug( f"RawDataLocationDirRoot:\t\t\t{RawDataLocationDirRoot}" )
         demuxLogger.debug( f"SequenceRunOriginDir:\t\t\t\t{SequenceRunOriginDir}" )
         demuxLogger.debug( f"SampleSheetFilePath:\t\t\t\t{SampleSheetFilePath}" )
         demuxLogger.debug( f"RTACompleteFilePath:\t\t\t\t{SequenceRunOriginDir}/{demux.RTACompleteFile}" )
@@ -1744,8 +1783,9 @@ def main( RunID ):
     calcFileHash( demux.ForTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
     changePermissions( demux.ForTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
     vannControlNegativReport ( RunID )
-    deliverFilesToVIGASP( )
-    deliverFilesToNIRD( )
+    tarFileQualityCheck( RunID )
+    deliverFilesToVIGASP( RunID )
+    deliverFilesToNIRD( RunID )
     scriptComplete( demux.DemultiplexRunIdDir )
 
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
@@ -1758,9 +1798,9 @@ def main( RunID ):
 ########################################################################
 
 
-class BufferingSMTPHandler(logging.handlers.BufferingHandler):
-    def __init__(self, mailhost, fromaddr, toaddrs, subject ):
-        logging.handlers.BufferingHandler.__init__(self, capacity = 9999999 )
+class BufferingSMTPHandler( logging.handlers.BufferingHandler ):
+    def __init__( self, mailhost, fromaddr, toaddrs, subject ):
+        logging.handlers.BufferingHandler.__init__( self, capacity = 9999999 )
         self.mailhost = mailhost
         self.mailport = None
         self.fromaddr = fromaddr
@@ -1774,15 +1814,15 @@ class BufferingSMTPHandler(logging.handlers.BufferingHandler):
             port = self.mailport
             if not port:
                 port = smtplib.SMTP_PORT
-            smtp = smtplib.SMTP(self.mailhost, port)
+            smtp = smtplib.SMTP( self.mailhost, port )
             msg = f"From: {self.fromaddr}\r\nTo: {self.toaddrs}\r\nSubject: {self.subject}\r\n\r\n"
             for record in self.buffer:
-                s = self.format(record)
+                s = self.format( record )
                 print( s )
                 msg = msg + s + '\r\n'
             msg = msg + '\r\n\r\n'
-            smtp.sendmail(self.fromaddr, self.toaddrs, msg)
-            smtp.quit()
+            smtp.sendmail( self.fromaddr, self.toaddrs, msg )
+            smtp.quit( )
             self.buffer = []
 
 
@@ -1803,7 +1843,7 @@ if __name__ == '__main__':
         sys.exit( "No RunID argument present. Exiting." )
 
     demuxLogger             = logging.getLogger( __name__ )
-    demuxFailureLogger      = logging.getLogger( "SMTPFailureLogger")
+    demuxFailureLogger      = logging.getLogger( "SMTPFailureLogger" )
     RunID                   = sys.argv[1]
     RunID                   = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
 
