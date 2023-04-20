@@ -209,6 +209,8 @@ class demux:
     DemuxQCDirectoryName            = ""
     DemuxQCDirectoryPath            = ""
     ######################################################
+    tarFileStack                    = [ ]
+    ######################################################
     ForTransferRunIdDir             = ""
     forTransferQCtarFile            = ""
     ######################################################
@@ -1327,6 +1329,7 @@ def prepareDelivery( RunID ):
 
         tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
         demuxLogger.info( termcolor.colored( f'==< Archived {project} ({counter} out of { len( projectsToProcess ) } projects ) ==================\n', color="yellow", attrs=["bold"] ) )
+        demux.tarFileStack.append( tarFile ) # add to list of archived tar files, we will use them with lstat later ot see if they pass untarring quality control
 
     ###########################################################
     #
@@ -1369,6 +1372,7 @@ def prepareDelivery( RunID ):
             demuxLogger.info( f"filenameToTar:\t\t{filenameToTar}" )
 
     demuxLogger.info( termcolor.colored( f"==> Archived {QCDir} ==================", color="yellow", attrs=["bold"] ) )
+    demux.tarFileStack.append( demux.forTransferQCtarFile ) # list of archived tar files, we will use them with lstat later ot see if they pass untarring quality control
 
     ################################################################################
     # multiqc_data
