@@ -2,6 +2,7 @@
 
 import argparse
 import ast
+import pdb
 import glob
 import hashlib
 import inspect
@@ -595,7 +596,10 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
 
     for project in project_list: # rename files in each project directory
 
-        if project == demux.TestProject:
+        if any( var in project for var in demux.ControlProjects ):     # if the project name includes a control project name, ignore it
+            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in ControlProjectsQC( ).\n", color="magenta" ) )
+            continue
+        elif project == demux.TestProject:
             if demux.debug:
                 demuxLogger.debug( f"Test project '{demux.TestProject}' detected. Skipping." )
                 continue
@@ -726,7 +730,7 @@ def FastQC( newFileList ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: FastQC started ==", color="green", attrs=["bold"] ) )
 
     command             = demux.fastqc_bin
-    argv                = [ command, '-t', '4', *newFileList ] # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
+    argv                = [ command, '-t', '12', *newFileList ] # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
     demultiplexRunIdDir = os.path.dirname( os.path.dirname( newFileList[0] ) )
 
     if demux.debug:
@@ -786,24 +790,31 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList ):
     zipFiles  = [ ]
     HTLMfiles = [ ]
     for project in projectNewNameList:
-        if any( project.find( var ) for var in demux.ControlProjects ):     # if the project name includes a control project name, ignore it
-            demuxLogger.info( f"{project} control directory name found in projects. Ignoring, will be handled via ControlProjectsQC( )" )
+        if any( var in project for var in demux.ControlProjects ):     # if the project name includes a control project name, ignore it
+            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in ControlProjectsQC( ).\n", color="magenta" ) )
             continue
-
-        if f"{demux.RunIDShort}.{demux.TestProject}" == project:
+        elif f"{demux.RunIDShort}.{demux.TestProject}" == project:
             if demux.debug:
                 demuxLogger.debug( f"Test project '{demux.RunIDShort}.{demux.TestProject}' detected. Skipping.")
             continue
         demuxLogger.info ( f"Now working on project: {project}")
-        zipFiles  = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*zip"  ) # source zip files
-        HTLMfiles = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*html" ) # source html files
+        zipFiles.append( glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*zip" ) )   # source zip files
+        HTLMfiles.append( glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*html" ) ) # source html files
         if demux.debug:
             demuxLogger.debug( f"DemultiplexRunIdDir/project/*zip:\t\t{demux.DemultiplexRunIdDir}/{project}/*zip"  )
             demuxLogger.debug( f"DemultiplexRunIdDir/project/*html:\t\t{demux.DemultiplexRunIdDir}/{project}/*html"  )
 
+    if ( not zipFiles[0] or not HTLMfiles[0] ):
+        demuxLogger.debug( f"zipFiles:\t\t\t{zipFiles}")
+        demuxLogger.debug( f"HTLMfiles:\t\t\t{HTLMfiles}")
+        demuxLogger.critical( f"Critical! zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.DemultiplexRunIdDir}. Exiting.")
+        sys.exit( )
+
     sourcefiles = [ *zipFiles, *HTLMfiles ]
+    demuxLogger.debug( f"\n\nsourcefiles: {sourcefiles}\n\n")
+    sys.exit( )
     destination = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"  # destination folder
-    textsource  = " ".join(sourcefiles)
+    textsource  = sourcefiles.join( " " )
 
     if demux.debug:
         demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}"                 )
