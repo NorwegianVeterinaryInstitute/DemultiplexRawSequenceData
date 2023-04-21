@@ -788,7 +788,7 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC started ==", color="green", attrs=["bold"] ) )
 
     zipFiles  = [ ]
-    HTLMfiles = [ ]
+    HTMLfiles = [ ]
     for project in projectNewNameList:
         if any( var in project for var in demux.ControlProjects ):     # if the project name includes a control project name, ignore it
             demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in ControlProjectsQC( ).\n", color="magenta" ) )
@@ -799,18 +799,18 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList ):
             continue
         demuxLogger.info ( f"Now working on project: {project}")
         zipFiles.append( glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*zip" ) )   # source zip files
-        HTLMfiles.append( glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*html" ) ) # source html files
+        HTMLfiles.append( glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*html" ) ) # source html files
         if demux.debug:
             demuxLogger.debug( f"DemultiplexRunIdDir/project/*zip:\t\t{demux.DemultiplexRunIdDir}/{project}/*zip"  )
             demuxLogger.debug( f"DemultiplexRunIdDir/project/*html:\t\t{demux.DemultiplexRunIdDir}/{project}/*html"  )
 
-    if ( not zipFiles[0] or not HTLMfiles[0] ):
+    if ( not zipFiles[0] or not HTMLfiles[0] ):
         demuxLogger.debug( f"zipFiles:\t\t\t{zipFiles}")
-        demuxLogger.debug( f"HTLMfiles:\t\t\t{HTLMfiles}")
+        demuxLogger.debug( f"HTMLfiles:\t\t\t{HTMLfiles}")
         demuxLogger.critical( f"Critical! zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.DemultiplexRunIdDir}. Exiting.")
         sys.exit( )
 
-    sourcefiles = [ *zipFiles, *HTLMfiles ]
+    sourcefiles = [ *zipFiles, *HTMLfiles ]
     demuxLogger.debug( f"\n\nsourcefiles: {sourcefiles}\n\n")
     sys.exit( )
     destination = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"  # destination folder
@@ -821,7 +821,7 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList ):
         demuxLogger.debug( f"projectNewNameList:\t\t\t\t{projectNewNameList}"   )
         demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
         demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                     )
-        demuxLogger.debug( f"HTLMfiles:\t\t\t\t\t{HTLMfiles}"                   )
+        demuxLogger.debug( f"HTMLfiles:\t\t\t\t\t{HTMLfiles}"                   )
         demuxLogger.debug( f"sourcefiles:\t\t\t\t\t{sourcefiles}"               ) # textual representation of the source files.
         demuxLogger.debug( f"Command to execute:\t\t\t\t/usr/bin/cp {textsource} {destination}" )
 
