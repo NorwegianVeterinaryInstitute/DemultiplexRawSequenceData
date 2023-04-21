@@ -607,12 +607,6 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
         filesToSearchFor     = f'{CompressedFastQfilesDir}/*{demux.CompressedFastqSuffix}'
         CompressedFastQfiles = glob.glob( filesToSearchFor ) # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
 
-        if demux.debug:
-            demuxLogger.debug( f"fastq files for {project}:\t\t\t{filesToSearchFor}" )
-
-            for index, item in enumerate( CompressedFastQfiles ):
-                demuxLogger.debug( f"CompressedFastQfiles[{index}]:\t\t\t\t{item}" )
-
         if not CompressedFastQfiles: # if array is empty
             text = f"\n\nProject {project} does not contain any .fastq.gz entries."
             if demux.debug:
@@ -622,8 +616,14 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
             demuxFailureLogger.critical( text )
             demuxLogger.critical( text )
             continue
-            # logging.shutdown( )
-            # sys.exit( )
+
+
+        if demux.debug:
+            demuxLogger.debug( f"fastq files for {project}:\t\t\t{filesToSearchFor}" )
+
+            for index, item in enumerate( CompressedFastQfiles ):
+                demuxLogger.debug( f"CompressedFastQfiles[{index}]:\t\t\t\t{item}" )
+
 
         for file in CompressedFastQfiles:
     
@@ -704,8 +704,9 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
                 for index, item in enumerate( newProjectFileList ):
                     demuxLogger.debug( f"newProjectFileList[{index}]:\t\t\t{item}") # make sure the debugging output is all lined up.
 
-                for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
-                    demuxLogger.info( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}")
+    demuxLogger.info( termcolor.colored( f"List of demultiplexed RunID directories that got renamed:", color="green", attrs=["bold"] ) )
+    for index, item in enumerate( DemultiplexRunIdDirNewNameList ):
+        demuxLogger.info( f"DemultiplexRunIdDirNewNameList[{index}]:\t\t{item}")
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -785,13 +786,13 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList ):
     zipFiles  = [ ]
     HTLMfiles = [ ]
     for project in projectNewNameList:
+        if any( project.find( var ) for var in demux.ControlProjects ):     # if the project name includes a control project name, ignore it
+            demuxLogger.info( f"{project} control directory name found in projects. Ignoring, will be handled via ControlProjectsQC( )" )
+            continue
+
         if f"{demux.RunIDShort}.{demux.TestProject}" == project:
             if demux.debug:
                 demuxLogger.debug( f"Test project '{demux.RunIDShort}.{demux.TestProject}' detected. Skipping.")
-            continue
-        if any( f"{var}" in project for var in [ demux.ControlProjects ] ):
-            if debug.demux:
-                demuxLogger.debug( f"{project} control directory name found in projects. Ignoring, will be handled via ControlProjectsQC( )" )
             continue
         demuxLogger.info ( f"Now working on project: {project}")
         zipFiles  = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*zip"  ) # source zip files
@@ -814,7 +815,7 @@ def prepareMultiQC( DemultiplexRunIdDir, projectNewNameList ):
         demuxLogger.debug( f"Command to execute:\t\t\t\t/usr/bin/cp {textsource} {destination}" )
 
     if not os.path.isdir( destination ) :
-        text =  f"Directory {destination} does not exist. Please check the logs, delete {demux.DemultiplexRunIdDir} and try again."
+        text =  f"Directory {destination} does not exist. Please check the logs. You can also just delete {demux.DemultiplexRunIdDir} and try again."
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
@@ -939,8 +940,6 @@ def qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, newProjectNameLis
 
     FastQC( newFileList )
     prepareMultiQC( DemultiplexRunIdDir, newProjectNameList )
-    sys.exit( )
-
     MultiQC( DemultiplexRunIdDir )
 
 
@@ -1077,18 +1076,6 @@ def changePermissions( path ):
                 logging.shutdown( )
                 sys.exit( )
 
-            # try:
-            #     # shutil.chown( filepath, user = demux.user, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup filepath
-            #     shutil.chown( filepath, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup filepath
-            #                                                   # chown user is not available for non-root users
-            # except FileNotFoundError as err:                  # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-            #     demuxLogger.info( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
-            #     demuxLogger.info( f"\terrno:\t{err.errno}"                            )
-            #     demuxLogger.info( f"\tstrerror:\t{err.strerror}"                      )
-            #     demuxLogger.info( f"\tfilename:\t{err.filename}"                      )
-            #     demuxLogger.info( f"\tfilename2:\t{err.filename2}"                    )
-            #     sys.exit( )
-
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
                 os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
@@ -1123,18 +1110,6 @@ def changePermissions( path ):
                 demuxLogger.critical( f"{ text }" )
                 logging.shutdown( )
                 sys.exit( )
-
-
-            # try:
-            #     shutil.chown( dirpath, group = demux.group ) # EXAMPLE: /bin/chown :sambagroup dirpath
-            #                                                   # chown user is not available for non-root users
-            # except FileNotFoundError as err:                  # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-            #     demuxLogger.info( f"\tFileNotFoundError in {inspect.stack()[0][3]}()" )
-            #     demuxLogger.info( f"\terrno:\t{err.errno}"                            )
-            #     demuxLogger.info( f"\tstrerror:\t{err.strerror}"                      )
-            #     demuxLogger.info( f"\tfilename:\t{err.filename}"                      )
-            #     demuxLogger.info( f"\tfilename2:\t{err.filename2}"                    )
-            #     sys.exit( )
 
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
@@ -1254,10 +1229,7 @@ def prepareDelivery( RunID ):
 
     projectsToProcess = [ ]
     for project in projectList:                                             # itterate over said demux.DemultiplexRunIdDirs contents, take only the projects we need
-        if demux.ControlProjects in project:
-            if demux.debug:
-                demuxLogger.warning( f"{demux.ControlProjectsQC} control project name found in projects. Skipping, it will be handled in ControlProjectsQC( )." )
-            continue
+
         if any( var in project for var in [ demux.QCSuffix ] ):             # skip anything that includes '_QC'
             if demux.debug:
                 demuxLogger.warning( f"{demux.QCSuffix} directory found in projects. Skipping." )
@@ -1266,10 +1238,15 @@ def prepareDelivery( RunID ):
             if demux.debug:
                 demuxLogger.warning( f"{demux.TestProject} test project directory found in projects. Skipping." )
             continue
-        if any( var in project for var in [ demux.NextSeq, demux.MiSeq ] ): # if there is a nextseq or misqeq tag, add the directory to the newProjectNameList
+        if any( project.find( var ) for var in demux.ControlProjects ):     # if the project name includes a control project name, ignore it
             if demux.debug:
-                demuxLogger.warning( f"Now processing {project} project." )
-            projectsToProcess.append( project )
+                demuxLogger.warning( f"{project} control project name found in projects. Skipping, it will be handled in ControlProjectsQC( )." )
+            continue
+        else:
+            if any( var in project for var in [ demux.NextSeq, demux.MiSeq ] ): # Make sure there is a nextseq or misqeq tag, before adding the directory to the newProjectNameList
+                if demux.debug:
+                    demuxLogger.warning( f"Now processing {project} project." )
+                projectsToProcess.append( project )
 
     if demux.debug:
         demuxLogger.debug( f"projectsToProcess:\t\t{ projectsToProcess }" )
@@ -1674,7 +1651,7 @@ def main( RunID ):
 
     # Build the paths for each of the projects. example: /data/for_transfer/{RunID}/{item}
     for project in project_list: 
-        ForTransferProjNames.append( f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}" )
+        ForTransferProjNames.append( f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}" ) # FIXME FIXME FIXME if we have the date and serial number encoded in DemultiplexRunIdDir, do we need demux.RunIDShort?
 
 
     demuxLogger.info( f"To rerun this script run\n" )
@@ -1788,17 +1765,21 @@ def main( RunID ):
 
     newProjectNamelist = [ ]
     for project in project_list:
-        newProjectNamelist.append( f"{demux.RunIDShort}.{project}")
+        if any( var in project for var in demux.ControlProjects ):
+            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in ControlProjectsQC( ).\n", color="magenta" ) )
+        else:
+            newProjectNamelist.append( project )
     
     qualityCheck( newFileList, DemultiplexRunIdDirNewNameList, newProjectNamelist )
+    sys.exit( )
     calcFileHash( demux.DemultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
     changePermissions( demux.DemultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
     prepareDelivery( RunID )                                                                            # prepare the delivery files
     calcFileHash( demux.ForTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
     changePermissions( demux.ForTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
-    ControlProjectsQC ( RunID )
-    tarFileQualityCheck( RunID )
-    deliverFilesToVIGASP( RunID )
+    ControlProjectsQC ( RunID )                                                                         # check to see if we need to create the report for any control projects present
+    tarFileQualityCheck( RunID )                                                                        # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
+    deliverFilesToVIGASP( RunID )                                                                       # 
     deliverFilesToNIRD( RunID )
     scriptComplete( demux.DemultiplexRunIdDir )
 
