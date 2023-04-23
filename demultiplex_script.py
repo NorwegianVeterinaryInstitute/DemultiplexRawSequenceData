@@ -271,19 +271,6 @@ class demux:
         self.debug = True
 
 
-    def writeVigasFile( ):
-        """
-        Write the file for the uploading of files to VIGASP
-        """
-
-        demux.n = demux.n + 1
-        demuxLogger.info( f"{demux.n}/{demux.TotalTasks} tasks: writing VIGASP uploader file started\n")
-
-
-        demuxLogger.info( f"{demux.n}/{demux.TotalTasks} tasks: writing VIGASP uploader file finished\n")
-
-
-
     ########################################################################
     # getProjectName
     ########################################################################
