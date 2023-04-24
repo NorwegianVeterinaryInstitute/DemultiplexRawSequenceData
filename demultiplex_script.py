@@ -1616,22 +1616,10 @@ def setupEventAndLogHandling( ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Set up the Event and Log handling ==\n", color="green", attrs=["bold"] ) )
 
-    if not os.path.isdir( demux.LogDirPath ) :  # make sure that the /data/log directory exists.
-        sys.exit( f"{demux.LogDirPath} does not exist. Exiting." )
-
-    # # set up logging for /data/log/RunID.log
-    demuxFileLogHandler   = logging.FileHandler( demux.DemuxRunLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
-    demuxLogger.setLevel( demux.LoggingLevel )
 
     # demuxLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(name)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
-    demuxFileLogHandler.setFormatter( demuxLogFormatter )
-
-    # set up cummulative logging in /data/log/RunID.log
-    demuxFileCumulativeLogHandler   = logging.FileHandler( demux.DemuxCumulativeLogFilePath, mode = 'a', encoding = demux.DecodeScheme )
-    demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
-
 
     # setup loging for console
     demuxConsoleLogHandler    = logging.StreamHandler( stream = sys.stderr )
@@ -1647,18 +1635,11 @@ def setupEventAndLogHandling( ):
     demuxSMTPsuccessLogHandler = BufferingSMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectSuccess )
 
     demuxLogger.addHandler( demuxSyslogLoggerHandler )
-    demuxLogger.addHandler( demuxFileLogHandler )
     demuxLogger.addHandler( demuxConsoleLogHandler )
-    demuxLogger.addHandler( demuxFileCumulativeLogHandler )
     demuxLogger.addHandler( demuxSMTPsuccessLogHandler )
 
     # this has to be in a separate logger because we are only logging to it when we fail
     demuxFailureLogger.addHandler( demuxSMTPfailureLogHandler )
-
-    # setup logging for /data/bin/demultiplex/RunID/demultiplex_log/00_script.log
-    demuxScriptLogHandler   = logging.FileHandler( demux.DemultiplexScriptLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
-    demuxScriptLogHandler.setFormatter( demuxLogFormatter )
-    demuxLogger.addHandler( demuxScriptLogHandler )
 
     # # setup logging for messaging over Workplace
     # demuxHttpsLogHandler       = logging.handlers.HTTPHandler( demux.httpsHandlerHost, demux.httpsHandlerUrl, method = 'GET', secure = True, credentials = None, context = None ) # FIXME later
@@ -1781,8 +1762,8 @@ def setupEnvironment( RunID ):
     demux.ForTransferQCtarFile          = os.path.join( demux.ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
 ######################################################
 
+######################################################
     # set up
-    demux.LogDirPath                   = os.path.join( demux.DataRootDirPath,       demux.LogDirName )
     demux.DemuxRunLogFilePath          = os.path.join( demux.LogDirPath,            RunID + demux.LogSuffix )
     demux.DemuxCumulativeLogFilePath   = os.path.join( demux.LogDirPath,            demux.DemuxCumulativeLogFileName )
     demux.DemultiplexLogDirPath        = os.path.join( demux.DemultiplexRunIdDir,   demux.DemultiplexLogDirName )
@@ -1794,6 +1775,99 @@ def setupEnvironment( RunID ):
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )
 
+
+
+
+########################################################################
+# setupFileLogHandling( )
+########################################################################
+
+def setupFileLogHandling( RunID ):
+    """
+    Setup the file event and log handling
+    """
+
+    demux.n = demux.n + 1
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Setup the file event and log handling ==\n", color="green", attrs=["bold"] ) )
+
+    # make sure that the /data/log directory exists.
+    if not os.path.isdir( demux.LogDirPath ) :
+        text = [    "Trying to setup demux.LogDirPath failed. Reason:\n",
+                    "The parts of demux.LogDirPath have the following values:\n",
+                    f"demux.LogDirPath:\t\t\t\t{demux.LogDirPath}\n"
+                    f"demux.DataRootDirPath:\t\t\t{demux.DataRootDirPath}\n",
+                    f"demux.LogDirName:\t\t\t{demux.LogDirName}\n",
+        ]
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
+        sys.exit( )
+
+    # # set up logging for /data/log/{RunID}.log
+    try: 
+        demuxFileLogHandler   = logging.FileHandler( demux.DemuxRunLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
+    except Exception as err:
+        text = [    "Trying to setup demuxFileLogHandler failed. Reason:\n",
+                    str(err),
+                    "The parts of demux.DemuxRunLogFilePath have the following values:\n",
+                    f"demux.DemuxRunLogFilePath:\t\t\t{demux.DemuxRunLogFilePath}\n",
+                    f"RunID + demux.LogSuffix:\t\t\t{RunID} + {demux.LogSuffix}\n",
+                    f"demux.LogDirPath:\t\t\t\t{demux.LogDirPath}\n"
+        ]
+        demuxFailureLogger.critical( *text  )
+        demuxLogger.critical( *text )
+        logging.shutdown( )
+        sys.exit( )
+
+    demuxFileLogHandler.setFormatter( demuxLogFormatter )
+    demuxLogger.setLevel( demux.LoggingLevel )
+
+    # set up cummulative logging in /data/log/demultiplex.log
+    try:
+        demuxFileCumulativeLogHandler   = logging.FileHandler( demux.DemuxCumulativeLogFilePath, mode = 'a', encoding = demux.DecodeScheme )
+    except Exception as err:
+        text = [    "Trying to setup demuxFileCumulativeLogHandler failed. Reason:\n",
+                    str(err),
+                    "The parts of demux.DemuxRunLogFilePath have the following values:\n",
+                    f"demux.DemuxCumulativeLogFilePath:\t\t\t{demux.DemuxCumulativeLogFilePath}\n",
+                    f"demux.LogDirPath:\t\t\t\t\t{demux.LogDirPath}\n",
+                    f"demux.DemultiplexLogDirName:\t\t\t{demux.DemultiplexLogDirName}\n",
+        ]
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
+        sys.exit( )
+
+    demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
+
+    # setup logging for /data/bin/demultiplex/RunID/demultiplex_log/00_script.log
+    try:
+        demuxScriptLogHandler   = logging.FileHandler( demux.DemultiplexScriptLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
+    except Exception as err:
+        text = [    "Trying to setup demuxScriptLogHandler failed. Reason:\n",
+                    str(err),
+                    "The parts of demux.DemultiplexScriptLogFilePath have the following values:\n",
+                    f"demux.DemultiplexScriptLogFilePath:\t\t\t{demux.DemultiplexScriptLogFilePath}\n",
+                    f"demux.DemultiplexLogDirPath\t\t\t\t{demux.DemultiplexLogDirPath}\n",
+                    f"demux.ScriptRunLogFileName:\t\t\t\t{demux.ScriptRunLogFileName}\n",
+                    f"demux.DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}\n",
+                    f"demux.DemultiplexLogDirName:\t\t\t\t{demux.DemultiplexLogDirName}\n",
+                    f"demux.DemultiplexDir:\t\t\t\t\t{demux.DemultiplexDir}\n",
+                    f"RunID + demux.DemultiplexDirSuffix:\t{RunID} + {demux.DemultiplexDirSuffix}\n",
+                    "Exiting.",
+        ]
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
+        sys.exit( )
+
+    demuxScriptLogHandler.setFormatter( demuxLogFormatter )
+
+    demuxLogger.addHandler( demuxScriptLogHandler )
+    demuxLogger.addHandler( demuxFileLogHandler )
+    demuxLogger.addHandler( demuxFileCumulativeLogHandler )
+
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Setup the file event and log handling ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -1935,31 +2009,35 @@ def main( RunID ):
     """
 
 
-    setupEnvironment( RunID )                                                                           # set up variables needed in the running environment
+    setupEventAndLogHandling( )                                                                         # setup the event and log handing, which we will use everywhere, sans file logging 
+    setupEnvironment( RunID )                                                                           # set up variables needed in the running setupEnvironment  
     #   create {DemultiplexDirRoot} directory structrure
     createDemultiplexDirectoryStructure( demux.DemultiplexRunIdDir )                                    # create the directory structure under {demux.DemultiplexRunIdDir}
 
-    demux.getProjectName( )                                                                             # get the list of projects in this current run
     # #################### demux.getProjectName( ) needs to be called before we start logging  ##########################################################
+    demux.getProjectName( )                                                                             # get the list of projects in this current run
+    # renameProjectListAccordingToAgreedPatttern( )                                                     # rename the contents of the project_list according to {RunIDShort}.{project}
+    # #################### createDemultiplexDirectoryStructure( ) needs to be called before we start logging  ###########################################
+    setupFileLogHandling( RunID )                                                                       # setup the file event and log handing, which we left out
     printRunningEnvironment( RunID )                                                                    # print our running environment
     checkRunningEnvironment( RunID )                                                                    # check our running environment
-    # #################### createDemultiplexDirectoryStructure( ) needs to be called before we start logging  ###########################################
-    setupEventAndLogHandling( )                                                                         # setup the event and log handing, which we will use everywhere
     copySampleSheetIntoDemultiplexRunIdDir( )                                                           # copy SampleSheet.csv from {demux.SampleSheetFilePath} to {demux.DemultiplexRunIdDir}
     archiveSampleSheet( RunID )                                                                         # make a copy of the Sample Sheet for future reference
     demultiplex( )                                                                                      # use blc2fastq to convert .bcl files to fastq.gz
     newFileList = renameFilesAndDirectories( demux.DemultiplexRunIdDir, demux.project_list )            # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
     qualityCheck( newFileList, project_list )                                                           # execute QC on the incoming fastq files
+
     calcFileHash( demux.DemultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
     changePermissions( demux.DemultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
     prepareDelivery( RunID )                                                                            # prepare the delivery files
     calcFileHash( demux.ForTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
     changePermissions( demux.ForTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
-    ControlProjectsQC ( RunID )                                                                         # check to see if we need to create the report for any control projects present
+    controlProjectsQC ( RunID )                                                                         # check to see if we need to create the report for any control projects present
     tarFileQualityCheck( RunID )                                                                        # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
     deliverFilesToVIGASP( RunID )                                                                       # Deliver the output files to VIGASP
     deliverFilesToNIRD( RunID )                                                                         # deliver the output files to NIRD
     scriptComplete( demux.DemultiplexRunIdDir )                                                         # mark the script as complete
+    # shutdownEventAndLoggingHandling( )                                                                # shutdown logging before exiting.
 
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
     logging.shutdown( )
