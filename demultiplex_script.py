@@ -165,6 +165,8 @@ class demux:
     ForTransferDir                  = os.path.join( DataRootDirPath, ForTransferDirName )
     SampleSheetDirName              = 'samplesheets'
     SampleSheetDirPath              = os.path.join( DataRootDirPath, SampleSheetDirName )
+    LogDirName                      = "log"
+    LogDirPath                      = os.path.join( DataRootDirPath, LogDirName )
     ######################################################
     CompressedFastqSuffix           = '.fastq.gz' 
     CSVSuffix                       = '.csv'
@@ -222,7 +224,6 @@ class demux:
     ForTransferRunIdDir             = ""
     forTransferQCtarFile            = ""
     ######################################################
-    LogDirName                      = 'log'
     DemuxCumulativeLogFileName      = 'demultiplex.log'
     DemultiplexLogDirName           = 'demultiplex_log'
     ScriptRunLogFileName            = '00_script.log'
@@ -234,7 +235,6 @@ class demux:
     DemuxCumulativeLogFilePath      = ""
     DemuxBcl2FastqLogFilePath       = ""
     FastQCLogFilePath               = ""
-    LogDirPath                      = ""
     LogFilePath                     = ""
     MultiQCLogFilePath              = ""
     ScriptRunLogFile                = ""
