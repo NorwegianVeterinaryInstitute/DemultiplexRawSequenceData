@@ -349,9 +349,14 @@ class demux:
         else:
             demuxLogger.info( f"project_list: {project_list}\n" )
 
-        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Get project name from {demux.SampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] ) )
         demux.project_list = project_list   # no need to return anything, save everything in the object space
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Get project name from {demux.SampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] ) )
 
+
+
+    ########################################################################
+    # checkTarFiles( )
+    ########################################################################
     def checkTarFiles ( listOfTarFilesToCheck ):
         """
         Check to see if the tar files created for delivery can be listed with no errors
@@ -364,7 +369,17 @@ class demux:
         But do it quietly, no need for output other than an OK/FAIL
         """
 
-    def has_beenDemultiplexed( RunID ):
+        demux.n = demux.n + 1
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Verify that the tar files produced are actually untarrable started ==\n", color="green", attrs=["bold"] ) )
+
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Verify that the tar files produced are actually untarrable finished ==\n", color="red", attrs=["bold"] ) )
+
+
+
+    ########################################################################
+    # hasBeenDemultiplexed( )
+    ########################################################################
+    def hasBeenDemultiplexed( RunID ):
         """
         Check if run has been demultiplexed before
 
@@ -376,9 +391,16 @@ class demux:
         Returs
             *True* if RudID_demultiplex exists
         """
+        demux.n = demux.n + 1
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: See if the specific RunID has already been demultiplexed started ==\n", color="green", attrs=["bold"] ) )
+
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: See if the specific RunID has already been demultiplexed finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
+    ########################################################################
+    # reDemultiplex( )
+    ########################################################################
     def reDemultiplex( RunID ):
         """
         setup nessecary paths:
@@ -386,7 +408,16 @@ class demux:
         Copy modified samplesheet to /data/SampleSheets as RunID-ISODATETIME.csv
         Demultiplex RunID again
         """
+        demux.n = demux.n + 1
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: See if the specific RunID has already been demultiplexed started ==\n", color="green", attrs=["bold"] ) )
 
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: See if the specific RunID has already been demultiplexed finished ==\n", color="red", attrs=["bold"] ) )
+
+
+
+    ########################################################################
+    # checkSampleSheetForMistakes( )
+    ########################################################################
     def checkSampleSheetForMistakes( RunID ):
         """
         Check SampleSheet.csv for common human mistakes
@@ -400,6 +431,10 @@ class demux:
 
         point any mistakes out to log
         """
+        demux.n = demux.n + 1
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Check SampleSheet.csv for common human mistakes started ==\n", color="green", attrs=["bold"] ) )
+
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Check SampleSheet.csv for common human mistakes finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -606,7 +641,7 @@ def renameDirectories( project_list ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Print out the current running environment ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Print out the current running environment ==\n", color="green" ) )
 
 
     for project in project_list: # rename the project directories
@@ -644,7 +679,7 @@ def renameDirectories( project_list ):
     for index, item in enumerate( newProjectFileList ):
         demuxLogger.debug( f"newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n", color="red" ) )
 
 
 
@@ -664,7 +699,7 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
     for project in project_list: # rename files in each project directory
 
         if any( var in project for var in demux.ControlProjects ):      # if the project name includes a control project name, ignore it
-            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in ControlProjectsQC( ).\n", color="magenta" ) )
+            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
             continue
         elif project == demux.TestProject:                              # ignore the test project
             if demux.debug:
@@ -774,7 +809,7 @@ def renameFilesAndDirectories( DemultiplexRunIdDir, project_list ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Renaming files started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Renaming started ==", color="green", attrs=["bold"] ) )
 
 
     if demux.debug:
@@ -786,6 +821,8 @@ def renameFilesAndDirectories( DemultiplexRunIdDir, project_list ):
 
     newProjectFileList = renameFiles( DemultiplexRunIdDir, project_list )
     renameDirectories( project_list )
+
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming started ==", color="red", attrs=["bold"] ) )
 
     return newProjectFileList
 
@@ -1313,6 +1350,8 @@ def prepareDelivery( RunID ):
     if demux.debug:
         demuxLogger.debug( f"{demux.DemultiplexRunIdDir} directory contents: {projectList}" ) 
 
+
+def renameProjects( ):
     projectsToProcess = [ ]
     for project in projectList:                                                 # itterate over said demux.DemultiplexRunIdDirs contents, take only the projects we need
 
@@ -1323,7 +1362,7 @@ def prepareDelivery( RunID ):
             demuxLogger.warning( f"{demux.TestProject} test project directory found in projects. Skipping." )
             continue
         elif any( var in project for var in demux.ControlProjects ):                # if the project name includes a control project name, ignore it
-            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in ControlProjectsQC( ).\n", color="magenta" ) )
+            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
             continue
         elif demux.temp in project:                                                 # disregard the temp directory
             demuxLogger.warning( f"{demux.temp} directory found. Skipping." )
@@ -1468,7 +1507,7 @@ def prepareDelivery( RunID ):
 # Water Control Negative report
 ########################################################################
 
-def ControlProjectsQC ( RunID ):
+def controlProjectsQC ( RunID ):
     """
     This function creeates a report if any water control samples are submitted for sequence ( and subsequently, analysis )
 
