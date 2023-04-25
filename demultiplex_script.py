@@ -1540,7 +1540,7 @@ def sha512FileQualityCheck ( RunID ):
 
 
 ########################################################################
-# Water Control Negative report
+# tarFileQualityCheck: verify tar files before upload
 ########################################################################
 
 def tarFileQualityCheck ( RunID ):
@@ -1795,7 +1795,7 @@ def setupEnvironment( RunID ):
     demux.RTACompleteFilePath           = f"{demux.RawDataRunIDdir}/{demux.RTACompleteFile}"
 ######################################################
     demux.DemultiplexRunIdDir           = os.path.join( demux.DemultiplexDir, RunID + demux.DemultiplexDirSuffix ) 
-    demux.DemuxQCDirectoryPath          = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"
+    demux.DemultiplexQCDirPath          = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"
 ######################################################
     demux.ForTransferRunIdDir           = os.path.join( demux.ForTransferDir, RunID )
     demux.ForTransferQCtarFile          = os.path.join( demux.ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
@@ -1956,7 +1956,7 @@ def printRunningEnvironment( RunID ):
 
 
     demuxLogger.info( f"To rerun this script run\n" )
-    demuxLogger.info( termcolor.colored( f"\tclear; rm -rf {demux.DemultiplexRunIDdir} && rm -rf {demux.ForTransferDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"\tclear; rm -rf {demux.DemultiplexRunIdDir} && rm -rf {demux.ForTransferRunIdDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n", attrs=["bold"] ) )
     if demux.debug: # logging.info the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
         demuxLogger.debug( "=============================================================================")
         demuxLogger.debug( f"RunID:\t\t\t\t\t\t{RunID}")
@@ -1969,7 +1969,7 @@ def printRunningEnvironment( RunID ):
         demuxLogger.debug( f"RTACompleteFilePath:\t\t\t\t{demux.RawDataRunIDdir}/{demux.RTACompleteFile}" )
         demuxLogger.debug( "=============================================================================")
         demuxLogger.debug( f"DemultiplexDirRoot:\t\t\t\t{demux.DemultiplexDir}" )
-        demuxLogger.debug( f"DemultiplexRunIDdir:\t\t\t\t{demux.DemultiplexRunIDdir}" )
+        demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
         demuxLogger.debug( f"DemultiplexLogDirPath:\t\t\t\t{demux.DemultiplexLogDirPath}" )
         demuxLogger.debug( f"DemuxRunLogFilePath:\t\t\t\t{demux.DemuxRunLogFilePath}" )
         demuxLogger.debug( f"DemultiplexScriptLogFilePath:\t\t\t{demux.DemultiplexScriptLogFilePath}" )
