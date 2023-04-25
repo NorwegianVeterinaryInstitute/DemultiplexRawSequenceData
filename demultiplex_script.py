@@ -1936,7 +1936,7 @@ def printRunningEnvironment( RunID ):
             demuxLogger.debug( f"DemultiplexProjSubDirs[{index}]:\t\t\t{project}")
         demuxLogger.debug( "=============================================================================")
         demuxLogger.debug( f"ForTransferDir:\t\t\t\t\t{demux.ForTransferDir}" )
-        demuxLogger.debug( f"ForTransferRunIDdir:\t\t\t\t\t{demux.ForTransferRunIDdir}" )
+        demuxLogger.debug( f"ForTransferRunIdDir:\t\t\t\t{demux.ForTransferRunIdDir}" )
         for index, project in enumerate( demux.ForTransferProjNames):
             demuxLogger.debug( f"ForTransferProjNames[{index}]:\t\t\t\t{project}")
         demuxLogger.debug( "=============================================================================\n")
