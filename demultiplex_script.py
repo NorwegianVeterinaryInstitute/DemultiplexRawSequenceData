@@ -1776,48 +1776,6 @@ def archiveSampleSheet( RunID ):
 
 
 ########################################################################
-# setupEnvironment( )
-########################################################################
-
-def setupEnvironment( RunID ):
-    """
-    Setup the variables for our environment
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Set up the current running environment ==\n", color="green", attrs=["bold"] ) )
-
-    # RunID
-    demux.RunIDShort                    = '_'.join(RunID.split('_')[0:2]) # this should be turned into a setter in the demux object
-######################################################
-    demux.RawDataRunIDdir               = os.path.join( demux.RawDataDir, RunID )
-    demux.SampleSheetFilePath           = os.path.join( demux.RawDataRunIDdir, demux.SampleSheetFileName )
-    demux.RTACompleteFilePath           = f"{demux.RawDataRunIDdir}/{demux.RTACompleteFile}"
-######################################################
-    demux.DemultiplexRunIdDir           = os.path.join( demux.DemultiplexDir, RunID + demux.DemultiplexDirSuffix ) 
-    demux.DemultiplexQCDirPath          = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"
-######################################################
-    demux.ForTransferRunIdDir           = os.path.join( demux.ForTransferDir, RunID )
-    demux.ForTransferQCtarFile          = os.path.join( demux.ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
-######################################################
-
-######################################################
-    # set up
-    demux.DemuxRunLogFilePath          = os.path.join( demux.LogDirPath,            RunID + demux.LogSuffix )
-    demux.DemuxCumulativeLogFilePath   = os.path.join( demux.LogDirPath,            demux.DemuxCumulativeLogFileName )
-    demux.DemultiplexLogDirPath        = os.path.join( demux.DemultiplexRunIdDir,   demux.DemultiplexLogDirName )
-    demux.DemultiplexScriptLogFilePath = os.path.join( demux.DemultiplexLogDirPath, demux.ScriptRunLogFileName )
-    demux.DemuxBcl2FastqLogFilePath    = os.path.join( demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
-    demux.FastQCLogFilePath            = os.path.join( demux.DemultiplexLogDirPath, demux.FastqcLogFileName )
-    demux.MutliQCLogFilePath           = os.path.join( demux.DemultiplexLogDirPath, demux.MultiqcLogFileName )
-    demux.SampleSheetArchiveFilePath   = os.path.join( demux.SampleSheetDirPath, f"{RunID}{demux.CSVSuffix}" ) # .dot is included in CSVsuffix
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )
-
-
-
-
-########################################################################
 # setupFileLogHandling( )
 ########################################################################
 
@@ -1985,6 +1943,49 @@ def printRunningEnvironment( RunID ):
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Print out the current running environment ==\n", color="red", attrs=["bold"] ) )
     # sys.exit( )
+
+
+
+
+
+########################################################################
+# setupEnvironment( )
+########################################################################
+
+def setupEnvironment( RunID ):
+    """
+    Setup the variables for our environment
+    """
+
+    demux.n = demux.n + 1
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Set up the current running environment ==\n", color="green", attrs=["bold"] ) )
+
+    # RunID
+    demux.RunIDShort                    = '_'.join(RunID.split('_')[0:2]) # this should be turned into a setter in the demux object
+######################################################
+    demux.RawDataRunIDdir               = os.path.join( demux.RawDataDir, RunID )
+    demux.SampleSheetFilePath           = os.path.join( demux.RawDataRunIDdir, demux.SampleSheetFileName )
+    demux.RTACompleteFilePath           = f"{demux.RawDataRunIDdir}/{demux.RTACompleteFile}"
+######################################################
+    demux.DemultiplexRunIdDir           = os.path.join( demux.DemultiplexDir, RunID + demux.DemultiplexDirSuffix ) 
+    demux.DemultiplexQCDirPath          = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"
+######################################################
+    demux.ForTransferRunIdDir           = os.path.join( demux.ForTransferDir, RunID )
+    demux.ForTransferQCtarFile          = os.path.join( demux.ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
+######################################################
+
+######################################################
+    # set up
+    demux.DemuxRunLogFilePath          = os.path.join( demux.LogDirPath,            RunID + demux.LogSuffix )
+    demux.DemuxCumulativeLogFilePath   = os.path.join( demux.LogDirPath,            demux.DemuxCumulativeLogFileName )
+    demux.DemultiplexLogDirPath        = os.path.join( demux.DemultiplexRunIdDir,   demux.DemultiplexLogDirName )
+    demux.DemultiplexScriptLogFilePath = os.path.join( demux.DemultiplexLogDirPath, demux.ScriptRunLogFileName )
+    demux.DemuxBcl2FastqLogFilePath    = os.path.join( demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
+    demux.FastQCLogFilePath            = os.path.join( demux.DemultiplexLogDirPath, demux.FastqcLogFileName )
+    demux.MutliQCLogFilePath           = os.path.join( demux.DemultiplexLogDirPath, demux.MultiqcLogFileName )
+    demux.SampleSheetArchiveFilePath   = os.path.join( demux.SampleSheetDirPath, f"{RunID}{demux.CSVSuffix}" ) # .dot is included in CSVsuffix
+
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )
 
 
 
