@@ -1858,6 +1858,7 @@ def setupFileLogHandling( RunID ):
         logging.shutdown( )
         sys.exit( )
 
+    demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxFileLogHandler.setFormatter( demuxLogFormatter )
     demuxLogger.setLevel( demux.LoggingLevel )
 
