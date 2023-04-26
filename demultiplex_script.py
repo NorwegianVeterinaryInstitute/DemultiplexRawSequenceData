@@ -974,10 +974,11 @@ def prepareMultiQC( ):
     try:
         # EXAMPLE: /usr/bin/cp project/*zip project_f/*html DemultiplexDir/demux.RunIDShort.short_QC # (destination is a directory)
         demuxLogger.debug( f"source:\t\t\t\t\t{[*sourcefiles]}" )
-        for source in [ *sourcefiles ]:
+        for source  in sourcefiles :
             if demux.debug:
                 demuxLogger.debug( f"Command to execute:\t\t\t\t/usr/bin/cp {source} {destination}" )
-            shutil.copy2( source, destination )    # destination has to be a directory
+            for file in source:
+                shutil.copy2( file, destination )    # destination has to be a directory
     except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
         text = [ f"\tFileNotFoundError in {inspect.stack()[0][3]}()" ,
                  f"\terrno:\t{err.errno}",
