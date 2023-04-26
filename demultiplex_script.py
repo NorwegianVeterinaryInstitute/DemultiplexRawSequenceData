@@ -1898,6 +1898,14 @@ def checkRunningEnvironment( RunID ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Check the validity of the current running environment ==\n", color="green", attrs=["bold"] ) )
 
+    # ensure Java[tm] exists
+    if not shutil.which( "java"):
+        text = "Java executable not detected! Exiting." 
+        demuxFailureLogger.critical( text  )
+        demuxLogger.critical( text )
+        logging.shutdown( )
+        sys.exit( )
+
     if len( demux.project_list ) == 0:
         text = "List project_list contains no projects/zero length! Exiting." 
         demuxFailureLogger.critical( text  )
