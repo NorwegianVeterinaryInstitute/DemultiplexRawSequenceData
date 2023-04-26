@@ -216,6 +216,7 @@ class demux:
     SampleSheetArchiveFilePath      = ""
     ######################################################
     DemultiplexProjSubDirs          = [ ]
+    newProjectFileList              = [ ]
     ForTransferProjNames            = [ ]
     tarFileStack                    = [ ]
     ######################################################
@@ -592,7 +593,7 @@ def demultiplex( ):
         sys.exit( )
 
     try: 
-        Bcl2FastqLogFile     = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
+        Bcl2FastqLogFile     = os.path.join( demux.DemultiplexRunIdDir, demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
         file = open( Bcl2FastqLogFile, "w" )
         file.write( result.stderr )
         file.close( )
@@ -676,8 +677,8 @@ def renameDirectories( project_list ):
             if demux.debug:
                 demuxLogger.debug( termcolor.colored( f"Renaming {oldname} to {newname}", color="cyan", attrs=["reverse"] ) )
 
-    for index, item in enumerate( newProjectFileList ):
-        demuxLogger.debug( f"newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
+    for index, item in enumerate( demux.newProjectFileList ):
+        demuxLogger.debug( f"demux.newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n", color="red" ) )
 
@@ -695,7 +696,6 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
 
     oldname            = ""
     newname            = ""
-    newProjectFileList = [ ]
     for project in project_list: # rename files in each project directory
 
         if any( var in project for var in demux.ControlProjects ):      # if the project name includes a control project name, ignore it
@@ -740,9 +740,12 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
                 demuxLogger.debug( "-----------------")
                 demuxLogger.debug( f"baseFilename:\t\t\t\t\t{baseFileName}")
 
-            oldname = f"{file}"
-            newname = f"{demux.DemultiplexRunIdDir}/{project}/{demux.RunIDShort}.{baseFileName}"
-            newfoo  = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}/{demux.RunIDShort}.{baseFileName}" # saving this var to pass locations of new directories
+            oldname     = f"{file}"
+            newname     = f"{demux.DemultiplexRunIdDir}/{project}/{demux.RunIDShort}.{baseFileName}"
+            renamedFile = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}/{demux.RunIDShort}.{baseFileName}" # saving this var to pass locations of new directories
+
+            if renamedFile not in demux.newProjectFileList:
+                demux.newProjectFileList.append( renamedFile ) # save it to return the list, so we will not have to recreate the filenames
 
             if demux.debug:
                 demuxLogger.debug( f"file:\t\t\t\t\t\t{file}")
@@ -752,9 +755,6 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
             # make sure newname files do not exist
             oldfileExists = os.path.isfile( oldname )
             newfileExists = os.path.isfile( newname )
-
-            if newfoo not in newProjectFileList:
-                newProjectFileList.append( newfoo ) # save it to return the list, so we will not have to recreate the filenames
 
             if oldfileExists and not newfileExists:
                 try: 
@@ -777,7 +777,6 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
 
     demuxLogger.info( "-----------------")
 
-    return newProjectFileList
 
 ########################################################################
 # renameFilesAndDirectories( )
@@ -831,7 +830,7 @@ def renameFilesAndDirectories( DemultiplexRunIdDir, project_list ):
 # FastQC
 ########################################################################
 
-def FastQC( newFileList ):
+def FastQC( ):
     """
     FastQC: Run /data/bin/fastqc (which is a symlink to the real qc)
     """
@@ -840,7 +839,7 @@ def FastQC( newFileList ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: FastQC started ==", color="green", attrs=["bold"] ) )
 
     command             = demux.fastqc_bin
-    argv                = [ command, '-t', str(demux.threadsToUse), *newFileList ]  # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
+    argv                = [ command, '-t', str(demux.threadsToUse), *demux.newFileList ]  # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
     demultiplexRunIdDir = os.path.dirname( os.path.dirname( newFileList[0] ) )
 
     if demux.debug:
@@ -893,7 +892,7 @@ def FastQC( newFileList ):
 # prepareMultiQC
 ########################################################################
 
-def prepareMultiQC( project_list ):
+def prepareMultiQC( ):
     """
     Preperation to run MultiQC:
         copy *.zip and *.html from individual {demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project} directories to the {DemultiplexRunIdDirNewNamel}/{demux.RunIDShort}_QC directory
@@ -911,7 +910,7 @@ def prepareMultiQC( project_list ):
     zipFiles    = [ ]
     HTMLfiles   = [ ]
     sourcefiles = [ ]
-    for project in project_list:
+    for project in demux.newProjectNameList:
         project_directory = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}"
         zipFiles  = glob.glob( f"{project_directory}/*zip" )    # source zip files
         HTMLfiles = glob.glob( f"{project_directory}/*html" )   # source html files
@@ -1040,10 +1039,10 @@ def MultiQC( ):
 
 
 ########################################################################
-# qc
+# qualityCheck
 ########################################################################
 
-def qualityCheck( newFileList, newProjectNameList ):
+def qualityCheck( ):
     """
     Run QC on the sequence run files
 
@@ -1057,12 +1056,12 @@ def qualityCheck( newFileList, newProjectNameList ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Quality Check started ==", color="green", attrs=["bold"] ) )
 
     if demux.debug:
-        demuxLogger.debug( f"newFileList:\t\t\t\t\t{newFileList}" )
+        demuxLogger.debug( f"demux.newFileList:\t\t\t\t{demux.newFileList}" )
         demuxLogger.debug( f"demux.DemultiplexRunIdDir:\t\t\t{demux.DemultiplexRunIdDir}" )
-        demuxLogger.debug( f"newProjectNameList:\t\t\t\t{newProjectNameList}" )
+        demuxLogger.debug( f"demux.newProjectNameList:\t\t\t{demux.newProjectNameList}" )
 
-    FastQC( newFileList )
-    prepareMultiQC( newProjectNameList )
+    FastQC( )
+    prepareMultiQC( )
     MultiQC( )
 
 
@@ -2065,8 +2064,8 @@ def main( RunID ):
     copySampleSheetIntoDemultiplexRunIdDir( )                                                           # copy SampleSheet.csv from {demux.SampleSheetFilePath} to {demux.DemultiplexRunIdDir}
     archiveSampleSheet( RunID )                                                                         # make a copy of the Sample Sheet for future reference
     demultiplex( )                                                                                      # use blc2fastq to convert .bcl files to fastq.gz
-    newFileList = renameFilesAndDirectories( demux.DemultiplexRunIdDir, demux.project_list )            # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
-    qualityCheck( newFileList, project_list )                                                           # execute QC on the incoming fastq files
+    renameFilesAndDirectories( demux.DemultiplexRunIdDir, demux.project_list )                          # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
+    qualityCheck( )                                                                                     # execute QC on the incoming fastq files
 
     calcFileHash( demux.DemultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
     changePermissions( demux.DemultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
