@@ -335,7 +335,7 @@ class demux:
                 if demux.debug and demux.verbosity == 2:
                     demuxLogger.debug( f"item:\t\t\t\t\t\t{item}")
                 project_list.append( item )                               # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
-                demux.newProjectNameList.append( f"{demux.RunIDShort}.{item}")  #  since we are here, we might construct the new name list.
+                newProjectNameList.append( f"{demux.RunIDShort}.{item}")  #  since we are here, we might construct the new name list.
 
             elif demux.Sample_Project in line: # demux.Sample_Project is defined in class demux:
 
@@ -930,26 +930,36 @@ def prepareMultiQC( ):
     HTMLfiles   = [ ]
     sourcefiles = [ ]
     for project in demux.newProjectNameList:
-        project_directory = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}"
-        zipFiles  = glob.glob( f"{project_directory}/*zip" )    # source zip files
-        HTMLfiles = glob.glob( f"{project_directory}/*html" )   # source html files
-
-        if ( not zipFiles[0] or not HTMLfiles[0] ):
-            demuxLogger.critical( f"zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.DemultiplexRunIdDir}. Exiting.")
-            sys.exit( )
+        globZipFiles  = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*zip" )
+        globHTMLFiles = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*html" )
+        
+        if not globZipFiles or not globHTMLFiles:
+            if demux.debug:
+                demuxLogger.debug( f"globZipFiles or globHTMLFiles came back empty on project {project}" )
+                demuxLogger.debug( f"demux.DemultiplexRunIdDir/project/\t{demux.DemultiplexRunIdDir}/{project}/" )
+                demuxLogger.debug( f"globZipFiles:\t\t\t{globZipFiles}")
+                demuxLogger.debug( f"globHTMLFiles:\t\t\t{globZipFiles}")
+            continue
+        else:
+            zipFiles.append( globZipFiles )  # source zip files
+            HTMLfiles.append( globZipFiles  )  # source html files
 
         if demux.debug:
             demuxLogger.debug( termcolor.colored( f"Now working on project \"{project}\"", color="cyan", attrs=["reverse"] ) )
             demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                               )
             demuxLogger.debug( f"HTMLfiles:\t\t\t\t\t{HTMLfiles}"                             )
 
+    if ( not zipFiles[0] or not HTMLfiles[0] ):
+        demuxLogger.critical( f"zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.DemultiplexRunIdDir}. Exiting.")
+        sys.exit( )
+
     sourcefiles = [ *zipFiles, *HTMLfiles ]
-    demuxLogger.debug( f"sourcefiles:\t\t\t\t\t{sourcefiles}\n\n")
     destination = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"     # QC folder eg /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578_QC/
+    demuxLogger.debug( f"sourcefiles:\t\t\t\t\t{sourcefiles}\n\n")
 
     if demux.debug:
             demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}"                 )
-            demuxLogger.debug( f"project_list:\t\t\t\t\t{project_list}"                       )
+            demuxLogger.debug( f"denmux.project_list:\t\t\t\t{demux.project_list}"                       )
             demuxLogger.debug( f"demux.DemultiplexRunIdDir:\t\t\t{demux.DemultiplexRunIdDir}" )
             demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                               )
             demuxLogger.debug( f"HTMLfiles:\t\t\t\t\t{HTMLfiles}"                             )
@@ -1379,7 +1389,7 @@ def renameProjects( ):
             demuxLogger.warning( f"{demux.DemultiplexLogDirPath} directory found. Skipping." )
             continue
 
-        if any( var in project for var in [ demux.NextSeq, demux.MiSeq ] ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the newProjectNameList
+        if any( var in project for var in [ demux.NextSeq, demux.MiSeq ] ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcess
             if demux.debug:
                 demuxLogger.warning( f"Now processing {project} project." )
             projectsToProcess.append( project )
