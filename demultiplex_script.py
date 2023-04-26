@@ -50,6 +50,9 @@ WHY DOES THIS PROGRAM EXIST
     So, essentially, this script is an attempt at automation workflow:
         sequencing -> demultiplexing -> quality checking -> delivering the results of the demultiplexing and the QC to the appropriate places, in the case of NVI, VIGASP and NIRD
 
+WHERE DO PROJECTS GET THEIR NEW {RunIDShort}.{project} NAME?
+    In demux.getProjectName( ) . We are building the project names there, might as well put the compliance as well. (This might change)
+
 WHAT DO THE FASTQ.GZ FILES CONTAIN
     The .fastq.gz contain all the fastq files from the blc2fastq demultiplexing
 
@@ -217,6 +220,7 @@ class demux:
     ######################################################
     DemultiplexProjSubDirs          = [ ]
     newProjectFileList              = [ ]
+    newProjectNameList              = [ ]
     ForTransferProjNames            = [ ]
     tarFileStack                    = [ ]
     ######################################################
@@ -299,10 +303,11 @@ class demux:
         demux.n = demux.n + 1
         demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Get project name from {demux.SampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
 
-        project_line_check = False
-        project_index  = 0
-        project_list   = []
+        project_line_check  = False
+        project_index       = 0
+        project_list        = [ ]
         SampleSheetContents = [ ]
+        newProjectNameList  = [ ]
 
         SampleSheetFileHandle = open( demux.SampleSheetFilePath, 'r', encoding= demux.DecodeScheme )
         SampleSheetContent    = SampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
@@ -329,7 +334,8 @@ class demux:
             if project_line_check == True and item not in project_list :
                 if demux.debug and demux.verbosity == 2:
                     demuxLogger.debug( f"item:\t\t\t\t\t\t{item}")
-                project_list.append( item )# + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
+                project_list.append( item )                               # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
+                demux.newProjectNameList.append( f"{demux.RunIDShort}.{item}")  #  since we are here, we might construct the new name list.
 
             elif demux.Sample_Project in line: # demux.Sample_Project is defined in class demux:
 
@@ -341,6 +347,7 @@ class demux:
             else:
                 continue
 
+        # Let's make sure that we have something before assigning it to object var
         if len( project_list ) == 0:
             text = "project_list is empty! Exiting!"
             demuxFailureLogger.critical( text  )
@@ -349,8 +356,20 @@ class demux:
             sys.exit( )
         else:
             demuxLogger.info( f"project_list: {project_list}\n" )
+        demux.project_list       = project_list         # no need to return anything, save everything in the object space
 
-        demux.project_list = project_list   # no need to return anything, save everything in the object space
+        # Let's make sure that we have something before assigning it to object var
+        if len( project_list ) == 0:
+            text = "project_list is empty! Exiting!"
+            demuxFailureLogger.critical( text  )
+            demuxLogger.critical( text )
+            logging.shutdown( )
+            sys.exit( )
+        else:
+            demuxLogger.info( f"project_list: {project_list}\n" )
+        demux.newProjectNameList = newProjectNameList
+
+
         demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Get project name from {demux.SampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] ) )
 
 
@@ -649,11 +668,11 @@ def renameDirectories( project_list ):
 
         oldname = f"{demux.DemultiplexRunIdDir}/{project}"
         newname = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}"
-        # make sure oldname dir exists
-        # make sure newname dir name does not exist
         olddirExists = os.path.isdir( oldname )
         newdirExists = os.path.isdir( newname )
 
+        # make sure oldname dir exists
+        # make sure newname dir name does not exist
         if olddirExists and not newdirExists: # rename directory
 
             try: 
@@ -708,7 +727,7 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
 
         CompressedFastQfilesDir = f"{demux.DemultiplexRunIdDir}/{project}"
         if demux.debug:
-            demuxLogger.debug( termcolor.colored(   f"Now working on project:\t\t\t\t{project}", color="cyan", attrs=["reverse"] ) )
+            demuxLogger.debug( termcolor.colored(   f"Now working on project:\t\t\t{project}", color="cyan", attrs=["reverse"] ) )
             demuxLogger.debug( f"CompressedFastQfilesDir:\t\t\t{CompressedFastQfilesDir}")
 
         filesToSearchFor     = f'{CompressedFastQfilesDir}/*{demux.CompressedFastqSuffix}'
@@ -839,8 +858,8 @@ def FastQC( ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: FastQC started ==", color="green", attrs=["bold"] ) )
 
     command             = demux.fastqc_bin
-    argv                = [ command, '-t', str(demux.threadsToUse), *demux.newFileList ]  # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
-    demultiplexRunIdDir = os.path.dirname( os.path.dirname( newFileList[0] ) )
+    argv                = [ command, '-t', str(demux.threadsToUse), *demux.newProjectFileList ]  # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
+    demultiplexRunIdDir = os.path.dirname( os.path.dirname( demux.newProjectFileList[0] ) )
 
     if demux.debug:
         arguments = " ".join( argv[1:] )
@@ -923,10 +942,6 @@ def prepareMultiQC( ):
             demuxLogger.debug( termcolor.colored( f"Now working on project \"{project}\"", color="cyan", attrs=["reverse"] ) )
             demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                               )
             demuxLogger.debug( f"HTMLfiles:\t\t\t\t\t{HTMLfiles}"                             )
-
-
-    sys.exit( )
-
 
     sourcefiles = [ *zipFiles, *HTMLfiles ]
     demuxLogger.debug( f"sourcefiles:\t\t\t\t\t{sourcefiles}\n\n")
@@ -1055,15 +1070,9 @@ def qualityCheck( ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Quality Check started ==", color="green", attrs=["bold"] ) )
 
-    if demux.debug:
-        demuxLogger.debug( f"demux.newFileList:\t\t\t\t{demux.newFileList}" )
-        demuxLogger.debug( f"demux.DemultiplexRunIdDir:\t\t\t{demux.DemultiplexRunIdDir}" )
-        demuxLogger.debug( f"demux.newProjectNameList:\t\t\t{demux.newProjectNameList}" )
-
     FastQC( )
     prepareMultiQC( )
     MultiQC( )
-
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Quality Check finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -1934,7 +1943,7 @@ def printRunningEnvironment( RunID ):
         for index, project in enumerate( demux.DemultiplexProjSubDirs):
             demuxLogger.debug( f"DemultiplexProjSubDirs[{index}]:\t\t\t{project}")
         demuxLogger.debug( "=============================================================================")
-        demuxLogger.debug( f"ForTransferDir:\t\t\t\t\t{demux.ForTransferDir}" )
+        demuxLogger.debug( f"ForTransferDir:\t\t\t\t{demux.ForTransferDir}" )
         demuxLogger.debug( f"ForTransferRunIdDir:\t\t\t\t{demux.ForTransferRunIdDir}" )
         for index, project in enumerate( demux.ForTransferProjNames):
             demuxLogger.debug( f"ForTransferProjNames[{index}]:\t\t\t\t{project}")
