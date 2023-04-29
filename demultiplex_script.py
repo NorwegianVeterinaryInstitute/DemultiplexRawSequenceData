@@ -159,91 +159,92 @@ class demux:
     debug     = True
     verbosity = 1
     ######################################################
-    DataRootDirPath                 = '/data'
-    RawDataDirName                  = 'rawdata'
-    RawDataDir                      =  os.path.join( DataRootDirPath, RawDataDirName )
-    DemultiplexDirName              = "demultiplex"
-    DemultiplexDir                  = os.path.join( DataRootDirPath, DemultiplexDirName )
-    ForTransferDirName              = 'for_transfer'
-    ForTransferDir                  = os.path.join( DataRootDirPath, ForTransferDirName )
-    SampleSheetDirName              = 'samplesheets'
-    SampleSheetDirPath              = os.path.join( DataRootDirPath, SampleSheetDirName )
-    LogDirName                      = "log"
-    LogDirPath                      = os.path.join( DataRootDirPath, LogDirName )
+    dataRootDirPath                 = '/data'
+    rawDataDirName                  = 'rawdata'
+    rawDataDir                      =  os.path.join( DataRootDirPath, RawDataDirName )
+    demultiplexDirName              = "demultiplex"
+    demultiplexDir                  = os.path.join( DataRootDirPath, DemultiplexDirName )
+    forTransferDirName              = 'for_transfer'
+    forTransferDir                  = os.path.join( DataRootDirPath, ForTransferDirName )
+    sampleSheetDirName              = 'samplesheets'
+    sampleSheetDirPath              = os.path.join( DataRootDirPath, SampleSheetDirName )
+    logDirName                      = "log"
+    logDirPath                      = os.path.join( DataRootDirPath, LogDirName )
     ######################################################
-    CompressedFastqSuffix           = '.fastq.gz' 
-    CSVSuffix                       = '.csv'
-    DemultiplexDirSuffix            = '_demultiplex'
+    compressedFastqSuffix           = '.fastq.gz' 
+    csvSuffix                       = '.csv'
+    demultiplexDirSuffix            = '_demultiplex'
     multiqc_data                    = 'multiqc_data'
     md5Suffix                       = '.md5'
-    QCSuffix                        = '_QC'
+    qcSuffix                        = '_QC'
     sha512Suffix                    = '.sha512'
     tarSuffix                       = '.tar'
     temp                            = 'temp'
     zipSuffix                       = '.zip'
-    HTMLSuffix                      = '.html'
-    LogSuffix                       = '.log'
+    htmlSuffix                      = '.html'
+    logSuffix                       = '.log'
     ######################################################
     bcl2fastq_bin                   = f"{DataRootDirPath}/bin/bcl2fastq"
     fastqc_bin                      = f"{DataRootDirPath}/bin/fastqc"
     mutliqc_bin                     = f"{DataRootDirPath}/bin/multiqc"
     python3_bin                     = f"/usr/bin/python3"
-    ScriptFilePath                  = __file__
+    scriptFilePath                  = __file__
     ######################################################
-    RTACompleteFile                 = 'RTAComplete.txt'
-    SampleSheetFileName             = 'SampleSheet.csv'
-    TestProject                     = 'FOO-blahblah-BAR'
-    Sample_Project                  = 'Sample_Project'
-    DemultiplexCompleteFile         = 'DemultiplexComplete.txt'
+    rtaCompleteFile                 = 'RTAComplete.txt'
+    sampleSheetFileName             = 'SampleSheet.csv'
+    testProject                     = 'FOO-blahblah-BAR'
+    sample_Project                  = 'Sample_Project'
+    demultiplexCompleteFile         = 'DemultiplexComplete.txt'
     vannControlNegativReport        = 'Negativ'
+    forTransferRunIdDirTestName     = 'test_tar'
     md5File                         = 'md5sum.txt'
-    MiSeq                           = 'M06578'   # if we get more than one, turn this into an array, or read from config, or read from illumina
-    NextSeq                         = 'NB552450' # if we get more than one, turn this into an array, or read from config, or read from illumina
-    DecodeScheme                    = "utf-8"
+    miSeq                           = 'M06578'   # if we get more than one, turn this into an array, or read from config, or read from illumina
+    mextSeq                         = 'NB552450' # if we get more than one, turn this into an array, or read from config, or read from illumina
+    decodeScheme                    = "utf-8"
     footarfile                      = f"foo{tarSuffix}"      # class variable shared by all instances
     barzipfile                      = f"zip{zipSuffix}"
     TotalTasks                      = 0  
 
     ######################################################
-    RunIDShort                      = ""
-    RawDataRunIDdir                 = ""
-    DemultiplexRunIDdir             = ""
-    DemultiplexLogDirPath           = ""
-    DemultiplexQCDirPath            = ""
-    DemultiplexScriptLogFilePath    = ""
-    DemuxQCDirectoryName            = ""
-    DemuxQCDirectoryPath            = ""
-    ForTransferRunIDdir             = ""
-    ForTransferQCtarFile            = ""
-    SampleSheetFilePath             = os.path.join( SampleSheetDirPath, SampleSheetFileName )
-    SampleSheetArchiveFilePath      = ""
+    runIDShort                      = ""
+    rawDataRunIDdir                 = ""
+    demultiplexRunIDdir             = ""
+    demultiplexLogDirPath           = ""
+    demultiplexQCDirPath            = ""
+    demultiplexScriptLogFilePath    = ""
+    demuxQCDirectoryName            = ""
+    demuxQCDirectoryPath            = ""
+    forTransferRunIDdir             = ""
+    forTransferQCtarFile            = ""
+    sampleSheetFilePath             = os.path.join( SampleSheetDirPath, SampleSheetFileName )
+    sampleSheetArchiveFilePath      = ""
     ######################################################
-    DemultiplexProjSubDirs          = [ ]
+    demultiplexProjSubDirs          = [ ]
     newProjectFileList              = [ ]
     newProjectNameList              = [ ]
-    ForTransferProjNames            = [ ]
+    forTransferProjNames            = [ ]
     tarFileStack                    = [ ]
     ######################################################
-    ControlProjects                 = [ "Negativ" ]
+    controlProjects                 = [ "Negativ" ]
     ######################################################
-    ForTransferRunIdDir             = ""
+    forTransferRunIdDir             = ""
     forTransferQCtarFile            = ""
     ######################################################
-    DemuxCumulativeLogFileName      = 'demultiplex.log'
-    DemultiplexLogDirName           = 'demultiplex_log'
-    ScriptRunLogFileName            = '00_script.log'
-    Bcl2FastqLogFileName            = '01_demultiplex.log'
-    FastqcLogFileName               = '02_fastqcLogFile.log'
-    MultiqcLogFileName              = '03_multiqcLogFile.log'
-    LoggingLevel                    = logging.DEBUG
+    demuxCumulativeLogFileName      = 'demultiplex.log'
+    demultiplexLogDirName           = 'demultiplex_log'
+    scriptRunLogFileName            = '00_script.log'
+    bcl2FastqLogFileName            = '01_demultiplex.log'
+    fastqcLogFileName               = '02_fastqcLogFile.log'
+    multiqcLogFileName              = '03_multiqcLogFile.log'
+    loggingLevel                    = logging.DEBUG
     ######################################################
-    DemuxCumulativeLogFilePath      = ""
-    DemuxBcl2FastqLogFilePath       = ""
-    FastQCLogFilePath               = ""
-    LogFilePath                     = ""
-    MultiQCLogFilePath              = ""
-    ScriptRunLogFile                = ""
-    ForTransferDirRoot              = ""
+    demuxCumulativeLogFilePath      = ""
+    demuxBcl2FastqLogFilePath       = ""
+    fastQCLogFilePath               = ""
+    logFilePath                     = ""
+    multiQCLogFilePath              = ""
+    scriptRunLogFile                = ""
+    forTransferDirRoot              = ""
 
     ######################################################
     # mailhost                        = 'seqtech00.vetinst.no'
@@ -1304,10 +1305,10 @@ def prepareDelivery( RunID ):
             would be a good idea to pull the control projects right out of irida or clarity.
 
     TRICK IN THIS FUNCTION:
-        os.mkdir( ForTransferRunIdDir )
+        os.mkdir( forTransferRunIdDir )
         move all the tar files in there
             one directory per project
-        calcFileHash( ForTransferRunIdDir ) # use a temp dir to re-use the same function we used earlier, so I will not have to write a new function to do the same thing
+        calcFileHash( forTransferRunIdDir ) # use a temp dir to re-use the same function we used earlier, so I will not have to write a new function to do the same thing
 
     Original commands:
         EXAMPLE: /bin/tar -cvf tar_file -C DemultiplexDir folder 
@@ -1322,7 +1323,7 @@ def prepareDelivery( RunID ):
     if demux.debug:
         text = [    f"Current working directory:\t{os.getcwd( )}",
                     f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}",
-                    f"ForTransferRunIdDir:\t\t{demux.ForTransferRunIdDir}",
+                    f"forTransferRunIdDir:\t\t{demux.forTransferRunIdDir}",
                     f"forTransferQCtarFile:\t{demux.forTransferQCtarFile}",
                     f"Original working directory:\t{ os.getcwd( ) }"
                 ]
@@ -1354,11 +1355,11 @@ def prepareDelivery( RunID ):
     if demux.debug:
         demuxLogger.debug( f"Changed into directory\t{demux.DemultiplexRunIdDir}")
 
-    # Make {demux.ForTransferRunIdDir} directory
-    if not os.path.isdir( demux.ForTransferRunIdDir ):
-        os.mkdir( demux.ForTransferRunIdDir )
+    # Make {demux.forTransferRunIdDir} directory
+    if not os.path.isdir( demux.forTransferRunIdDir ):
+        os.mkdir( demux.forTransferRunIdDir )
     else:
-        text = f"{demux.ForTransferRunIdDir} exists, this is not supposed to exist, please investigate and re-run the demux. Exiting."
+        text = f"{demux.forTransferRunIdDir} exists, this is not supposed to exist, please investigate and re-run the demux. Exiting."
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
@@ -1400,13 +1401,13 @@ def renameProjects( ):
         demuxLogger.debug( f"len(projectsToProcess):\t{len( projectsToProcess  )}" )
 
     for project in projectsToProcess:                                               # create the directories for the individual project e.g. 
-                                                                                    # if project is APEC-Seq it will create {demux.ForTransferRunIdDir}/{demux.RunIDShort}.{project}
+                                                                                    # if project is APEC-Seq it will create {demux.forTransferRunIdDir}/{demux.RunIDShort}.{project}
                                                                                     # /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578.APEC-Seq/
         try:
-            os.mkdir( f"{demux.ForTransferRunIdDir}/{project}" ) # we save each tar file into its own directory
+            os.mkdir( f"{demux.forTransferRunIdDir}/{project}" ) # we save each tar file into its own directory
         except FileExistsError as err:
             text = [
-                f"Error while trying to mkdir {demux.ForTransferRunIdDir}/{project}",
+                f"Error while trying to mkdir {demux.forTransferRunIdDir}/{project}",
                 f"Error message: {err}",
                 "Exiting."
             ]
@@ -1417,7 +1418,7 @@ def renameProjects( ):
             sys.exit( )
 
 
-        tarFile = os.path.join( demux.ForTransferRunIdDir, project )
+        tarFile = os.path.join( demux.forTransferRunIdDir, project )
         tarFile = os.path.join( tarFile, f"{project}{demux.tarSuffix}" )
         if demux.debug:
             demuxLogger.debug( f"tarFile:\t\t\t{tarFile}")
@@ -1565,15 +1566,84 @@ def sha512FileQualityCheck ( RunID ):
 def tarFileQualityCheck ( RunID ):
     """
     Perform a final quality check on the tar files before uploading them.
-
     If there are errors in the untarring or the sha512 check, halt.
-
     If there are no errors, go ahead with the uploading
+
+
+    steps for completing this function:
+        Step 1: create a /data/for_transfer/RunID/test directory
+        Step 2: copy any tar file for relevant RunIDShort into the test directory
+        Step 3: untar files under /data/for_transfer/RunID/test
+        Step 4: recalculate sha512 hash for each file
+        compare result with hash file on disk
     """
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Tar files quaility check started ==", color="green", attrs=["bold"] ) )
 
+#---- Step 1: create a /data/for_transfer/RunID/test directory -------------------------------------------------------------------------------------------
+
+    # ensure that demux.ForTransferDir (/data/for_transfer) exists
+    if not os. path. isdir( demux.ForTransferDir ):
+        text = f"{demux.ForTransferDir} does not exist! Please re-run the ansible playbook! Exiting!"
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )    
+
+    try:
+        os.mkdir( demux.forTransferRunIdDir )       # try to create the demux.forTransferRunIdDir directory ( /data/for_transfer/220603_M06578_0105_000000000-KB7MY )
+    except e as err:
+        text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )
+
+    try: 
+        forTransferRunIDdirTest = os.join( demux.forTransferRunIdDir,demux.forTransferRunIdDirTestName )
+        os.mkdir( forTransferRunIDdirTest )
+    except e as err:
+        text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )
+
+#---- Step 2: copy any tar file for relevant RunIDShort into the test directory ---------------------------------------------------------------------------
+
+    # we need a list of the .tar files inside demux.forTransferRunIdDir ( /data/for_transfer/220603_M06578_0105_000000000-KB7MY )
+    transferTarFiles = glob.glob( f"{demux.forTransferRunIdDir}/*.tar" )
+    # get a copy of the sha512 files, as well
+    transfterSha512Files = glob.glob( f"{demux.forTransferRunIdDir}/*.sha512")
+    #
+    # then copy them into forTransferRunIDdirTest
+
+#---- Step 3: untar files under /data/for_transfer/RunID/test -------------------------------------------------------------------------------------------
+    transferTarTestFiles = glob.glob( f"{demux.forTransferRunIdDir}/{demux.forTransferRunIDdirTest}/*.tar" )
+    for tarfile in transferTarTestFiles:
+        try:
+            tarHandle = tarfile.open( name = tarfile, mode = 'r', fileobj = None, bufsize = 10240 )
+            tarHandle.extractall( forTransferRunIDdirTest )
+            tarHandle.close( )
+        except e as err:
+            text = f"{forTransferRunIDdirTest}/{tarfile} cannot be created: { str( err ) }\nExiting!"
+            demuxFailureLogger.critical( f"{ text }" )
+            demuxLogger.critical( f"{ text }" )
+            logging.shutdown( )
+            sys.exit( )
+
+#---- Step 4: recalculate sha512 hash for each file ------------------------------------------------------------------------------------------------------
+
+
+#---- Step 6: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIDdirTest} and contents ------------------------------------------------------------
+
+
+#---- Step 7: return True/false depending on answer ------------------------------------------------------------------------------------------------------
+
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Tar files quaility check finished ==", color="red", attrs=["bold"] ) )
+
+    sys.exit( )
+
 
 
 
@@ -1941,7 +2011,7 @@ def printRunningEnvironment( RunID ):
 
 
     demuxLogger.info( f"To rerun this script run\n" )
-    demuxLogger.info( termcolor.colored( f"\tclear; rm -rf {demux.DemultiplexRunIdDir} && rm -rf {demux.ForTransferRunIdDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"\tclear; rm -rf {demux.DemultiplexRunIdDir} && rm -rf {demux.forTransferRunIdDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n", attrs=["bold"] ) )
     if demux.debug: # logging.info the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
         demuxLogger.debug( "=============================================================================")
         demuxLogger.debug( f"RunID:\t\t\t\t\t\t{RunID}")
@@ -1963,7 +2033,7 @@ def printRunningEnvironment( RunID ):
             demuxLogger.debug( f"DemultiplexProjSubDirs[{index}]:\t\t\t{project}")
         demuxLogger.debug( "=============================================================================")
         demuxLogger.debug( f"ForTransferDir:\t\t\t\t{demux.ForTransferDir}" )
-        demuxLogger.debug( f"ForTransferRunIdDir:\t\t\t\t{demux.ForTransferRunIdDir}" )
+        demuxLogger.debug( f"forTransferRunIdDir:\t\t\t\t{demux.forTransferRunIdDir}" )
         for index, project in enumerate( demux.ForTransferProjNames):
             demuxLogger.debug( f"ForTransferProjNames[{index}]:\t\t\t\t{project}")
         demuxLogger.debug( "=============================================================================\n")
@@ -1997,8 +2067,8 @@ def setupEnvironment( RunID ):
     demux.DemultiplexRunIdDir           = os.path.join( demux.DemultiplexDir, RunID + demux.DemultiplexDirSuffix ) 
     demux.DemultiplexQCDirPath          = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"
 ######################################################
-    demux.ForTransferRunIdDir           = os.path.join( demux.ForTransferDir, RunID )
-    demux.ForTransferQCtarFile          = os.path.join( demux.ForTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
+    demux.forTransferRunIdDir           = os.path.join( demux.ForTransferDir, RunID )
+    demux.ForTransferQCtarFile          = os.path.join( demux.forTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
 ######################################################
 
 ######################################################
@@ -2098,8 +2168,8 @@ def main( RunID ):
     calcFileHash( demux.DemultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
     changePermissions( demux.DemultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
     prepareDelivery( RunID )                                                                            # prepare the delivery files
-    calcFileHash( demux.ForTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
-    changePermissions( demux.ForTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
+    calcFileHash( demux.forTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
+    changePermissions( demux.forTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
     controlProjectsQC ( RunID )                                                                         # check to see if we need to create the report for any control projects present
     tarFileQualityCheck( RunID )                                                                        # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
     deliverFilesToVIGASP( RunID )                                                                       # Deliver the output files to VIGASP
