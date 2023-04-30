@@ -249,7 +249,7 @@ class demux:
     ######################################################
     # mailhost                        = 'seqtech00.vetinst.no'
     mailhost                        = 'localhost'
-    fromAddress                     = f"demultiplex@{ socket.gethostname( ) }"
+    fromAddress                     = f"demultiplex@{ socket.getfqdn( ) }"
     toAddress                       = 'gmarselis@localhost'
     subjectFailure                  = 'Demultiplexing has failed'
     subjectSuccess                  = 'Demultiplexing has finished successfuly'
