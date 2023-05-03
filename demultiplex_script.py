@@ -2152,30 +2152,32 @@ def setupEnvironment( RunID ):
     demux.mutliQCLogFilePath            = os.path.join( demux.demultiplexLogDirPath, demux.multiqcLogFileName )
     demux.sampleSheetArchiveFilePath    = os.path.join( demux.sampleSheetDirPath,    demux.RunID + demux.csvSuffix ) # .dot is included in csvSuffix
 
-
+    # maintain the order added this way, so our little stateLetter trick will work
     demux.globalDictionary = {  
-        'RunID'                         : "",
-        'RunIDShort'                    : "",
-        'rawDataRunIDdir'               : "",
-        'rtaCompleteFilePath'           : "",
-        'sampleSheetFilePath'           : "",
-        'demultiplexRunIdDir'           : "",
-        'demultiplexLogDirPath'         : "",
-        'demuxQCDirectoryPath'          : "",
-        'demuxRunLogFilePath'           : "",
-        'demuxCumulativeLogFilePath'    : "",
-        'demultiplexLogDirPath'         : "",
-        'demultiplexScriptLogFilePath'  : "",
-        'bcl2FastqLogFile'              : "",
-        'forTransferRunIdDir'           : "",
-        'forTransferQCtarFile'          : "",
-        'fastQCLogFilePath'             : "",
-        'mutliQCLogFilePath'            : "",
-        'sampleSheetArchiveFilePath'    : "",
-        'projectList'                   : [ ],
-        'newProjectNameList'            : [ ]
+        'RunID'                         : str( ),
+        'RunIDShort'                    : str( ),
+        'rawDataRunIDdir'               : str( ),
+        'rtaCompleteFilePath'           : str( ),
+        'sampleSheetFilePath'           : str( ),
+        'demultiplexRunIdDir'           : str( ),
+        'demultiplexLogDirPath'         : str( ),
+        'demuxQCDirectoryPath'          : str( ),
+        'demuxRunLogFilePath'           : str( ),
+        'demuxCumulativeLogFilePath'    : str( ),
+        'demultiplexLogDirPath'         : str( ),
+        'demultiplexScriptLogFilePath'  : str( ),
+        'bcl2FastqLogFile'              : str( ),
+        'fastQCLogFilePath'             : str( ),
+        'mutliQCLogFilePath'            : str( ),
+        'forTransferRunIdDir'           : str( ),
+        'forTransferQCtarFile'          : str( ),
+        'sampleSheetArchiveFilePath'    : str( ),
+        'projectList'                   : list( ),
+        'newProjectNameList'            : list( )
     }
 
+
+    # maintain the order added this way, so our little stateLetter trick will work
     demux.globalDictionary[ 'RunID'                        ] = demux.RunID
     demux.globalDictionary[ 'RunIDShort'                   ] = demux.RunIDShort
     demux.globalDictionary[ 'rawDataRunIDdir'              ] = demux.rawDataRunIDdir
