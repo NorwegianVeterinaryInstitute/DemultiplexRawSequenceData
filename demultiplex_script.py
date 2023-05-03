@@ -2191,13 +2191,13 @@ def setupEnvironment( RunID ):
     demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
     demux.globalDictionary[ 'demultiplexScriptLogFilePath' ] = demux.demultiplexScriptLogFilePath
     demux.globalDictionary[ 'bcl2FastqLogFile'             ] = demux.bcl2FastqLogFile
-    demux.globalDictionary[ 'forTransferRunIdDir'          ] = demux.forTransferRunIdDir
-    demux.globalDictionary[ 'forTransferQCtarFile'         ] = demux.forTransferQCtarFile
     demux.globalDictionary[ 'fastQCLogFilePath'            ] = demux.fastQCLogFilePath
     demux.globalDictionary[ 'mutliQCLogFilePath'           ] = demux.mutliQCLogFilePath
+    demux.globalDictionary[ 'forTransferRunIdDir'          ] = demux.forTransferRunIdDir
+    demux.globalDictionary[ 'forTransferQCtarFile'         ] = demux.forTransferQCtarFile
     demux.globalDictionary[ 'sampleSheetArchiveFilePath'   ] = demux.sampleSheetArchiveFilePath
-    demux.globalDictionary[ 'projectList'                  ].append( demux.projectList )
-    demux.globalDictionary[ 'newProjectNameList'           ].append( demux.newProjectNameList )
+    demux.globalDictionary[ 'projectList'                  ] = demux.projectList
+    demux.globalDictionary[ 'newProjectNameList'           ] = demux.newProjectNameList
 
 
     if 'demuxLogger' in logging.Logger.manager.loggerDict.keys():
