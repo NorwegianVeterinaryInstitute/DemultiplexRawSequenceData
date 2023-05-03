@@ -164,15 +164,15 @@ class demux:
     ######################################################
     dataRootDirPath                 = '/data'
     rawDataDirName                  = 'rawdata'
-    rawDataDir                      =  os.path.join( DataRootDirPath, RawDataDirName )
+    rawDataDir                      =  os.path.join( dataRootDirPath, rawDataDirName )
     demultiplexDirName              = "demultiplex"
-    demultiplexDir                  = os.path.join( DataRootDirPath, DemultiplexDirName )
+    demultiplexDir                  = os.path.join( dataRootDirPath, demultiplexDirName )
     forTransferDirName              = 'for_transfer'
-    forTransferDir                  = os.path.join( DataRootDirPath, ForTransferDirName )
+    forTransferDir                  = os.path.join( dataRootDirPath, forTransferDirName )
     sampleSheetDirName              = 'samplesheets'
-    sampleSheetDirPath              = os.path.join( DataRootDirPath, SampleSheetDirName )
+    sampleSheetDirPath              = os.path.join( dataRootDirPath, sampleSheetDirName )
     logDirName                      = "log"
-    logDirPath                      = os.path.join( DataRootDirPath, LogDirName )
+    logDirPath                      = os.path.join( dataRootDirPath, logDirName )
     ######################################################
     compressedFastqSuffix           = '.fastq.gz' 
     csvSuffix                       = '.csv'
@@ -187,28 +187,32 @@ class demux:
     htmlSuffix                      = '.html'
     logSuffix                       = '.log'
     ######################################################
-    bcl2fastq_bin                   = f"{DataRootDirPath}/bin/bcl2fastq"
-    fastqc_bin                      = f"{DataRootDirPath}/bin/fastqc"
-    mutliqc_bin                     = f"{DataRootDirPath}/bin/multiqc"
+    bcl2fastq_bin                   = f"{dataRootDirPath}/bin/bcl2fastq"
+    fastqc_bin                      = f"{dataRootDirPath}/bin/fastqc"
+    mutliqc_bin                     = f"{dataRootDirPath}/bin/multiqc"
     python3_bin                     = f"/usr/bin/python3"
     scriptFilePath                  = __file__
     ######################################################
     rtaCompleteFile                 = 'RTAComplete.txt'
     sampleSheetFileName             = 'SampleSheet.csv'
     testProject                     = 'FOO-blahblah-BAR'
-    sample_Project                  = 'Sample_Project'
+    Sample_Project                  = 'Sample_Project'
     demultiplexCompleteFile         = 'DemultiplexComplete.txt'
     vannControlNegativReport        = 'Negativ'
     forTransferRunIdDirTestName     = 'test_tar'
     md5File                         = 'md5sum.txt'
     miSeq                           = 'M06578'   # if we get more than one, turn this into an array, or read from config, or read from illumina
-    mextSeq                         = 'NB552450' # if we get more than one, turn this into an array, or read from config, or read from illumina
+    nextSeq                         = 'NB552450' # if we get more than one, turn this into an array, or read from config, or read from illumina
     decodeScheme                    = "utf-8"
     footarfile                      = f"foo{tarSuffix}"      # class variable shared by all instances
     barzipfile                      = f"zip{zipSuffix}"
-    TotalTasks                      = 0  
+    totalTasks                      = 0  
+    spacing1                        = 40
+    spacing2                        = 48
+    spacing3                        = 56
 
     ######################################################
+    RunID                           = ""
     runIDShort                      = ""
     rawDataRunIDdir                 = ""
     demultiplexRunIDdir             = ""
@@ -219,14 +223,14 @@ class demux:
     demuxQCDirectoryPath            = ""
     forTransferRunIDdir             = ""
     forTransferQCtarFile            = ""
-    sampleSheetFilePath             = os.path.join( SampleSheetDirPath, SampleSheetFileName )
+    sampleSheetFilePath             = os.path.join( sampleSheetDirPath, sampleSheetFileName )
     sampleSheetArchiveFilePath      = ""
     ######################################################
-    demultiplexProjSubDirs          = [ ]
-    newProjectFileList              = [ ]
+    projectList                     = [ ]
     newProjectNameList              = [ ]
-    forTransferProjNames            = [ ]
+    newProjectFileList              = [ ]
     tarFileStack                    = [ ]
+    globalDictionary                = dict( )
     ######################################################
     controlProjects                 = [ "Negativ" ]
     ######################################################
@@ -242,13 +246,12 @@ class demux:
     loggingLevel                    = logging.DEBUG
     ######################################################
     demuxCumulativeLogFilePath      = ""
-    demuxBcl2FastqLogFilePath       = ""
+    bcl2FastqLogFile                = ""
     fastQCLogFilePath               = ""
     logFilePath                     = ""
     multiQCLogFilePath              = ""
     scriptRunLogFile                = ""
     forTransferDirRoot              = ""
-
     ######################################################
     # mailhost                        = 'seqtech00.vetinst.no'
     mailhost                        = 'localhost'
@@ -262,9 +265,9 @@ class demux:
     ######################################################
     threadsToUse                    = 12                        # the amount of threads FastQC and other programs can utilize
     ######################################################
-    with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize TotalTasks to it
+    with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize totalTasks to it
         tree = ast.parse( f.read( ) )
-        TotalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body ) + 2 # + 2 adjust as needed
+        totalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body ) + 2 # + 2 adjust as needed
     n = 0 # counter for keeping track of the number of the current task
 
 
@@ -292,7 +295,7 @@ class demux:
 
         Returns:
             List of included Sample Projects. 
-                Example of returned project_list:     {'SAV-amplicon-MJH'}
+                Example of returned projectList:     {'SAV-amplicon-MJH'}
 
         Parsing is simple:
             go line-by-line
@@ -300,88 +303,127 @@ class demux:
                 we hit the line that contains 'Sample_Project'
                 if 'Sample_Project' found
                     split the line and 
-                        take the value of 'Sample_Project'
+                        save the value of 'Sample_Project'
             return an set of the values of all values of 'Sample_Project' and 'Analysis'
+
+        # DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
         """
 
         demux.n = demux.n + 1
-        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Get project name from {demux.SampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
+        if 'demuxLogger' in logging.Logger.manager.loggerDict.keys():
+            demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
+        else:
+            print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
 
-        project_line_check  = False
-        project_index       = 0
-        project_list        = [ ]
-        SampleSheetContents = [ ]
+        projectLineCheck    = False
+        projectIndex        = 0
+        projectList         = [ ]
+        sampleSheetContents = [ ]
         newProjectNameList  = [ ]
+        loggerName          = 'demuxLogger'
 
-        SampleSheetFileHandle = open( demux.SampleSheetFilePath, 'r', encoding= demux.DecodeScheme )
-        SampleSheetContent    = SampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
+        sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding= demux.decodeScheme )
+        sampleSheetContent    = sampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
 
-        if demux.debug and demux.verbosity == 2:
-            demuxLogger.debug(f"SampleSheetContents:\n{SampleSheetContent}") # logging.info it
-
-        SampleSheetContents   = SampleSheetContent.split( '\n' )  # then split it in lines
-
-
-        for line in SampleSheetContents:
-
-            if demux.debug and demux.verbosity == 2:
-                demuxLogger.debug( f"procesing line '{line}'")
-
-            if line != '': # line != '' is not the same as 'not line'
-                line = line.rstrip()
-                if demux.debug and demux.verbosity == 2:
-                    demuxLogger.debug( f"project_index: {project_index}" )
-                item = line.split(',')[project_index]
+        if demux.verbosity == 2:
+            if loggerName in logging.Logger.manager.loggerDict.keys():
+                demuxLogger.debug( f"sampleSheetContent:\n{sampleSheetContent }" ) # logging.debug it
             else:
-                break
+                print( f"sampleSheetContent:\n{sampleSheetContent }" )
 
-            if project_line_check == True and item not in project_list :
-                if demux.debug and demux.verbosity == 2:
-                    demuxLogger.debug( f"item:\t\t\t\t\t\t{item}")
-                project_list.append( item )                               # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
-                newProjectNameList.append( f"{demux.RunIDShort}.{item}")  #  since we are here, we might construct the new name list.
+        sampleSheetContents   = sampleSheetContent.split( '\n' )  # then split it in lines
 
-            elif demux.Sample_Project in line: # demux.Sample_Project is defined in class demux:
 
-                project_index      = line.split(',').index( demux.Sample_Project )
-                if demux.debug and demux.verbosity == 2:
-                    demuxLogger.debug( f"project_index:\t\t\t\t{project_index}")
+        for line in sampleSheetContents:
 
-                project_line_check = True
+            if demux.verbosity == 2:
+                text = f"procesing line '{line}'"
+                if loggerName in logging.Logger.manager.loggerDict.keys():
+                    demuxLogger.debug( text )
+                else:
+                    print( text )
+
+            if len( line ): # line != '' is not the same as 'not line'
+                line = line.rstrip()
+                if demux.verbosity == 2:
+                    text = f"projectIndex: {projectIndex}" 
+                    if loggerName in logging.Logger.manager.loggerDict.keys():
+                        demuxLogger.debug( text )
+                    else:
+                        print( text )
+                item = line.split(',')[projectIndex]
             else:
                 continue
 
-        # Let's make sure that we have something before assigning it to object var
-        if len( project_list ) == 0:
-            text = "project_list is empty! Exiting!"
-            demuxFailureLogger.critical( text  )
-            demuxLogger.critical( text )
-            logging.shutdown( )
-            sys.exit( )
-        else:
-            demuxLogger.info( f"project_list: {project_list}\n" )
-        demux.project_list       = project_list         # no need to return anything, save everything in the object space
+            if projectLineCheck == True and item not in projectList:
+                if demux.verbosity == 2:
+                    text = f"{'item:':{demux.spacing1}}{item}"
+                    if loggerName in logging.Logger.manager.loggerDict.keys():
+                        demuxLogger.debug( text )
+                    else:
+                        print( text )
+                projectList.append( item )                                 # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
+                newProjectNameList.append( f"{demux.RunIDShort}.{item}" )  #  since we are here, we might construct the new name list.
 
-        # Let's make sure that we have something before assigning it to object var
-        if len( project_list ) == 0:
-            text = "project_list is empty! Exiting!"
-            demuxFailureLogger.critical( text  )
-            demuxLogger.critical( text )
-            logging.shutdown( )
+            elif demux.Sample_Project in line: ### DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
+
+                projectIndex     = line.split(',').index( demux.Sample_Project ) # DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
+                if demux.verbosity == 2:
+                    text = f"{'projectIndex:':{demux.spacing1}}{projectIndex}"
+                    if loggerName in logging.Logger.manager.loggerDict.keys():
+                        demuxLogger.debug( text )
+                    else:
+                        print( text )
+
+                projectLineCheck = True
+            else:
+                continue
+
+        # Let's make sure that projectList and newProjectNameList are not empty
+        if len( projectList ) == 0:
+            text = f"line {getframeinfo( currentframe( ) ).lineno} projectList is empty! Exiting!"
+            if loggerName in logging.Logger.manager.loggerDict.keys():
+                demuxFailureLogger.critical( text  )
+                demuxLogger.critical( text )
+                logging.shutdown( )
+            else:
+                print( text )
+            sys.exit( )
+        elif len( newProjectNameList ) == 0:
+            text = f"line {getframeinfo( currentframe( ) ).lineno}: newProjectNameList is empty! Exiting!"
+            if loggerName in logging.Logger.manager.loggerDict.keys():
+                demuxFailureLogger.critical( text  )
+                demuxLogger.critical( text )
+                logging.shutdown( )
+            else:
+                print( text )
             sys.exit( )
         else:
-            demuxLogger.info( f"project_list: {project_list}\n" )
+            text1 = f"projectList:\t\t\t\t\t\t\t\t\t\t\t\t\t{projectList}"
+            text2 = f"newProjectNameList:\t\t\t\t\t\t\t\t\t\t\t\t{newProjectNameList}\n"
+            if loggerName in logging.Logger.manager.loggerDict.keys():
+                demuxLogger.info( text1 )
+                demuxLogger.info( text2 )
+            else:
+                print( text1 )
+                print( text2 )
+
+        demux.projectList        = projectList          # no need to return anything, save everything in the object space
         demux.newProjectNameList = newProjectNameList
 
+        signOutText = termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] )
+        if loggerName in logging.Logger.manager.loggerDict.keys():
+            demuxLogger.info( signOutText )
+        else:
+            print( signOutText )
 
-        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Get project name from {demux.SampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
     ########################################################################
-    # checkTarFiles( )
+    # listTarFiles( )
     ########################################################################
-    def checkTarFiles ( listOfTarFilesToCheck ):
+    def listTarFiles ( listOfTarFilesToCheck ):
         """
         Check to see if the tar files created for delivery can be listed with no errors
         use
@@ -394,9 +436,9 @@ class demux:
         """
 
         demux.n = demux.n + 1
-        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Verify that the tar files produced are actually untarrable started ==\n", color="green", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Verify that the tar files produced are actually untarrable started ==\n", color="green", attrs=["bold"] ) )
 
-        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Verify that the tar files produced are actually untarrable finished ==\n", color="red", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Verify that the tar files produced are actually untarrable finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -416,9 +458,9 @@ class demux:
             *True* if RudID_demultiplex exists
         """
         demux.n = demux.n + 1
-        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: See if the specific RunID has already been demultiplexed started ==\n", color="green", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: See if the specific RunID has already been demultiplexed started ==\n", color="green", attrs=["bold"] ) )
 
-        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: See if the specific RunID has already been demultiplexed finished ==\n", color="red", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: See if the specific RunID has already been demultiplexed finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -433,9 +475,9 @@ class demux:
         Demultiplex RunID again
         """
         demux.n = demux.n + 1
-        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: See if the specific RunID has already been demultiplexed started ==\n", color="green", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: See if the specific RunID has already been demultiplexed started ==\n", color="green", attrs=["bold"] ) )
 
-        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: See if the specific RunID has already been demultiplexed finished ==\n", color="red", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: See if the specific RunID has already been demultiplexed finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -456,9 +498,9 @@ class demux:
         point any mistakes out to log
         """
         demux.n = demux.n + 1
-        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Check SampleSheet.csv for common human mistakes started ==\n", color="green", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Check SampleSheet.csv for common human mistakes started ==\n", color="green", attrs=["bold"] ) )
 
-        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Check SampleSheet.csv for common human mistakes finished ==\n", color="red", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Check SampleSheet.csv for common human mistakes finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -504,41 +546,36 @@ class BufferingSMTPHandler( logging.handlers.BufferingHandler ):
 # createDirectory
 ########################################################################
 
-def createDemultiplexDirectoryStructure( DemultiplexRunIdDir ):
+def createDemultiplexDirectoryStructure(  ):
     """
     If the Demultiplexing directory or any relevant directory does not exist, create it
         demux.RunIDShort format is in the pattern of (date +%y%m%d)_SEQUENCERSERIALNUMBER Example: 220314_M06578
-        {DemultiplexDirRoot} == "/data/demultiplex" # default
+        {demultiplexDirRoot} == "/data/demultiplex" # default
 
-        {DemultiplexDirRoot}/{RunID}_{DemultiplexDirSuffix}/
-        {DemultiplexDirRoot}/{RunID}_{DemultiplexDirSuffix}/project_list[0]
-        {DemultiplexDirRoot}/{RunID}_{DemultiplexDirSuffix}/project_list[1]
+        {demultiplexDirRoot}/{demux.RunID}_{demultiplexDirSuffix}/
+        {demultiplexDirRoot}/{demux.RunID}_{demultiplexDirSuffix}/projectList[0]
+        {demultiplexDirRoot}/{demux.RunID}_{demultiplexDirSuffix}/projectList[1]
         .
         .
         .
-        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/project_list[ len(project_list) -1 ]
-        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{DemultiplexLogDir}
-        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/{demux.RunIDShort}{demux.QCSuffix}
-        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/Reports      # created by bcl2fastq
-        {DemultiplexDirRoot}{RunID}_{DemultiplexDirSuffix}/Stats        # created by bcl2fastq
+        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/projectList[ len( projectList ) -1 ]
+        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/{demultiplexLogDir}
+        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/{demux.RunIDShort}{demux.qcSuffix}
+        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/Reports      # created by bcl2fastq
+        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/Stats        # created by bcl2fastq
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
 
-    demux.DemultiplexLogDirPath = os.path.join( DemultiplexRunIdDir, demux.DemultiplexLogDirName ) 
-    demux.DemuxQCDirectoryName  = f"{demux.RunIDShort}{demux.QCSuffix}" # QCSuffix is defined in object demux
-    demux.DemuxQCDirectoryPath  = os.path.join( DemultiplexRunIdDir, demux.DemuxQCDirectoryName  )
-
-    if demux.debug:
-            demuxLogger.debug( f"demux.DemultiplexRunIdDir\t\t\t{demux.DemultiplexRunIdDir}" )
-            demuxLogger.debug( f"DemultiplexRunIdDir/DemultiplexLogDir:\t\t{demux.DemultiplexLogDirPath}" )
-            demuxLogger.debug( f"DemultiplexRunIdDir/DemuxQCDirectory:\t\t{demux.DemuxQCDirectoryPath}" )
+    demuxLogger.debug( f"demux.demultiplexRunIdDir\t\t\t{demux.demultiplexRunIdDir}" )
+    demuxLogger.debug( f"demultiplexRunIdDir/demultiplexLogDir:\t\t{demux.demultiplexLogDirPath}" )
+    demuxLogger.debug( f"demultiplexRunIdDir/demuxQCDirectory:\t\t{demux.demuxQCDirectoryPath}" )
 
     try:
-        os.mkdir( demux.DemultiplexRunIdDir )   # root directory for run
-        os.mkdir( demux.DemultiplexLogDirPath ) # log directory for run
-        os.mkdir( demux.DemuxQCDirectoryPath )  # QC directory  for run
+        os.mkdir( demux.demultiplexRunIdDir )   # root directory for run
+        os.mkdir( demux.demultiplexLogDirPath ) # log directory for run
+        os.mkdir( demux.demuxQCDirectoryPath )  # QC directory  for run
     except FileExistsError as err:
         demuxFailureLogger.critical( f"File already exists! Exiting!\n{err}" )
         demuxLogger.critical( f"File already exists! Exiting!\n{err}" )
@@ -551,7 +588,7 @@ def createDemultiplexDirectoryStructure( DemultiplexRunIdDir ):
         sys.exit( )
 
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Create directory structure finished ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Create directory structure finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -580,21 +617,21 @@ def demultiplex( ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Demultiplexing started ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Demultiplexing started ==\n", color="green", attrs=["bold"] ) )
 
     argv = [ demux.bcl2fastq_bin,
          "--no-lane-splitting",
          "--runfolder-dir",
-        f"{demux.RawDataRunIDdir}",
+        f"{demux.rawDataRunIDdir}",
          "--output-dir",
-        f"{demux.DemultiplexRunIdDir}"
+        f"{demux.demultiplexRunIdDir}"
     ]
-    if demux.debug:
-        demuxLogger.debug( f"Command to execute:\t\t\t\t" + " ".join( argv ) )
+
+    demuxLogger.debug( f"Command to execute:\t\t\t\t" + " ".join( argv ) )
 
     try:
-        # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.RawDataRunIDdir + ' --output-dir ' + DemultiplexDir + ' 2> ' + DemultiplexDir + '/demultiplex_log/02_demultiplex.log'
-        result =  subprocess.run( argv, capture_output = True, cwd = demux.RawDataRunIDdir, check = True, encoding = demux.DecodeScheme )
+        # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
+        result =  subprocess.run( argv, capture_output = True, cwd = demux.rawDataRunIDdir, check = True, encoding = demux.decodeScheme )
     except ChildProcessError as err: 
         text = [    f"Caught exception!",
                     f"Command: {err.cmd}", # interpolated strings
@@ -616,8 +653,7 @@ def demultiplex( ):
         sys.exit( )
 
     try: 
-        Bcl2FastqLogFile     = os.path.join( demux.DemultiplexRunIdDir, demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
-        file = open( Bcl2FastqLogFile, "w" )
+        file = open( demux.bcl2FastqLogFile, "w" )
         file.write( result.stderr )
         file.close( )
     except OSError as err:
@@ -634,17 +670,17 @@ def demultiplex( ):
         logging.shutdown( )
         sys.exit( )
 
-    if demux.debug:
-        if not os.path.isfile( Bcl2FastqLogFile ):
-            demuxFailureLogger.critical( f"{Bcl2FastqLogFile} did not get written to disk. Exiting." )
-            demuxLogger.debug( f"{Bcl2FastqLogFile} did not get written to disk. Exiting." )
-            logging.shutdown( )
-            sys.exit( )
-        else:
-            filesize = os.path.getsize( Bcl2FastqLogFile )
-            demuxLogger.debug( f"Bcl2FastqLogFile:\t\t\t\t{Bcl2FastqLogFile} is {filesize} bytes.\n")
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Demultiplexing finished ==\n", color="red", attrs=["bold"] ) )
+    if not os.path.isfile( demux.bcl2FastqLogFile ):
+        demuxFailureLogger.critical( f"{demux.bcl2FastqLogFile} did not get written to disk. Exiting." )
+        demuxLogger.critical( f"{demux.bcl2FastqLogFile} did not get written to disk. Exiting." )
+        logging.shutdown( )
+        sys.exit( )
+    else:
+        filesize = os.path.getsize( demux.bcl2FastqLogFile )
+        demuxLogger.debug( f"bcl2FastqLogFile:\t\t\t\t{demux.bcl2FastqLogFile} is {filesize} bytes.\n")
+
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Demultiplexing finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -653,10 +689,10 @@ def demultiplex( ):
 # renameDirectories( )
 ########################################################################
 
-def renameDirectories( project_list ):
+def renameDirectories( ):
     """
-        For each project directory in project_list
-            rename the project directory  to conform from the {demux.DemultiplexRunIdDir}/{project} pattern to the {demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}
+        For each project directory in demux.projectList
+            rename the project directory  to conform from the {demux.demultiplexRunIdDir}/{project} pattern to the {demux.demultiplexRunIdDir}/{demux.RunIDShort}.{project}
 
         Why you ask?
             That's how the original script does it (TRADITION!)
@@ -665,13 +701,13 @@ def renameDirectories( project_list ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Print out the current running environment ==\n", color="green" ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Renaming project directories from project_name to RunIDShort.project_name ==\n", color="green", attrs=["bold"] ) )
 
 
-    for project in project_list: # rename the project directories
+    for project in demux.projectList: # rename the project directories
 
-        oldname = f"{demux.DemultiplexRunIdDir}/{project}"
-        newname = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}"
+        oldname = os.path.join( demux.demultiplexRunIdDir, project )
+        newname = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project )
         olddirExists = os.path.isdir( oldname )
         newdirExists = os.path.isdir( newname )
 
@@ -697,17 +733,17 @@ def renameDirectories( project_list ):
                 logging.shutdown( )
                 sys.exit( )
 
-            if demux.debug:
-                demuxLogger.debug( termcolor.colored( f"Renaming {oldname} to {newname}", color="cyan", attrs=["reverse"] ) )
+            demuxLogger.debug( f"Renaming " + termcolor.colored(  f"{oldname:92}", color="cyan", attrs=["reverse"] ) + " to " + termcolor.colored(  f"{newname:106}", color="yellow", attrs=["reverse"] ) )
 
     for index, item in enumerate( demux.newProjectFileList ):
         demuxLogger.debug( f"demux.newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming files finished ==\n", color="red" ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Renaming project directories from project_name to RunIDShort.project_name ==\n", color="red", attrs=["bold"] ) )
 
 
 
-def renameFiles( DemultiplexRunIdDir, project_list ):
+
+def renameFiles( ):
     """
     Rename the files within each {project} to conform to the {RunIDShort}.{filename}.fastq.gz pattern
 
@@ -715,64 +751,61 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Rename files ==\n", color="green" ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Rename files ==\n", color="green" ) )
 
     oldname            = ""
     newname            = ""
-    for project in project_list: # rename files in each project directory
+    for project in demux.projectList: # rename files in each project directory
 
-        if any( var in project for var in demux.ControlProjects ):      # if the project name includes a control project name, ignore it
+        if any( var in project for var in demux.controlProjects ):      # if the project name includes a control project name, ignore it
             demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
             continue
-        elif project == demux.TestProject:                              # ignore the test project
-            if demux.debug:
-                demuxLogger.debug( f"Test project '{demux.TestProject}' detected. Skipping." )
-                continue
+        elif project == demux.testProject:                              # ignore the test project
+            demuxLogger.debug( f"Test project '{demux.testProject}' detected. Skipping." )
+            continue
 
-        CompressedFastQfilesDir = f"{demux.DemultiplexRunIdDir}/{project}"
-        if demux.debug:
-            demuxLogger.debug( termcolor.colored(   f"Now working on project:\t\t\t{project}", color="cyan", attrs=["reverse"] ) )
-            demuxLogger.debug( f"CompressedFastQfilesDir:\t\t\t{CompressedFastQfilesDir}")
+        compressedFastQfilesDir = f"{demux.demultiplexRunIdDir}/{project}"
+        text1 = "Now working on project:"
+        text2 = "compressedFastQfilesDir:"
+        demuxLogger.debug( termcolor.colored( f"{text1:{demux.spacing1}}{project}", color="cyan", attrs=["reverse"] ) )
+        demuxLogger.debug( f"{text2:{demux.spacing1}}{compressedFastQfilesDir}")
 
-        filesToSearchFor     = f'{CompressedFastQfilesDir}/*{demux.CompressedFastqSuffix}'
-        CompressedFastQfiles = glob.glob( filesToSearchFor )            # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
+        filesToSearchFor     = os.path.join( compressedFastQfilesDir, '*' + demux.compressedFastqSuffix )
+        compressedFastQfiles = glob.glob( filesToSearchFor )            # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
 
-        if not CompressedFastQfiles: # if array is empty
+        if not len( compressedFastQfiles ): # if array is empty
             text = f"\n\nProject {project} does not contain any .fastq.gz entries"
-            if demux.debug:
-                text = f"{text} | method {inspect.stack()[0][3]}() ]"
+            text = f"{text} | method {inspect.stack()[0][3]}() ]"
             text = f"{text}\n\n"
 
             demuxFailureLogger.critical( text )
             demuxLogger.critical( text )
             sys.exit( )
 
+        text1 = "fastq files for " + project + ":"
+        demuxLogger.debug( f"{text1:{demux.spacing1}}{filesToSearchFor}" )
 
-        if demux.debug:
-            demuxLogger.debug( f"fastq files for {project}:\t\t\t{filesToSearchFor}" )
-
-            for index, item in enumerate( CompressedFastQfiles ):
-                demuxLogger.debug( f"CompressedFastQfiles[{index}]:\t\t\t\t{item}" )
+        for index, item in enumerate( compressedFastQfiles ):
+            text1 = "compressedFastQfiles[" + str(index) + "]:"
+            demuxLogger.debug( f"{text1:{demux.spacing1}}{item}" )
 
 
-        for file in CompressedFastQfiles:
+        for file in compressedFastQfiles:
     
             # get the base filename. We picked up sample*.{CompressedFastqSuffix} and we have to rename it to {demux.RunIDShort}sample*.{CompressedFastqSuffix}
             baseFileName = os.path.basename( file )
-            if demux.debug:
-                demuxLogger.debug( "-----------------")
-                demuxLogger.debug( f"baseFilename:\t\t\t\t\t{baseFileName}")
+            demuxLogger.debug( "-----------------")
+            demuxLogger.debug( f"baseFilename:\t\t\t\t\t{baseFileName}")
 
             oldname     = f"{file}"
-            newname     = f"{demux.DemultiplexRunIdDir}/{project}/{demux.RunIDShort}.{baseFileName}"
-            renamedFile = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}/{demux.RunIDShort}.{baseFileName}" # saving this var to pass locations of new directories
+            newname     = os.path.join( demux.demultiplexRunIdDir, project, demux.RunIDShort + baseFileName )
+            renamedFile = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project, demux.RunIDShort + baseFileName ) # saving this var to use later when renaming directories
 
             if renamedFile not in demux.newProjectFileList:
-                demux.newProjectFileList.append( renamedFile ) # save it to return the list, so we will not have to recreate the filenames
+                demux.newProjectFileList.append( renamedFile ) # demux.newProjectFileList is used in fastQC( )
 
-            if demux.debug:
-                demuxLogger.debug( f"file:\t\t\t\t\t\t{file}")
-                demuxLogger.debug( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}\n" )
+            demuxLogger.debug( f"file:\t\t\t\t\t\t{file}")
+            demuxLogger.debug( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}\n" )
             
             # make sure oldname files exist
             # make sure newname files do not exist
@@ -796,7 +829,7 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
                     logging.shutdown( )
                     sys.exit( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Copy {demux.SampleSheetFilePath} to {demux.DemultiplexRunIdDir} ==\n", color="red" ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="red" ) )
 
     demuxLogger.info( "-----------------")
 
@@ -805,20 +838,20 @@ def renameFiles( DemultiplexRunIdDir, project_list ):
 # renameFilesAndDirectories( )
 ########################################################################
 
-def renameFilesAndDirectories( DemultiplexRunIdDir, project_list ):
+def renameFilesAndDirectories( ):
     """
     Rename any [sample-1_S1_R1_001.fastq.gz, .. , sample-1_S1_Rn_001.fastq.gz ] files inside 
-        {demux.DemultiplexRunIdDir}/{demux.RunIDShort}/[{project_list[0]}, .. , {project_list[n]}] to match the pattern
+        {demux.demultiplexRunIdDir}/{demux.RunIDShort}/[ { projectList[0] }, .. , { projectList[n] } ] to match the pattern
         {demux.RunIDShort}.[sample-1_S1_R1_001.fastq.gz, .. , sample-1_S1_Rn_001.fastq.gz ]
     
     Then rename the 
-        {demux.DemultiplexRunIdDir}/{demux.RunIDShort}/[{project_list[0]}, .. , {project_list[n]}] to match the pattern
-        {demux.DemultiplexRunIdDir}/{demux.RunIDShort}/{demux.RunIDShort}.[{project_list[0]}, .. , {project_list[n]}] to match the pattern
+        {demux.demultiplexRunIdDir}/{demux.RunIDShort}/[ { projectList[0] }, .. , { projectList[n] } ] to match the pattern
+        {demux.demultiplexRunIdDir}/{demux.RunIDShort}/{demux.RunIDShort}.[ {projectList[0] }, .. , { projectList[n] } ] to match the pattern
         
     Examples:
     
-        DemultiplexRunIdDir: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/
-        Sample_Project:      SAV-amplicon-MJH
+        demultiplexRunIdDir: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/
+        Sample_Project:      SAV-amplicon-MJH              ### DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
         demux.RunIDShort:    220314_M06578
 
         1. Rename the files:
@@ -831,49 +864,44 @@ def renameFilesAndDirectories( DemultiplexRunIdDir, project_list ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Renaming started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Renaming started ==", color="green", attrs=["bold"] ) )
 
 
-    if demux.debug:
-        demuxLogger.debug( f"demux.DemultiplexRunIdDir:\t\t\t{demux.DemultiplexRunIdDir}")    # tabulation error
-        demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}")
-        # for index, item in enumerate( project_list ):
-        if demux.verbosity == 2:
-            demuxLogger.debug( f"project_list:\t\t\t\t{project_list}")
+    demuxLogger.debug( f"demux.demultiplexRunIdDir:\t\t\t{demux.demultiplexRunIdDir}")    # tabulation error
+    demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}")
+    if demux.verbosity == 2:
+        demuxLogger.debug( f"demux.projectList:\t\t\t\t{demux.projectList}")
 
-    newProjectFileList = renameFiles( DemultiplexRunIdDir, project_list )
-    renameDirectories( project_list )
+    renameFiles( )
+    renameDirectories( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Renaming started ==", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Renaming finished ==", color="red", attrs=["bold"] ) )
 
-    return newProjectFileList
 
 
 ########################################################################
-# FastQC
+# fastQC
 ########################################################################
 
-def FastQC( ):
+def fastQC( ):
     """
-    FastQC: Run /data/bin/fastqc (which is a symlink to the real qc)
+    fastQC: Run /data/bin/fastqc (which is a symlink to the real qc)
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: FastQC started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: fastQC started ==", color="yellow" ) )
 
     command             = demux.fastqc_bin
     argv                = [ command, '-t', str(demux.threadsToUse), *demux.newProjectFileList ]  # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
-    demultiplexRunIdDir = os.path.dirname( os.path.dirname( demux.newProjectFileList[0] ) )
 
-    if demux.debug:
-        arguments = " ".join( argv[1:] )
-        demuxLogger.debug( f"Command to execute:\t\t\t\t{command} {arguments}")     # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
-        if demux.verbosity == 2:
-            demuxLogger.debug( f"demultiplexRunIdDir:\t\t\t\t{demultiplexRunIdDir}")
+    arguments = " ".join( argv[1:] )
+    demuxLogger.debug( f"Command to execute:\t\t\t\t\t{command} {arguments}")     # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
+    if demux.verbosity == 2:
+        demuxLogger.debug( f"demultiplexRunIdDir:\t\t\t\t{demux.demultiplexRunIdDir}")
 
     try:
-        # EXAMPLE: /usr/local/bin/fastqc -t 4 {demux.DemultiplexRunIdDir}/{project}/*fastq.gz > DemultiplexRunIdDir/demultiplex_log/04_fastqc.log
-        result = subprocess.run( argv, capture_output = True, cwd = demultiplexRunIdDir, check = True, encoding = demux.DecodeScheme )
+        # EXAMPLE: /usr/local/bin/fastqc -t 4 {demux.demultiplexRunIdDir}/{project}/*fastq.gz > demultiplexRunIdDir/demultiplex_log/04_fastqc.log
+        result = subprocess.run( argv, capture_output = True, cwd = demux.demultiplexRunIdDir, check = True, encoding = demux.decodeScheme )
     except ChildProcessError as err: 
             text = [ "Caught exception!",
                      f"Command: {err.cmd}", # interpolated strings
@@ -888,16 +916,14 @@ def FastQC( ):
             sys.exit( )
 
     # log FastQC output
-    demux.FastQCLogFilePath   = os.path.join( demux.DemultiplexLogDirPath, demux.FastqcLogFileName )  #### FIXME FIXME FIXME ADJUST AND TAKE OUT
     try: 
-        fastQCLogFileHandle = open( demux.FastQCLogFilePath, "x" ) # fail if file exists
-        if demux.debug:
-            demuxLogger.debug( f"FastQCLogFilePath:\t\t\t\t{demux.FastQCLogFilePath}")
+        fastQCLogFileHandle = open( demux.fastQCLogFilePath, "x" ) # fail if file exists
+        if demux.verbosity == 2:
+            demuxLogger.debug( f"demux.fastQCLogFilePath:\t\t\t{demux.fastQCLogFilePath}")
         fastQCLogFileHandle.write( result.stdout ) 
         fastQCLogFileHandle.close( )
     except FileNotFoundError as err:
-        text = [    f"Error opening FastQCLogFilePath {oldname}:", 
-                    f"FastQCLogFilePath: {demux.FastQCLogFilePath} does not exist",
+        text = [    f"Error opening fastQCLogFilePath: {demux.fastQCLogFilePath} does not exist",
                     f"err.filename:  {err.filename}",
                     f"Exiting!"
                 ]
@@ -907,7 +933,7 @@ def FastQC( ):
         logging.shutdown( )
         sys.exit( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: FastQC complete ==\n", color="red", attrs=["bold"] )  )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: FastQC complete ==\n", color="cyan" )  )
 
 
 
@@ -918,7 +944,7 @@ def FastQC( ):
 def prepareMultiQC( ):
     """
     Preperation to run MultiQC:
-        copy *.zip and *.html from individual {demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project} directories to the {DemultiplexRunIdDirNewNamel}/{demux.RunIDShort}_QC directory
+        copy *.zip and *.html from individual {demux.demultiplexRunIdDir}/{demux.RunIDShort}.{project} directories to the {demultiplexRunIdDirNewNamel}/{demux.RunIDShort}_QC directory
   
     INPUT
         the renamed project list
@@ -928,59 +954,66 @@ def prepareMultiQC( ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for MultiQC started ==", color="yellow" ) )
 
     zipFiles    = [ ]
     HTMLfiles   = [ ]
     sourcefiles = [ ]
     for project in demux.newProjectNameList:
-        globZipFiles  = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*zip" )
-        globHTMLFiles = glob.glob( f"{demux.DemultiplexRunIdDir}/{project}/*html" )
+
+        if any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
+            demuxLogger.warning( termcolor.colored( f"{demux.testProject} test project directory found in projects. Skipping.", color="magenta" ) )
+            continue
+        elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
+            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
+            continue
+        else:
+            zipFilesPath  = os.path.join( demux.demultiplexRunIdDir, project ,'*' + demux.zipSuffix  ) # {project} here is already in the {RunIDShort}.{project_name} format
+            htmlFilesPath = os.path.join( demux.demultiplexRunIdDir, project, '*' + demux.htmlSuffix ) # {project} here is already in the {RunIDShort}.{project_name} format
+            globZipFiles  = glob.glob( zipFilesPath ) 
+            globHTMLFiles = glob.glob( htmlFilesPath ) 
         
         if not globZipFiles or not globHTMLFiles:
-            if demux.debug:
-                demuxLogger.debug( f"globZipFiles or globHTMLFiles came back empty on project {project}" )
-                demuxLogger.debug( f"demux.DemultiplexRunIdDir/project/\t{demux.DemultiplexRunIdDir}/{project}/" )
-                demuxLogger.debug( f"globZipFiles:\t\t\t{globZipFiles}")
-                demuxLogger.debug( f"globHTMLFiles:\t\t\t{globZipFiles}")
+            demuxLogger.debug( f"globZipFiles or globHTMLFiles came back empty on project {project}" )
+            demuxLogger.debug( f"demux.DemultiplexRunIdDir/project:\t\t\t\t{demux.demultiplexRunIdDir}/{project}/" )
+            demuxLogger.debug( f"globZipFiles:\t\t\t\t{globZipFiles}")
+            demuxLogger.debug( f"globHTMLFiles:\t\t\t\t{globZipFiles}")
             continue
         else:
             zipFiles.append( globZipFiles )  # source zip files
             HTMLfiles.append( globZipFiles  )  # source html files
 
-        if demux.debug:
-            demuxLogger.debug( termcolor.colored( f"Now working on project \"{project}\"", color="cyan", attrs=["reverse"] ) )
-            demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                               )
-            demuxLogger.debug( f"HTMLfiles:\t\t\t\t\t{HTMLfiles}"                             )
+        demuxLogger.debug( termcolor.colored( f"Now working on project:\t\t\t\t\"{project}\"", color="cyan", attrs=["reverse"] ) )
+        demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                               )
+        demuxLogger.debug( f"HTMLfiles:\t\t\t\t\t{HTMLfiles}"                             )
 
     if ( not zipFiles[0] or not HTMLfiles[0] ):
-        demuxLogger.critical( f"zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.DemultiplexRunIdDir}. Exiting.")
+        demuxLogger.critical( f"zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.demultiplexRunIdDir}. Exiting.")
+        logging.shutdown( )
         sys.exit( )
 
     sourcefiles = [ *zipFiles, *HTMLfiles ]
-    destination = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"     # QC folder eg /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578_QC/
+    destination = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + demux.qcSuffix )     # QC folder eg /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578_QC/
     demuxLogger.debug( f"sourcefiles:\t\t\t\t\t{sourcefiles}\n\n")
 
-    if demux.debug:
-            demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}"                 )
-            demuxLogger.debug( f"denmux.project_list:\t\t\t\t{demux.project_list}"                       )
-            demuxLogger.debug( f"demux.DemultiplexRunIdDir:\t\t\t{demux.DemultiplexRunIdDir}" )
-            demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                               )
-            demuxLogger.debug( f"HTMLfiles:\t\t\t\t\t{HTMLfiles}"                             )
+    demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}"                 )
+    demuxLogger.debug( f"denmux.newProjectNameList:\t\t\t{demux.newProjectNameList}"  )
+    demuxLogger.debug( f"demux.demultiplexRunIdDir:\t\t\t{demux.demultiplexRunIdDir}" )
+    demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                               )
+    demuxLogger.debug( f"HTMLfiles:\t\t\t\t\t{HTMLfiles}"                             )
 
     if not os.path.isdir( destination ) :
-        text =  f"Directory {destination} does not exist. Please check the logs. You can also just delete {demux.DemultiplexRunIdDir} and try again."
+        text =  f"Directory {destination} does not exist. Please check the logs. You can also just delete {demux.demultiplexRunIdDir} and try again."
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
         sys.exit( )
 
     try:
-        # EXAMPLE: /usr/bin/cp project/*zip project_f/*html DemultiplexDir/demux.RunIDShort.short_QC # (destination is a directory)
+        # EXAMPLE: /usr/bin/cp project/*zip project/*html DemultiplexDir/demux.RunIDShort.short_QC # (destination is a directory)
         demuxLogger.debug( f"source:\t\t\t\t\t{[*sourcefiles]}" )
         for source  in sourcefiles :
-            if demux.debug:
-                demuxLogger.debug( f"Command to execute:\t\t\t\t/usr/bin/cp {source} {destination}" )
+            demuxLogger.debug( f"Command to execute:\t\t\t\t/usr/bin/cp {source} {destination}" )
             for file in source:
                 shutil.copy2( file, destination )    # destination has to be a directory
     except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
@@ -996,15 +1029,15 @@ def prepareMultiQC( ):
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for MultiQC finished ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for multiQC finished ==\n", color="cyan" ) )
 
 
 
 ########################################################################
-# prepareMultiQC
+# multiQC
 ########################################################################
 
-def MultiQC( ):
+def multiQC( ):
     """
     Run /data/bin/multiqc against the project list.
 
@@ -1012,23 +1045,21 @@ def MultiQC( ):
     """ 
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: MultiQC started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: multiQC started ==", color="yellow" ) )
 
-    if demux.debug:
-        demuxLogger.debug( f"demux.DemultiplexRunIdDir:\t\t\t{demux.DemultiplexRunIdDir}" )
+    demuxLogger.debug( f"demux.DemultiplexRunIdDir:\t\t\t{demux.demultiplexRunIdDir}" )
 
     command = demux.mutliqc_bin
-    argv    = [ command, demux.DemultiplexRunIdDir,
-               '-o', demux.DemultiplexRunIdDir 
+    argv    = [ command, demux.demultiplexRunIdDir,
+               '-o', demux.demultiplexRunIdDir 
               ]
     args    = " ".join(argv[1:]) # ignore the command part so we can logging.debug this string below, fresh all the time, in case we change tool command name
 
-    if demux.debug:
-        demuxLogger.debug( f"Command to execute:\t\t\t\t{command} {args}" )
+    demuxLogger.debug( f"Command to execute:\t\t\t\t{command} {args}" )
 
     try:
-        # EXAMPLE: /usr/local/bin/multiqc {demux.DemultiplexRunIdDir} -o {demux.DemultiplexRunIdDir} 2> {demux.DemultiplexRunIdDir}/demultiplex_log/05_multiqc.log
-        result = subprocess.run( argv, capture_output = True, cwd = demux.DemultiplexRunIdDir, check = True, encoding = demux.DecodeScheme )
+        # EXAMPLE: /usr/local/bin/multiqc {demux.demultiplexRunIdDir} -o {demux.demultiplexRunIdDir} 2> {demux.demultiplexRunIdDir}/demultiplex_log/05_multiqc.log
+        result = subprocess.run( argv, capture_output = True, cwd = demux.demultiplexRunIdDir, check = True, encoding = demux.decodeScheme )
     except ChildProcessError as err: 
         text = [    f"Caught exception!",
                     f"Command:\t{err.cmd}", # interpolated strings
@@ -1043,11 +1074,11 @@ def MultiQC( ):
         sys.exit( )
 
     # log multiqc output
-    demux.MutliQCLogFilePath  = os.path.join( demux.DemultiplexLogDirPath, demux.MultiqcLogFileName ) ############# FIXME FIXME FIXME FIXME take out
+    demux.multiQCLogFilePath  = os.path.join( demux.demultiplexLogDirPath, demux.multiqcLogFileName ) ############# FIXME FIXME FIXME FIXME take out
     try: 
-        multiQCLogFileHandle      = open( demux.MutliQCLogFilePath, "x" ) # fail if file exists
-        if demux.debug:
-            demuxLogger.debug( f"MutliQCLogFilePath:\t\t\t\t{demux.MutliQCLogFilePath}")
+        multiQCLogFileHandle      = open( demux.multiQCLogFilePath, "x" ) # fail if file exists
+        if demux.verbosity == 2:
+            demuxLogger.debug( f"multiQCLogFilePath:\t\t\t\t{demux.multiQCLogFilePath}")
         multiQCLogFileHandle.write( result.stderr ) # The MultiQC people are special: They write output to stderr
         multiQCLogFileHandle.close( )
     except OSError as err:
@@ -1065,7 +1096,7 @@ def MultiQC( ):
         sys.exit( )    
 
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: MultiQC finished ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: multiQC finished ==\n", color="cyan" ) )
 
 
 ########################################################################
@@ -1083,13 +1114,13 @@ def qualityCheck( ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Quality Check started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Quality Check started ==", color="green", attrs=["bold"] ) )
 
-    FastQC( )
+    fastQC( )
     prepareMultiQC( )
-    MultiQC( )
+    multiQC( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Quality Check finished ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Quality Check finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -1098,12 +1129,15 @@ def qualityCheck( ):
 # calcFileHash
 ########################################################################
 
-def calcFileHash( DemultiplexRunIdDir ):
+def calcFileHash( eitherRunIdDir ):
     """
     Calculate the md5 sum for files which are meant to be delivered:
         .tar
         .zip
         .fasta.gz
+
+    INPUT
+        '''eitherRunIdDir refers to either demux.demultiplexRunIdDir or demux.forTransferRunIdDir; we use this method more than once
 
     ORIGINAL EXAMPLE: /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
 
@@ -1121,21 +1155,20 @@ def calcFileHash( DemultiplexRunIdDir ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==", color="green", attrs=["bold"] ) )
 
     if demux.debug:
-        demuxLogger.debug( f"for debug puproses, creating empty files {demux.DemultiplexRunIdDir}/foo.tar and {demux.DemultiplexRunIdDir}/bar.zip\n" )
-        pathlib.Path( f"{demux.DemultiplexRunIdDir}/{demux.footarfile}" ).touch( )
-        pathlib.Path( f"{demux.DemultiplexRunIdDir}/{demux.barzipfile}" ).touch( )
+        demuxLogger.debug( f"for debug puproses, creating empty files {demux.demultiplexRunIdDir}/foo.tar and {demux.demultiplexRunIdDir}/bar.zip\n" )
+        pathlib.Path( os.path.join( demux.demultiplexRunIdDir, demux.footarfile ) ).touch( )
+        pathlib.Path( os.path.join( demux.demultiplexRunIdDir, demux.barzipfile ) ).touch( )
 
 
     # build the filetree
-    if demux.debug:
-        demuxLogger.debug( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
-    for directoryRoot, dirnames, filenames, in os.walk( DemultiplexRunIdDir, followlinks = False ):
+    demuxLogger.debug( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
+    for directoryRoot, dirnames, filenames, in os.walk( eitherRunIdDir, followlinks = False ):
 
         for file in filenames:
-            if not any( var in file for var in [ demux.CompressedFastqSuffix, demux.zipSuffix, demux.tarSuffix ] ): # grab only .zip, .fasta.gz and .tar files
+            if not any( var in file for var in [ demux.compressedFastqSuffix, demux.zipSuffix, demux.tarSuffix ] ): # grab only .zip, .fasta.gz and .tar files
                 continue
 
             filepath = os.path.join( directoryRoot, file )
@@ -1155,8 +1188,7 @@ def calcFileHash( DemultiplexRunIdDir ):
             filetobehashed = filehandle.read( )
             md5sum         = hashlib.md5( filetobehashed ).hexdigest( )
             sha512sum      = hashlib.sha256( filetobehashed ).hexdigest( ) 
-            if demux.debug:
-                demuxLogger.debug( f"md5sum: {md5sum} | sha512sum: {sha512sum} | filepath: {filepath}" )
+            demuxLogger.debug( f"md5sum: {md5sum} | sha512sum: {sha512sum} | filepath: {filepath}" )
 
 
             if not os.path.isfile( f"{filepath}{demux.md5Suffix}" ):
@@ -1183,12 +1215,12 @@ def calcFileHash( DemultiplexRunIdDir ):
             else:
                 continue
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files finished ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
 #######################################################################
-# change_permission
+# changePermissions
 ########################################################################
 
 def changePermissions( path ):
@@ -1199,21 +1231,22 @@ def changePermissions( path ):
             change permissions to 755
         if file
             change permissions to 644
+
+    INPUT
+        input is a generic path rather than demux.demultiplexRunID, because we use this method more than once
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Changing Permissions started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Changing Permissions started ==", color="green", attrs=["bold"] ) )
 
-    if demux.debug:
-        demuxLogger.debug( termcolor.colored( f"= walk the file tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
+    demuxLogger.debug( termcolor.colored( f"= walk the file tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
 
     for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
     
         # change ownership and access mode of files
         for file in filenames:
             filepath = os.path.join( directoryRoot, file )
-            if demux.debug:
-                demuxLogger.debug( filepath )
+            demuxLogger.debug( filepath )
 
             if not os.path.isfile( filepath ):
                 text = f"{filepath} is not a file. Exiting." 
@@ -1240,16 +1273,13 @@ def changePermissions( path ):
 
 
     # change ownership and access mode of directories
-    if demux.debug:
-        demuxLogger.debug( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
+    demuxLogger.debug( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
     for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
 
         for name in dirnames:
             dirpath = os.path.join( directoryRoot, name )
 
-            if demux.debug:
-                demuxLogger.debug( dirpath )
-
+            demuxLogger.debug( dirpath )
             if not os.path.isdir( dirpath ):
                 text = f"{dirpath} is not a directory. Exiting."
                 demuxFailureLogger.critical( f"{ text }" )
@@ -1274,17 +1304,210 @@ def changePermissions( path ):
                 logging.shutdown( )
                 sys.exit( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Changing Permissions finished ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Changing Permissions finished ==\n", color="red", attrs=["bold"] ) )
+
 
 
 
 ########################################################################
-# prepare_delivery
+# tarProjectFiles
 ########################################################################
 
-def prepareDelivery( RunID ):
+def tarProjectFiles( ):
     """
-    Prepare the appropiarate tar files for transfer and write the appropirate .md5/.sha512 checksum files
+
+    """
+
+#---------- Prepare a list of the projects to tar under /data/for_transfer ----------------------
+
+    projectsToProcess = [ ]
+    for project in demux.newProjectNameList:                                        # this loop is a check against project names which are not suppossed to be eventually tarred
+
+        if any( var in project for var in [ demux.qcSuffix ] ):                     # skip anything that includes '_QC'
+            demuxLogger.warning( f"{demux.qcSuffix} directory found in projects. Skipping." )
+            continue
+        elif any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
+            demuxLogger.warning( f"{demux.testProject} test project directory found in projects. Skipping." )
+            continue
+        elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
+            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
+            continue
+        elif demux.temp in project:                                                 # disregard the temp directory
+            demuxLogger.warning( f"{demux.temp} directory found. Skipping." )
+            continue
+        elif demux.demultiplexLogDirPath in project: # disregard demultiplex_log
+            demuxLogger.warning( f"{demux.demultiplexLogDirPath} directory found. Skipping." )
+            continue
+
+        if any( var in project for var in [ demux.nextSeq, demux.miSeq ] ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcess
+            projectsToProcess.append( project )
+            demuxLogger.debug( f"{project} added to projectsToProcess." )
+
+    demuxLogger.debug( f"projectsToProcess:\t\t{ projectsToProcess }" )
+    demuxLogger.debug( f"len(projectsToProcess):\t{len( projectsToProcess  )}" )
+    for project in projectsToProcess:               # create the directories for the individual project e.g. 
+                                                    # if project is APEC-Seq it will create {demux.forTransferRunIdDir}/{demux.RunIDShort}.{project}
+                                                    # /data/for_transfer/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578.APEC-Seq/
+                                                    #
+                                                    # Directory path is formatted as absolute
+                                                    # 
+                                                    # demux.forTransferRunIdDir is created inside prepareDelivery( )
+        try:
+            forTransferDirProject = os.path.join( demux.forTransferRunIdDir, project )
+            os.mkdir( forTransferDirProject ) # we save each tar file into its own directory
+        except FileExistsError as err:
+            text = [
+                f"Error while trying to mkdir {project}",
+                f"Error message: { str( err ) }",
+                "Exiting."
+            ]
+            text = '\n'.join( text )
+            demuxFailureLogger.critical( f"{ text }" )
+            demuxLogger.critical( f"{ text }" )
+            logging.shutdown( )
+            sys.exit( )
+
+
+#---------- Use the projectsToProcess list to tar files demux data.demultiplexRunID to demux.forTransferRunIdDir   ----------------------
+
+    counter = 0         # used in counting how many projects we have archived so far
+    for project in projectsToProcess:
+        tarFileDir = os.path.join( demux.forTransferRunIdDir, project )
+        tarFile    = os.path.join( tarFileDir, project + demux.tarSuffix )
+        demuxLogger.debug( f"tarFile:\t\t\t{tarFile}")
+
+        if not os.path.isfile( tarFile ) :
+            tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
+        else:
+            text = f"{tarFile} exists. Please investigate or delete. Exiting."
+            demuxFailureLogger.critical( f"{ text }" )
+            demuxLogger.critical( f"{ text }" )
+            logging.shutdown( )
+            sys.exit( )
+
+#---------- chdir to demux.demultiplexRunIdDir, for nice relative path names when untarring  ----------------------
+    try:
+        os.chdir( demux.demultiplexRunIdDir )
+    except FileExistsError as err:
+        text = [
+            f"Error while trying to mkdir {project}",
+            f"Error message: { str( err ) }",
+            "Exiting."
+        ]
+        text = '\n'.join( text )
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )
+
+#---------- Iterrate through demux.demultiplexRunIdDir/projectsToProcess list and make a single tar file for each directory under data.forTransferRunIdDir   ----------------------
+        # 
+        # build the filetree
+        demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {os.getcwd( )}/{project} ======================", attrs=["bold"] ) )
+
+        counter = counter + 1
+        demuxLogger.info( termcolor.colored( f"==> Archiving {project} ( {counter} out of { len( projectsToProcess ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
+        for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.demultiplexRunIdDir, project ), followlinks = False ): 
+             for file in filenames:
+                # add one file at a time so we can give visual feedback to the user that the script is processing files
+                # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
+                # of output that make users uncomfortable
+                filenameToTar = os.path.join( project, file )
+                tarFileHandle.add( name = filenameToTar, recursive = False )
+                demuxLogger.info( f"filenameToTar:\t\t{filenameToTar}" )
+
+        tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
+
+        demux.tarFileStack.append( tarFile ) # add to list of archived tar files, we will use them with lstat later to see if they pass untarring quality control
+
+        demuxLogger.info( termcolor.colored( f'==< Archived {project} ({counter} out of { len( projectsToProcess ) } projects ) ==================\n', color="yellow", attrs=["bold"] ) )
+
+
+
+
+########################################################################
+# createQcTarFile
+########################################################################
+
+def createQcTarFile( ):
+    """
+    create the qc.tar file by reading from /data/demultiplex/RunID/RunID_QC and writing the tar file to /data/for_transfer/RunID/demux.RunIDShort_qc.tar
+    What to put inside the QC file: {demux.RunIDShort}_QC and multiqc_data
+
+    """
+
+    demuxLogger.info( termcolor.colored( f"==> Archiving {demux.demuxQCDirectoryPath} =================", color="yellow", attrs=["bold"] ) )
+
+    demuxLogger.debug( f"demux.demuxQCDirectoryPath:\t{demux.demuxQCDirectoryPath}" )
+    demuxLogger.debug( f"demux.multiqc_data:\t\t{demux.multiqc_data}" )
+
+    if not os.path.isfile( demux.forTransferQCtarFile ): # exit if /data/for_transfer/RunID/qc.tar file exists.
+        tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "w:" )
+    else:
+        text = f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting."
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )
+
+    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.demultiplexRunIdDir, demux.demuxQCDirectoryPath ), followlinks = False ): 
+         for file in filenames:
+            # add one file at a time so we can give visual feedback to the Archivinguser that the script is processing files
+            # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
+            # of output that make users uncomfortable
+            filenameToTar = os.path.join( demux.demuxQCDirectoryPath, file )
+            tarQCFileHandle.add( name = filenameToTar, recursive = False )
+            demuxLogger.info( f"filenameToTar:\t\t{filenameToTar}" )
+
+    demux.tarFileStack.append( demux.forTransferQCtarFile ) # list of archived tar files, we will use them with lstat later ot see if they pass untarring quality control
+
+    demuxLogger.info( termcolor.colored( f"==> Archived {demux.demuxQCDirectoryPath} ==================", color="yellow", attrs=["bold"] ) )
+
+
+
+
+########################################################################
+# createMultiQcTarFile
+########################################################################
+
+def createMultiQcTarFile( ):
+    """
+    Add the multiqc_data to the qc.tar under /data/for_transfer/RunID
+    """
+    demuxLogger.info( termcolor.colored( f"==> Archiving {demux.multiqc_data} ==================", color="yellow", attrs=["bold"] ) )
+
+    if os.path.isfile( demux.forTransferQCtarFile ): # /data/for_transfer/RunID/qc.tar must exist before writi
+        tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "a:" ) # "a:" for exclusive, uncompresed append.
+    else:
+        text = f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting."
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )
+
+    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.demultiplexRunIdDir, demux.multiqc_data ), followlinks = False ): 
+         for file in filenames:
+            # add one file at a time so we can give visual feedback to the user that the script is processing files
+            # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
+            # of output that make users uncomfortable
+            filenameToTar = os.path.join( demux.multiqc_data, file )
+            tarQCFileHandle.add( name = filenameToTar, recursive = False )
+            demuxLogger.info( f"filenameToTar:\t\t{filenameToTar}" )
+
+    # both {demux.RunIDShort}_QC and multidata_qc go in the same tar file
+    tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
+    demuxLogger.info( termcolor.colored( f"==> Archived {demux.multiqc_data} ==================", color="yellow", attrs=["bold"] ) )    
+
+
+
+########################################################################
+# prepareDelivery
+########################################################################
+
+def prepareDelivery( ):
+    """
+    Prepare the appropriate tar files for transfer and write the appropirate .md5/.sha512 checksum files
+
     Preparing has the following steps:
         tar the entire DemultiplexRunIdDir
         tar the QC directory
@@ -1316,212 +1539,49 @@ def prepareDelivery( RunID ):
     Original commands:
         EXAMPLE: /bin/tar -cvf tar_file -C DemultiplexDir folder 
         EXAMPLE: /bin/md5sum tar_file | sed_command > md5_file
+
+    First, exclude:
+        qcSuffix project
+        test projects used by this software
+        control projects inserted by the lab periodically
+        demultiplex_log directory that stores all the logs for the run
+
+    For the projects left, 
+        create the directory projects under /data/for_transfer/RunID/{project_name}
+        create the tar file
+            by recursing down the /data/RunID_demultiplex
+    
+    Finally
+        crete the _QC tar file
+
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for delivery started ==", color="green", attrs=["bold"] ) )
 
-    counter = 0
 
-    if demux.debug:
-        text = [    f"Current working directory:\t{os.getcwd( )}",
-                    f"DemultiplexRunIdDir:\t\t{demux.DemultiplexRunIdDir}",
-                    f"forTransferRunIdDir:\t\t{demux.forTransferRunIdDir}",
-                    f"forTransferQCtarFile:\t{demux.forTransferQCtarFile}",
-                    f"Original working directory:\t{ os.getcwd( ) }"
-                ]
-        '\n'.join( text )
-        demuxLogger.debug( text )
-
-    # Switch to the Demultiplex directory we will be archiving
+    # create the root directory for this run
     try:
-        os.chdir( demux.DemultiplexRunIdDir )
-    except FileNotFoundError:
-        text = f"Directory: {demux.DemultiplexRunIdDir} does not exist. Exiting."
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )
-    except NotADirectoryError:
-        text =  f"{demux.DemultiplexRunIdDir} is not a directory. Exiting."
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )
-    except Exception as e:
-        text = f"You do not have permissions to change to {demux.DemultiplexRunIdDir}. Exiting."
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )
-
-    if demux.debug:
-        demuxLogger.debug( f"Changed into directory\t{demux.DemultiplexRunIdDir}")
-
-    # Make {demux.forTransferRunIdDir} directory
-    if not os.path.isdir( demux.forTransferRunIdDir ):
-        os.mkdir( demux.forTransferRunIdDir )
-    else:
-        text = f"{demux.forTransferRunIdDir} exists, this is not supposed to exist, please investigate and re-run the demux. Exiting."
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )
-
-    projectList = os.listdir( "." )                                         # get the contents of the demux.DemultiplexRunIdDir directory
-
-    if demux.debug:
-        demuxLogger.debug( f"{demux.DemultiplexRunIdDir} directory contents: {projectList}" ) 
-
-
-def renameProjects( ):
-    projectsToProcess = [ ]
-    for project in projectList:                                                 # itterate over said demux.DemultiplexRunIdDirs contents, take only the projects we need
-
-        if any( var in project for var in [ demux.QCSuffix ] ):                     # skip anything that includes '_QC'
-            demuxLogger.warning( f"{demux.QCSuffix} directory found in projects. Skipping." )
-            continue
-        elif any( var in project for var in [ demux.TestProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
-            demuxLogger.warning( f"{demux.TestProject} test project directory found in projects. Skipping." )
-            continue
-        elif any( var in project for var in demux.ControlProjects ):                # if the project name includes a control project name, ignore it
-            demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
-            continue
-        elif demux.temp in project:                                                 # disregard the temp directory
-            demuxLogger.warning( f"{demux.temp} directory found. Skipping." )
-            continue
-        elif demux.DemultiplexLogDirPath in project: # disregard demultiplex_log
-            demuxLogger.warning( f"{demux.DemultiplexLogDirPath} directory found. Skipping." )
-            continue
-
-        if any( var in project for var in [ demux.NextSeq, demux.MiSeq ] ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcess
-            if demux.debug:
-                demuxLogger.warning( f"Now processing {project} project." )
-            projectsToProcess.append( project )
-
-    if demux.debug:
-        demuxLogger.debug( f"projectsToProcess:\t\t{ projectsToProcess }" )
-        demuxLogger.debug( f"len(projectsToProcess):\t{len( projectsToProcess  )}" )
-
-    for project in projectsToProcess:                                               # create the directories for the individual project e.g. 
-                                                                                    # if project is APEC-Seq it will create {demux.forTransferRunIdDir}/{demux.RunIDShort}.{project}
-                                                                                    # /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578.APEC-Seq/
-        try:
-            os.mkdir( f"{demux.forTransferRunIdDir}/{project}" ) # we save each tar file into its own directory
-        except FileExistsError as err:
-            text = [
-                f"Error while trying to mkdir {demux.forTransferRunIdDir}/{project}",
-                f"Error message: {err}",
-                "Exiting."
-            ]
-            text = '\n'.join( text )
-            demuxFailureLogger.critical( f"{ text }" )
-            demuxLogger.critical( f"{ text }" )
-            logging.shutdown( )
-            sys.exit( )
-
-
-        tarFile = os.path.join( demux.forTransferRunIdDir, project )
-        tarFile = os.path.join( tarFile, f"{project}{demux.tarSuffix}" )
-        if demux.debug:
-            demuxLogger.debug( f"tarFile:\t\t\t{tarFile}")
-
-        if not os.path.isfile( tarFile ) :
-            tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
-        else:
-            text = f"{tarFile} exists. Please investigate or delete. Exiting."
-            demuxFailureLogger.critical( f"{ text }" )
-            demuxLogger.critical( f"{ text }" )
-            logging.shutdown( )
-            sys.exit( )
-
-
-        # we iterrate through all the renamed Sample_Project directories and make a single tar file for each directory
-        # build the filetree
-        if demux.debug:
-            demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {os.getcwd( )}/{project} ======================", attrs=["bold"] ) )
-
-        counter = counter + 1
-        demuxLogger.info( termcolor.colored( f"==> Archiving {project} ({counter} out of { len( projectsToProcess ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
-        for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.DemultiplexRunIdDir, project ), followlinks = False ): 
-             for file in filenames:
-                # add one file at a time so we can give visual feedback to the user that the script is processing files
-                # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
-                # of output that make users uncomfortable
-                filenameToTar = os.path.join( project, file )
-                tarFileHandle.add( name = filenameToTar, recursive = False )
-                demuxLogger.info( f"filenameToTar:\t\t{filenameToTar}" )
-
-        tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
-        demuxLogger.info( termcolor.colored( f'==< Archived {project} ({counter} out of { len( projectsToProcess ) } projects ) ==================\n', color="yellow", attrs=["bold"] ) )
-        demux.tarFileStack.append( tarFile ) # add to list of archived tar files, we will use them with lstat later ot see if they pass untarring quality control
-
-    ###########################################################
-    #
-    #   QC.tar
-    #
-    ###########################################################
-    QCDir           = f"{demux.RunIDShort}{demux.QCSuffix}"
-    multiQCDir      = demux.multiqc_data
-    if demux.debug:
+        os.mkdir( demux.forTransferRunIdDir ) # we save each tar file into its own directory
+    except FileExistsError as err:
         text = [
-            f"demux.RunIDShort:\t\t{demux.RunIDShort}",
-            f"QCDir:\t\t\t{QCDir}",
-            f"multiQCDir:\t\t\t{multiQCDir}"
+            f"Error while trying to mkdir {project}",
+            f"Error message: { str( err ) }",
+            "Exiting."
         ]
-        '\n'.join( text )
-        demuxLogger.debug( text )
-    
-
-    ################################################################################
-    # What to put inside the QC file: {demux.RunIDShort}_QC and multiqc_data
-    ################################################################################
-    # {demux.RunIDShort}_QC
-    ################################################################################
-    if not os.path.isfile( demux.forTransferQCtarFile ):
-        tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "w:" )
-    else:
-        text = f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting."
+        text = '\n'.join( text )
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
         sys.exit( )
-    demuxLogger.info( termcolor.colored( f"==> Archiving {QCDir} ==================", color="yellow", attrs=["bold"] ) )
-    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.DemultiplexRunIdDir, QCDir ), followlinks = False ): 
-         for file in filenames:
-            # add one file at a time so we can give visual feedback to the Archivinguser that the script is processing files
-            # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
-            # of output that make users uncomfortable
-            filenameToTar = os.path.join( QCDir, file )
-            tarQCFileHandle.add( name = filenameToTar, recursive = False )
-            demuxLogger.info( f"filenameToTar:\t\t{filenameToTar}" )
 
-    demuxLogger.info( termcolor.colored( f"==> Archived {QCDir} ==================", color="yellow", attrs=["bold"] ) )
-    demux.tarFileStack.append( demux.forTransferQCtarFile ) # list of archived tar files, we will use them with lstat later ot see if they pass untarring quality control
+    # individual project directories are created in tarProjectFiles( )
+    tarProjectFiles( )
+    createQcTarFile( )
+    createMultiQcTarFile( )
 
-    ################################################################################
-    # multiqc_data
-    ################################################################################
-    demuxLogger.info( termcolor.colored( f"==> Archiving {multiQCDir} ==================", color="yellow", attrs=["bold"] ) )
-    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.DemultiplexRunIdDir, multiQCDir ), followlinks = False ): 
-         for file in filenames:
-            # add one file at a time so we can give visual feedback to the user that the script is processing files
-            # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
-            # of output that make users uncomfortable
-            filenameToTar = os.path.join( multiQCDir, file )
-            tarQCFileHandle.add( name = filenameToTar, recursive = False )
-            demuxLogger.info( f"filenameToTar:\t\t{filenameToTar}" )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for delivery finished ==", color="red", attrs=["bold"] ) )
 
-    # both {demux.RunIDShort}_QC and multidata_qc go in the same tar file
-    tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
-    demuxLogger.info( termcolor.colored( f"==> Archived {multiQCDir} ==================", color="yellow", attrs=["bold"] ) )    
-
-
-    ###########################################################
-    # cleanup
-    ###########################################################
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for delivery finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -1532,7 +1592,7 @@ def renameProjects( ):
 
 def controlProjectsQC ( RunID ):
     """
-    This function creeates a report if any water control samples are submitted for sequence ( and subsequently, analysis )
+    This function creeates a report if any water 1 samples are submitted for sequence ( and subsequently, analysis )
 
     If there are no water control samples, no report is generated.
 
@@ -1541,7 +1601,10 @@ def controlProjectsQC ( RunID ):
     Otherwise
         just mention in green text that no results are detected (and move on)
     """
+    demux.n = demux.n + 1
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard proejcts started ==", color="green", attrs=["bold"] ) )
 
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard proejcts finished ==", color="red", attrs=["bold"] ) )
 
 
 
@@ -1555,9 +1618,10 @@ def sha512FileQualityCheck ( RunID ):
     re-perform (quietly) the sha512 calculation and compare that with the result on file for the specific file.
     """
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: sha512 files check started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: sha512 files check started ==", color="green", attrs=["bold"] ) )
 
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: sha512 files check finished ==", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: sha512 files check finished ==", color="red", attrs=["bold"] ) )
+
 
 
 
@@ -1579,9 +1643,15 @@ def tarFileQualityCheck ( RunID ):
         Step 3: untar files under /data/for_transfer/RunID/test
         Step 4: recalculate sha512 hash for each file
         compare result with hash file on disk
+            stuff result in sql database?
+        delete {demux.forTransferRunIdDir}/{demux.forTransferRunIDdirTest} and contents
+        return True/false depending on answer
+
+    INPUT
+        Input is RunID rather than demux.RunID or some other variable because we can use this method later to check the tarFile quality of any fetched tar file from archive
     """
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Tar files quaility check started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Tar files quaility check started ==", color="green", attrs=["bold"] ) )
 
 #---- Step 1: create a /data/for_transfer/RunID/test directory -------------------------------------------------------------------------------------------
 
@@ -1638,12 +1708,15 @@ def tarFileQualityCheck ( RunID ):
 #---- Step 4: recalculate sha512 hash for each file ------------------------------------------------------------------------------------------------------
 
 
+#---- Step 5: compare result with hash file on disk ------------------------------------------------------------------------------------------------------
+
+
 #---- Step 6: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIDdirTest} and contents ------------------------------------------------------------
 
 
 #---- Step 7: return True/false depending on answer ------------------------------------------------------------------------------------------------------
 
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Tar files quaility check finished ==", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Tar files quaility check finished ==", color="red", attrs=["bold"] ) )
 
     sys.exit( )
 
@@ -1655,23 +1728,23 @@ def tarFileQualityCheck ( RunID ):
 # script_completion_file
 ########################################################################
 
-def scriptComplete( DemultiplexRunIdDir ):
+def scriptComplete( ):
     """
     Create the {DemultiplexDir}/{demux.DemultiplexCompleteFile} file to signal that this script has finished
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Finishing up script ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Finishing up script ==", color="green", attrs=["bold"] ) )
 
     try:
-        file = os.path.join( DemultiplexRunIdDir, demux.DemultiplexCompleteFile )
+        file = os.path.join( demux.demultiplexRunIdDir, demux.demultiplexCompleteFile )
         pathlib.Path( file ).touch( mode=644, exist_ok=False)
     except Exception as e:
         demuxLogger.critical( f"{file} already exists. Please delete it before running {__file__}.\n")
         sys.exit( )
 
-    demuxLogger.debug( f"DemultiplexCompleteFile {file} created.")
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Finishing up script ==", color="red", attrs=["bold"] ) )
+    demuxLogger.debug( f"demux.demultiplexCompleteFile {file} created.")
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Finishing up script ==", color="red", attrs=["bold"] ) )
 
 
 
@@ -1685,10 +1758,10 @@ def deliverFilesToVIGASP( RunID ):
         upload the relevant files.
     """
     demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for uploading to VIGASP started\n")
+    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for uploading to VIGASP started\n")
 
 
-    demuxLogger.info( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for uploading to VIGASP finished\n")
+    demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for uploading to VIGASP finished\n")
 
 
 
@@ -1702,10 +1775,10 @@ def deliverFilesToNIRD( RunID ):
     Make connection to NIRD and upload the data
     """
     demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.TotalTasks} tasks: Preparing files for archiving to NIRD started\n")
+    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n")
 
 
-    demuxLogger.info( f"==< {demux.n}/{demux.TotalTasks} tasks: Preparing files for archiving to NIRD finished\n")
+    demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n")
 
 
 
@@ -1727,10 +1800,10 @@ def detectNewRuns(  ):
 #       mention which one are remaining
 #########
     demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.TotalTasks} tasks: Detecting if new runs exist started\n")
+    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Detecting if new runs exist started\n")
 
 
-    demuxLogger.info( f"==< {demux.n}/{demux.TotalTasks} tasks: Detecting if new runs exist finished\n")
+    demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Detecting if new runs exist finished\n")
 
 
 
@@ -1745,7 +1818,7 @@ def setupEventAndLogHandling( ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Set up the Event and Log handling ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Set up the Event and Log handling ==\n", color="green", attrs=["bold"] ) )
 
 
     # demuxLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(name)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
@@ -1775,7 +1848,7 @@ def setupEventAndLogHandling( ):
     # # setup logging for messaging over Workplace
     # demuxHttpsLogHandler       = logging.handlers.HTTPHandler( demux.httpsHandlerHost, demux.httpsHandlerUrl, method = 'GET', secure = True, credentials = None, context = None ) # FIXME later
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Set up the Event and Log handling ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Set up the Event and Log handling ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -1791,14 +1864,14 @@ def copySampleSheetIntoDemultiplexRunIdDir( ):
     #
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Copy {demux.SampleSheetFilePath} to {demux.DemultiplexRunIdDir} ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="green", attrs=["bold"] ) )
 
     try:
-        currentPermissions = stat.S_IMODE(os.lstat( demux.SampleSheetFilePath ).st_mode )
-        os.chmod( demux.SampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
-        shutil.copy2( demux.SampleSheetFilePath, demux.DemultiplexRunIdDir )
+        currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetFilePath ).st_mode )
+        os.chmod( demux.sampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
+        shutil.copy2( demux.sampleSheetFilePath, demux.demultiplexRunIdDir )
     except Exception as err:
-        text = [    f"Copying {demux/SampleSheetFilePath} to {demux.DemultiplexRunIdDir} failed.",
+        text = [    f"Copying {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} failed.",
                     err.tostring( ),
                     "Exiting."
         ]
@@ -1808,7 +1881,7 @@ def copySampleSheetIntoDemultiplexRunIdDir( ):
         logging.shutdown( )
         sys.exit( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Copy {demux.SampleSheetFilePath} to {demux.DemultiplexRunIdDir} ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -1817,7 +1890,7 @@ def copySampleSheetIntoDemultiplexRunIdDir( ):
 # archiveSampleSheet( )
 ########################################################################
 
-def archiveSampleSheet( RunID ):
+def archiveSampleSheet( ):
     """
 
     # Request by Cathrine: Copy the SampleSheet file to /data/samplesheet automatically
@@ -1828,31 +1901,31 @@ def archiveSampleSheet( RunID ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Archive {demux.SampleSheetFilePath} to {demux.SampleSheetArchiveFilePath} ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Archive {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} ==\n", color="green", attrs=["bold"] ) )
 
 
-    if not os.path.exists( demux.SampleSheetFilePath ):
-        text = f"{demux.SampleSheetFilePath} does not exist! Demultiplexing cannot continue. Exiting."
+    if not os.path.exists( demux.sampleSheetFilePath ):
+        text = f"{demux.sampleSheetFilePath} does not exist! Demultiplexing cannot continue. Exiting."
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
         sys.exit( )
 
 
-    if not os.path.isfile( demux.SampleSheetFilePath ):
-        text = f"{demux.SampleSheetFilePath} is not a file! Exiting."
+    if not os.path.isfile( demux.sampleSheetFilePath ):
+        text = f"{demux.ampleSheetFilePath} is not a file! Exiting."
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
         sys.exit( )
 
     try:
-        shutil.copy2( demux.SampleSheetFilePath, demux.SampleSheetArchiveFilePath )
-        currentPermissions = stat.S_IMODE(os.lstat( demux.SampleSheetArchiveFilePath ).st_mode )
-        os.chmod( demux.SampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "o=rw,g=r,o=r"
+        shutil.copy2( demux.sampleSheetFilePath, demux.sampleSheetArchiveFilePath )
+        currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetArchiveFilePath ).st_mode )
+        os.chmod( demux.sampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "o=rw,g=r,o=r"
     except Exception as err:
         frameinfo = getframeinfo( currentframe( ) )
-        text = [    f"Archiving {demux.SampleSheetFilePath} to {demux.SampleSheetArchiveFilePath} failed.",
+        text = [    f"Archiving {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} failed.",
                     str(err),
                     f" at {frameinfo.filename}:{frameinfo.lineno}."
                     "Exiting.",
@@ -1862,7 +1935,7 @@ def archiveSampleSheet( RunID ):
         logging.shutdown( )
         sys.exit( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks:  Archive {demux.SampleSheetFilePath} to {demux.SampleSheetArchiveFilePath} ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks:  Archive {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -1871,37 +1944,37 @@ def archiveSampleSheet( RunID ):
 # setupFileLogHandling( )
 ########################################################################
 
-def setupFileLogHandling( RunID ):
+def setupFileLogHandling( ):
     """
     Setup the file event and log handling
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Setup the file event and log handling ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Setup the file event and log handling ==\n", color="green", attrs=["bold"] ) )
 
     # make sure that the /data/log directory exists.
-    if not os.path.isdir( demux.LogDirPath ) :
-        text = [    "Trying to setup demux.LogDirPath failed. Reason:\n",
-                    "The parts of demux.LogDirPath have the following values:\n",
-                    f"demux.LogDirPath:\t\t\t\t{demux.LogDirPath}\n"
-                    f"demux.DataRootDirPath:\t\t\t{demux.DataRootDirPath}\n",
-                    f"demux.LogDirName:\t\t\t{demux.LogDirName}\n",
+    if not os.path.isdir( demux.logDirPath ) :
+        text = [    "Trying to setup demux.logDirPath failed. Reason:\n",
+                    "The parts of demux.logDirPath have the following values:\n",
+                    f"demux.dataRootDirPath:\t\t\t{demux.dataRootDirPath}\n",
+                    f"demux.logDirName:\t\t\t{demux.logDirName}\n",
+                    f"demux.logDirPath:\t\t\t\t{demux.logDirPath}\n"
         ]
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
         sys.exit( )
 
-    # # set up logging for /data/log/{RunID}.log
+    # # set up logging for /data/log/{demux.RunID}.log
     try: 
-        demuxFileLogHandler   = logging.FileHandler( demux.DemuxRunLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
+        demuxFileLogHandler   = logging.FileHandler( demux.demuxRunLogFilePath, mode = 'w', encoding = demux.decodeScheme )
     except Exception as err:
         text = [    "Trying to setup demuxFileLogHandler failed. Reason:\n",
                     str(err),
-                    "The parts of demux.DemuxRunLogFilePath have the following values:\n",
-                    f"demux.DemuxRunLogFilePath:\t\t\t{demux.DemuxRunLogFilePath}\n",
-                    f"RunID + demux.LogSuffix:\t\t\t{RunID} + {demux.LogSuffix}\n",
-                    f"demux.LogDirPath:\t\t\t\t{demux.LogDirPath}\n"
+                    "The parts of demux.demuxRunLogFilePath have the following values:\n",
+                    f"demux.demuxRunLogFilePath:\t\t\t{demux.demuxRunLogFilePath}\n",
+                    f"demux.RunID + demux.logSuffix:\t\t{demux.RunID} + {demux.logSuffix}\n",
+                    f"demux.logDirPath:\t\t\t\t{demux.logDirPath}\n"
         ]
         demuxFailureLogger.critical( *text  )
         demuxLogger.critical( *text )
@@ -1910,18 +1983,18 @@ def setupFileLogHandling( RunID ):
 
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxFileLogHandler.setFormatter( demuxLogFormatter )
-    demuxLogger.setLevel( demux.LoggingLevel )
+    demuxLogger.setLevel( demux.loggingLevel )
 
     # set up cummulative logging in /data/log/demultiplex.log
     try:
-        demuxFileCumulativeLogHandler   = logging.FileHandler( demux.DemuxCumulativeLogFilePath, mode = 'a', encoding = demux.DecodeScheme )
+        demuxFileCumulativeLogHandler   = logging.FileHandler( demux.demuxCumulativeLogFilePath, mode = 'a', encoding = demux.decodeScheme )
     except Exception as err:
         text = [    "Trying to setup demuxFileCumulativeLogHandler failed. Reason:\n",
                     str(err),
-                    "The parts of demux.DemuxRunLogFilePath have the following values:\n",
-                    f"demux.DemuxCumulativeLogFilePath:\t\t\t{demux.DemuxCumulativeLogFilePath}\n",
-                    f"demux.LogDirPath:\t\t\t\t\t{demux.LogDirPath}\n",
-                    f"demux.DemultiplexLogDirName:\t\t\t{demux.DemultiplexLogDirName}\n",
+                    "The parts of demux.demuxRunLogFilePath have the following values:\n",
+                    f"demux.demuxCumulativeLogFilePath:\t\t\t{demux.demuxCumulativeLogFilePath}\n",
+                    f"demux.logDirPath:\t\t\t\t\t{demux.logDirPath}\n",
+                    f"demux.demultiplexLogDirName:\t\t\t{demux.demultiplexLogDirName}\n",
         ]
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
@@ -1930,20 +2003,20 @@ def setupFileLogHandling( RunID ):
 
     demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
 
-    # setup logging for /data/bin/demultiplex/RunID/demultiplex_log/00_script.log
+    # setup logging for /data/bin/demultiplex/demux.RunID/demultiplex_log/00_script.log
     try:
-        demuxScriptLogHandler   = logging.FileHandler( demux.DemultiplexScriptLogFilePath, mode = 'w', encoding = demux.DecodeScheme )
+        demuxScriptLogHandler   = logging.FileHandler( demux.demultiplexScriptLogFilePath, mode = 'w', encoding = demux.decodeScheme )
     except Exception as err:
         text = [    "Trying to setup demuxScriptLogHandler failed. Reason:\n",
                     str(err),
                     "The parts of demux.DemultiplexScriptLogFilePath have the following values:\n",
-                    f"demux.DemultiplexScriptLogFilePath:\t\t\t{demux.DemultiplexScriptLogFilePath}\n",
-                    f"demux.DemultiplexLogDirPath\t\t\t\t{demux.DemultiplexLogDirPath}\n",
-                    f"demux.ScriptRunLogFileName:\t\t\t\t{demux.ScriptRunLogFileName}\n",
-                    f"demux.DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}\n",
-                    f"demux.DemultiplexLogDirName:\t\t\t\t{demux.DemultiplexLogDirName}\n",
-                    f"demux.DemultiplexDir:\t\t\t\t\t{demux.DemultiplexDir}\n",
-                    f"RunID + demux.DemultiplexDirSuffix:\t{RunID} + {demux.DemultiplexDirSuffix}\n",
+                    f"demux.demultiplexScriptLogFilePath:\t\t\t{demux.demultiplexScriptLogFilePath}\n",
+                    f"demux.demultiplexLogDirPath\t\t\t\t{demux.demultiplexLogDirPath}\n",
+                    f"demux.scriptRunLogFileName:\t\t\t\t{demux.scriptRunLogFileName}\n",
+                    f"demux.demultiplexRunIdDir:\t\t\t\t{demux.demultiplexRunIdDir}\n",
+                    f"demux.demultiplexLogDirName:\t\t\t\t{demux.demultiplexLogDirName}\n",
+                    f"demux.demultiplexDir:\t\t\t\t\t{demux.demultiplexDir}\n",
+                    f"RunID + demux.demultiplexDirSuffix:\t{demux.RunID} + {demux.demultiplexDirSuffix}\n",
                     "Exiting.",
         ]
         demuxFailureLogger.critical( text  )
@@ -1957,7 +2030,7 @@ def setupFileLogHandling( RunID ):
     demuxLogger.addHandler( demuxFileLogHandler )
     demuxLogger.addHandler( demuxFileCumulativeLogHandler )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Setup the file event and log handling ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Setup the file event and log handling ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -1965,12 +2038,12 @@ def setupFileLogHandling( RunID ):
 # checkRunningEnvironment( )
 ########################################################################
 
-def checkRunningEnvironment( RunID ):
+def checkRunningEnvironment( ):
     """
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Check the validity of the current running environment ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Check the validity of the current running environment ==\n", color="green", attrs=["bold"] ) )
 
     # ensure Java[tm] exists
     if not shutil.which( "java"):
@@ -1980,23 +2053,16 @@ def checkRunningEnvironment( RunID ):
         logging.shutdown( )
         sys.exit( )
 
-    if len( demux.project_list ) == 0:
-        text = "List project_list contains no projects/zero length! Exiting." 
+    if len( demux.projectList ) == 0:
+        text = "List projectList contains no projects/zero length! Exiting." 
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
         sys.exit( )
-    elif demux.debug and len( demux.project_list ) == 1: 
-        demux.project_list.add( demux.TestProject )               # if debug, have at least two project names to ensure multiple paths are being created
+    elif demux.debug and len( demux.projectList ) == 1: 
+        demux.projectList.add( demux.testProject )               # if debug, have at least two project names to ensure multiple paths are being created
 
-    for project in demux.project_list:                            # build the full list of subdirectories to make under {demux.DemultiplexRunIdDir}
-        demux.DemultiplexProjSubDirs.append( f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}" )
-
-    # Build the directory paths inside the /data/for_transfer/RunID for each of the projects. example: /data/for_transfer/{RunID}_demultiplext/{demux.RunIDShort}.{project}
-    for project in demux.project_list: 
-        demux.ForTransferProjNames.append( f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}.{project}" )
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Check the validity of the current running environment ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Check the validity of the current running environment ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -2004,45 +2070,36 @@ def checkRunningEnvironment( RunID ):
 # printRunningEnvironment( )
 ########################################################################
 
-def printRunningEnvironment( RunID ):
+def printRunningEnvironment( ):
     """
     Print our running environment
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Print out the current running environment ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Print out the current running environment ==\n", color="green", attrs=["bold"] ) )
 
 
     demuxLogger.info( f"To rerun this script run\n" )
-    demuxLogger.info( termcolor.colored( f"\tclear; rm -rf {demux.DemultiplexRunIdDir} && rm -rf {demux.forTransferRunIdDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {RunID}\n\n", attrs=["bold"] ) )
-    if demux.debug: # logging.info the values here # FIXME https://docs.python.org/3/tutorial/inputoutput.html "Column output in Python3"
-        demuxLogger.debug( "=============================================================================")
-        demuxLogger.debug( f"RunID:\t\t\t\t\t\t{RunID}")
-        demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}")
-        demuxLogger.debug( f"project_list:\t\t\t\t\t{demux.project_list}")
-        demuxLogger.debug( "=============================================================================")
-        demuxLogger.debug( f"RawDataDir:\t\t\t\t\t{demux.RawDataDir}" )
-        demuxLogger.debug( f"RawDataRunIDdir:\t\t\t\t{demux.RawDataRunIDdir}" )
-        demuxLogger.debug( f"SampleSheetFilePath:\t\t\t\t{demux.SampleSheetFilePath}" )
-        demuxLogger.debug( f"RTACompleteFilePath:\t\t\t\t{demux.RawDataRunIDdir}/{demux.RTACompleteFile}" )
-        demuxLogger.debug( "=============================================================================")
-        demuxLogger.debug( f"DemultiplexDirRoot:\t\t\t\t{demux.DemultiplexDir}" )
-        demuxLogger.debug( f"DemultiplexRunIdDir:\t\t\t\t{demux.DemultiplexRunIdDir}" )
-        demuxLogger.debug( f"DemultiplexLogDirPath:\t\t\t\t{demux.DemultiplexLogDirPath}" )
-        demuxLogger.debug( f"DemuxRunLogFilePath:\t\t\t\t{demux.DemuxRunLogFilePath}" )
-        demuxLogger.debug( f"DemultiplexScriptLogFilePath:\t\t\t{demux.DemultiplexScriptLogFilePath}" )
-        demuxLogger.debug( f"DemultiplexQCDirPath:\t\t\t\t{demux.DemultiplexQCDirPath}" )
-        for index, project in enumerate( demux.DemultiplexProjSubDirs):
-            demuxLogger.debug( f"DemultiplexProjSubDirs[{index}]:\t\t\t{project}")
-        demuxLogger.debug( "=============================================================================")
-        demuxLogger.debug( f"ForTransferDir:\t\t\t\t{demux.ForTransferDir}" )
-        demuxLogger.debug( f"forTransferRunIdDir:\t\t\t\t{demux.forTransferRunIdDir}" )
-        for index, project in enumerate( demux.ForTransferProjNames):
-            demuxLogger.debug( f"ForTransferProjNames[{index}]:\t\t\t\t{project}")
-        demuxLogger.debug( "=============================================================================\n")
+    demuxLogger.info( termcolor.colored( f"\tclear; rm -rf {demux.demultiplexRunIdDir} && rm -rf {demux.forTransferRunIdDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {demux.RunID}\n\n", attrs=["bold"] ) )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Print out the current running environment ==\n", color="red", attrs=["bold"] ) )
-    # sys.exit( )
+    demuxLogger.debug( "=============================================================================")
+    for key, value2 in demux.globalDictionary.items( ):
+        if type( value2 ) is list:
+            for index, value1 in enumerate( value2 ):       
+                text = f"{key}[{str(index)}]:"
+                text = f"{text:{demux.spacing3}}{value1}"
+                demuxLogger.debug( text )
+            demuxLogger.debug( "=============================================================================")
+        else:
+            text = f"{key:{demux.spacing2}}" + value2
+
+            # TODO TODO TODO Everytime the first letter of the  key changes you print a 
+            # demuxLogger.debug( "=============================================================================")
+            
+            demuxLogger.debug( text )
+    demuxLogger.debug( "\n")
+
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Print out the current running environment ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -2058,34 +2115,98 @@ def setupEnvironment( RunID ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Set up the current running environment ==\n", color="green", attrs=["bold"] ) )
+    if 'demuxLogger' in logging.Logger.manager.loggerDict.keys():
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="green", attrs=["bold"] ) )
+    else:
+        print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="green", attrs=["bold"] ) )
 
-    # RunID
-    demux.RunIDShort                    = '_'.join(RunID.split('_')[0:2]) # this should be turned into a setter in the demux object
+    demux.RunID                         = RunID
+    demux.RunIDShort                    = '_'.join( RunID.split('_')[0:2] ) # this should be turned into a setter in the demux object
 ######################################################
-    demux.RawDataRunIDdir               = os.path.join( demux.RawDataDir, RunID )
-    demux.SampleSheetFilePath           = os.path.join( demux.RawDataRunIDdir, demux.SampleSheetFileName )
-    demux.RTACompleteFilePath           = f"{demux.RawDataRunIDdir}/{demux.RTACompleteFile}"
-######################################################
-    demux.DemultiplexRunIdDir           = os.path.join( demux.DemultiplexDir, RunID + demux.DemultiplexDirSuffix ) 
-    demux.DemultiplexQCDirPath          = f"{demux.DemultiplexRunIdDir}/{demux.RunIDShort}{demux.QCSuffix}"
-######################################################
-    demux.forTransferRunIdDir           = os.path.join( demux.ForTransferDir, RunID )
-    demux.ForTransferQCtarFile          = os.path.join( demux.forTransferRunIdDir, f"{RunID}{demux.QCSuffix}{demux.tarSuffix}" )
-######################################################
+    demux.rawDataRunIDdir               = os.path.join( demux.rawDataDir,           demux.RunID )
+    demux.sampleSheetFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.sampleSheetFileName )
+    demux.rtaCompleteFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.rtaCompleteFile )
+
+    demux.getProjectName( )             # get the list of projects in this current run
 
 ######################################################
+    demux.demultiplexRunIdDir           = os.path.join( demux.demultiplexDir,       demux.RunID + demux.demultiplexDirSuffix ) 
+    demux.demultiplexQCDirPath          = os.path.join( demux.demultiplexRunIdDir,  demux.RunIDShort + demux.qcSuffix )
+    demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIdDir,  demux.demultiplexLogDirName ) 
+    demux.demuxQCDirectoryName          = demux.RunIDShort + demux.qcSuffix              # example: 200624_M06578_QC  # QCSuffix is defined in object demux
+    demux.demuxQCDirectoryPath          = os.path.join( demux.demultiplexRunIdDir,  demux.demuxQCDirectoryName  )
+    demux.bcl2FastqLogFile              = os.path.join( demux.demultiplexRunIdDir,  demux.demultiplexLogDirPath, demux.bcl2FastqLogFileName )
+######################################################
+    demux.forTransferRunIdDir           = os.path.join( demux.forTransferDir,       demux.RunID )
+    demux.forTransferQCtarFile          = os.path.join( demux.forTransferRunIdDir,  demux.RunID + demux.qcSuffix + demux.tarSuffix )
+######################################################
+
     # set up
-    demux.DemuxRunLogFilePath          = os.path.join( demux.LogDirPath,            RunID + demux.LogSuffix )
-    demux.DemuxCumulativeLogFilePath   = os.path.join( demux.LogDirPath,            demux.DemuxCumulativeLogFileName )
-    demux.DemultiplexLogDirPath        = os.path.join( demux.DemultiplexRunIdDir,   demux.DemultiplexLogDirName )
-    demux.DemultiplexScriptLogFilePath = os.path.join( demux.DemultiplexLogDirPath, demux.ScriptRunLogFileName )
-    demux.DemuxBcl2FastqLogFilePath    = os.path.join( demux.DemultiplexLogDirPath, demux.Bcl2FastqLogFileName )
-    demux.FastQCLogFilePath            = os.path.join( demux.DemultiplexLogDirPath, demux.FastqcLogFileName )
-    demux.MutliQCLogFilePath           = os.path.join( demux.DemultiplexLogDirPath, demux.MultiqcLogFileName )
-    demux.SampleSheetArchiveFilePath   = os.path.join( demux.SampleSheetDirPath, f"{RunID}{demux.CSVSuffix}" ) # .dot is included in CSVsuffix
+    demux.demuxRunLogFilePath           = os.path.join( demux.logDirPath,            demux.RunID + demux.logSuffix )
+    demux.demuxCumulativeLogFilePath    = os.path.join( demux.logDirPath,            demux.demuxCumulativeLogFileName )
+    demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIdDir,   demux.demultiplexLogDirName )
+    demux.demultiplexScriptLogFilePath  = os.path.join( demux.demultiplexLogDirPath, demux.scriptRunLogFileName )
+    demux.demuxBcl2FastqLogFilePath     = os.path.join( demux.demultiplexLogDirPath, demux.bcl2FastqLogFileName )
+    demux.fastQCLogFilePath             = os.path.join( demux.demultiplexLogDirPath, demux.fastqcLogFileName )
+    demux.mutliQCLogFilePath            = os.path.join( demux.demultiplexLogDirPath, demux.multiqcLogFileName )
+    demux.sampleSheetArchiveFilePath    = os.path.join( demux.sampleSheetDirPath,    demux.RunID + demux.csvSuffix ) # .dot is included in csvSuffix
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )
+
+    demux.globalDictionary = {  
+        'RunID'                         : "",
+        'RunIDShort'                    : "",
+        'rawDataRunIDdir'               : "",
+        'rtaCompleteFilePath'           : "",
+        'sampleSheetFilePath'           : "",
+        'demultiplexRunIdDir'           : "",
+        'demultiplexQCDirPath'          : "",
+        'demultiplexLogDirPath'         : "",
+        'demuxQCDirectoryName'          : "",
+        'demuxQCDirectoryPath'          : "",
+        'demuxRunLogFilePath'           : "",
+        'demuxCumulativeLogFilePath'    : "",
+        'demultiplexLogDirPath'         : "",
+        'demultiplexScriptLogFilePath'  : "",
+        'demuxBcl2FastqLogFilePath'     : "",
+        'bcl2FastqLogFile'              : "",
+        'forTransferRunIdDir'           : "",
+        'forTransferQCtarFile'          : "",
+        'fastQCLogFilePath'             : "",
+        'mutliQCLogFilePath'            : "",
+        'sampleSheetArchiveFilePath'    : "",
+        'projectList'                   : [ ],
+        'newProjectNameList'            : [ ]
+    }
+
+    demux.globalDictionary[ 'RunID'                        ] = demux.RunID
+    demux.globalDictionary[ 'RunIDShort'                   ] = demux.RunIDShort
+    demux.globalDictionary[ 'rawDataRunIDdir'              ] = demux.rawDataRunIDdir
+    demux.globalDictionary[ 'rtaCompleteFilePath'          ] = demux.rtaCompleteFilePath
+    demux.globalDictionary[ 'sampleSheetFilePath'          ] = demux.sampleSheetFilePath
+    demux.globalDictionary[ 'demultiplexRunIdDir'          ] = demux.demultiplexRunIdDir
+    demux.globalDictionary[ 'demultiplexQCDirPath'         ] = demux.demultiplexQCDirPath
+    demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
+    demux.globalDictionary[ 'demuxQCDirectoryName'         ] = demux.demuxQCDirectoryName
+    demux.globalDictionary[ 'demuxQCDirectoryPath'         ] = demux.demuxQCDirectoryPath
+    demux.globalDictionary[ 'demuxRunLogFilePath'          ] = demux.demuxRunLogFilePath
+    demux.globalDictionary[ 'demuxCumulativeLogFilePath'   ] = demux.demuxCumulativeLogFilePath
+    demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
+    demux.globalDictionary[ 'demultiplexScriptLogFilePath' ] = demux.demultiplexScriptLogFilePath
+    demux.globalDictionary[ 'demuxBcl2FastqLogFilePath'    ] = demux.demuxBcl2FastqLogFilePath
+    demux.globalDictionary[ 'bcl2FastqLogFile'             ] = demux.bcl2FastqLogFile
+    demux.globalDictionary[ 'forTransferRunIdDir'          ] = demux.forTransferRunIdDir
+    demux.globalDictionary[ 'forTransferQCtarFile'         ] = demux.forTransferQCtarFile
+    demux.globalDictionary[ 'fastQCLogFilePath'            ] = demux.fastQCLogFilePath
+    demux.globalDictionary[ 'mutliQCLogFilePath'           ] = demux.mutliQCLogFilePath
+    demux.globalDictionary[ 'sampleSheetArchiveFilePath'   ] = demux.sampleSheetArchiveFilePath
+    demux.globalDictionary[ 'projectList'                  ].append( demux.projectList )
+    demux.globalDictionary[ 'newProjectNameList'           ].append( demux.newProjectNameList )
+
+
+    if 'demuxLogger' in logging.Logger.manager.loggerDict.keys():
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )
+    else:
+        print( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -2094,48 +2215,48 @@ def setupEnvironment( RunID ):
 # checkRunningDirectoryStructure( )
 ########################################################################
 
-def checkRunningDirectoryStructure( RunID ):
+def checkRunningDirectoryStructure( ):
     """
     Check if the runtime directory structure is ready for processing
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.TotalTasks} tasks: Check if the runtime directory structure is ready for processing ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Check if the runtime directory structure is ready for processing ==\n", color="green", attrs=["bold"] ) )
 
     # init:
 
     #   check if sequencing run has completed, exit if not
-    #       Completion of sequencing run is signaled by the existance of the file {RTACompleteFilePath} ( {SequenceRunOriginDir}/{demux.RTACompleteFile} )
-    if not os.path.isfile( f"{RTACompleteFilePath}" ):
-        text = f"{RunID} is not finished sequencing yet!"
+    #       Completion of sequencing run is signaled by the existance of the file {demux.rtaCompleteFilePath} ( {demux.sequenceRunOriginDir}/{demux.rtaCompleteFile} )
+    if not os.path.isfile( f"{demux.rtaCompleteFilePath}" ):
+        text = f"{demux.RunID} is not finished sequencing yet!"
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
         sys.exit( )
 
-    #   check if {DemultiplexDirRoot} exists
+    #   check if {demux.demultiplexDirRoot} exists
     #       exit if not
-    if not os.path.exists( DemultiplexDirRoot ):
-        text = f"{DemultiplexDirRoot} is not present, please use the provided ansible file to create the root directory hierarchy"
+    if not os.path.exists( demux.demultiplexDirRoot ):
+        text = f"{demux.demultiplexDirRoot} is not present, please use the provided ansible file to create the root directory hierarchy"
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
         sys.exit( )
 
-    if not os.path.isdir( DemultiplexDirRoot ):
-        text = f"{DemultiplexDirRoot} is not a directory! Cannot stored demultiplex data in a non-directory structure! Exiting." 
+    if not os.path.isdir( demux.demultiplexDirRoot ):
+        text = f"{demux.demultiplexDirRoot} is not a directory! Cannot stored demultiplex data in a non-directory structure! Exiting." 
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
         sys.exit( )
-    if os.path.exists( demux.DemultiplexRunIdDir ):
-        text = f"{demux.DemultiplexRunIdDir} exists. Delete the demultiplex folder before re-running the script"
+    if os.path.exists( demux.demultiplexDirRoot ):
+        text = f"{demux.demultiplexRunIdDir} exists. Delete the demultiplex folder before re-running the script"
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
         sys.exit( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.TotalTasks} tasks: Check if the runtime directory structure is ready for processing ==\n", color="red" ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Check if the runtime directory structure is ready for processing ==\n", color="red" ) )
 
 
 
@@ -2152,32 +2273,30 @@ def main( RunID ):
 
     setupEventAndLogHandling( )                                                                         # setup the event and log handing, which we will use everywhere, sans file logging 
     setupEnvironment( RunID )                                                                           # set up variables needed in the running setupEnvironment  
-    #   create {DemultiplexDirRoot} directory structrure
-    createDemultiplexDirectoryStructure( demux.DemultiplexRunIdDir )                                    # create the directory structure under {demux.DemultiplexRunIdDir}
-
-    # #################### demux.getProjectName( ) needs to be called before we start logging  ##########################################################
-    demux.getProjectName( )                                                                             # get the list of projects in this current run
-    # renameProjectListAccordingToAgreedPatttern( )                                                     # rename the contents of the project_list according to {RunIDShort}.{project}
+    # moved inside setupEnvironment( )
+    # demux.getProjectName( )                                                                             # get the list of projects in this current run
+    createDemultiplexDirectoryStructure( )                                                              # create the directory structure under {demux.demultiplexRunIdDir}
+    # renameProjectListAccordingToAgreedPatttern( )                                                     # rename the contents of the projectList according to {RunIDShort}.{project}
     # #################### createDemultiplexDirectoryStructure( ) needs to be called before we start logging  ###########################################
-    setupFileLogHandling( RunID )                                                                       # setup the file event and log handing, which we left out
-    printRunningEnvironment( RunID )                                                                    # print our running environment
-    checkRunningEnvironment( RunID )                                                                    # check our running environment
-    copySampleSheetIntoDemultiplexRunIdDir( )                                                           # copy SampleSheet.csv from {demux.SampleSheetFilePath} to {demux.DemultiplexRunIdDir}
-    archiveSampleSheet( RunID )                                                                         # make a copy of the Sample Sheet for future reference
+    setupFileLogHandling( )                                                                             # setup the file event and log handing, which we left out
+    printRunningEnvironment( )                                                                          # print our running environment
+    checkRunningEnvironment( )                                                                          # check our running environment
+    copySampleSheetIntoDemultiplexRunIdDir( )                                                           # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
+    archiveSampleSheet( )                                                                               # make a copy of the Sample Sheet for future reference
     demultiplex( )                                                                                      # use blc2fastq to convert .bcl files to fastq.gz
-    renameFilesAndDirectories( demux.DemultiplexRunIdDir, demux.project_list )                          # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
+    renameFilesAndDirectories( )                                                                        # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
     qualityCheck( )                                                                                     # execute QC on the incoming fastq files
 
-    calcFileHash( demux.DemultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under DemultiplexRunIdDir
-    changePermissions( demux.DemultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
-    prepareDelivery( RunID )                                                                            # prepare the delivery files
-    calcFileHash( demux.forTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under DemultiplexRunIdDir, 2nd fime for the new .tar files created by prepareDelivery( )
+    calcFileHash( demux.demultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIdDir
+    changePermissions( demux.demultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
+    prepareDelivery( )                                                                                  # prepare the delivery files
+    calcFileHash( demux.forTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIdDir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
     changePermissions( demux.forTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
-    controlProjectsQC ( RunID )                                                                         # check to see if we need to create the report for any control projects present
-    tarFileQualityCheck( RunID )                                                                        # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
-    deliverFilesToVIGASP( RunID )                                                                       # Deliver the output files to VIGASP
-    deliverFilesToNIRD( RunID )                                                                         # deliver the output files to NIRD
-    scriptComplete( demux.DemultiplexRunIdDir )                                                         # mark the script as complete
+    controlProjectsQC ( )                                                                               # check to see if we need to create the report for any control projects present
+    tarFileQualityCheck( )                                                                              # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
+    deliverFilesToVIGASP( )                                                                             # Deliver the output files to VIGASP
+    deliverFilesToNIRD( )                                                                               # deliver the output files to NIRD
+    scriptComplete( )                                                                                   # mark the script as complete
     # shutdownEventAndLoggingHandling( )                                                                # shutdown logging before exiting.
 
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
