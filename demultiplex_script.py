@@ -836,8 +836,6 @@ def renameFiles( ):
                     sys.exit( )
         demuxLogger.debug( "-----------------")
 
-    breakpoint( )
-
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="red" ) )
 
     demuxLogger.info( "-----------------")
