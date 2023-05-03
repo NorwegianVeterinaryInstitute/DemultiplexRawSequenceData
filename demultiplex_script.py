@@ -217,7 +217,6 @@ class demux:
     rawDataRunIDdir                 = ""
     demultiplexRunIDdir             = ""
     demultiplexLogDirPath           = ""
-    demultiplexQCDirPath            = ""
     demultiplexScriptLogFilePath    = ""
     demuxQCDirectoryName            = ""
     demuxQCDirectoryPath            = ""
@@ -2131,7 +2130,6 @@ def setupEnvironment( RunID ):
 
 ######################################################
     demux.demultiplexRunIdDir           = os.path.join( demux.demultiplexDir,       demux.RunID + demux.demultiplexDirSuffix ) 
-    demux.demultiplexQCDirPath          = os.path.join( demux.demultiplexRunIdDir,  demux.RunIDShort + demux.qcSuffix )
     demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIdDir,  demux.demultiplexLogDirName ) 
     demux.demuxQCDirectoryName          = demux.RunIDShort + demux.qcSuffix              # example: 200624_M06578_QC  # QCSuffix is defined in object demux
     demux.demuxQCDirectoryPath          = os.path.join( demux.demultiplexRunIdDir,  demux.demuxQCDirectoryName  )
@@ -2146,7 +2144,6 @@ def setupEnvironment( RunID ):
     demux.demuxCumulativeLogFilePath    = os.path.join( demux.logDirPath,            demux.demuxCumulativeLogFileName )
     demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIdDir,   demux.demultiplexLogDirName )
     demux.demultiplexScriptLogFilePath  = os.path.join( demux.demultiplexLogDirPath, demux.scriptRunLogFileName )
-    demux.demuxBcl2FastqLogFilePath     = os.path.join( demux.demultiplexLogDirPath, demux.bcl2FastqLogFileName )
     demux.fastQCLogFilePath             = os.path.join( demux.demultiplexLogDirPath, demux.fastqcLogFileName )
     demux.mutliQCLogFilePath            = os.path.join( demux.demultiplexLogDirPath, demux.multiqcLogFileName )
     demux.sampleSheetArchiveFilePath    = os.path.join( demux.sampleSheetDirPath,    demux.RunID + demux.csvSuffix ) # .dot is included in csvSuffix
@@ -2159,15 +2156,12 @@ def setupEnvironment( RunID ):
         'rtaCompleteFilePath'           : "",
         'sampleSheetFilePath'           : "",
         'demultiplexRunIdDir'           : "",
-        'demultiplexQCDirPath'          : "",
         'demultiplexLogDirPath'         : "",
-        'demuxQCDirectoryName'          : "",
         'demuxQCDirectoryPath'          : "",
         'demuxRunLogFilePath'           : "",
         'demuxCumulativeLogFilePath'    : "",
         'demultiplexLogDirPath'         : "",
         'demultiplexScriptLogFilePath'  : "",
-        'demuxBcl2FastqLogFilePath'     : "",
         'bcl2FastqLogFile'              : "",
         'forTransferRunIdDir'           : "",
         'forTransferQCtarFile'          : "",
@@ -2184,15 +2178,12 @@ def setupEnvironment( RunID ):
     demux.globalDictionary[ 'rtaCompleteFilePath'          ] = demux.rtaCompleteFilePath
     demux.globalDictionary[ 'sampleSheetFilePath'          ] = demux.sampleSheetFilePath
     demux.globalDictionary[ 'demultiplexRunIdDir'          ] = demux.demultiplexRunIdDir
-    demux.globalDictionary[ 'demultiplexQCDirPath'         ] = demux.demultiplexQCDirPath
     demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
-    demux.globalDictionary[ 'demuxQCDirectoryName'         ] = demux.demuxQCDirectoryName
     demux.globalDictionary[ 'demuxQCDirectoryPath'         ] = demux.demuxQCDirectoryPath
     demux.globalDictionary[ 'demuxRunLogFilePath'          ] = demux.demuxRunLogFilePath
     demux.globalDictionary[ 'demuxCumulativeLogFilePath'   ] = demux.demuxCumulativeLogFilePath
     demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
     demux.globalDictionary[ 'demultiplexScriptLogFilePath' ] = demux.demultiplexScriptLogFilePath
-    demux.globalDictionary[ 'demuxBcl2FastqLogFilePath'    ] = demux.demuxBcl2FastqLogFilePath
     demux.globalDictionary[ 'bcl2FastqLogFile'             ] = demux.bcl2FastqLogFile
     demux.globalDictionary[ 'forTransferRunIdDir'          ] = demux.forTransferRunIdDir
     demux.globalDictionary[ 'forTransferQCtarFile'         ] = demux.forTransferQCtarFile
