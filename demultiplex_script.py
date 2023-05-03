@@ -399,14 +399,12 @@ class demux:
                 print( text )
             sys.exit( )
         else:
-            text1 = f"projectList:\t\t\t\t\t\t\t\t\t\t\t\t\t{projectList}"
-            text2 = f"newProjectNameList:\t\t\t\t\t\t\t\t\t\t\t\t{newProjectNameList}\n"
-            if loggerName in logging.Logger.manager.loggerDict.keys():
-                demuxLogger.info( text1 )
-                demuxLogger.info( text2 )
-            else:
-                print( text1 )
-                print( text2 )
+            text1 = f"projectList:"
+            text1 = f"{text1:{demux.spacing2}}{projectList}"
+            text2 = f"newProjectNameList:"
+            text2 = f"{text2:{demux.spacing2}}{newProjectNameList}\n"
+            demuxLogger.debug( text1 )
+            demuxLogger.debug( text2 )
 
         demux.projectList        = projectList          # no need to return anything, save everything in the object space
         demux.newProjectNameList = newProjectNameList
@@ -568,14 +566,14 @@ def createDemultiplexDirectoryStructure(  ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
 
-    demuxLogger.debug( f"demux.demultiplexRunIdDir\t\t\t{demux.demultiplexRunIdDir}" )
+    demuxLogger.debug( f"demultiplexRunIdDir\t\t\t{demux.demultiplexRunIdDir}" )
     demuxLogger.debug( f"demultiplexRunIdDir/demultiplexLogDir:\t\t{demux.demultiplexLogDirPath}" )
     demuxLogger.debug( f"demultiplexRunIdDir/demuxQCDirectory:\t\t{demux.demuxQCDirectoryPath}" )
 
     try:
         os.mkdir( demux.demultiplexRunIdDir )   # root directory for run
-        os.mkdir( demux.demultiplexLogDirPath ) # log directory for run
-        os.mkdir( demux.demuxQCDirectoryPath )  # QC directory  for run
+        os.mkdir( demux.demultiplexLogDirPath ) # log directory  for run
+        os.mkdir( demux.demuxQCDirectoryPath )  # QC directory   for run
     except FileExistsError as err:
         demuxFailureLogger.critical( f"File already exists! Exiting!\n{err}" )
         demuxLogger.critical( f"File already exists! Exiting!\n{err}" )
