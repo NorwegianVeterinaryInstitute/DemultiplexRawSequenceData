@@ -207,10 +207,15 @@ class demux:
     decodeScheme                    = "utf-8"
     footarfile                      = f"foo{tarSuffix}"      # class variable shared by all instances
     barzipfile                      = f"zip{zipSuffix}"
-    totalTasks                      = 0  
+    totalTasks                      = 0
+    tabSpace                        = 8 
     spacing1                        = 40
-    spacing2                        = 48
-    spacing3                        = 56
+    spacing2                        = spacing1 + tabSpace
+    spacing3                        = spacing2 + tabSpace
+    spacing4                        = spacing3 + tabSpace
+    spacing5                        = spacing4 + tabSpace
+    spacing6                        = spacing5 + tabSpace
+    spacing6                        = spacing6 + tabSpace
 
     ######################################################
     RunID                           = ""
@@ -625,7 +630,8 @@ def demultiplex( ):
         f"{demux.demultiplexRunIdDir}"
     ]
 
-    demuxLogger.debug( f"Command to execute:\t\t\t\t" + " ".join( argv ) )
+    text = f"Command to execute:"
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + " ".join( argv ) )
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
@@ -676,7 +682,8 @@ def demultiplex( ):
         sys.exit( )
     else:
         filesize = os.path.getsize( demux.bcl2FastqLogFile )
-        demuxLogger.debug( f"bcl2FastqLogFile:\t\t\t\t{demux.bcl2FastqLogFile} is {filesize} bytes.\n")
+        text = "bcl2FastqLogFile:"
+        demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{demux.bcl2FastqLogFile} is {filesize} bytes.\n")
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Demultiplexing finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -762,11 +769,12 @@ def renameFiles( ):
             demuxLogger.debug( f"Test project '{demux.testProject}' detected. Skipping." )
             continue
 
-        compressedFastQfilesDir = f"{demux.demultiplexRunIdDir}/{project}"
+        compressedFastQfilesDir = os.path.join( demux.demultiplexRunIdDir, project )
+        # text1 = termcolor.colored( "Now working on project:", color="cyan", attrs=["reverse"] )
         text1 = "Now working on project:"
         text2 = "compressedFastQfilesDir:"
-        demuxLogger.debug( termcolor.colored( f"{text1:{demux.spacing1}}{project}", color="cyan", attrs=["reverse"] ) )
-        demuxLogger.debug( f"{text2:{demux.spacing1}}{compressedFastQfilesDir}")
+        demuxLogger.debug( termcolor.colored( f"{text1:{demux.spacing2 - 1}}", color="cyan", attrs=["reverse"] ) + " " + termcolor.colored( f"{project}", color="cyan", attrs=["reverse"] ) )
+        demuxLogger.debug( f"{text2:{demux.spacing2}}{compressedFastQfilesDir}")
 
         filesToSearchFor     = os.path.join( compressedFastQfilesDir, '*' + demux.compressedFastqSuffix )
         compressedFastQfiles = glob.glob( filesToSearchFor )            # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
@@ -781,29 +789,29 @@ def renameFiles( ):
             sys.exit( )
 
         text1 = "fastq files for " + project + ":"
-        demuxLogger.debug( f"{text1:{demux.spacing1}}{filesToSearchFor}" )
+        demuxLogger.debug( f"{text1:{demux.spacing2}}{filesToSearchFor}" )
 
         for index, item in enumerate( compressedFastQfiles ):
             text1 = "compressedFastQfiles[" + str(index) + "]:"
-            demuxLogger.debug( f"{text1:{demux.spacing1}}{item}" )
+            demuxLogger.debug( f"{text1:{demux.spacing3}}{item}" )
 
 
-        for file in compressedFastQfiles:
+        demuxLogger.debug( "-----------------")
+        demuxLogger.debug( f"Move commands to execute:" )
+        for file in compressedFastQfiles: # compressedFastQfiles is already in absolute path format
     
             # get the base filename. We picked up sample*.{CompressedFastqSuffix} and we have to rename it to {demux.RunIDShort}sample*.{CompressedFastqSuffix}
             baseFileName = os.path.basename( file )
-            demuxLogger.debug( "-----------------")
-            demuxLogger.debug( f"baseFilename:\t\t\t\t\t{baseFileName}")
 
-            oldname     = f"{file}"
+            oldname     = file
             newname     = os.path.join( demux.demultiplexRunIdDir, project, demux.RunIDShort + baseFileName )
             renamedFile = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project, demux.RunIDShort + baseFileName ) # saving this var to use later when renaming directories
 
             if renamedFile not in demux.newProjectFileList:
                 demux.newProjectFileList.append( renamedFile ) # demux.newProjectFileList is used in fastQC( )
 
-            demuxLogger.debug( f"file:\t\t\t\t\t\t{file}")
-            demuxLogger.debug( f"command to execute:\t\t\t\t/usr/bin/mv {oldname} {newname}\n" )
+            text  = f"/usr/bin/mv {oldname} {newname}"
+            demuxLogger.debug( " "*demux.spacing2 + text )
             
             # make sure oldname files exist
             # make sure newname files do not exist
@@ -826,6 +834,9 @@ def renameFiles( ):
                     demuxLogger.critical( f"{ text }" )
                     logging.shutdown( )
                     sys.exit( )
+        demuxLogger.debug( "-----------------")
+
+    breakpoint( )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="red" ) )
 
@@ -865,10 +876,13 @@ def renameFilesAndDirectories( ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Renaming started ==", color="green", attrs=["bold"] ) )
 
 
-    demuxLogger.debug( f"demux.demultiplexRunIdDir:\t\t\t{demux.demultiplexRunIdDir}")    # tabulation error
-    demuxLogger.debug( f"demux.RunIDShort:\t\t\t\t{demux.RunIDShort}")
+    text = f"demultiplexRunIdDir:"
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexRunIdDir )    # tabulation error
+    text = f"RunIDShort:"
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.RunIDShort )
     if demux.verbosity == 2:
-        demuxLogger.debug( f"demux.projectList:\t\t\t\t{demux.projectList}")
+        text = "demux.projectList:"
+        demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.projectList )
 
     renameFiles( )
     renameDirectories( )
@@ -981,9 +995,12 @@ def prepareMultiQC( ):
             zipFiles.append( globZipFiles )  # source zip files
             HTMLfiles.append( globZipFiles  )  # source html files
 
-        demuxLogger.debug( termcolor.colored( f"Now working on project:\t\t\t\t\"{project}\"", color="cyan", attrs=["reverse"] ) )
-        demuxLogger.debug( f"zipFiles:\t\t\t\t\t{zipFiles}"                               )
-        demuxLogger.debug( f"HTMLfiles:\t\t\t\t\t{HTMLfiles}"                             )
+        text = termcolor.colored( f"Now working on project:", color="cyan", attrs=["reverse"] ) 
+        demuxLogger.debug( f"{text:{demux.spacing3}}" + {project} )
+        text = f"zipFiles:"
+        demuxLogger.debug( f"{text:{demux.spacing4}}" + " ".join( zipFiles )                  )
+        text = f"HTMLfiles:"
+        demuxLogger.debug( f"{text:{demux.spacing4}}" + " ".join( HTMLfiles )                 )
 
     if ( not zipFiles[0] or not HTMLfiles[0] ):
         demuxLogger.critical( f"zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.demultiplexRunIdDir}. Exiting.")
@@ -2283,7 +2300,6 @@ def main( RunID ):
     demultiplex( )                                                                                      # use blc2fastq to convert .bcl files to fastq.gz
     renameFilesAndDirectories( )                                                                        # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
     qualityCheck( )                                                                                     # execute QC on the incoming fastq files
-
     calcFileHash( demux.demultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIdDir
     changePermissions( demux.demultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
     prepareDelivery( )                                                                                  # prepare the delivery files
