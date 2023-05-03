@@ -741,7 +741,8 @@ def renameDirectories( ):
             demuxLogger.debug( f"Renaming " + termcolor.colored(  f"{oldname:92}", color="cyan", attrs=["reverse"] ) + " to " + termcolor.colored(  f"{newname:106}", color="yellow", attrs=["reverse"] ) )
 
     for index, item in enumerate( demux.newProjectFileList ):
-        demuxLogger.debug( f"demux.newProjectFileList[{index}]:\t\t\t\t{item}") # make sure the debugging output is all lined up.
+        text = f"demux.newProjectFileList[{index}]:"
+        demuxLogger.debug( f"{text:{demux.spacing3}}" + item) # make sure the debugging output is all lined up.
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Renaming project directories from project_name to RunIDShort.project_name ==\n", color="red", attrs=["bold"] ) )
 
@@ -788,8 +789,8 @@ def renameFiles( ):
             demuxLogger.critical( text )
             sys.exit( )
 
-        text1 = "fastq files for " + project + ":"
-        demuxLogger.debug( f"{text1:{demux.spacing2}}{filesToSearchFor}" )
+        text = "fastq files for '" + project + "':"
+        demuxLogger.debug( f"{text:{demux.spacing2}}{filesToSearchFor}" )
 
         for index, item in enumerate( compressedFastQfiles ):
             text1 = "compressedFastQfiles[" + str(index) + "]:"
@@ -811,7 +812,7 @@ def renameFiles( ):
                 demux.newProjectFileList.append( renamedFile ) # demux.newProjectFileList is used in fastQC( )
 
             text  = f"/usr/bin/mv {oldname} {newname}"
-            demuxLogger.debug( " "*demux.spacing2 + text )
+            demuxLogger.debug( " "*demux.spacing1 + text )
             
             # make sure oldname files exist
             # make sure newname files do not exist
@@ -985,20 +986,26 @@ def prepareMultiQC( ):
         
         if not globZipFiles or not globHTMLFiles:
             demuxLogger.debug( f"globZipFiles or globHTMLFiles came back empty on project {project}" )
-            demuxLogger.debug( f"demux.DemultiplexRunIdDir/project:\t\t\t\t{demux.demultiplexRunIdDir}/{project}/" )
-            demuxLogger.debug( f"globZipFiles:\t\t\t\t{globZipFiles}")
-            demuxLogger.debug( f"globHTMLFiles:\t\t\t\t{globZipFiles}")
+            text = "DemultiplexRunIdDir/project:"
+            demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{demux.demultiplexRunIdDir}/{project}" )
+            text = "globZipFiles:"
+            demuxLogger.debug( f"{text:{demux.spacing3}}" + f"{ ' '.join( globZipFiles ) }"          )
+            text = "globHTMLFiles:"
+            demuxLogger.debug( f"{text:{demux.spacing3}}" + f"{ ' '.join( globZipFiles ) }"          )
             continue
         else:
-            zipFiles.append( globZipFiles )  # source zip files
+            zipFiles.append( globZipFiles )    # source zip files
             HTMLfiles.append( globZipFiles  )  # source html files
 
-        text = termcolor.colored( f"Now working on project:", color="cyan", attrs=["reverse"] ) 
-        demuxLogger.debug( f"{text:{demux.spacing3}}" + {project} )
-        text = f"zipFiles:"
-        demuxLogger.debug( f"{text:{demux.spacing4}}" + " ".join( zipFiles )                  )
-        text = f"HTMLfiles:"
-        demuxLogger.debug( f"{text:{demux.spacing4}}" + " ".join( HTMLfiles )                 )
+        text  = termcolor.colored( f"Now working on project:", color="cyan", attrs=["reverse"] ) 
+        demuxLogger.debug( f"{text:{demux.spacing3}}" + project                                )
+        text  = f"zipFiles:"
+        breakpoint( )
+        text1 = " ".join( *zipFiles )
+        demuxLogger.debug( f"{text:{demux.spacing3}}" + text1                                  )
+        text  = f"HTMLfiles:"
+        text1 = " ".join( *HTMLfiles )
+        demuxLogger.debug( f"{text:{demux.spacing3}}" + text1                                  )
 
     if ( not zipFiles[0] or not HTMLfiles[0] ):
         demuxLogger.critical( f"zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.demultiplexRunIdDir}. Exiting.")
