@@ -1394,9 +1394,9 @@ def tarProjectFiles( ):
             demuxLogger.debug( f"{project:{demux.spacing2}} added to projectsToProcess." )
 
     text = "projectsToProcess:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + projectsToProcess )
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{projectsToProcess}" )
     text = "len(projectsToProcess):"
-    demuxLogger.debug( f"{text:{demux.spacing}}" + f"{len( projectsToProcess )}" )
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{len( projectsToProcess )}" )
     for project in projectsToProcess:               # create the directories for the individual project e.g. 
                                                     # if project is APEC-Seq it will create {demux.forTransferRunIdDir}/{demux.RunIDShort}.{project}
                                                     # /data/for_transfer/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578.APEC-Seq/
