@@ -610,7 +610,7 @@ def prepareForTransferDirectoryStructure( ):
 
 
     # ensure that demux.forTransferDir (/data/for_transfer) exists
-    if not os. path. isdir( demux.ForTransferDir ):
+    if not os. path. isdir( demux.forTransferDir ):
         text = f"{demux.forTransferDir} does not exist! Please re-run the ansible playbook! Exiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
@@ -1659,16 +1659,8 @@ def prepareDelivery( ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for delivery started ==", color="green", attrs=["bold"] ) )
 
 
-    # create the root directory for this run
-    try:
-        os.mkdir( demux.forTransferRunIdDir ) # we save each tar file into its own directory
-    except FileExistsError as err:
-        text = [
-            f"Error while trying to mkdir {project}",
-            f"Error message: { str( err ) }",
-            "Exiting."
-        ]
-        text = '\n'.join( text )
+    if not os.path.isdir( demux.forTransferRunIdDir ): # we save each tar file into its own directory
+        text = f"Error: {demux.forTransferRunIdDir} does not exist. Exiting."
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
@@ -1755,8 +1747,8 @@ def tarFileQualityCheck ( RunID ):
 #---- Step 1: create a /data/for_transfer/RunID/test directory -------------------------------------------------------------------------------------------
 
     # ensure that demux.forTransferDir (/data/for_transfer) exists
-    if not os. path. isdir( demux.ForTransferDir ):
-        text = f"{demux.ForTransferDir} does not exist! Please re-run the ansible playbook! Exiting!"
+    if not os. path. isdir( demux.forTransferDir ):
+        text = f"{demux.forTransferDir} does not exist! Please re-run the ansible playbook! Exiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
