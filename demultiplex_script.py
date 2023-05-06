@@ -1529,8 +1529,6 @@ def createQcTarFile( ):
 
     demuxLogger.info( termcolor.colored( f"==> Archiving {demux.demuxQCDirectoryPath} =================", color="yellow", attrs=["bold"] ) )
 
-    tarQCFileHandle = ""
-
     if demux.verbosity == 2:
         demuxLogger.debug( f"demuxQCDirectoryPath:\t{demux.demuxQCDirectoryPath}" )
         demuxLogger.debug( f"multiqc_data:\t\t{demux.multiqc_data}" )
@@ -1554,8 +1552,8 @@ def createQcTarFile( ):
             text = "filenameToTar:"
             text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
             demuxLogger.info( text + filenameToTar )
-            tarQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
 
+    tarQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
     demux.tarFileStack.append( demux.forTransferQCtarFile ) # list of archived tar files, we will use them with lstat later ot see if they pass untarring quality control
 
     demuxLogger.info( termcolor.colored( f"==> Archived {demux.demuxQCDirectoryPath} ==================", color="yellow", attrs=["bold"] ) )
@@ -1574,7 +1572,7 @@ def createMultiQcTarFile( ):
     demuxLogger.info( termcolor.colored( f"==> Archiving {demux.multiqc_data} ==================", color="yellow", attrs=["bold"] ) )
 
     if os.path.isfile( demux.forTransferQCtarFile ): # /data/for_transfer/RunID/qc.tar must exist before writi
-        tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "a:" ) # "a:" for exclusive, uncompresed append.
+        multiQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "a:" ) # "a:" for exclusive, uncompresed append.
     else:
         text = f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting."
         demuxFailureLogger.critical( f"{ text }" )
@@ -1588,13 +1586,13 @@ def createMultiQcTarFile( ):
             # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
             # of output that make users uncomfortable
             filenameToTar = os.path.join( demux.multiqc_data, file )
-            tarQCFileHandle.add( name = filenameToTar, recursive = False )
+            multiQCFileHandle.add( name = filenameToTar, recursive = False )
             text = "filenameToTar"
             text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
             demuxLogger.info( text + filenameToTar )
 
-    # both {demux.RunIDShort}_QC and multidata_qc go in the same tar file
-    tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
+    # bothisfiledemux.RunIDShort}_QC and multidata_qc go in the same tar file
+    multiQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
     demuxLogger.info( termcolor.colored( f"==> Archived {demux.multiqc_data} ==================", color="yellow", attrs=["bold"] ) )    
 
 
@@ -1681,7 +1679,7 @@ def prepareDelivery( ):
 # Water Control Negative report
 ########################################################################
 
-def controlProjectsQC ( RunID ):
+def controlProjectsQC(  ):
     """
     This function creeates a report if any water 1 samples are submitted for sequence ( and subsequently, analysis )
 
@@ -1704,7 +1702,7 @@ def controlProjectsQC ( RunID ):
 # Perform a sha512 comparision
 ########################################################################
 
-def sha512FileQualityCheck ( RunID ):
+def sha512FileQualityCheck(  ):
     """
     re-perform (quietly) the sha512 calculation and compare that with the result on file for the specific file.
     """
@@ -1721,7 +1719,7 @@ def sha512FileQualityCheck ( RunID ):
 # tarFileQualityCheck: verify tar files before upload
 ########################################################################
 
-def tarFileQualityCheck ( RunID ):
+def tarFileQualityCheck(  ):
     """
     Perform a final quality check on the tar files before uploading them.
     If there are errors in the untarring or the sha512 check, halt.
