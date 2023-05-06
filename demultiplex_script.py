@@ -1329,7 +1329,7 @@ def changePermissions( path ):
         # change ownership and access mode of files
         for file in filenames:
             filepath = os.path.join( directoryRoot, file )
-            demuxLogger.debug( " "*demux.spacing1 + f"chmod 644 {filepath}" ) # print chmod 644 {dirpath}
+            demuxLogger.debug( " "*demux.spacing2 + f"chmod 644 {filepath}" ) # print chmod 644 {dirpath}
 
             if not os.path.isfile( filepath ):
                 text = f"{filepath} is not a file. Exiting." 
@@ -1361,7 +1361,7 @@ def changePermissions( path ):
         for name in dirnames:
             dirpath = os.path.join( directoryRoot, name )
 
-            demuxLogger.debug( " "*demux.spacing1 + f"chmod 644 {dirpath}" ) # print chmod 755 {dirpath}
+            demuxLogger.debug( " "*demux.spacing2 + f"chmod 644 {dirpath}" ) # print chmod 755 {dirpath}
 
             if not os.path.isdir( dirpath ):
                 text = f"{dirpath} is not a directory. Exiting."
@@ -1798,8 +1798,6 @@ def tarFileQualityCheck(  ):
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Tar files quaility check finished ==", color="red", attrs=["bold"] ) )
 
-    sys.exit( )
-
 
 
 
@@ -1808,7 +1806,7 @@ def tarFileQualityCheck(  ):
 # script_completion_file
 ########################################################################
 
-def scriptComplete( ):
+def scriptComplete(  ):
     """
     Create the {DemultiplexDir}/{demux.DemultiplexCompleteFile} file to signal that this script has finished
     """
@@ -1832,7 +1830,7 @@ def scriptComplete( ):
 # deliverFilesToVIGASP
 ########################################################################
 
-def deliverFilesToVIGASP( RunID ):
+def deliverFilesToVIGASP(  ):
     """
     Write the uploader file needed to upload the data to VIGASP and then
         upload the relevant files.
@@ -1850,7 +1848,7 @@ def deliverFilesToVIGASP( RunID ):
 # deliverFilesToNIRD
 ########################################################################
 
-def deliverFilesToNIRD( RunID ):
+def deliverFilesToNIRD(  ):
     """
     Make connection to NIRD and upload the data
     """
