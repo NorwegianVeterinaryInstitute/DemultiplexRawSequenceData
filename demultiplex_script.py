@@ -1733,7 +1733,7 @@ def tarFileQualityCheck(  ):
         Step 4: recalculate sha512 hash for each file
         compare result with hash file on disk
             stuff result in sql database?
-        delete {demux.forTransferRunIdDir}/{demux.forTransferRunIDdirTest} and contents
+        delete {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} and contents
         return True/false depending on answer
 
     INPUT
@@ -1753,8 +1753,8 @@ def tarFileQualityCheck(  ):
         sys.exit( )    
 
     try: 
-        forTransferRunIDdirTest = os.path.join( demux.forTransferRunIdDir,demux.forTransferRunIdDirTestName )
-        os.mkdir( forTransferRunIDdirTest )
+        forTransferRunIdDirTestName = os.path.join( demux.forTransferRunIdDir,demux.forTransferRunIdDirTestName )
+        os.mkdir( forTransferRunIdDirTestName )
     except Exception as err:
         text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
         demuxFailureLogger.critical( f"{ text }" )
@@ -1769,17 +1769,17 @@ def tarFileQualityCheck(  ):
     # get a copy of the sha512 files, as well
     transfterSha512Files = glob.glob( f"{demux.forTransferRunIdDir}/*.sha512")
     #
-    # then copy them into forTransferRunIDdirTest
+    # then copy them into forTransferRunIdDirTestName
 
 #---- Step 3: untar files under /data/for_transfer/RunID/test -------------------------------------------------------------------------------------------
-    transferTarTestFiles = glob.glob( f"{demux.forTransferRunIdDir}/{demux.forTransferRunIDdirTest}/*.tar" )
+    transferTarTestFiles = glob.glob( f"{demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName}/*.tar" )
     for tarfile in transferTarTestFiles:
         try:
             tarHandle = tarfile.open( name = tarfile, mode = 'r', fileobj = None, bufsize = 10240 )
-            tarHandle.extractall( forTransferRunIDdirTest )
+            tarHandle.extractall( forTransferRunIdDirTestName )
             tarHandle.close( )
         except Exception as err:
-            text = f"{forTransferRunIDdirTest}/{tarfile} cannot be created: { str( err ) }\nExiting!"
+            text = f"{forTransferRunIdDirTestName}/{tarfile} cannot be created: { str( err ) }\nExiting!"
             demuxFailureLogger.critical( f"{ text }" )
             demuxLogger.critical( f"{ text }" )
             logging.shutdown( )
@@ -1791,7 +1791,7 @@ def tarFileQualityCheck(  ):
 #---- Step 5: compare result with hash file on disk ------------------------------------------------------------------------------------------------------
 
 
-#---- Step 6: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIDdirTest} and contents ------------------------------------------------------------
+#---- Step 6: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} and contents ------------------------------------------------------------
 
 
 #---- Step 7: return True/false depending on answer ------------------------------------------------------------------------------------------------------
