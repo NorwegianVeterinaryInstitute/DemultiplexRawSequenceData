@@ -225,7 +225,7 @@ class demux:
     demultiplexLogDirPath           = ""
     demultiplexScriptLogFilePath    = ""
     demuxQCDirectoryName            = ""
-    demuxQCDirectoryPath            = ""
+    demuxQCDirectoryFullPath        = ""
     forTransferRunIDdir             = ""
     forTransferQCtarFile            = ""
     sampleSheetFilePath             = os.path.join( sampleSheetDirPath, sampleSheetFileName )
@@ -571,14 +571,18 @@ def createDemultiplexDirectoryStructure(  ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
 
-    demuxLogger.debug( f"demultiplexRunIdDir\t\t\t{demux.demultiplexRunIdDir}" )
-    demuxLogger.debug( f"demultiplexRunIdDir/demultiplexLogDir:\t\t{demux.demultiplexLogDirPath}" )
-    demuxLogger.debug( f"demultiplexRunIdDir/demuxQCDirectory:\t\t{demux.demuxQCDirectoryPath}" )
+    text = "demultiplexRunIdDir:"
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexRunIdDir )
+    text = "demultiplexRunIdDir/demultiplexLogDir:"
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexLogDirPath )
+    text = "demultiplexRunIdDir/demuxQCDirectory:"
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demuxQCDirectoryFullPath )
 
+    # using absolute path names here
     try:
-        os.mkdir( demux.demultiplexRunIdDir )   # root directory for run
-        os.mkdir( demux.demultiplexLogDirPath ) # log directory  for run
-        os.mkdir( demux.demuxQCDirectoryPath )  # QC directory   for run
+        os.mkdir( demux.demultiplexRunIdDir )       # root directory for run
+        os.mkdir( demux.demultiplexLogDirPath )     # log directory  for run
+        os.mkdir( demux.demuxQCDirectoryFullPath )  # QC directory   for run
     except FileExistsError as err:
         demuxFailureLogger.critical( f"File already exists! Exiting!\n{err}" )
         demuxLogger.critical( f"File already exists! Exiting!\n{err}" )
@@ -960,6 +964,7 @@ def fastQC( ):
             sys.exit( )
 
     # log FastQC output
+    fastQCLogFileHandle = ""
     try: 
         fastQCLogFileHandle = open( demux.fastQCLogFilePath, "x" ) # fail if file exists
         if demux.verbosity == 2:
@@ -1527,10 +1532,10 @@ def createQcTarFile( ):
 
     """
 
-    demuxLogger.info( termcolor.colored( f"==> Archiving {demux.demuxQCDirectoryPath} =================", color="yellow", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> Archiving {demux.demuxQCDirectoryFullPath} =================", color="yellow", attrs=["bold"] ) )
 
     if demux.verbosity == 2:
-        demuxLogger.debug( f"demuxQCDirectoryPath:\t{demux.demuxQCDirectoryPath}" )
+        demuxLogger.debug( f"demuxQCDirectoryFullPath:\t{demux.demuxQCDirectoryFullPath}" )
         demuxLogger.debug( f"multiqc_data:\t\t{demux.multiqc_data}" )
 
     if not os.path.isfile( demux.forTransferQCtarFile ): # exit if /data/for_transfer/RunID/qc.tar file exists.
@@ -1542,12 +1547,14 @@ def createQcTarFile( ):
         logging.shutdown( )
         sys.exit( )
 
-    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.demultiplexRunIdDir, demux.demuxQCDirectoryPath ), followlinks = False ): 
+    # os.chdir( demux.demultiplexRunIdDir ) # this chdir() is essential because it allows you to create a tar file with relative directories 
+
+    for directoryRoot, dirnames, filenames, in os.walk( demux.demuxQCDirectoryName  , followlinks = False ): 
          for file in filenames:
             # add one file at a time so we can give visual feedback to the Archivinguser that the script is processing files
             # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
             # of output that make users uncomfortable
-            filenameToTar = os.path.join( demux.demuxQCDirectoryPath, file )
+            filenameToTar = os.path.join( demux.demuxQCDirectoryName, file ) # demux.demuxQCDirectoryName is relative, for example '220603_M06578_QC'
             tarQCFileHandle.add( name = filenameToTar, recursive = False )
             text = "filenameToTar:"
             text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
@@ -1556,7 +1563,7 @@ def createQcTarFile( ):
     tarQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
     demux.tarFileStack.append( demux.forTransferQCtarFile ) # list of archived tar files, we will use them with lstat later ot see if they pass untarring quality control
 
-    demuxLogger.info( termcolor.colored( f"==> Archived {demux.demuxQCDirectoryPath} ==================", color="yellow", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> Archived {demux.demuxQCDirectoryFullPath} ==================", color="yellow", attrs=["bold"] ) )
 
 
 
@@ -2216,7 +2223,7 @@ def setupEnvironment( RunID ):
     demux.demultiplexRunIdDir           = os.path.join( demux.demultiplexDir,       demux.RunID + demux.demultiplexDirSuffix ) 
     demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIdDir,  demux.demultiplexLogDirName ) 
     demux.demuxQCDirectoryName          = demux.RunIDShort + demux.qcSuffix              # example: 200624_M06578_QC  # QCSuffix is defined in object demux
-    demux.demuxQCDirectoryPath          = os.path.join( demux.demultiplexRunIdDir,  demux.demuxQCDirectoryName  )
+    demux.demuxQCDirectoryFullPath      = os.path.join( demux.demultiplexRunIdDir,  demux.demuxQCDirectoryName  )
     demux.bcl2FastqLogFile              = os.path.join( demux.demultiplexRunIdDir,  demux.demultiplexLogDirPath, demux.bcl2FastqLogFileName )
 ######################################################
     demux.forTransferRunIdDir           = os.path.join( demux.forTransferDir,       demux.RunID )
@@ -2241,7 +2248,7 @@ def setupEnvironment( RunID ):
         'sampleSheetFilePath'           : str( ),
         'demultiplexRunIdDir'           : str( ),
         'demultiplexLogDirPath'         : str( ),
-        'demuxQCDirectoryPath'          : str( ),
+        'demuxQCDirectoryFullPath'      : str( ),
         'demuxRunLogFilePath'           : str( ),
         'demuxCumulativeLogFilePath'    : str( ),
         'demultiplexLogDirPath'         : str( ),
@@ -2265,7 +2272,7 @@ def setupEnvironment( RunID ):
     demux.globalDictionary[ 'sampleSheetFilePath'          ] = demux.sampleSheetFilePath
     demux.globalDictionary[ 'demultiplexRunIdDir'          ] = demux.demultiplexRunIdDir
     demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
-    demux.globalDictionary[ 'demuxQCDirectoryPath'         ] = demux.demuxQCDirectoryPath
+    demux.globalDictionary[ 'demuxQCDirectoryFullPath'     ] = demux.demuxQCDirectoryFullPath
     demux.globalDictionary[ 'demuxRunLogFilePath'          ] = demux.demuxRunLogFilePath
     demux.globalDictionary[ 'demuxCumulativeLogFilePath'   ] = demux.demuxCumulativeLogFilePath
     demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
