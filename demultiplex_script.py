@@ -595,6 +595,41 @@ def createDemultiplexDirectoryStructure(  ):
 
 
 
+
+########################################################################
+# demultiplex
+########################################################################
+
+def prepareForTransferDirectoryStructure( ):
+    """
+    create /data/for_transfer/RunID and any required subdirectories
+    """
+
+    demux.n = demux.n + 1
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Create delivery directory structure under {demux.forTransferRunIdDir} started ==", color="green", attrs=["bold"] ) )
+
+
+    # ensure that demux.forTransferDir (/data/for_transfer) exists
+    if not os. path. isdir( demux.ForTransferDir ):
+        text = f"{demux.forTransferDir} does not exist! Please re-run the ansible playbook! Exiting!"
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )    
+
+    try:
+        os.mkdir( demux.forTransferRunIdDir )       # try to create the demux.forTransferRunIdDir directory ( /data/for_transfer/220603_M06578_0105_000000000-KB7MY )
+    except e as err:
+        text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )
+
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks:  Create delivery directory structure under {demux.forTransferRunIdDir} ==\n", color="red", attrs=["bold"] ) )
+
+
+
 ########################################################################
 # demultiplex
 ########################################################################
@@ -1419,7 +1454,6 @@ def tarProjectFiles( ):
             logging.shutdown( )
             sys.exit( )
 
-    breakpoint( )
 #---------- Use the projectsToProcess list to tar files demux data.demultiplexRunID to demux.forTransferRunIdDir   ----------------------
 
     counter = 0         # used in counting how many projects we have archived so far
@@ -1520,7 +1554,7 @@ def createQcTarFile( ):
             text = "filenameToTar:"
             text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
             demuxLogger.info( text + filenameToTar )
-            tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
+            tarQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
 
     demux.tarFileStack.append( demux.forTransferQCtarFile ) # list of archived tar files, we will use them with lstat later ot see if they pass untarring quality control
 
@@ -1720,22 +1754,13 @@ def tarFileQualityCheck ( RunID ):
 
 #---- Step 1: create a /data/for_transfer/RunID/test directory -------------------------------------------------------------------------------------------
 
-    # ensure that demux.ForTransferDir (/data/for_transfer) exists
+    # ensure that demux.forTransferDir (/data/for_transfer) exists
     if not os. path. isdir( demux.ForTransferDir ):
         text = f"{demux.ForTransferDir} does not exist! Please re-run the ansible playbook! Exiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
         sys.exit( )    
-
-    try:
-        os.mkdir( demux.forTransferRunIdDir )       # try to create the demux.forTransferRunIdDir directory ( /data/for_transfer/220603_M06578_0105_000000000-KB7MY )
-    except e as err:
-        text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )
 
     try: 
         forTransferRunIDdirTest = os.join( demux.forTransferRunIdDir,demux.forTransferRunIdDirTestName )
@@ -2352,6 +2377,7 @@ def main( RunID ):
     qualityCheck( )                                                                                     # execute QC on the incoming fastq files
     calcFileHash( demux.demultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIdDir
     changePermissions( demux.demultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
+    prepareForTransferDirectoryStructure( )                                                             # create /data/for_transfer/RunID and any required subdirectories
     prepareDelivery( )                                                                                  # prepare the delivery files
     calcFileHash( demux.forTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIdDir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
     changePermissions( demux.forTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
