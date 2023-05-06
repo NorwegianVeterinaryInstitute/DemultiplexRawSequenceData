@@ -1753,9 +1753,9 @@ def tarFileQualityCheck(  ):
         sys.exit( )    
 
     try: 
-        forTransferRunIDdirTest = os.join( demux.forTransferRunIdDir,demux.forTransferRunIdDirTestName )
+        forTransferRunIDdirTest = os.path.join( demux.forTransferRunIdDir,demux.forTransferRunIdDirTestName )
         os.mkdir( forTransferRunIDdirTest )
-    except e as err:
+    except Exception as err:
         text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
@@ -1778,7 +1778,7 @@ def tarFileQualityCheck(  ):
             tarHandle = tarfile.open( name = tarfile, mode = 'r', fileobj = None, bufsize = 10240 )
             tarHandle.extractall( forTransferRunIDdirTest )
             tarHandle.close( )
-        except e as err:
+        except Exception as err:
             text = f"{forTransferRunIDdirTest}/{tarfile} cannot be created: { str( err ) }\nExiting!"
             demuxFailureLogger.critical( f"{ text }" )
             demuxLogger.critical( f"{ text }" )
@@ -1819,7 +1819,7 @@ def scriptComplete( ):
     try:
         file = os.path.join( demux.demultiplexRunIdDir, demux.demultiplexCompleteFile )
         pathlib.Path( file ).touch( mode=644, exist_ok=False)
-    except Exception as e:
+    except Exception as e:  
         demuxLogger.critical( f"{file} already exists. Please delete it before running {__file__}.\n")
         sys.exit( )
 
