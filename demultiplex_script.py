@@ -1439,13 +1439,13 @@ def tarProjectFiles( ):
     text = "len(projectsToProcess):"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{len( projectsToProcess )}" )
 
-#---------- change the current working directory to demux data.demultiplexRunID, so we can get nice relative paths  ----------------------
+#---------- change the current working directory to demux.demultiplexRunIdDir, so we can get nice relative paths  ----------------------
 
-    os.chdir( demux.demultiplexRunID )
+    os.chdir( demux.demultiplexRunIdDir )
 
-#---------- Use the projectsToProcess list to tar files demux data.demultiplexRunID to demux.forTransferRunIdDir  ----------------------
+#---------- Use the projectsToProcess list to tar files demux.demultiplexRunIdDir to demux.forTransferRunIdDir  ----------------------
 
-    # this mean that while we are sitting in data.demultiplexRunID, we are saving tar files under demux.forTransferRunIdDir
+    # this mean that while we are sitting in data.demultiplexRunIdDir, we are saving tar files under demux.forTransferRunIdDir
     counter = 0         # used in counting how many projects we have archived so far
     for project in projectsToProcess:
 
@@ -1453,7 +1453,7 @@ def tarProjectFiles( ):
 
         tarFile    = os.path.join(  demux.forTransferRunIdDir, project + demux.tarSuffix )
         text = "tarFile:"
-        demuxLogger.debug( f"{text:{demux.spacing2}}" + os.join( demux.forTransferRunIdDir, tarFile ) )  # print the absolute path
+        demuxLogger.debug( f"{text:{demux.spacing2}}" + os.path,join( demux.forTransferRunIdDir, tarFile ) )  # print the absolute path
 
         if not os.path.isfile( tarFile ):                                   # Using absolute path to open the tar file
             tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
@@ -2160,10 +2160,9 @@ def printRunningEnvironment( ):
                 demuxLogger.debug( "=============================================================================")
             
             demuxLogger.debug( text )
+
     demuxLogger.debug( "=============================================================================")
 
-    text = "tar files to be created:"
-    demuxLogger.debug( text )
     for index, project in enumerate( demux.globalDictionary[ 'newProjectNameList' ] ):
 
         if any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
