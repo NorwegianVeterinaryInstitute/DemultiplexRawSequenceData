@@ -1547,8 +1547,6 @@ def createQcTarFile( ):
         logging.shutdown( )
         sys.exit( )
 
-    # os.chdir( demux.demultiplexRunIdDir ) # this chdir() is essential because it allows you to create a tar file with relative directories 
-
     for directoryRoot, dirnames, filenames, in os.walk( demux.demuxQCDirectoryName  , followlinks = False ): 
          for file in filenames:
             # add one file at a time so we can give visual feedback to the Archivinguser that the script is processing files
