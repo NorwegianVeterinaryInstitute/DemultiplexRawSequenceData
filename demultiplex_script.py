@@ -1441,7 +1441,7 @@ def tarProjectFiles( ):
 
 #---------- change the current working directory to demux data.demultiplexRunID, so we can get nice relative paths  ----------------------
 
-    os.chdir( data.demultiplexRunID )
+    os.chdir( demux.demultiplexRunID )
 
 #---------- Use the projectsToProcess list to tar files demux data.demultiplexRunID to demux.forTransferRunIdDir  ----------------------
 
@@ -2152,9 +2152,11 @@ def printRunningEnvironment( ):
         else:
             text = f"{key:{demux.spacing2}}" + value2           # if it is not a list, print the item but
             if key[0] != stateLetter:                           # if the first letter of this is different fr
-                stateLetter = key[0]
                 if re.search( logString, key, re.IGNORECASE):   # keep the *Log* variables together
+                    demuxLogger.debug( text )
                     continue
+                else:
+                    stateLetter = key[0]
                 demuxLogger.debug( "=============================================================================")
             
             demuxLogger.debug( text )
