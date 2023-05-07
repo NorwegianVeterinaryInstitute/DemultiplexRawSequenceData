@@ -1468,8 +1468,6 @@ def tarProjectFiles( ):
         demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {demux.demultiplexRunIdDir}/{project} ======================", attrs=["bold"] ) )
 
         tarFile    = os.path.join(  demux.forTransferRunIdDir, project + demux.tarSuffix )
-        text = "tarFile:"
-        demuxLogger.debug( f"{text:{demux.spacing2}}" + os.path.join( demux.forTransferRunIdDir, tarFile ) )  # print the absolute path
 
         if not os.path.isfile( tarFile ):                                   # Using absolute path to open the tar file
             tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
@@ -1484,6 +1482,8 @@ def tarProjectFiles( ):
 
         counter = counter + 1
         demuxLogger.info( termcolor.colored( f"==> Archiving {project} ( {counter} out of { len( projectsToProcessList ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
+        text = "tarFile:"
+        demuxLogger.debug( f"{text:{demux.spacing2}}" + os.path.join( demux.forTransferRunIdDir, tarFile ) )  # print the absolute path
         for directoryRoot, dirnames, filenames, in os.walk( project, followlinks = False ): 
              for file in filenames:
                 # add one file at a time so we can give visual feedback to the user that the script is processing files
