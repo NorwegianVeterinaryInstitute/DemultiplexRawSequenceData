@@ -1783,9 +1783,10 @@ def tarFileQualityCheck(  ):
 
 #---- Step 5: compare result with hash file on disk ------------------------------------------------------------------------------------------------------
 
-
 #---- Step 6: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} and contents ------------------------------------------------------------
-
+    # clean up
+    cleanupFiles = glob.glob( os.path.join( demux.forTransferRunIdDir, demux.forTransferRunIdDirTestName ) )
+    shutil.rmtree( cleanupFiles )
 
 #---- Step 7: return True/false depending on answer ------------------------------------------------------------------------------------------------------
 
