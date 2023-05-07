@@ -1439,56 +1439,22 @@ def tarProjectFiles( ):
     text = "len(projectsToProcess):"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{len( projectsToProcess )}" )
 
-#---------- Create project directories under demux.forTransferRunIdDir   ----------------------
+#---------- change the current working directory to demux data.demultiplexRunID, so we can get nice relative paths  ----------------------
 
-    for project in projectsToProcess:               # create the directories for the individual project e.g. 
-                                                    # if project is APEC-Seq it will create {demux.forTransferRunIdDir}/{demux.RunIDShort}.{project}
-                                                    # /data/for_transfer/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578.APEC-Seq/
-                                                    #
-                                                    # Directory path is formatted as absolute
-        try:
-            forTransferDirProject = os.path.join( demux.forTransferRunIdDir, project )
-            os.mkdir( forTransferDirProject )   # create the directory via absolute paths, so we will not need to chdir() 
-                                                # we save each tar file into its own directory 
-        except FileExistsError as err:
-            text = [
-                f"Error while trying to mkdir {project}",
-                f"Error message: { str( err ) }",
-                "Exiting."
-            ]
-            text = '\n'.join( text )
-            demuxFailureLogger.critical( f"{ text }" )
-            demuxLogger.critical( f"{ text }" )
-            logging.shutdown( )
-            sys.exit( )
+    os.chdir( data.demultiplexRunID )
 
-#---------- chdir to demux.demultiplexRunIdDir, for nice relative path names when untarring  ----------------------
-    try:
-        os.chdir( demux.demultiplexRunIdDir )
-    except FileExistsError as err:
-        text = [
-            f"Error while trying to mkdir {project}",
-            f"Error message: { str( err ) }",
-            "Exiting."
-        ]
-        text = '\n'.join( text )
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )
+#---------- Use the projectsToProcess list to tar files demux data.demultiplexRunID to demux.forTransferRunIdDir  ----------------------
 
-#---------- Use the projectsToProcess list to tar files demux data.demultiplexRunID to demux.forTransferRunIdDir   ----------------------
-
+    # this mean that while we are sitting in data.demultiplexRunID, we are saving tar files under demux.forTransferRunIdDir
     counter = 0         # used in counting how many projects we have archived so far
     for project in projectsToProcess:
 
         # build the filetree
-        demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {os.getcwd( )}/{project} ======================", attrs=["bold"] ) )
+        demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {demux.demultiplexRunIdDir}/{project} ======================", attrs=["bold"] ) )
 
-        tarFileDir = os.path.join( demux.forTransferRunIdDir, project )
-        tarFile    = os.path.join( tarFileDir, project + demux.tarSuffix )
+        tarFile    = os.path.join(  demux.forTransferRunIdDir, project + demux.tarSuffix )
         text = "tarFile:"
-        demuxLogger.debug( f"{text:{demux.spacing2}}" + tarFile )
+        demuxLogger.debug( f"{text:{demux.spacing2}}" + os.join( demux.forTransferRunIdDir, tarFile ) )  # print the absolute path
 
         if not os.path.isfile( tarFile ) :
             tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
@@ -1540,8 +1506,10 @@ def createQcTarFile( ):
     demuxLogger.info( termcolor.colored( f"==> Archiving {demux.demuxQCDirectoryFullPath} =================", color="yellow", attrs=["bold"] ) )
 
     if demux.verbosity == 2:
-        demuxLogger.debug( f"demuxQCDirectoryFullPath:\t{demux.demuxQCDirectoryFullPath}" )
-        demuxLogger.debug( f"multiqc_data:\t\t{demux.multiqc_data}" )
+        text = "demuxQCDirectoryFullPath:"
+        demuxLogger.debug( f"{text:{demux.spacing3}}" + demux.demuxQCDirectoryFullPath )
+        text = "multiqc_data:"
+        demuxLogger.debug( f"{text:{demux.spacing3}}" + demux.multiqc_data )
 
     if not os.path.isfile( demux.forTransferQCtarFile ): # exit if /data/for_transfer/RunID/qc.tar file exists.
         tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "w:" )
