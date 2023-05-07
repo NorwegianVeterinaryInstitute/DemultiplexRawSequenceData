@@ -1779,6 +1779,7 @@ def tarFileQualityCheck(  ):
 
 #---- Step 4: recalculate sha512 hash for each file ------------------------------------------------------------------------------------------------------
 
+# for file in $TARFILES; do printf '\n==== tar file: $file============================='; tar --verbose --compare --file=$file | grep -v 'Mod time differs'; done
 
 #---- Step 5: compare result with hash file on disk ------------------------------------------------------------------------------------------------------
 
