@@ -1465,11 +1465,11 @@ def tarProjectFiles( ):
             logging.shutdown( )
             sys.exit( )
 
-#---------- Iterrate through demux.demultiplexRunIdDir/projectsToProcess list and make a single tar file for each directory under data.forTransferRunIdDir   ----------------------
+#---------- Iterrate through demux.demultiplexRunIdDir/projectsToProcess list and make a single tar file for each project under data.forTransferRunIdDir   ----------------------
 
         counter = counter + 1
         demuxLogger.info( termcolor.colored( f"==> Archiving {project} ( {counter} out of { len( projectsToProcess ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
-        for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.demultiplexRunIdDir, project ), followlinks = False ): 
+        for directoryRoot, dirnames, filenames, in os.walk( project, followlinks = False ): 
              for file in filenames:
                 # add one file at a time so we can give visual feedback to the user that the script is processing files
                 # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
