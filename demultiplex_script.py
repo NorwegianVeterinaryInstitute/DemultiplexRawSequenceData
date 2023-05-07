@@ -1437,16 +1437,18 @@ def tarProjectFiles( ):
     demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{projectsToProcess}" )
     text = "len(projectsToProcess):"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{len( projectsToProcess )}" )
+
+#---------- Create project directories under demux.forTransferRunIdDir   ----------------------
+
     for project in projectsToProcess:               # create the directories for the individual project e.g. 
                                                     # if project is APEC-Seq it will create {demux.forTransferRunIdDir}/{demux.RunIDShort}.{project}
                                                     # /data/for_transfer/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578.APEC-Seq/
                                                     #
                                                     # Directory path is formatted as absolute
-                                                    # 
-                                                    # demux.forTransferRunIdDir is created inside prepareDelivery( )
         try:
             forTransferDirProject = os.path.join( demux.forTransferRunIdDir, project )
-            os.mkdir( forTransferDirProject ) # we save each tar file into its own directory
+            os.mkdir( forTransferDirProject )   # create the directory via absolute paths, so we will not need to chdir() 
+                                                # we save each tar file into its own directory 
         except FileExistsError as err:
             text = [
                 f"Error while trying to mkdir {project}",
@@ -1465,7 +1467,8 @@ def tarProjectFiles( ):
     for project in projectsToProcess:
         tarFileDir = os.path.join( demux.forTransferRunIdDir, project )
         tarFile    = os.path.join( tarFileDir, project + demux.tarSuffix )
-        demuxLogger.debug( f"tarFile:\t\t\t{tarFile}")
+        text = "tarFile:"
+        demuxLogger.debug( f"{text:{demux.spacing2}}" + tarFile )
 
         if not os.path.isfile( tarFile ) :
             tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
