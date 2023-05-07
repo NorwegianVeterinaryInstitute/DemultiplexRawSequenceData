@@ -1777,16 +1777,22 @@ def tarFileQualityCheck(  ):
             logging.shutdown( )
             sys.exit( )
 
-#---- Step 4: recalculate sha512 hash for each file ------------------------------------------------------------------------------------------------------
+
+# there is no point in making this complicated: tar files can be easily edited, they are just a simple container and any attacker can easily alter the file insitu,
+# recalculate the hash and replace the hash again in situ
+#
+# So the only thing we can do is basically untar the file to ensure that it was packed correctly in this program,
+# then delete the test_tar directory
 
 # for file in $TARFILES; do printf '\n==== tar file: $file============================='; tar --verbose --compare --file=$file | grep -v 'Mod time differs'; done
 
-#---- Step 5: compare result with hash file on disk ------------------------------------------------------------------------------------------------------
 
 #---- Step 6: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} and contents ------------------------------------------------------------
     # clean up
-    cleanupFiles = glob.glob( os.path.join( demux.forTransferRunIdDir, demux.forTransferRunIdDirTestName ) )
-    shutil.rmtree( cleanupFiles )
+    cleanupPath = os.path.join( demux.forTransferRunIdDir, demux.forTransferRunIdDirTestName )
+    text = "Cleanup up path:"
+    demuxLogger.info( f"{text:{demux.spacing2}}" + cleanupPath )
+    shutil.rmtree( cleanupPath )
 
 #---- Step 7: return True/false depending on answer ------------------------------------------------------------------------------------------------------
 
