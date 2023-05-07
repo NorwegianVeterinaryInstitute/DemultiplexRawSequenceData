@@ -1764,8 +1764,7 @@ def tarFileQualityCheck(  ):
     # then copy them into forTransferRunIdDirTestName
 
 #---- Step 3: untar files under /data/for_transfer/RunID/test -------------------------------------------------------------------------------------------
-    transferTarTestFiles = glob.glob( f"{demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName}/*.tar" )
-    for tarfile in transferTarTestFiles:
+    for tarfile in demux.tarFilesToTransferList
         try:
             tarHandle = tarfile.open( name = tarfile, mode = 'r', fileobj = None, bufsize = 10240 )
             tarHandle.extractall( forTransferRunIdDirTestName )
