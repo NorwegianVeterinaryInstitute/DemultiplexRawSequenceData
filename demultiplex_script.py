@@ -1449,15 +1449,14 @@ def tarProjectFiles( ):
     counter = 0         # used in counting how many projects we have archived so far
     for project in projectsToProcess:
 
-        # build the filetree
         demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {demux.demultiplexRunIdDir}/{project} ======================", attrs=["bold"] ) )
 
         tarFile    = os.path.join(  demux.forTransferRunIdDir, project + demux.tarSuffix )
         text = "tarFile:"
         demuxLogger.debug( f"{text:{demux.spacing2}}" + os.join( demux.forTransferRunIdDir, tarFile ) )  # print the absolute path
 
-        if not os.path.isfile( tarFile ) :
-            tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )
+        if not os.path.isfile( tarFile ):                                   # Using absolute path to open the tar file
+            tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
         else:
             text = f"{tarFile} exists. Please investigate or delete. Exiting."
             demuxFailureLogger.critical( f"{ text }" )
