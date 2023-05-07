@@ -341,7 +341,7 @@ class demux:
 
         for line in sampleSheetContents:
 
-            if demux.verbosity == 2:
+            if demux.verbosity == 3:
                 text = f"procesing line '{line}'"
                 if loggerName in logging.Logger.manager.loggerDict.keys():
                     demuxLogger.debug( text )
@@ -1461,6 +1461,21 @@ def tarProjectFiles( ):
             logging.shutdown( )
             sys.exit( )
 
+#---------- chdir to demux.demultiplexRunIdDir, for nice relative path names when untarring  ----------------------
+    try:
+        os.chdir( demux.demultiplexRunIdDir )
+    except FileExistsError as err:
+        text = [
+            f"Error while trying to mkdir {project}",
+            f"Error message: { str( err ) }",
+            "Exiting."
+        ]
+        text = '\n'.join( text )
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( )
+
 #---------- Use the projectsToProcess list to tar files demux data.demultiplexRunID to demux.forTransferRunIdDir   ----------------------
 
     counter = 0         # used in counting how many projects we have archived so far
@@ -1478,21 +1493,6 @@ def tarProjectFiles( ):
             demuxLogger.critical( f"{ text }" )
             logging.shutdown( )
             sys.exit( )
-
-#---------- chdir to demux.demultiplexRunIdDir, for nice relative path names when untarring  ----------------------
-    try:
-        os.chdir( demux.demultiplexRunIdDir )
-    except FileExistsError as err:
-        text = [
-            f"Error while trying to mkdir {project}",
-            f"Error message: { str( err ) }",
-            "Exiting."
-        ]
-        text = '\n'.join( text )
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )
 
 #---------- Iterrate through demux.demultiplexRunIdDir/projectsToProcess list and make a single tar file for each directory under data.forTransferRunIdDir   ----------------------
         # 
@@ -1550,7 +1550,8 @@ def createQcTarFile( ):
         logging.shutdown( )
         sys.exit( )
 
-    for directoryRoot, dirnames, filenames, in os.walk( demux.demuxQCDirectoryName  , followlinks = False ): 
+    # paths are relative here, cuz we chdir( ) in tarProjectFiles( )
+    for directoryRoot, dirnames, filenames, in os.walk( demux.demuxQCDirectoryName , followlinks = False ): 
          for file in filenames:
             # add one file at a time so we can give visual feedback to the Archivinguser that the script is processing files
             # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
@@ -1588,7 +1589,8 @@ def createMultiQcTarFile( ):
         logging.shutdown( )
         sys.exit( )
 
-    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.demultiplexRunIdDir, demux.multiqc_data ), followlinks = False ): 
+    # paths are relative here, cuz we chdir( ) in tarProjectFiles( )
+    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.multiqc_data ), followlinks = False ): 
          for file in filenames:
             # add one file at a time so we can give visual feedback to the user that the script is processing files
             # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
