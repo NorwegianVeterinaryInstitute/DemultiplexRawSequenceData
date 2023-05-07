@@ -234,7 +234,8 @@ class demux:
     projectList                     = [ ]
     newProjectNameList              = [ ]
     newProjectFileList              = [ ]
-    tarFileStack                    = [ ]
+    controlProjectsFoundList        = [ ]
+    tarFilesToTransferList          = [ ]
     globalDictionary                = dict( )
     ######################################################
     controlProjects                 = [ "Negativ" ]
@@ -320,12 +321,14 @@ class demux:
         else:
             print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
 
-        projectLineCheck    = False
-        projectIndex        = 0
-        projectList         = [ ]
-        sampleSheetContents = [ ]
-        newProjectNameList  = [ ]
-        loggerName          = 'demuxLogger'
+        projectLineCheck            = False
+        projectIndex                = 0
+        sampleSheetContents         = [ ]
+        projectList                 = [ ]
+        newProjectNameList          = [ ]
+        controlProjectsFoundList    = [ ]
+        tarFilesToTransferList      = [ ]
+        loggerName                  = 'demuxLogger'
 
         sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding= demux.decodeScheme )
         sampleSheetContent    = sampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
@@ -336,9 +339,9 @@ class demux:
             else:
                 print( f"sampleSheetContent:\n{sampleSheetContent }" )
 
+#---------- Parse the contets of SampleSheet.csv ----------------------
+
         sampleSheetContents   = sampleSheetContent.split( '\n' )  # then split it in lines
-
-
         for line in sampleSheetContents:
 
             if demux.verbosity == 3:
@@ -367,6 +370,7 @@ class demux:
                         demuxLogger.debug( text )
                     else:
                         print( text )
+                    
                 projectList.append( item )                                 # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
                 newProjectNameList.append( f"{demux.RunIDShort}.{item}" )  #  since we are here, we might construct the new name list.
 
@@ -379,14 +383,25 @@ class demux:
                         demuxLogger.debug( text )
                     else:
                         print( text )
-
                 projectLineCheck = True
             else:
                 continue
 
-        # Let's make sure that projectList and newProjectNameList are not empty
+#---------- Prepare a list of the projects to tar under /data/for_transfer/RunID ----------------------
+
+        for index, project in enumerate( newProjectNameList ):
+            if any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
+                continue
+            elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
+                controlProjectsFoundList.append( project )
+                continue
+            elif project not in tarFilesToTransferList:
+                tarFilesToTransferList.append(  os.path.join( demux.forTransferDir, demux.RunID, project + demux.tarSuffix ) )
+
+#---------- Let's make sure that demux.projectList and demux.newProjectNameList are not empty ----------------------
+
         if len( projectList ) == 0:
-            text = f"line {getframeinfo( currentframe( ) ).lineno} projectList is empty! Exiting!"
+            text = f"line {getframeinfo( currentframe( ) ).lineno} demux.projectList is empty! Exiting!"
             if loggerName in logging.Logger.manager.loggerDict.keys():
                 demuxFailureLogger.critical( text  )
                 demuxLogger.critical( text )
@@ -395,7 +410,7 @@ class demux:
                 print( text )
             sys.exit( )
         elif len( newProjectNameList ) == 0:
-            text = f"line {getframeinfo( currentframe( ) ).lineno}: newProjectNameList is empty! Exiting!"
+            text = f"line {getframeinfo( currentframe( ) ).lineno}: demux.newProjectNameList is empty! Exiting!"
             if loggerName in logging.Logger.manager.loggerDict.keys():
                 demuxFailureLogger.critical( text  )
                 demuxLogger.critical( text )
@@ -408,11 +423,14 @@ class demux:
             text1 = f"{text1:{demux.spacing2}}{projectList}"
             text2 = f"newProjectNameList:"
             text2 = f"{text2:{demux.spacing2}}{newProjectNameList}\n"
-            demuxLogger.debug( text1 )
-            demuxLogger.debug( text2 )
+            if demux.verbosity == 3:
+                demuxLogger.debug( text1 )
+                demuxLogger.debug( text2 )
 
-        demux.projectList        = projectList          # no need to return anything, save everything in the object space
-        demux.newProjectNameList = newProjectNameList
+        demux.projectList               = projectList                        
+        demux.newProjectNameList        = newProjectNameList
+        demux.controlProjectsFoundList  = controlProjectsFoundList
+        demux.tarFilesToTransferList    = tarFilesToTransferList
 
         signOutText = termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] )
         if loggerName in logging.Logger.manager.loggerDict.keys():
@@ -1410,6 +1428,9 @@ def tarProjectFiles( ):
 
 #---------- Prepare a list of the projects to tar under /data/for_transfer ----------------------
 
+    # this looks duplicated from demux.getProjects( ) and it is, but I am not sure how to resolve the duplication. Let's keep this for now as second check, as this is more complete than
+    # the one found in demux.getProjects( )
+    
     tarFile = ""
     projectsToProcess = [ ]
     for project in demux.newProjectNameList:                                        # this loop is a check against project names which are not suppossed to be eventually tarred
@@ -1431,13 +1452,8 @@ def tarProjectFiles( ):
             continue
 
         if any( var in project for var in [ demux.nextSeq, demux.miSeq ] ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcess
-            projectsToProcess.append( project )
+            demux.projectsToProcess.append( project )
             demuxLogger.debug( f"{project:{demux.spacing2}} added to projectsToProcess." )
-
-    text = "projectsToProcess:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{projectsToProcess}" )
-    text = "len(projectsToProcess):"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{len( projectsToProcess )}" )
 
 #---------- change the current working directory to demux.demultiplexRunIdDir, so we can get nice relative paths  ----------------------
 
@@ -1447,13 +1463,13 @@ def tarProjectFiles( ):
 
     # this mean that while we are sitting in data.demultiplexRunIdDir, we are saving tar files under demux.forTransferRunIdDir
     counter = 0         # used in counting how many projects we have archived so far
-    for project in projectsToProcess:
+    for project in demux.projectsToProcess:
 
         demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {demux.demultiplexRunIdDir}/{project} ======================", attrs=["bold"] ) )
 
         tarFile    = os.path.join(  demux.forTransferRunIdDir, project + demux.tarSuffix )
         text = "tarFile:"
-        demuxLogger.debug( f"{text:{demux.spacing2}}" + os.path,join( demux.forTransferRunIdDir, tarFile ) )  # print the absolute path
+        demuxLogger.debug( f"{text:{demux.spacing2}}" + os.path.join( demux.forTransferRunIdDir, tarFile ) )  # print the absolute path
 
         if not os.path.isfile( tarFile ):                                   # Using absolute path to open the tar file
             tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
@@ -1480,8 +1496,6 @@ def tarProjectFiles( ):
                 demuxLogger.info( text + filenameToTar )
 
         tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
-
-        demux.tarFileStack.append( tarFile ) # add to list of archived tar files, we will use them with lstat later to see if they pass untarring quality control
 
         demuxLogger.info( termcolor.colored( f'==< Archived {project} ({counter} out of { len( projectsToProcess ) } projects ) ==================\n', color="yellow", attrs=["bold"] ) )
 
@@ -2158,21 +2172,7 @@ def printRunningEnvironment( ):
                 else:
                     stateLetter = key[0]
                 demuxLogger.debug( "=============================================================================")
-            
             demuxLogger.debug( text )
-
-    demuxLogger.debug( "=============================================================================")
-
-    for index, project in enumerate( demux.globalDictionary[ 'newProjectNameList' ] ):
-
-        if any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
-            continue
-        elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
-            continue
-
-        text = f"tarFileForTransfer[{index}]:"
-        tarFileToTransfer = os.path.join( demux.forTransferRunIdDir, demux.globalDictionary[ 'newProjectNameList' ][index] )
-        demuxLogger.debug( f"{text:{demux.spacing3}}" +  tarFileToTransfer + demux.tarSuffix )
 
     demuxLogger.debug( "=============================================================================")
     demuxLogger.debug( "\n")
@@ -2248,10 +2248,14 @@ def setupEnvironment( RunID ):
         'forTransferQCtarFile'          : str( ),
         'sampleSheetArchiveFilePath'    : str( ),
         'projectList'                   : list( ),
-        'newProjectNameList'            : list( )
+        'newProjectNameList'            : list( ),
+        'controlProjectsFoundList'      : list( ),
+        'tarFilesToTransferList'        : list( )
     }
 
 
+    # add the QC file to the list of tar files, even if duplicate
+    demux.tarFilesToTransferList.append( demux.forTransferQCtarFile )
     # maintain the order added this way, so our little stateLetter trick will work
     demux.globalDictionary[ 'RunID'                        ] = demux.RunID
     demux.globalDictionary[ 'RunIDShort'                   ] = demux.RunIDShort
@@ -2273,6 +2277,9 @@ def setupEnvironment( RunID ):
     demux.globalDictionary[ 'sampleSheetArchiveFilePath'   ] = demux.sampleSheetArchiveFilePath
     demux.globalDictionary[ 'projectList'                  ] = demux.projectList
     demux.globalDictionary[ 'newProjectNameList'           ] = demux.newProjectNameList
+    demux.globalDictionary[ 'controlProjectsFoundList'     ] = demux.controlProjectsFoundList
+    demux.globalDictionary[ 'tarFilesToTransferList'       ] = demux.tarFilesToTransferList
+
 
 
     if 'demuxLogger' in logging.Logger.manager.loggerDict.keys():
