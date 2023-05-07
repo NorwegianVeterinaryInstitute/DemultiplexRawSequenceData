@@ -2161,6 +2161,21 @@ def printRunningEnvironment( ):
             
             demuxLogger.debug( text )
     demuxLogger.debug( "=============================================================================")
+
+    text = "tar files to be created:"
+    demuxLogger.debug( text )
+    for index, project in enumerate( demux.globalDictionary[ 'newProjectNameList' ] ):
+
+        if any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
+            continue
+        elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
+            continue
+
+        text = f"tarFileForTransfer[{index}]:"
+        tarFileToTransfer = os.path.join( demux.forTransferRunIdDir, demux.globalDictionary[ 'newProjectNameList' ][index] )
+        demuxLogger.debug( f"{text:{demux.spacing3}}" +  tarFileToTransfer + demux.tarSuffix )
+
+    demuxLogger.debug( "=============================================================================")
     demuxLogger.debug( "\n")
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Print out the current running environment ==\n", color="red", attrs=["bold"] ) )
