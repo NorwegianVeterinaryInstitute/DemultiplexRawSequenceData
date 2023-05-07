@@ -1432,7 +1432,7 @@ def tarProjectFiles( ):
     # the one found in demux.getProjects( )
     
     tarFile = ""
-    projectsToProcess = [ ]
+    projectsToProcessList = [ ]
     for project in demux.newProjectNameList:                                        # this loop is a check against project names which are not suppossed to be eventually tarred
 
         if any( var in project for var in [ demux.qcSuffix ] ):                     # skip anything that includes '_QC'
@@ -1451,19 +1451,19 @@ def tarProjectFiles( ):
             demuxLogger.warning( f"{demux.demultiplexLogDirPath} directory found. Skipping." )
             continue
 
-        if any( var in project for var in [ demux.nextSeq, demux.miSeq ] ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcess
-            demux.projectsToProcess.append( project )
-            demuxLogger.debug( f"{project:{demux.spacing2}} added to projectsToProcess." )
+        if any( var in project for var in [ demux.nextSeq, demux.miSeq ] ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcessList
+            projectsToProcessList.append( project )
+            demuxLogger.debug( f"{project:{demux.spacing2}} added to projectsToProcessList." )
 
 #---------- change the current working directory to demux.demultiplexRunIdDir, so we can get nice relative paths  ----------------------
 
     os.chdir( demux.demultiplexRunIdDir )
 
-#---------- Use the projectsToProcess list to tar files demux.demultiplexRunIdDir to demux.forTransferRunIdDir  ----------------------
+#---------- Use projectsToProcessList to tar files demux.demultiplexRunIdDir to demux.forTransferRunIdDir  ----------------------
 
     # this mean that while we are sitting in data.demultiplexRunIdDir, we are saving tar files under demux.forTransferRunIdDir
     counter = 0         # used in counting how many projects we have archived so far
-    for project in demux.projectsToProcess:
+    for project in projectsToProcessList:
 
         demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {demux.demultiplexRunIdDir}/{project} ======================", attrs=["bold"] ) )
 
@@ -1480,10 +1480,10 @@ def tarProjectFiles( ):
             logging.shutdown( )
             sys.exit( )
 
-#---------- Iterrate through demux.demultiplexRunIdDir/projectsToProcess list and make a single tar file for each project under data.forTransferRunIdDir   ----------------------
+#---------- Iterrate through demux.demultiplexRunIdDir/projectsToProcessList and make a single tar file for each project under data.forTransferRunIdDir   ----------------------
 
         counter = counter + 1
-        demuxLogger.info( termcolor.colored( f"==> Archiving {project} ( {counter} out of { len( projectsToProcess ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==> Archiving {project} ( {counter} out of { len( projectsToProcessList ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
         for directoryRoot, dirnames, filenames, in os.walk( project, followlinks = False ): 
              for file in filenames:
                 # add one file at a time so we can give visual feedback to the user that the script is processing files
@@ -1497,7 +1497,7 @@ def tarProjectFiles( ):
 
         tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
 
-        demuxLogger.info( termcolor.colored( f'==< Archived {project} ({counter} out of { len( projectsToProcess ) } projects ) ==================\n', color="yellow", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f'==< Archived {project} ({counter} out of { len( projectsToProcessList ) } projects ) ==================\n', color="yellow", attrs=["bold"] ) )
 
 #---------- Finished taring   -----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1546,7 +1546,6 @@ def createQcTarFile( ):
             demuxLogger.info( text + filenameToTar )
 
     tarQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
-    demux.tarFileStack.append( demux.forTransferQCtarFile ) # list of archived tar files, we will use them with lstat later ot see if they pass untarring quality control
 
     demuxLogger.info( termcolor.colored( f"==> Archived {demux.demuxQCDirectoryFullPath} ==================", color="yellow", attrs=["bold"] ) )
 
