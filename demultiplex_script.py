@@ -330,7 +330,7 @@ class demux:
         sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding= demux.decodeScheme )
         sampleSheetContent    = sampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
 
-        if demux.verbosity == 2:
+        if demux.verbosity == 3:
             if loggerName in logging.Logger.manager.loggerDict.keys():
                 demuxLogger.debug( f"sampleSheetContent:\n{sampleSheetContent }" ) # logging.debug it
             else:
@@ -350,7 +350,7 @@ class demux:
 
             if len( line ): # line != '' is not the same as 'not line'
                 line = line.rstrip()
-                if demux.verbosity == 2:
+                if demux.verbosity == 3:
                     text = f"projectIndex: {projectIndex}" 
                     if loggerName in logging.Logger.manager.loggerDict.keys():
                         demuxLogger.debug( text )
@@ -1410,6 +1410,7 @@ def tarProjectFiles( ):
 
 #---------- Prepare a list of the projects to tar under /data/for_transfer ----------------------
 
+    tarFile = ""
     projectsToProcess = [ ]
     for project in demux.newProjectNameList:                                        # this loop is a check against project names which are not suppossed to be eventually tarred
 
@@ -1480,6 +1481,10 @@ def tarProjectFiles( ):
 
     counter = 0         # used in counting how many projects we have archived so far
     for project in projectsToProcess:
+
+        # build the filetree
+        demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {os.getcwd( )}/{project} ======================", attrs=["bold"] ) )
+
         tarFileDir = os.path.join( demux.forTransferRunIdDir, project )
         tarFile    = os.path.join( tarFileDir, project + demux.tarSuffix )
         text = "tarFile:"
@@ -1495,9 +1500,6 @@ def tarProjectFiles( ):
             sys.exit( )
 
 #---------- Iterrate through demux.demultiplexRunIdDir/projectsToProcess list and make a single tar file for each directory under data.forTransferRunIdDir   ----------------------
-        # 
-        # build the filetree
-        demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {os.getcwd( )}/{project} ======================", attrs=["bold"] ) )
 
         counter = counter + 1
         demuxLogger.info( termcolor.colored( f"==> Archiving {project} ( {counter} out of { len( projectsToProcess ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
