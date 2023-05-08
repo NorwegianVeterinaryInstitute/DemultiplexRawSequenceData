@@ -2126,7 +2126,7 @@ def checkRunningEnvironment( ):
         logging.shutdown( )
         sys.exit( )
     elif demux.debug and len( demux.projectList ) == 1: 
-        demux.projectList.add( demux.testProject )               # if debug, have at least two project names to ensure multiple paths are being created
+        demux.projectList.append( demux.testProject )               # if debug, have at least two project names to ensure multiple paths are being created
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Check the validity of the current running environment ==\n", color="red", attrs=["bold"] ) )
 
