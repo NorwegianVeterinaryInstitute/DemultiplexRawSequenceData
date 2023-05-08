@@ -51,5 +51,7 @@ Software requirements
 * Cron job runs every 30 minutes if it finds a new run, _RTAComplete.txt_ and _SampleSheet.csv_ files within the run new, it starts the demultiplexing script
 * It can be manually started as below
 ```bash
-[sambauser01@seqtech01 bin (master)]$ clear; rm -rf /data/demultiplexing/\<RunID\> ; /usr/bin/python3 /data/bin/demultiplex_script.py \<RunID\>
+/usr/bin/python3 /data/bin/demultiplex_script.py \<RunID\>
 ```
+
+as the relevant user.
