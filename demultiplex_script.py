@@ -438,11 +438,11 @@ class demux:
         demux.controlProjectsFoundList  = controlProjectsFoundList
         demux.tarFilesToTransferList    = tarFilesToTransferList
 
-        signOutText = termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] )
+        text = termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] )
         if loggerName in logging.Logger.manager.loggerDict.keys():
-            demuxLogger.info( signOutText )
+            demuxLogger.info( text )
         else:
-            print( signOutText )
+            print( text )
 
 
 
