@@ -2153,6 +2153,8 @@ def printRunningEnvironment( ):
     demuxLogger.debug( "=============================================================================")
     for key, value2 in demux.globalDictionary.items( ):         # take the key/label and the value of the key from the global dictionary
         if type( value2 ) is list:                              # if this is a list, print each individual member of the list
+            if not len( value2 ):
+                continue
             demuxLogger.debug( "=============================================================================")
             for index, value1 in enumerate( value2 ):       
                 text = f"{key}[{str(index)}]:"
