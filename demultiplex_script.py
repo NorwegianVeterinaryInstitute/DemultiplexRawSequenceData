@@ -387,6 +387,12 @@ class demux:
             else:
                 continue
 
+        text = "\n"
+        if loggerName in logging.Logger.manager.loggerDict.keys():
+            demuxLogger.info( text )
+        else:
+            print( text )
+
 #---------- Prepare a list of the projects to tar under /data/for_transfer/RunID ----------------------
 
         for index, project in enumerate( newProjectNameList ):
