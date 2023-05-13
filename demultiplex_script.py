@@ -406,7 +406,7 @@ class demux:
 
 #---------- Let's make sure that demux.projectList and demux.newProjectNameList are not empty ----------------------
 
-        if len( projectList ) == 0:
+        if not any( projectList ):
             text = f"line {getframeinfo( currentframe( ) ).lineno} demux.projectList is empty! Exiting!"
             if loggerName in logging.Logger.manager.loggerDict.keys():
                 demuxFailureLogger.critical( text  )
@@ -415,7 +415,7 @@ class demux:
             else:
                 print( text )
             sys.exit( )
-        elif len( newProjectNameList ) == 0:
+        elif not any( newProjectNameList ):
             text = f"line {getframeinfo( currentframe( ) ).lineno}: demux.newProjectNameList is empty! Exiting!"
             if loggerName in logging.Logger.manager.loggerDict.keys():
                 demuxFailureLogger.critical( text  )
@@ -843,7 +843,7 @@ def renameFiles( ):
         filesToSearchFor     = os.path.join( compressedFastQfilesDir, '*' + demux.compressedFastqSuffix )
         compressedFastQfiles = glob.glob( filesToSearchFor )            # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
 
-        if not len( compressedFastQfiles ): # if array is empty
+        if not any( compressedFastQfiles ): # if array is empty
             text = f"\n\nProject {project} does not contain any .fastq.gz entries"
             text = f"{text} | method {inspect.stack()[0][3]}() ]"
             text = f"{text}\n\n"
@@ -1290,7 +1290,7 @@ def calcFileHash( eitherRunIdDir ):
                 logging.shutdown( )
                 sys.exit( )
 
-            if os.path.getsize( filepath ) == 0 : # make sure it's not a zero length file 
+            if not any( filepath ): # make sure it's not a zero length file 
                 demuxLogger.warning( f"file {filepath} has zero length. Skipping." )
                 continue
         
@@ -2125,7 +2125,7 @@ def checkRunningEnvironment( ):
         logging.shutdown( )
         sys.exit( )
 
-    if len( demux.projectList ) == 0:
+    if not any( demux.projectList ):
         text = "List projectList contains no projects/zero length! Exiting." 
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
