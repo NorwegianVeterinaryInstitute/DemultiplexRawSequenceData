@@ -2112,6 +2112,11 @@ def setupFileLogHandling( ):
 
 def checkRunningEnvironment( ):
     """
+    See if the following things exist:
+        - bcl2fastq ( to be moved from other section )
+        - Java
+        - FastQC    ( to be moved from other section )
+        - MultiQC   ( to be moved from other section)
     """
 
     demux.n = demux.n + 1
