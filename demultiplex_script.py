@@ -2168,7 +2168,7 @@ def printRunningEnvironment( ):
                 demuxLogger.debug( text )
         else:
             text = f"{key:{demux.spacing2}}" + value2           # if it is not a list, print the item but
-            if key[0] != stateLetter:                           # if the first letter of this is different fr
+            if key[0] != stateLetter:                           # if the first letter differs from the state variable, print a '=====' row
                 if re.search( logString, key, re.IGNORECASE):   # keep the *Log* variables together
                     demuxLogger.debug( text )
                     continue
