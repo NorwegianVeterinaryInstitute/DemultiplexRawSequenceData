@@ -34,8 +34,20 @@ demux module:
 
     python interpreter | path to script                 | RunID directory from /data/rawdata
 
-INPUTS
+INPUTS:
     - RunID directory from /data/rawdata
+
+    SPECIFIC FILES WE CARE WITHIN /data/rawdata/RunID:
+    - *.zip
+    - *.fasta.gz
+    - *.tar
+    - *.html
+    - *.jp[e]g
+    - RtaComplexe.txt
+    - SampleSheet.csv
+
+    SPECIFIC FILES WE IGNORE WITHIN /data/rawdata/RunID:
+    - *.txt
 
 OUTPUTS:
     - fastq.gz files that are used by FastQC and MultiQC
