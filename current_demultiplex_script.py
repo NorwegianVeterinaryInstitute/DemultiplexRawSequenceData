@@ -1,4 +1,4 @@
-#!/bin/env /bin/python3.6
+#!/bin/env /bin/python3.11
 
 import os, sys, subprocess
 
