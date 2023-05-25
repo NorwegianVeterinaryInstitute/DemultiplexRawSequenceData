@@ -356,6 +356,12 @@ class demux:
         sampleSheetContents   = sampleSheetContent.split( '\n' )  # then split it in lines
         for line in sampleSheetContents:
 
+            # When you edit files in CSV format, some software saves the values surrounded by quotes
+            # and some do not. So, precautionary strip single and double quotes
+            # 
+            line = line.replace( '\'', '' )
+            line = line.replace( "\"", '' )
+
             if demux.verbosity == 3:
                 text = f"procesing line '{line}'"
                 if loggerName in logging.Logger.manager.loggerDict.keys():
@@ -363,7 +369,7 @@ class demux:
                 else:
                     print( text )
 
-            if len( line ): # line != '' is not the same as 'not line'
+            if any( line ): # line != '' is not the same as 'not line'
                 line = line.rstrip()
                 if demux.verbosity == 3:
                     text = f"projectIndex: {projectIndex}" 
