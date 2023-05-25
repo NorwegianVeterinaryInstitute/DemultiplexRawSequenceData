@@ -61,6 +61,12 @@ def getProjectName( DemultiplexFolder, demultiplex_out_file):
 
     for line in open(DemultiplexFolder + '/SampleSheet.csv', 'r'):
         line = line.rstrip()
+        # When you edit files in CSV format, some software saves the values surrounded by quotes
+        # and some do not. So, precautionary strip single and double quotes
+        # 
+        line = line.replace( '\'', '' )
+        line = line.replace( "\"", '' )
+
         if project_line_check == 'yes':
             project_list.append(line.split(',')[project_index] + '.' + line.split(',')[analysis_index])
         if 'Sample_Project' in line:
