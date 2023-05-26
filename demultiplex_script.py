@@ -1301,6 +1301,13 @@ def calcFileHash( eitherRunIdDir ):
 
             filepath = os.path.join( directoryRoot, file )
 
+            if any( var in file for var in [ demux.sha512Suffix, demux.md5Suffix  ] ):
+                text = f"{filepath} is already a sha512 file!."
+                demuxFailureLogger.critical( f"{ text }" )
+                demuxLogger.critical( f"{ text }" )
+                continue
+
+
             if not os.path.isfile( filepath ):
                 text = f"{filepath} is not a file. Exiting."
                 demuxFailureLogger.critical( f"{ text }" )
