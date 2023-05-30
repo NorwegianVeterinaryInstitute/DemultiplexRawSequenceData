@@ -64,7 +64,7 @@ WHY DOES THIS PROGRAM EXIST
         sequencing -> demultiplexing -> quality checking -> delivering the results of the demultiplexing and the QC to the appropriate places, in the case of NVI, VIGASP and NIRD
 
 WHERE DO PROJECTS GET THEIR NEW {RunIDShort}.{project} NAME?
-    In demux.getProjectName( ) . We are building the project names there, might as well put the compliance as well. (This might change)
+    In demux.getProjectDetails( ) . We are building the project names there, might as well put the compliance as well. (This might change)
 
 WHAT DO THE FASTQ.GZ FILES CONTAIN
     The .fastq.gz contain all the fastq files from the blc2fastq demultiplexing
@@ -211,7 +211,6 @@ class demux:
     testProject                     = 'FOO-blahblah-BAR'
     Sample_Project                  = 'Sample_Project'
     demultiplexCompleteFile         = 'DemultiplexComplete.txt'
-    vannControlNegativReport        = 'Negativ'
     forTransferRunIdDirTestName     = 'test_tar'
     md5File                         = 'md5sum.txt'
     miSeq                           = 'M06578'   # if we get more than one, turn this into an array, or read from config, or read from illumina
@@ -228,7 +227,13 @@ class demux:
     spacing5                        = spacing4 + tabSpace
     spacing6                        = spacing5 + tabSpace
     spacing6                        = spacing6 + tabSpace
-
+    ######################################################
+    readLength                      = 0
+    numberOfReads                   = 0
+    genomeSize                      = 0
+    readLengthString                = "[Reads]"
+    numberOfReadsString nextSeq     = "[Number Of Reads]"
+    genomeSizeString                = "[Genome Size]"
     ######################################################
     RunID                           = ""
     runIDShort                      = ""
