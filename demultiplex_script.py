@@ -300,11 +300,22 @@ class demux:
         self.RunID = RunID # variables in __init___ are unique to each instance
         self.debug = True
 
+    ########################################################################
+    # calculateSampleCoverage
+    ########################################################################
+    def calculateSampleCoverage( ):
+        """
+        Get the sample coverage calculated automatically
+        """
+        result = int( )
+        result = 2 * ( ( demux.readLength * demux.numberOfReads ) // demux.genomeSize ) # // is integer division, essentially divide and take math.floor( ) of result
+
+        return result
 
     ########################################################################
-    # getProjectName
+    # getProjectDetails
     ########################################################################
-    def getProjectName( ):
+    def getProjectDetails( ):
         """
         Get the associated project name from SampleSheet.csv
 
@@ -414,7 +425,7 @@ class demux:
 #---------- Prepare a list of the projects to tar under /data/for_transfer/RunID ----------------------
 
         for index, project in enumerate( newProjectNameList ):
-            if any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
+            if any( var in project for var in [ demux.testProject ] ):                  # skip the test project, 'FOO-blahblah-BAR'
                 continue
             elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
                 controlProjectsFoundList.append( project )
@@ -2238,7 +2249,7 @@ def setupEnvironment( RunID ):
     demux.sampleSheetFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.sampleSheetFileName )
     demux.rtaCompleteFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.rtaCompleteFile )
 
-    demux.getProjectName( )             # get the list of projects in this current run
+    demux.getProjectDetails( )             # get the list of projects in this current run
 
 ######################################################
     demux.demultiplexRunIdDir           = os.path.join( demux.demultiplexDir,       demux.RunID + demux.demultiplexDirSuffix ) 
@@ -2386,7 +2397,7 @@ def main( RunID ):
     setupEventAndLogHandling( )                                                                         # setup the event and log handing, which we will use everywhere, sans file logging 
     setupEnvironment( RunID )                                                                           # set up variables needed in the running setupEnvironment  
     # moved inside setupEnvironment( )
-    # demux.getProjectName( )                                                                             # get the list of projects in this current run
+    # demux.getProjectDetails( )                                                                             # get the list of projects in this current run
     createDemultiplexDirectoryStructure( )                                                              # create the directory structure under {demux.demultiplexRunIdDir}
     # renameProjectListAccordingToAgreedPatttern( )                                                     # rename the contents of the projectList according to {RunIDShort}.{project}
     # #################### createDemultiplexDirectoryStructure( ) needs to be called before we start logging  ###########################################
