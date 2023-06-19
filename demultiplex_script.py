@@ -209,7 +209,6 @@ class demux:
     rtaCompleteFile                 = 'RTAComplete.txt'
     sampleSheetFileName             = 'SampleSheet.csv'
     testProject                     = 'FOO-blahblah-BAR'
-    Sample_Project                  = 'Sample_Project'
     demultiplexCompleteFile         = 'DemultiplexComplete.txt'
     forTransferRunIdDirTestName     = 'test_tar'
     md5File                         = 'md5sum.txt'
@@ -227,13 +226,6 @@ class demux:
     spacing5                        = spacing4 + tabSpace
     spacing6                        = spacing5 + tabSpace
     spacing6                        = spacing6 + tabSpace
-    ######################################################
-    readLength                      = 0
-    numberOfReads                   = 0
-    genomeSize                      = 0
-    readLengthString                = "[Reads]"
-    numberOfReadsString nextSeq     = "[Number Of Reads]"
-    genomeSizeString                = "[Genome Size]"
     ######################################################
     RunID                           = ""
     runIDShort                      = ""
@@ -275,6 +267,44 @@ class demux:
     multiQCLogFilePath              = ""
     scriptRunLogFile                = ""
     forTransferDirRoot              = ""
+    ######################################################
+    #### header
+    IEMFileVersion                  = ""
+    InvestigatorName                = ""
+    ExperimentName                  = ""
+    ExperimentDate                  = ""
+    Workflow                        = ""
+    Application                     = ""
+    InstrumentType                  = ""
+    Assay                           = ""
+    IndexAdapters                   = ""
+    Chemistry
+    #### reads
+    FiveToThreeReads                = int( )                    # forward reads
+    ThreeToFiveReads                = int( )                    # referse reads 
+                                                                # https://en.wikipedia.org/wiki/Directionality_(molecular_biology)
+    #### settings
+    ReverseComplement               = int( )
+    #### data
+    SampleID                        = str( )
+    SamplePlate                     = str( )
+    SampleWell                      = str( )
+    IndexPlateWell                  = str( )                    # FIXME FIXME FIXME FIXME check that the well location is always within bounds
+    IndexID                         = str( )
+    Index1                          = str( )                    # FIXME This is supposed to be a DNA string. We need a check to ensure that the dna seqence is correct? and that there is only a dna sequence and not garbage?
+    Index2                          = str( )                    # FIXME This is supposed to be a DNA string. We need a check to ensure that the dna seqence is correct? and that there is only a dna sequence and not garbage?
+    Sample_Project                  = 'Sample_Project'
+    Project_Submission              = str( )    
+    Transfer_to_VIGAS               = bool( )
+    readLength                      = int( )
+    numberOfReads                   = int( )
+    genomeSize                      = int( )
+    readLengthString                = "[Reads]"
+    numberOfReadsString nextSeq     = "[Number Of Reads]"
+    genomeSizeString                = "[Genome Size]"
+    ######################################################
+
+
     ######################################################
     # mailhost                        = 'seqtech00.vetinst.no'
     mailhost                        = 'localhost'
