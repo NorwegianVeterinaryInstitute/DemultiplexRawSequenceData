@@ -278,7 +278,7 @@ class demux:
     InstrumentType                  = ""
     Assay                           = ""
     IndexAdapters                   = ""
-    Chemistry
+    # Chemistry
     #### reads
     FiveToThreeReads                = int( )                    # forward reads
     ThreeToFiveReads                = int( )                    # referse reads 
@@ -300,7 +300,7 @@ class demux:
     numberOfReads                   = int( )
     genomeSize                      = int( )
     readLengthString                = "[Reads]"
-    numberOfReadsString nextSeq     = "[Number Of Reads]"
+    numberOfReadsString             = "[Number Of Reads]"
     genomeSizeString                = "[Genome Size]"
     ######################################################
 
