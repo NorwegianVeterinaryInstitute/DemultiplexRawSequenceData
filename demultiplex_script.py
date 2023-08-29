@@ -435,8 +435,14 @@ class demux:
                     else:
                         print( text )
                     
-                projectList.append( item )                                 # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
-                newProjectNameList.append( f"{demux.RunIDShort}.{item}" )  #  since we are here, we might construct the new name list.
+                if any( item ):
+                    projectList.append( item )                                 # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
+                    newProjectNameList.append( f"{demux.RunIDShort}.{item}" )  #  since we are here, we might construct the new name list.
+                else:
+                    text = f"{'Empty project in line: {line}'}"
+                    demuxLogger.warning( text )
+                    continue:
+
 
             elif demux.Sample_Project in line: ### DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
 
