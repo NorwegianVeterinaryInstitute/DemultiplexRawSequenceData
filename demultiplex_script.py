@@ -441,7 +441,7 @@ class demux:
                 else:
                     text = f"{'Empty project in line: {line}'}"
                     demuxLogger.warning( text )
-                    continue:
+                    continue
 
 
             elif demux.Sample_Project in line: ### DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
