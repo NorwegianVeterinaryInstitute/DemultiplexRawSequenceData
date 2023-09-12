@@ -17,6 +17,7 @@ import stat
 import string
 import subprocess
 import sys
+import csv
 import syslog
 import tarfile
 import termcolor
@@ -164,6 +165,50 @@ LIMITATIONS
         
 
 """
+
+import csv
+
+class IlluminaSampleSheetParser:
+    '''
+    parse Illuimina's SampleSheet.csv file
+    '''
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.header = None
+        self.data = []
+
+    def parse(self):
+        try:
+            with open(self.file_path, 'r') as csv_file:
+                csv_reader = csv.reader(csv_file)
+                for row in csv_reader:
+                    if not self.header:
+                        self.header = row
+                    else:
+                        if len(row) == len(self.header):
+                            sample_info = {}
+                            for i in range(len(self.header)):
+                                sample_info[self.header[i]] = row[i]
+                            self.data.append(sample_info)
+                        else:
+                            print(f"Skipping malformed row: {row}")
+
+        except FileNotFoundError:
+            print(f"File not found: {self.file_path}")
+
+    def get_samples(self):
+        return self.data
+
+# if __name__ == "__main__":
+#     # Example usage
+#     samplesheet_path = 'samplesheet.csv'  # Replace with your actual file path
+#     parser = IlluminaSampleSheetParser(samplesheet_path)
+#     parser.parse()
+#     samples = parser.get_samples()
+
+#     for sample in samples:
+#         print(sample)
+
 
 
 class demux:
@@ -441,7 +486,7 @@ class demux:
                 else:
                     text = f"{'Empty project in line: {line}'}"
                     demuxLogger.warning( text )
-                    continue:
+                    continue
 
 
             elif demux.Sample_Project in line: ### DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
