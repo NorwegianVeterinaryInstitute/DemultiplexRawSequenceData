@@ -1427,7 +1427,7 @@ def calcFileHash( eitherRunIdDir ):
 
             if not os.path.isfile( f"{filepath}{demux.md5Suffix}" ):
                 fh = open( f"{filepath}{demux.md5Suffix}", "w" )
-                fh.write( f"{md5sum}\n" )
+                fh.write( f"{md5sum}  {file}\n" ) # the two spaces are there on purpose; lab uses md5sum -c <file.md5> to verify uploaded sequences. that is the format of the file.
                 fh.close( )
             else:
                 demuxLogger.warning( f"{filepath}{demux.md5Suffix} exists, skipping" )
@@ -1435,7 +1435,7 @@ def calcFileHash( eitherRunIdDir ):
             if not os.path.isfile( f"{filepath}{demux.sha512Suffix}" ):
                 try: 
                     fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
-                    fh.write( f"{sha512sum}\n" )
+                    fh.write( f"{sha512sum}  {file}\n" ) # the two spaces are there on purpose; lab uses sha512sum -c <file.sha512> to verify uploaded sequences. that is the format of the file.
                     fh.close( )  
                 except FileNotFoundError as err:
                     text = [    f"Error writing sha512 sum file {filepath}{demux.sha512Suffix}:", 
