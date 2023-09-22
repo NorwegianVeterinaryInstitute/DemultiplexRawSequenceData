@@ -1489,21 +1489,21 @@ def changePermissions( path ):
                 logging.shutdown( )
                 sys.exit( )
 
-            try:
-                # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-                os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
-            except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                text = [    f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
-                            f"\terrno:\t{err.errno}",
-                            f"\tstrerror:\t{err.strerror}",
-                            f"\tfilename:\t{err.filename}",
-                            f"\tfilename2:\t{err.filename2}"
-                        ]
-                text = '\n'.join( text )
-                demuxFailureLogger.critical( f"{ text }" )
-                demuxLogger.critical( f"{ text }" )
-                logging.shutdown( )
-                sys.exit( )
+            # try:
+            #     # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+            #     os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
+            # except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+            #     text = [    f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
+            #                 f"\terrno:\t{err.errno}",
+            #                 f"\tstrerror:\t{err.strerror}",
+            #                 f"\tfilename:\t{err.filename}",
+            #                 f"\tfilename2:\t{err.filename2}"
+            #             ]
+            #     text = '\n'.join( text )
+            #     demuxFailureLogger.critical( f"{ text }" )
+            #     demuxLogger.critical( f"{ text }" )
+            #     logging.shutdown( )
+            #     sys.exit( )
 
     # change ownership and access mode of directories
     demuxLogger.debug( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
@@ -1521,22 +1521,22 @@ def changePermissions( path ):
                 logging.shutdown( )
                 sys.exit( )
 
-            try:
-                # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-                os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
-            except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                text = [
-                        f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
-                        f"\terrno:\t{err.errno}",
-                        f"\tstrerror:\t{err.strerror}",
-                        f"\tfilename:\t{err.filename}",
-                        f"\tfilename2:\t{err.filename2}"
-                ]
-                text = '\n'.join( text )
-                demuxFailureLogger.critical( f"{ text }" )
-                demuxLogger.critical( f"{ text }" )
-                logging.shutdown( )
-                sys.exit( )
+            # try:
+            #     # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+            #     os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
+            # except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+            #     text = [
+            #             f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
+            #             f"\terrno:\t{err.errno}",
+            #             f"\tstrerror:\t{err.strerror}",
+            #             f"\tfilename:\t{err.filename}",
+            #             f"\tfilename2:\t{err.filename2}"
+            #     ]
+            #     text = '\n'.join( text )
+            #     demuxFailureLogger.critical( f"{ text }" )
+            #     demuxLogger.critical( f"{ text }" )
+            #     logging.shutdown( )
+            #     sys.exit( )
 
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Changing Permissions finished ==\n", color="red", attrs=["bold"] ) )
@@ -2062,7 +2062,7 @@ def copySampleSheetIntoDemultiplexRunIdDir( ):
 
     try:
         currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetFilePath ).st_mode )
-        os.chmod( demux.sampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
+        # os.chmod( demux.sampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
         shutil.copy2( demux.sampleSheetFilePath, demux.demultiplexRunIdDir )
     except Exception as err:
         text = [    f"Copying {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} failed.",
@@ -2116,7 +2116,7 @@ def archiveSampleSheet( ):
     try:
         shutil.copy2( demux.sampleSheetFilePath, demux.sampleSheetArchiveFilePath )
         currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetArchiveFilePath ).st_mode )
-        os.chmod( demux.sampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "o=rw,g=r,o=r"
+        # os.chmod( demux.sampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "o=rw,g=r,o=r"
     except Exception as err:
         frameinfo = getframeinfo( currentframe( ) )
         text = [    f"Archiving {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} failed.",
