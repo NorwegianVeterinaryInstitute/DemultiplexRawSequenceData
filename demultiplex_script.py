@@ -983,7 +983,7 @@ def renameFiles( ):
             baseFileName = os.path.basename( file )
 
             oldname     = file
-            newname     = os.path.join( demux.demultiplexRunIdDir, project, demux.RunIDShort + baseFileName )
+            newname     = os.path.join( demux.demultiplexRunIdDir, project, demux.RunIDShort + '.' + baseFileName )
             renamedFile = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project, demux.RunIDShort + baseFileName ) # saving this var to use later when renaming directories
 
             if renamedFile not in demux.newProjectFileList:
