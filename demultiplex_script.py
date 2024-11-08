@@ -2381,7 +2381,8 @@ def main( RunID ):
     Main function for the demultiplex script.
     All actions are coordinated through here
     """
-
+    RunID                   = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
+    RunID                   = RunID.replace( ",", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
 
     setupEventAndLogHandling( )                                                                         # setup the event and log handing, which we will use everywhere, sans file logging 
     setupEnvironment( RunID )                                                                           # set up variables needed in the running setupEnvironment  
@@ -2435,9 +2436,10 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         sys.exit( "No RunID argument present. Exiting." )
 
-    demuxLogger             = logging.getLogger( __name__ )
-    demuxFailureLogger      = logging.getLogger( "SMTPFailureLogger" )
+    #demuxLogger             = logging.getLogger( __name__ )
     RunID                   = sys.argv[1]
     RunID                   = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
+    RunID                   = RunID.replace( ",", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
+
 
     main( RunID )
