@@ -2421,6 +2421,8 @@ def main( RunID ):
 # MAIN
 ########################################################################
 
+demuxLogger             = logging.getLogger( __name__ )
+demuxFailureLogger      = logging.getLogger( "SMTPFailureLogger" )
 
 if __name__ == '__main__':
 
