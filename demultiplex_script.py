@@ -17,7 +17,6 @@ import stat
 import string
 import subprocess
 import sys
-import csv
 import syslog
 import tarfile
 import termcolor
@@ -166,50 +165,6 @@ LIMITATIONS
 
 """
 
-import csv
-
-class IlluminaSampleSheetParser:
-    '''
-    parse Illuimina's SampleSheet.csv file
-    '''
-    def __init__(self, file_path):
-        self.file_path = file_path
-        self.header = None
-        self.data = []
-
-    def parse(self):
-        try:
-            with open(self.file_path, 'r') as csv_file:
-                csv_reader = csv.reader(csv_file)
-                for row in csv_reader:
-                    if not self.header:
-                        self.header = row
-                    else:
-                        if len(row) == len(self.header):
-                            sample_info = {}
-                            for i in range(len(self.header)):
-                                sample_info[self.header[i]] = row[i]
-                            self.data.append(sample_info)
-                        else:
-                            print(f"Skipping malformed row: {row}")
-
-        except FileNotFoundError:
-            print(f"File not found: {self.file_path}")
-
-    def get_samples(self):
-        return self.data
-
-# if __name__ == "__main__":
-#     # Example usage
-#     samplesheet_path = 'samplesheet.csv'  # Replace with your actual file path
-#     parser = IlluminaSampleSheetParser(samplesheet_path)
-#     parser.parse()
-#     samples = parser.get_samples()
-
-#     for sample in samples:
-#         print(sample)
-
-
 
 class demux:
     """
@@ -254,6 +209,7 @@ class demux:
     rtaCompleteFile                 = 'RTAComplete.txt'
     sampleSheetFileName             = 'SampleSheet.csv'
     testProject                     = 'FOO-blahblah-BAR'
+    Sample_Project                  = 'Sample_Project'
     demultiplexCompleteFile         = 'DemultiplexComplete.txt'
     forTransferRunIdDirTestName     = 'test_tar'
     md5File                         = 'md5sum.txt'
@@ -271,6 +227,14 @@ class demux:
     spacing5                        = spacing4 + tabSpace
     spacing6                        = spacing5 + tabSpace
     spacing6                        = spacing6 + tabSpace
+    ######################################################
+    readLength                      = 0
+    forwardReads                    = 0
+    reverseReads                    = 0
+    genomeSize                      = 0
+    readLengthString                = "[Reads]"
+    numberOfReadsString nextSeq     = "[Number Of Reads]"
+    genomeSizeString                = "[Genome Size]"
     ######################################################
     RunID                           = ""
     runIDShort                      = ""
@@ -312,44 +276,6 @@ class demux:
     multiQCLogFilePath              = ""
     scriptRunLogFile                = ""
     forTransferDirRoot              = ""
-    ######################################################
-    #### header
-    IEMFileVersion                  = ""
-    InvestigatorName                = ""
-    ExperimentName                  = ""
-    ExperimentDate                  = ""
-    Workflow                        = ""
-    Application                     = ""
-    InstrumentType                  = ""
-    Assay                           = ""
-    IndexAdapters                   = ""
-    # Chemistry
-    #### reads
-    FiveToThreeReads                = int( )                    # forward reads
-    ThreeToFiveReads                = int( )                    # referse reads 
-                                                                # https://en.wikipedia.org/wiki/Directionality_(molecular_biology)
-    #### settings
-    ReverseComplement               = int( )
-    #### data
-    SampleID                        = str( )
-    SamplePlate                     = str( )
-    SampleWell                      = str( )
-    IndexPlateWell                  = str( )                    # FIXME FIXME FIXME FIXME check that the well location is always within bounds
-    IndexID                         = str( )
-    Index1                          = str( )                    # FIXME This is supposed to be a DNA string. We need a check to ensure that the dna seqence is correct? and that there is only a dna sequence and not garbage?
-    Index2                          = str( )                    # FIXME This is supposed to be a DNA string. We need a check to ensure that the dna seqence is correct? and that there is only a dna sequence and not garbage?
-    Sample_Project                  = 'Sample_Project'
-    Project_Submission              = str( )    
-    Transfer_to_VIGAS               = bool( )
-    readLength                      = int( )
-    numberOfReads                   = int( )
-    genomeSize                      = int( )
-    readLengthString                = "[Reads]"
-    numberOfReadsString             = "[Number Of Reads]"
-    genomeSizeString                = "[Genome Size]"
-    ######################################################
-
-
     ######################################################
     # mailhost                        = 'seqtech00.vetinst.no'
     mailhost                        = 'localhost'
@@ -480,14 +406,8 @@ class demux:
                     else:
                         print( text )
                     
-                if any( item ):
-                    projectList.append( item )                                 # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
-                    newProjectNameList.append( f"{demux.RunIDShort}.{item}" )  #  since we are here, we might construct the new name list.
-                else:
-                    text = f"{'Empty project in line: {line}'}"
-                    demuxLogger.warning( text )
-                    continue
-
+                projectList.append( item )                                 # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
+                newProjectNameList.append( f"{demux.RunIDShort}.{item}" )  #  since we are here, we might construct the new name list.
 
             elif demux.Sample_Project in line: ### DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
 
@@ -983,7 +903,7 @@ def renameFiles( ):
             baseFileName = os.path.basename( file )
 
             oldname     = file
-            newname     = os.path.join( demux.demultiplexRunIdDir, project, demux.RunIDShort + '.' + baseFileName )
+            newname     = os.path.join( demux.demultiplexRunIdDir, project, demux.RunIDShort + baseFileName )
             renamedFile = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project, demux.RunIDShort + baseFileName ) # saving this var to use later when renaming directories
 
             if renamedFile not in demux.newProjectFileList:
@@ -1419,7 +1339,7 @@ def calcFileHash( eitherRunIdDir ):
             filehandle     = open( filepath, 'rb' )
             filetobehashed = filehandle.read( )
             md5sum         = hashlib.md5( filetobehashed ).hexdigest( )
-            sha512sum      = hashlib.sha512( filetobehashed ).hexdigest( )
+            sha512sum      = hashlib.sha256( filetobehashed ).hexdigest( )
             md5Length      = 16 # 128 bytes
             sha512Length   = 64 # 512 bytes
             demuxLogger.debug( f"md5sum: {md5sum:{md5Length}} | sha512sum: {sha512sum:{sha512Length}} | filepath: {filepath}" )
@@ -1427,7 +1347,7 @@ def calcFileHash( eitherRunIdDir ):
 
             if not os.path.isfile( f"{filepath}{demux.md5Suffix}" ):
                 fh = open( f"{filepath}{demux.md5Suffix}", "w" )
-                fh.write( f"{md5sum}  {file}\n" ) # the two spaces are there on purpose; lab uses md5sum -c <file.md5> to verify uploaded sequences. that is the format of the file.
+                fh.write( f"{md5sum}\n" )
                 fh.close( )
             else:
                 demuxLogger.warning( f"{filepath}{demux.md5Suffix} exists, skipping" )
@@ -1435,7 +1355,7 @@ def calcFileHash( eitherRunIdDir ):
             if not os.path.isfile( f"{filepath}{demux.sha512Suffix}" ):
                 try: 
                     fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
-                    fh.write( f"{sha512sum}  {file}\n" ) # the two spaces are there on purpose; lab uses sha512sum -c <file.sha512> to verify uploaded sequences. that is the format of the file.
+                    fh.write( f"{sha512sum}\n" )
                     fh.close( )  
                 except FileNotFoundError as err:
                     text = [    f"Error writing sha512 sum file {filepath}{demux.sha512Suffix}:", 
@@ -1489,21 +1409,21 @@ def changePermissions( path ):
                 logging.shutdown( )
                 sys.exit( )
 
-            # try:
-            #     # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-            #     os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
-            # except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-            #     text = [    f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
-            #                 f"\terrno:\t{err.errno}",
-            #                 f"\tstrerror:\t{err.strerror}",
-            #                 f"\tfilename:\t{err.filename}",
-            #                 f"\tfilename2:\t{err.filename2}"
-            #             ]
-            #     text = '\n'.join( text )
-            #     demuxFailureLogger.critical( f"{ text }" )
-            #     demuxLogger.critical( f"{ text }" )
-            #     logging.shutdown( )
-            #     sys.exit( )
+            try:
+                # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+                os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
+            except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+                text = [    f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
+                            f"\terrno:\t{err.errno}",
+                            f"\tstrerror:\t{err.strerror}",
+                            f"\tfilename:\t{err.filename}",
+                            f"\tfilename2:\t{err.filename2}"
+                        ]
+                text = '\n'.join( text )
+                demuxFailureLogger.critical( f"{ text }" )
+                demuxLogger.critical( f"{ text }" )
+                logging.shutdown( )
+                sys.exit( )
 
     # change ownership and access mode of directories
     demuxLogger.debug( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
@@ -1521,22 +1441,22 @@ def changePermissions( path ):
                 logging.shutdown( )
                 sys.exit( )
 
-            # try:
-            #     # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-            #     os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
-            # except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-            #     text = [
-            #             f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
-            #             f"\terrno:\t{err.errno}",
-            #             f"\tstrerror:\t{err.strerror}",
-            #             f"\tfilename:\t{err.filename}",
-            #             f"\tfilename2:\t{err.filename2}"
-            #     ]
-            #     text = '\n'.join( text )
-            #     demuxFailureLogger.critical( f"{ text }" )
-            #     demuxLogger.critical( f"{ text }" )
-            #     logging.shutdown( )
-            #     sys.exit( )
+            try:
+                # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
+                os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
+            except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
+                text = [
+                        f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
+                        f"\terrno:\t{err.errno}",
+                        f"\tstrerror:\t{err.strerror}",
+                        f"\tfilename:\t{err.filename}",
+                        f"\tfilename2:\t{err.filename2}"
+                ]
+                text = '\n'.join( text )
+                demuxFailureLogger.critical( f"{ text }" )
+                demuxLogger.critical( f"{ text }" )
+                logging.shutdown( )
+                sys.exit( )
 
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Changing Permissions finished ==\n", color="red", attrs=["bold"] ) )
@@ -1811,9 +1731,9 @@ def controlProjectsQC(  ):
         just mention in green text that no results are detected (and move on)
     """
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard projects started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard proejcts started ==", color="green", attrs=["bold"] ) )
 
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard projects finished ==", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard proejcts finished ==", color="red", attrs=["bold"] ) )
 
 
 
@@ -2062,7 +1982,7 @@ def copySampleSheetIntoDemultiplexRunIdDir( ):
 
     try:
         currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetFilePath ).st_mode )
-        # os.chmod( demux.sampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
+        os.chmod( demux.sampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
         shutil.copy2( demux.sampleSheetFilePath, demux.demultiplexRunIdDir )
     except Exception as err:
         text = [    f"Copying {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} failed.",
@@ -2116,7 +2036,7 @@ def archiveSampleSheet( ):
     try:
         shutil.copy2( demux.sampleSheetFilePath, demux.sampleSheetArchiveFilePath )
         currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetArchiveFilePath ).st_mode )
-        # os.chmod( demux.sampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "o=rw,g=r,o=r"
+        os.chmod( demux.sampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "o=rw,g=r,o=r"
     except Exception as err:
         frameinfo = getframeinfo( currentframe( ) )
         text = [    f"Archiving {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} failed.",
