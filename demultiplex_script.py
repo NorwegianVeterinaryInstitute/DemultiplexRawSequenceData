@@ -665,7 +665,7 @@ def prepareForTransferDirectoryStructure( ):
 
     try:
         os.mkdir( demux.forTransferRunIdDir )       # try to create the demux.forTransferRunIdDir directory ( /data/for_transfer/220603_M06578_0105_000000000-KB7MY )
-    except e as err:
+    except Exception as err:
         text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
