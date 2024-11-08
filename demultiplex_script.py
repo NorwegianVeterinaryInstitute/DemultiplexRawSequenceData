@@ -214,8 +214,8 @@ class demux:
     vannControlNegativReport        = 'Negativ'
     forTransferRunIdDirTestName     = 'test_tar'
     md5File                         = 'md5sum.txt'
-    miSeq                           = 'M06578'   # if we get more than one, turn this into an array, or read from config, or read from illumina
-    nextSeq                         = 'NB552450' # if we get more than one, turn this into an array, or read from config, or read from illumina
+    miSeq                           = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
+    nextSeq                         = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
     decodeScheme                    = "utf-8"
     footarfile                      = f"foo{tarSuffix}"      # class variable shared by all instances
     barzipfile                      = f"zip{zipSuffix}"
