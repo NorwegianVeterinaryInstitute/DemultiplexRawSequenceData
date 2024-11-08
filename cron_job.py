@@ -51,11 +51,11 @@ import demultiplex_script
 RunList = []
 print( f"==> Getting new rawdata directories started ==\n")
 
-for dirName in os.listdir( demultiplex_script.demux.RawDataDir ): # add directory names from the raw generated data directory
+for dirName in os.listdir( demultiplex_script.demux.rawDataDir ): # add directory names from the raw generated data directory
 
-    if demultiplex_script.demux.DemultiplexDirSuffix in dirName: #  ignore any _demux dirs
+    if demultiplex_script.demux.demultiplexDirSuffix in dirName: #  ignore any _demux dirs
         continue
-    if any( var in dirName for var in[ demultiplex_script.demux.NextSeq, demultiplex_script.demux.MiSeq ] ): # only add directories that have a sequncer tag
+    if any( var in dirName for var in[ demultiplex_script.demux.nextSeq, demultiplex_script.demux.miSeq ] ): # only add directories that have a sequncer tag
         RunList.append(dirName)
 
 print( f"==< Getting new rawdata directories finished ==\n")
@@ -64,11 +64,11 @@ print( f"==< Getting new rawdata directories finished ==\n")
 DemultiplexList = [] 
 print( f"==> Getting demultiplexed directories started ==\n")
 
-for dirName in os.listdir( demultiplex_script.demux.DemultiplexDir ):
+for dirName in os.listdir( demultiplex_script.demux.demultiplexDir ):
 
-    if demultiplex_script.demux.DemultiplexDirSuffix not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety for other dirs included in /data/demultiplex
+    if demultiplex_script.demux.demultiplexDirSuffix not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety for other dirs included in /data/demultiplex
         continue
-    if any( var in dirName for var in[ demultiplex_script.demux.NextSeq, demultiplex_script.demux.MiSeq ] ): # ignore directories that have no sequncer tag
+    if any( var in dirName for var in[ demultiplex_script.demux.nextSeq, demultiplex_script.demux.miSeq ] ): # ignore directories that have no sequncer tag
         DemultiplexList.append( dirName.replace( demultiplex_script.demux.DemultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
 
 print( f"==> Getting demultiplexed directories finished ==\n")
@@ -100,14 +100,13 @@ if NewRunID:
     print( f"Will work on this RunID: {NewRunID}\n" ) # caution: if the corresponding _demux directory is somehow corrupted (wrong data in SampleSheetFilename or incomplete files), this will be printed over and over in the log file
 
     # essential condition to process is that RTAComplete.txt and SampleSheet.csv
-    if demultiplex_script.demux.RTACompleteFile in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ) and demultiplex_script.demux.SampleSheetFileName in os.listdir( os.path.join( demultiplex_script.demux.RawDataDir, NewRunID ) ):
-
+    if demultiplex_script.demux.rtaCompleteFile in os.listdir( os.path.join( demultiplex_script.demux.rawDataDir, NewRunID ) ) and demultiplex_script.demux.sampleSheetFileName in os.listdir( os.path.join( demultiplex_script.demux.rawDataDir, NewRunID ) ):
 
         if demultiplex_script.demux.debug: 
-            print( f"{demultiplex_script.demux.python3_bin} {demultiplex_script.demux.ScriptFilePath} {NewRunID}")
+            print( f"{demultiplex_script.demux.python3_bin} {demultiplex_script.demux.scriptFilePath} {NewRunID}")
 
-        if not os.path.exists( demultiplex_script.demux.ScriptFilePath ):
-            print( f"{demultiplex_script.demux.ScriptFilePath} does not exist!" )
+        if not os.path.exists( demultiplex_script.demux.scriptFilePath ):
+            print( f"{demultiplex_script.demux.scriptFilePath} does not exist!" )
             exit( )
 
         # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
