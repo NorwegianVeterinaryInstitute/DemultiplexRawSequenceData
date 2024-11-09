@@ -177,7 +177,7 @@ class demux:
     ######################################################
     dataRootDirPath                 = '/data'
     rawDataDirName                  = 'rawdata'
-    rawDataDir                      =  os.path.join( dataRootDirPath, rawDataDirName )
+    rawDataDir                      = os.path.join( dataRootDirPath, rawDataDirName )
     demultiplexDirName              = "demultiplex"
     demultiplexDir                  = os.path.join( dataRootDirPath, demultiplexDirName )
     forTransferDirName              = 'for_transfer'
