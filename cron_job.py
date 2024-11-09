@@ -69,7 +69,7 @@ for dirName in os.listdir( demultiplex_script.demux.demultiplexDir ):
     if demultiplex_script.demux.demultiplexDirSuffix not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety in case any other dirs included in /data/demultiplex
         continue
     if any( tag in dirName for tags in [ demultiplex_script.demux.nextSeq, demultiplex_script.demux.miSeq ] for tag in tags ): # ignore directories that have no sequncer tag
-        DemultiplexList.append( dirName.replace( demultiplex_script.demux.DemultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
+        DemultiplexList.append( dirName.replace( demultiplex_script.demux.demultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
 
 print( f"==> Getting demultiplexed directories finished ==\n")
 
