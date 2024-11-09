@@ -2405,7 +2405,7 @@ def main( RunID ):
     prepareDelivery( )                                                                                  # prepare the delivery files
     calcFileHash( demux.forTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIdDir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
     changePermissions( demux.forTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
-    controlProjectsQC ( )                                                                               # check to see if we need to create the report for any control projects present
+    controlProjectsQC( )                                                                                # check to see if we need to create the report for any control projects present
     tarFileQualityCheck( )                                                                              # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
     deliverFilesToVIGASP( )                                                                             # Deliver the output files to VIGASP
     deliverFilesToNIRD( )                                                                               # deliver the output files to NIRD
