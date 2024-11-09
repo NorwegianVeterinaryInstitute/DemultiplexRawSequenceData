@@ -1482,7 +1482,7 @@ def tarProjectFiles( ):
             demuxLogger.warning( f"{demux.demultiplexLogDirPath} directory found. Skipping." )
             continue
 
-        if any( var in project for var in [ demux.nextSeq, demux.miSeq ] ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcessList
+        if any( tag in project for tags in [ demux.nextSeq, demux.miSeq ] for tag in tags ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcessList
             projectsToProcessList.append( project )
             demuxLogger.debug( f"{project:{demux.spacing2}} added to projectsToProcessList." )
 
