@@ -109,7 +109,7 @@ if NewRunID:
             print( f"{demultiplex_script.demux.scriptFilePath} does not exist!" )
             exit( )
 
-        # EXAMPLE: /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
+        # EXAMPLE: /bin/python3.11 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
         demultiplex_script.main( NewRunID )
 
         print( 'completed\n' )

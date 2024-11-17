@@ -30,9 +30,9 @@ demux module:
 
     Module can run on its own, without needing to include in a library as such:
 
-    /usr/bin/python3     /data/bin/demultiplex_script.py  200306_M06578_0015_000000000-CWLBG
+    /data/bin/demultiplex_script.py 200306_M06578_0015_000000000-CWLBG
 
-    python interpreter | path to script                 | RunID directory from /data/rawdata
+    path to script                   | RunID directory from /data/rawdata
 
 INPUTS:
     - RunID directory from /data/rawdata
@@ -203,7 +203,7 @@ class demux:
     bcl2fastq_bin                   = f"{dataRootDirPath}/bin/bcl2fastq"
     fastqc_bin                      = f"{dataRootDirPath}/bin/fastqc"
     mutliqc_bin                     = f"{dataRootDirPath}/bin/multiqc"
-    python3_bin                     = f"/usr/bin/python3"
+    python3_bin                     = f"/usr/bin/python3.11" # Switching over to python3.11 for speed gains
     scriptFilePath                  = __file__
     ######################################################
     rtaCompleteFile                 = 'RTAComplete.txt'
@@ -2184,7 +2184,7 @@ def printRunningEnvironment( ):
     logString   = "log"
 
     demuxLogger.info( f"To rerun this script run\n" )
-    demuxLogger.info( termcolor.colored( f"\tclear; rm -rf {demux.demultiplexRunIdDir} && rm -rf {demux.forTransferRunIdDir} && /usr/bin/python3 /data/bin/demultiplex_script.py {demux.RunID}\n\n", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"\tclear; rm -rf {demux.demultiplexRunIdDir} && rm -rf {demux.forTransferRunIdDir} && /usr/bin/python3.11 /data/bin/demultiplex_script.py {demux.RunID}\n\n", attrs=["bold"] ) )
 
     demuxLogger.debug( "=============================================================================")
     for key, value2 in demux.globalDictionary.items( ):         # take the key/label and the value of the key from the global dictionary
