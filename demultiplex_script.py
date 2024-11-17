@@ -1965,7 +1965,7 @@ def copySampleSheetIntoDemultiplexRunIdDir( ):
 
     try:
         currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetFilePath ).st_mode )
-        os.chmod( demux.sampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
+        # os.chmod( demux.sampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
         shutil.copy2( demux.sampleSheetFilePath, demux.demultiplexRunIdDir )
     except Exception as err:
         text = [    f"Copying {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} failed.",
