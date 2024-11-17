@@ -1,4 +1,4 @@
-#!/bin/env /bin/python3.11
+#!/usr/bin/python3.11
 
 import argparse
 import ast
