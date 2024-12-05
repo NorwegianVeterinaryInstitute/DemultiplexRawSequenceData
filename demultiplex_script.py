@@ -11,6 +11,7 @@ import logging.handlers
 import os
 import pathlib
 import re
+import resource
 import shutil
 import socket
 import stat
@@ -703,6 +704,16 @@ def demultiplex( ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Demultiplexing started ==\n", color="green", attrs=["bold"] ) )
 
+    # increase the file descriptor limit to 65535:
+    #       241202_M06578_0219_000000000-LT29R has over 350 sampless, when executing it, bcl2fastq threw this error:
+    #       bcl2fastq::common::Exception: 2024-Dec-05 22:59:50: Too many open files (24): /TeamCityBuildAgent/work/556afd631a5b66d8/src/cxx/include/io/FileBufWithReopen.hpp(48): Throw in function bcl2fastq::io::BasicFileBufWithReopen<CharT, Traits>::BasicFileBufWithReopen(std::ios_base::openmode) [with CharT = char; Traits = std::char_traits<char>; std::ios_base::openmode = std::_Ios_Openmode]
+    #       Dynamic exception type: boost::exception_detail::clone_impl<bcl2fastq::common::IoError>
+    #       std::exception::what: Failed to allocate a file handle
+    # raising the file descriptor , seems to fix the issue
+    # command line equiv: ulimit -n 65535
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (65535, hard))
+
     argv = [ demux.bcl2fastq_bin,
          "--no-lane-splitting",
          "--runfolder-dir",
@@ -712,7 +723,7 @@ def demultiplex( ):
     ]
 
     text = f"Command to execute:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + " ".join( argv ) )
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + "ulimit -n 65535; " + " ".join( argv ) )
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
