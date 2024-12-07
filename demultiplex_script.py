@@ -536,7 +536,7 @@ class demux:
 
         common errors of SampleSheets
             1.       Space in sample name or project name. Especially hard to grasp if they occur at the end of the name. I replace the spaces with a “-“ if in middle of name. I erase the space if it is at the end.
-            2.       Æ, Ø or Å in sample name or project names.
+            2.       Non-UTF8 Æ, Ø or Å in sample name or project names.
             3.       Extra lines in SampleSheet with no sample info in them. Will appear as a bunch of commas for each line which is empty. They need to be deleted or demuxing fails.
             4.       Forget to put ekstra column called “Analysis” and set an “x” in that column for all samples (I don’t know if we will keep this feature for the future)
             5.       . in sample names
