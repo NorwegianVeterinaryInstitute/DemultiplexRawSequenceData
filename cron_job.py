@@ -10,18 +10,18 @@ from time import strftime, localtime, time
 import demultiplex_script
 
 # LIMITATIONS/ASSUMPTIONS:
-#   This script cannot handle more than 1 new run /data/scratch/{*M06578*,*NB552450*}_demultiplex
-#       if more than 1 new run exists in /data/scratch/ the script will pick the first
+#   This script cannot handle more than 1 new run
+#       if more than 1 new run exists in /data/rawdata/ the script will pick the first
 #       directory  os.listdir() will return, THERE IS NO GUARANTEE FOR LEXICOGRAPHICAL
 #       ORDER.
 #
 # INPUT:
 #   none from command line
-#   the directories in /data/scratch/{*M06578*,*NB552450*}_demultiplex
+#   the directory contents of /data/rawdata and /data/demultiplex
 #
 # OUTPUT:
 #   Log file in /data/bin/cron_out.log, append mode, file does not get overwritten with each run
-#           "2021-09-09 10:00:01 - 24 in scratch and 24 in demultiplex : all the runs have been demultiplexed"  
+#           "2021-09-09 10:00:01 - 24 in rawdata and 24 in demultiplex : all the runs have been demultiplexed"  
 #       or
 #           Need to work on this: $COMMAND_TO_RUN completed
 #       or
@@ -29,7 +29,7 @@ import demultiplex_script
 #
 # WHAT DOES THIS SCRIPT DO:
 #       This script sets up the demultiplexing:
-#           Picks up all the existing folders within /data/scratch/*M06578*_demultiplex in variable RunList     
+#           Picks up all the existing folders within /data/rawdata/*M06578*_demultiplex in variable RunList     
 #       Initializes a new variable
 #           fills it up with the var from RunList
 #           but removes the _demultiplex part
@@ -40,7 +40,7 @@ import demultiplex_script
 #       if there is a difference between the two lists
 #           the script starts a new run by
 #               creating the dir path to be demultiplexed
-#               checks if /data/scratch/$NEWRUN/SampleSheet.csv exists
+#               checks if /data/rawdata/$NEWRUN/SampleSheet.csv exists
 #           executes /bin/python3 /data/bin/current_demultiplex_script.py
 #               with the new dir name as argument, example
 #                   /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK_copy   
@@ -87,7 +87,7 @@ for item in RunList: # iterate over RunList to see if there a new item in Demult
         NewRunID = item # any RunList item that is not in the demux list, gets processed
 
 localTime = strftime( "%Y-%m-%d %H:%M:%S", localtime( ) ) 
-print( f"{ localTime } - { len( RunList ) } in scratch and { len( DemultiplexList ) } in demultiplex: ")
+print( f"{ localTime } - { len( RunList ) } in rawdata and { len( DemultiplexList ) } in demultiplex: ")
 
 if count == len( RunList ): # no new items in DemultiplexList, therefore count == len( RunList )
      print( 'all the runs have been demultiplexed\n' )
