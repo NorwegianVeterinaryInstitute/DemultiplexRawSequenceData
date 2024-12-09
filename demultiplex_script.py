@@ -1356,7 +1356,7 @@ def calcFileHash( eitherRunIdDir ):
                     fh = open( f"{filepath}{demux.md5Suffix}", "w" )
                     fh.write( f"{md5sum}\n  {filetobehashed}\n" ) # the two spaces are mandatory to be re-verified after uploading via 'md5sum -c FILE'
                     fh.close( )
-               except FileNotFoundError as err:
+                except FileNotFoundError as err:
                     text = [    f"Error writing md5 sum file {filepath}{demux.md5Suffix}:", 
                                 f"Exiting!"
                             ]
