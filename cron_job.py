@@ -102,8 +102,8 @@ if NewRunID:
     # essential condition to process is that RTAComplete.txt and SampleSheet.csv
     if demultiplex_script.demux.rtaCompleteFile in os.listdir( os.path.join( demultiplex_script.demux.rawDataDir, NewRunID ) ) and demultiplex_script.demux.sampleSheetFileName in os.listdir( os.path.join( demultiplex_script.demux.rawDataDir, NewRunID ) ):
 
-        if demultiplex_script.demux.debug: 
-            print( f"{demultiplex_script.demux.python3_bin} {demultiplex_script.demux.scriptFilePath} {NewRunID}")
+        # if demultiplex_script.demux.debug: 
+            # print( f"{demultiplex_script.demux.python3_bin} {demultiplex_script.demux.scriptFilePath} {NewRunID}")
 
         if not os.path.exists( demultiplex_script.demux.scriptFilePath ):
             print( f"{demultiplex_script.demux.scriptFilePath} does not exist!" )
