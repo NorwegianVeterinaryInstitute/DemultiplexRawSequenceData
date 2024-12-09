@@ -1364,7 +1364,8 @@ def calcFileHash( eitherRunIdDir ):
                     demuxFailureLogger.critical( f"{ text }" )
                     demuxLogger.critical( f"{ text }" )
                     logging.shutdown( )
-                    sys.exit( )            else:
+                    sys.exit( )            
+            else:
                 demuxLogger.warning( f"{filepath}{demux.md5Suffix} exists, skipping" )
                 continue
             if not os.path.isfile( f"{filepath}{demux.sha512Suffix}" ):
