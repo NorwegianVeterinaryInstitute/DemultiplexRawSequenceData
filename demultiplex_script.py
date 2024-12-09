@@ -1352,16 +1352,25 @@ def calcFileHash( eitherRunIdDir ):
 
 
             if not os.path.isfile( f"{filepath}{demux.md5Suffix}" ):
-                fh = open( f"{filepath}{demux.md5Suffix}", "w" )
-                fh.write( f"{md5sum}\n" )
-                fh.close( )
-            else:
+                try: 
+                    fh = open( f"{filepath}{demux.md5Suffix}", "w" )
+                    fh.write( f"{md5sum}\n  {filetobehashed}\n" ) # the two spaces are mandatory to be re-verified after uploading via 'md5sum -c FILE'
+                    fh.close( )
+               except FileNotFoundError as err:
+                    text = [    f"Error writing md5 sum file {filepath}{demux.md5Suffix}:", 
+                                f"Exiting!"
+                            ]
+                    text = '\n'.join( text )
+                    demuxFailureLogger.critical( f"{ text }" )
+                    demuxLogger.critical( f"{ text }" )
+                    logging.shutdown( )
+                    sys.exit( )            else:
                 demuxLogger.warning( f"{filepath}{demux.md5Suffix} exists, skipping" )
                 continue
             if not os.path.isfile( f"{filepath}{demux.sha512Suffix}" ):
                 try: 
                     fh = open( f"{filepath}{demux.sha512Suffix}", "w" )
-                    fh.write( f"{sha512sum}\n" )
+                    fh.write( f"{sha512sum}  {filetobehashed}\n" ) # the two spaces are mandatory to be re-verified after uploading via 'sha512sum -c FILE'
                     fh.close( )  
                 except FileNotFoundError as err:
                     text = [    f"Error writing sha512 sum file {filepath}{demux.sha512Suffix}:", 
