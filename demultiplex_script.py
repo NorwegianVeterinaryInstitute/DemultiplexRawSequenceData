@@ -1345,7 +1345,7 @@ def calcFileHash( eitherRunIdDir ):
             filehandle     = open( filepath, 'rb' )
             filetobehashed = filehandle.read( )
             md5sum         = hashlib.md5( filetobehashed ).hexdigest( )
-            sha512sum      = hashlib.sha256( filetobehashed ).hexdigest( )
+            sha512sum      = hashlib.sha512( filetobehashed ).hexdigest( )
             md5Length      = 16 # 128 bytes
             sha512Length   = 64 # 512 bytes
             demuxLogger.debug( f"md5sum: {md5sum:{md5Length}} | sha512sum: {sha512sum:{sha512Length}} | filepath: {filepath}" )
