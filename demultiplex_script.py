@@ -905,7 +905,8 @@ def renameFiles( ):
             renamedFile = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project, demux.RunIDShort + '.' + baseFileName ) # saving this var to use later when renaming directories
                                 # The idea here is that the format of the new path is the fully renamed directory + fully renamed file
                                 #
-                                # DO NOT REMOVE THE DOTS
+                                # DO NOT REMOVE THE DOTS. Look at https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/86#issuecomment-2527335084
+                                # if you want some documentation as to 'why'
 
             if renamedFile not in demux.newProjectFileList:
                 demux.newProjectFileList.append( renamedFile )  # demux.newProjectFileList is used in fastQC( )
