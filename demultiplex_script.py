@@ -801,6 +801,10 @@ def renameDirectories( ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Renaming project directories from project_name to RunIDShort.project_name ==\n", color="green", attrs=["bold"] ) )
 
 
+    for index, item in enumerate( demux.projectList ):
+        text = f"demux.projectList[{index}]:"
+        demuxLogger.debug( f"{text:{demux.spacing3}}" + item) # make sure the debugging output is all lined up.
+
     for project in demux.projectList: # rename the project directories
 
         oldname = os.path.join( demux.demultiplexRunIdDir, project )
@@ -897,11 +901,16 @@ def renameFiles( ):
             baseFileName = os.path.basename( file )
 
             oldname     = file
-            newname     = os.path.join( demux.demultiplexRunIdDir, project, demux.RunIDShort + baseFileName )
-            renamedFile = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project, demux.RunIDShort + baseFileName ) # saving this var to use later when renaming directories
+            newname     = os.path.join( demux.demultiplexRunIdDir, project, demux.RunIDShort + '.' + baseFileName )
+            renamedFile = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project, demux.RunIDShort + '.' + baseFileName ) # saving this var to use later when renaming directories
+                                # The idea here is that the format of the new path is the fully renamed directory + fully renamed file
+                                #
+                                # DO NOT REMOVE THE DOTS
 
             if renamedFile not in demux.newProjectFileList:
-                demux.newProjectFileList.append( renamedFile ) # demux.newProjectFileList is used in fastQC( )
+                demux.newProjectFileList.append( renamedFile )  # demux.newProjectFileList is used in fastQC( )
+                                                                # We are saving here in order to not have to read in the
+                                                                # filenames, again
 
             text  = f"/usr/bin/mv {oldname} {newname}"
             demuxLogger.debug( " "*demux.spacing1 + text )
@@ -974,7 +983,9 @@ def renameFilesAndDirectories( ):
         text = "demux.projectList:"
         demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{demux.projectList}" )
 
-    renameFiles( )
+    renameFiles( )  # CHECK IF FILES ARE RENAMED CORRECTLY:
+                    #
+                    #  /data/for_transfer/201218_M06578_0041_000000000-JF7TM/MHC-amplicon-UG/201218_M06578.*tar.gz
     renameDirectories( )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Renaming finished ==", color="red", attrs=["bold"] ) )
