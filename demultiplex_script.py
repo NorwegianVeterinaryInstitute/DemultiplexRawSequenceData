@@ -2217,7 +2217,7 @@ def printRunningEnvironment( ):
     logString   = "log"
 
     demuxLogger.info( f"To rerun this script run\n" )
-    demuxLogger.info( termcolor.colored( f"\tclear; rm -rf {demux.demultiplexRunIdDir} && rm -rf {demux.forTransferRunIdDir} && /usr/bin/python3.11 /data/bin/demultiplex_script.py {demux.RunID}\n\n", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"\tclear; rm -rvf /data/" + "{" + f"{demux.demultiplexDirName},{demux.forTransferDirName}" + "}" + f"/{demux.RunID}* " + f"&& /data/bin/demultiplex_script.py {demux.RunID}\n\n", attrs=["bold"] ) )
 
     demuxLogger.debug( "=============================================================================")
     for key, value2 in demux.globalDictionary.items( ):         # take the key/label and the value of the key from the global dictionary
