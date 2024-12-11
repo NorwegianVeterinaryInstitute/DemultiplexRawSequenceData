@@ -2502,8 +2502,5 @@ if __name__ == '__main__':
 
     #demuxLogger             = logging.getLogger( __name__ )
     RunID                   = sys.argv[1]
-    RunID                   = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
-    RunID                   = RunID.replace( ",", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
-
 
     main( RunID )
