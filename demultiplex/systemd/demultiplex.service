@@ -1,0 +1,14 @@
+[Unit]
+Description=Demultiplex Script Service
+After=network.target
+
+[Service]
+# got to add user and group here and rundir and pid and stuff
+# review the entire unit
+ExecStart=/usr/bin/python3.11 -m demultiplex <RunID>
+WorkingDirectory=/data/bin
+Environment="PYTHONPATH=/data/bin"
+Restart=always
+
+[Install]
+WantedBy=default.target
