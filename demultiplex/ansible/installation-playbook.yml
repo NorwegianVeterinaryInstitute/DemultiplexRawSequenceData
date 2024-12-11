@@ -23,3 +23,33 @@
 #
 ################################################################################
 
+# we got to install 
+# 1. bcl2fastq from the illumina website
+# 2. fastqc
+# 3. multiqc
+
+---
+- name: Install gzipped binary
+  hosts: localhost
+  tasks:
+    - name: Download the gzipped binary
+      get_url:
+        url: "https://example.com/binary.tar.gz"  # Replace with actual URL
+        dest: "/tmp/binary.tar.gz"
+
+    - name: Extract the gzipped binary
+      unarchive:
+        src: "/tmp/binary.tar.gz"
+        dest: "/usr/local/bin"
+        remote_src: yes
+
+    - name: Set permissions for the binary
+      file:
+        path: "/usr/local/bin/binary"  # Adjust the binary path as needed
+        mode: "0755"
+
+    - name: Clean up temporary files
+      file:
+        path: "/tmp/binary.tar.gz"
+        state: absent
+
