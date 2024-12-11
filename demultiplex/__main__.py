@@ -8,7 +8,16 @@
 ########################################################################
 
 
+import os
 import sys
+
+# ensure the bytecode cache is stored in a unique directory for each user
+# under /tmp
+username = os.getenv('USER') or os.getenv('USERNAME')  # Get current username
+sys.pycache_prefix = f'/tmp/pycache/{username}'
+
+
+
 import logging
 import argparse
 from demultiplex_script import main
