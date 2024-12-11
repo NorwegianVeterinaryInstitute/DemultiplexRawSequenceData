@@ -115,3 +115,22 @@ if NewRunID:
         print( 'completed\n' )
     else:
         print( ', waiting for the run to complete\n' )
+
+#
+########################################################################
+# Turning demultiplex_script into a python module, by placing it in a
+# package structure
+########################################################################
+#
+# from demultiplex.demultiplex_script import main
+#
+# def run_cron_job():
+#     RunID = "example_run_id"  # Replace with actual logic to retrieve RunID
+#     main(RunID)
+#
+# if __name__ == "__main__":
+#     run_cron_job()
+
+# to run this from cron, you change the command line to this
+# so python can find the demultiplexing script
+# PYTHONPATH=/data/bin /usr/bin/python3.11 /data/bin/cron_job.py
