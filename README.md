@@ -21,8 +21,10 @@ Software requirements
 	│   ├── gls_events	
 	│   ├── logs 													clarity logs go here
 	│   ├── miseq													miseq-clarity stopover directory
-	│   │   └── M06578												per serial number
-	│   │   	└── samplesheets									samplesheets for this serial number gohere
+    │   │   ├── M06578                                              per serial number
+    │   │   │   └── samplesheets                                    samplesheets for this serial number go here
+	│   │   └── M09180												other serial number
+	│   │   	└── samplesheets									samplesheets for other serial number go here
 	│   └── nextseq													nextseq-clarity stopover directory
 	│   	└── NB552450											per serial number
 	│   		└── samplesheets									samplesheets for this serial number gohere
@@ -32,9 +34,10 @@ Software requirements
 	├── rawdata														raw data directory, sequencers write here
 	│   ├── bad_runs												runs which are bad, or rejected
 	│   └── control_runs											water/other control runs
-	└── samplesheets												cummulative backups of all samplesheets
-	├── M06578 -> /data/clarity/miseq/M06578/samplesheets/			symlinmk to sample sheets for convinience
-	└── NB552450 -> /data/clarity/nextseq/NB552450/samplesheets/	symlinmk to sample sheets for convinience
+	├── samplesheets												cummulative backups of all samplesheets
+	├── M06578 -> /data/clarity/miseq/M06578/samplesheets/			symlink to sample sheets for convinience
+    ├── M09180 -> /data/clarity/miseq/M09180/samplesheets/          symlink to sample sheets for convinience
+	└── NB552450 -> /data/clarity/nextseq/NB552450/samplesheets/	symlink to sample sheets for convinience
 
 
 ## Procedure
