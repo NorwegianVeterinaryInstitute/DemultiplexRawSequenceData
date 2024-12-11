@@ -51,7 +51,7 @@ Software requirements
     Z:\SampleSheets
             ├── 190912_M06578_0001_000000000-CNNTP.csv
 
-* Cron job runs every 30 minutes if it finds a new run, _RTAComplete.txt_ and _SampleSheet.csv_ files within the run new, it starts the demultiplexing script
+* Cron job runs every 15 minutes if it finds a new run, _RTAComplete.txt_ and _SampleSheet.csv_ files within the run new, it starts the demultiplexing script
 * It can be manually started as below
 ```bash
 /usr/bin/python3.11 /data/bin/demultiplex_script.py \<RunID\>
