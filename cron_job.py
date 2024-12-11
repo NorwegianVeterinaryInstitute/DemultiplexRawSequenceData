@@ -1,9 +1,5 @@
 #!/usr/bin/python3.11
 
-
-# TO FIX: if someone passes a run with a / at the end be forgiving and just remove the '/'
-
-
 import os, sys, subprocess
 import time
 from time import strftime, localtime, time
