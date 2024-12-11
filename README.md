@@ -55,3 +55,5 @@ Software requirements
 ```
 
 as the relevant user.
+
+NIRD delivery directory: /projects/NS9305K/SEQ-TECH/data_delivery/
