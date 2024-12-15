@@ -2557,11 +2557,6 @@ def main( RunID ):
     All actions are coordinated through here
     """
 
-    # i don not like the __pycache__ dir sitting there.
-    # not while we are not a module and just sitting under /data/bin
-    # when we are a module, remove the following line
-    os.environ['PYTHONPYCACHEPREFIX'] = './.__pycache__'
-
     RunID                   = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
     RunID                   = RunID.replace( ",", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
 
