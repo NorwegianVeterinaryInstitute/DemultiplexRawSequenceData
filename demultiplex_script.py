@@ -1313,9 +1313,11 @@ def write_checksum_files(args):
         return f"{checksum_file}: exists, skipped"
 
     twoMandatorySpaces = "  "
-    write_file(demux.md5Suffix,    f"{md5sum}{twoMandatorySpaces}{filepath}\n")     # the two spaces are mandatory to be re-verified after uploading via 'md5sum -c FILE'
-    write_file(demux.sha512Suffix, f"{sha512sum}{twoMandatorySpaces}{filepath}\n")  # the two spaces are mandatory to be re-verified after uploading via 'sha512sum -c FILE'
+    write_file(demux.md5Suffix,    f"{md5sum}{twoMandatorySpaces}{os.path.basename( filepath )}\n")     # the two spaces are mandatory to be re-verified after uploading via 'md5sum -c FILE'
+    write_file(demux.sha512Suffix, f"{sha512sum}{twoMandatorySpaces}{os.path.basename( filepath )}\n")  # the two spaces are mandatory to be re-verified after uploading via 'sha512sum -c FILE'
     demuxLogger.debug(f"md5sum: {md5sum:{demux.md5Length}} | sha512sum: {sha512sum:{demux.sha512Length}} | filepath: {filepath}") # print for the benetif of the user
+
+
 
 ########################################################################
 # is_file_large
