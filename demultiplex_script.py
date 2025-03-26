@@ -626,9 +626,18 @@ def createDemultiplexDirectoryStructure(  ):
 
     # using absolute path names here
     try:
-        os.mkdir( demux.demultiplexRunIdDir )       # root directory for run
+        os. 
         os.mkdir( demux.demultiplexLogDirPath )     # log directory  for run
+
+        originalEgid = os.getegid()                # get the effective group id for the run
+        os.setegid( demux.commonEgid )              # set the effective group id for the run to "sambagroup", so labs can do manipulation of directories
+
+        os.mkdir( demux.demultiplexRunIdDir )       # root directory for run
         os.mkdir( demux.demuxQCDirectoryFullPath )  # QC directory   for run
+
+        os.chmod( demux.demultiplexRunIdDir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
+        os.chmod( demux.demux.demuxQCDirectoryFullPath, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
+
     except FileExistsError as err:
         demuxFailureLogger.critical( f"File already exists! Exiting!\n{err}" )
         demuxLogger.critical( f"File already exists! Exiting!\n{err}" )
@@ -669,6 +678,7 @@ def prepareForTransferDirectoryStructure( ):
 
     try:
         os.mkdir( demux.forTransferRunIdDir )       # try to create the demux.forTransferRunIdDir directory ( /data/for_transfer/220603_M06578_0105_000000000-KB7MY )
+         os.chmod( demux.forTransferRunIdDir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
     except Exception as err:
         text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
         demuxFailureLogger.critical( f"{ text }" )
@@ -1460,7 +1470,6 @@ def changePermissions( path ):
 
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-                # os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
                 os.chmod(filepath, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH) # rw-rw-r-- / 664 / read-write owner, read-write group, read others
             except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
                 text = [    f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
@@ -1493,7 +1502,6 @@ def changePermissions( path ):
 
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-                # os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
                 os.chmod( dirpath, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
             except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
                 text = [
