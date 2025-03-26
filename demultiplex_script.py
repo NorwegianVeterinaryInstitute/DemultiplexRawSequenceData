@@ -1449,7 +1449,7 @@ def changePermissions( path ):
         # change ownership and access mode of files
         for file in filenames:
             filepath = os.path.join( directoryRoot, file )
-            demuxLogger.debug( " "*demux.spacing2 + f"chmod 644 {filepath}" ) # print chmod 644 {dirpath}
+            demuxLogger.debug( " "*demux.spacing2 + f"chmod 664 {filepath}" ) # print chmod 664 {dirpath}
 
             if not os.path.isfile( filepath ):
                 text = f"{filepath} is not a file. Exiting." 
@@ -1460,7 +1460,8 @@ def changePermissions( path ):
 
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-                os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
+                # os.chmod( filepath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # rw-r--r-- / 644 / read-write owner, read group, read others
+                os.chmod(filepath, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH) # rw-rw-r-- / 664 / read-write owner, read-write group, read others
             except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
                 text = [    f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
                             f"\terrno:\t{err.errno}",
@@ -1481,7 +1482,7 @@ def changePermissions( path ):
         for name in dirnames:
             dirpath = os.path.join( directoryRoot, name )
 
-            demuxLogger.debug( " "*demux.spacing2 + f"chmod 644 {dirpath}" ) # print chmod 755 {dirpath}
+            demuxLogger.debug( " "*demux.spacing2 + f"chmod 775 {dirpath}" ) # print chmod 755 {dirpath}
 
             if not os.path.isdir( dirpath ):
                 text = f"{dirpath} is not a directory. Exiting."
@@ -1492,7 +1493,8 @@ def changePermissions( path ):
 
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-                os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
+                # os.chmod( dirpath, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxr-xr-x / 755 / read-write-execute owner, read-execute group, read-execute others
+                os.chmod( dirpath, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
             except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
                 text = [
                         f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
