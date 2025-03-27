@@ -368,6 +368,10 @@ class demux:
             # 
             line = line.replace( '\'', '' )
             line = line.replace( "\"", '' )
+            # Remove norwegian chars and other signs
+            line = line.replace('Â ', ' ').replace('ã€€', ' ')
+            # remove any &nbsp
+            line = line.replace('\u00A0', ' ')
 
             if demux.verbosity == 3:
                 text = f"procesing line '{line}'"
