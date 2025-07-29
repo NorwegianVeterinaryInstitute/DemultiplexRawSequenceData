@@ -22,6 +22,7 @@ import sys
 import syslog
 import tarfile
 import termcolor
+#import norwegianveterinaryinstitute.samplesheet
 
 from concurrent.futures import ProcessPoolExecutor
 from inspect import currentframe, getframeinfo
@@ -352,6 +353,89 @@ class demux:
         sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding= demux.decodeScheme )
         sampleSheetContent    = sampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
 
+        ##########################################################################
+        # check for non ASCII characters. if they exist, report them, then delete them
+        #
+        if re.search(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent):
+            invalidChars = [(m.group(), m.start()) for m in re.finditer(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent)]
+
+
+            for char, position in invalidChars:
+                lineNumber = sampleSheetContent.count( '\n', 0, position ) + 1
+                columnNumber = position - sampleSheetContent.rfind( '\n', 0, position )
+                print( f"Invalid character '{char}' at line {lineNumber}, column {columnNumber}" )
+
+            # replace it according to rules below
+            #
+            # if char found is not in the rules, notify user
+
+            # When you edit files in CSV format, some software saves the values surrounded by quotes
+            # and some do not. So, precautionary strip single and double quotes
+            #
+
+
+            ##########################################################################
+            # The following lists are designed to ensure compatibility with ASCII
+            # as required by Illumina's bcl2fastq, eliminating character sets which
+            # may be used by personnel in the lab handling the SampleSheet but are not
+            # compatible with bcl2fastq.
+            #
+            norwegianDanishCharactersPattern = r'[ÅÆØåæø]'
+            swedishFinnishCharactersPattern = r'[ÄÖäö]'
+            icelandicCharactersPattern = r'[ÁÐÍÓÚÝÞÖáðíóúýþ]'
+            # Ñ and ñ are Spanish-specific characters, everything else brazilianPortugueseCharactersPattern covers
+            spanishCharacterspattern = r'[Ññ]'
+            # Œ, œ, and ÿ are French-specific characters, everything else brazilianPortugueseCharactersPattern covers
+            frenchCharactersPattern = r'[Œœÿ]'
+            # Â,À,Ç are baptized as Brazilian Portugese cuz we got more Portugese speakers in the building
+            brazilianPortugueseCharactersPattern = r'[ÂÃÁÀÊÉÍÓÔÕÚÇâãáàêéíóôõúç]'
+            otherCharactersPattern = r'[\'\"=]'
+            currencyCharactersPattern = r'[€]'
+
+            # Catch Chinese, Japanese, and Korean (CJK) characters,
+            cjkPattern = r'[\u4E00-\u9FFF\u3040-\u30FF\uFF66-\uFF9F\u3400-\u4DBF]'
+                # \u4E00-\u9FFF: Common and Unified CJK characters (Chinese, Japanese Kanji, Korean Hanja).
+                # \u3040-\u30FF: Japanese Hiragana and Katakana.
+                # \uFF66-\uFF9F: Half-width Katakana.
+                # \u3400-\u4DBF: CJK Extension A (additional Chinese characters)
+            vietnameseCharactersPattern = r'[ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂễỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰ]'
+
+
+
+
+            ##########################################################################
+            # Classes of characters frequently found in SampleSheet
+
+            # Leftover single and double quotes 
+            line = line.replace( '\'', '' )
+            line = line.replace( "\"", '' )
+
+            # Norwegian characters
+            line = line.replace('Â', 'A')
+            line = line.replace('Å', 'A')
+            line = line.replace('Æ', 'AE')
+            line = line.replace('Ø', 'O')
+            line = line.replace('â', 'a')
+            line = line.replace('å', 'a')
+            line = line.replace('æ', 'ae')
+            line = line.replace('ø', 'o')
+
+            # Spanish accented characters
+            line = line.replace('Ã', 'A')
+            line = line.replace('ã', 'a')
+
+            # Euro currency sign
+            line = line.replace('€', ' ')
+
+            sys.exit( "what happens when multiples of the above exist, read up on line.replace()")
+            # remove any &nbsp
+            line = line.replace('\u00A0', ' ')
+
+            ###########################################################################
+            # WARN USER THAT SUCH CHARS WERE ENCOUNTERED
+            ###########################################################################
+            sys.exit( "working on: WARN USER THAT SUCH CHARS WERE ENCOUNTERED. Use this token to search for this sys.exit()" )
+
         if demux.verbosity == 3:
             if loggerName in logging.Logger.manager.loggerDict.keys():
                 demuxLogger.debug( f"sampleSheetContent:\n{sampleSheetContent }" ) # logging.debug it
@@ -362,16 +446,6 @@ class demux:
 
         sampleSheetContents   = sampleSheetContent.split( '\n' )  # then split it in lines
         for line in sampleSheetContents:
-
-            # When you edit files in CSV format, some software saves the values surrounded by quotes
-            # and some do not. So, precautionary strip single and double quotes
-            # 
-            line = line.replace( '\'', '' )
-            line = line.replace( "\"", '' )
-            # Remove norwegian chars and other signs
-            line = line.replace('Â ', ' ').replace('ã€€', ' ')
-            # remove any &nbsp
-            line = line.replace('\u00A0', ' ')
 
             if demux.verbosity == 3:
                 text = f"procesing line '{line}'"
@@ -736,7 +810,18 @@ def demultiplex( ):
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (65535, hard))
 
+    # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
+    availableCpus = os.cpu_count()
+    cpuMultiplier = 2
+    availableCpus = availableCpus * cpuMultiplier
+
     argv = [ demux.bcl2fastq_bin,
+         "--loading-threads",
+         f"{availableCpus}",
+         "--processing-threads",
+         f"{availableCpus}",
+         "--writing-threads",
+         f"{availableCpus}",
          "--no-lane-splitting",
          "--runfolder-dir",
         f"{demux.rawDataRunIDdir}",
@@ -746,6 +831,8 @@ def demultiplex( ):
 
     text = f"Command to execute:"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + "ulimit -n 65535; " + " ".join( argv ) )
+
+    sys.exit("Checking to see if bcl2fastq will run faster with morethreads")
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
