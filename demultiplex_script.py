@@ -1,5 +1,16 @@
 #!/usr/bin/python3.11
 
+########################################################################
+# Demutliplex a MiSEQ or NextSEQ run, perform QC using FastQC and
+# MultiQC and deliver files either to VIGASP for analysis or NIRD for
+# archiving
+#
+# https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData
+#
+# Copyright: The Norwegian Veterinary Institute
+# Licenced under the GNU Public License 3.0 of newer
+#
+
 import argparse
 import ast
 import pdb
@@ -380,25 +391,25 @@ class demux:
             # may be used by personnel in the lab handling the SampleSheet but are not
             # compatible with bcl2fastq.
             #
-            norwegianDanishCharactersPattern = r'[ÅÆØåæø]'
-            swedishFinnishCharactersPattern = r'[ÄÖäö]'
-            icelandicCharactersPattern = r'[ÁÐÍÓÚÝÞÖáðíóúýþ]'
-            # Ñ and ñ are Spanish-specific characters, everything else brazilianPortugueseCharactersPattern covers
-            spanishCharacterspattern = r'[Ññ]'
-            # Œ, œ, and ÿ are French-specific characters, everything else brazilianPortugueseCharactersPattern covers
-            frenchCharactersPattern = r'[Œœÿ]'
-            # Â,À,Ç are baptized as Brazilian Portugese cuz we got more Portugese speakers in the building
-            brazilianPortugueseCharactersPattern = r'[ÂÃÁÀÊÉÍÓÔÕÚÇâãáàêéíóôõúç]'
-            otherCharactersPattern = r'[\'\"=]'
-            currencyCharactersPattern = r'[€]'
+            # norwegianDanishCharactersPattern = r'[ÅÆØåæø]'
+            # swedishFinnishCharactersPattern = r'[ÄÖäö]'
+            # icelandicCharactersPattern = r'[ÁÐÍÓÚÝÞÖáðíóúýþ]'
+            # # Ñ and ñ are Spanish-specific characters, everything else brazilianPortugueseCharactersPattern covers
+            # spanishCharacterspattern = r'[Ññ]'
+            # # Œ, œ, and ÿ are French-specific characters, everything else brazilianPortugueseCharactersPattern covers
+            # frenchCharactersPattern = r'[Œœÿ]'
+            # # Â,À,Ç are baptized as Brazilian Portugese cuz we got more Portugese speakers in the building
+            # brazilianPortugueseCharactersPattern = r'[ÂÃÁÀÊÉÍÓÔÕÚÇâãáàêéíóôõúç]'
+            # otherCharactersPattern = r'[\'\"=]'
+            # currencyCharactersPattern = r'[€]'
 
-            # Catch Chinese, Japanese, and Korean (CJK) characters,
-            cjkPattern = r'[\u4E00-\u9FFF\u3040-\u30FF\uFF66-\uFF9F\u3400-\u4DBF]'
-                # \u4E00-\u9FFF: Common and Unified CJK characters (Chinese, Japanese Kanji, Korean Hanja).
-                # \u3040-\u30FF: Japanese Hiragana and Katakana.
-                # \uFF66-\uFF9F: Half-width Katakana.
-                # \u3400-\u4DBF: CJK Extension A (additional Chinese characters)
-            vietnameseCharactersPattern = r'[ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂễỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰ]'
+            # # Catch Chinese, Japanese, and Korean (CJK) characters,
+            # cjkPattern = r'[\u4E00-\u9FFF\u3040-\u30FF\uFF66-\uFF9F\u3400-\u4DBF]'
+            #     # \u4E00-\u9FFF: Common and Unified CJK characters (Chinese, Japanese Kanji, Korean Hanja).
+            #     # \u3040-\u30FF: Japanese Hiragana and Katakana.
+            #     # \uFF66-\uFF9F: Half-width Katakana.
+            #     # \u3400-\u4DBF: CJK Extension A (additional Chinese characters)
+            # vietnameseCharactersPattern = r'[ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂễỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰ]'
 
 
 
@@ -406,35 +417,35 @@ class demux:
             ##########################################################################
             # Classes of characters frequently found in SampleSheet
 
-            # Leftover single and double quotes 
-            line = line.replace( '\'', '' )
-            line = line.replace( "\"", '' )
+            # Leftover single and double quotes
+            # line = line.replace( '\'', '' )
+            # line = line.replace( "\"", '' )
 
-            # Norwegian characters
-            line = line.replace('Â', 'A')
-            line = line.replace('Å', 'A')
-            line = line.replace('Æ', 'AE')
-            line = line.replace('Ø', 'O')
-            line = line.replace('â', 'a')
-            line = line.replace('å', 'a')
-            line = line.replace('æ', 'ae')
-            line = line.replace('ø', 'o')
+            # # Norwegian characters
+            # line = line.replace('Â', 'A')
+            # line = line.replace('Å', 'A')
+            # line = line.replace('Æ', 'AE')
+            # line = line.replace('Ø', 'O')
+            # line = line.replace('â', 'a')
+            # line = line.replace('å', 'a')
+            # line = line.replace('æ', 'ae')
+            # line = line.replace('ø', 'o')
 
-            # Spanish accented characters
-            line = line.replace('Ã', 'A')
-            line = line.replace('ã', 'a')
+            # # Spanish accented characters
+            # line = line.replace('Ã', 'A')
+            # line = line.replace('ã', 'a')
 
-            # Euro currency sign
-            line = line.replace('€', ' ')
+            # # Euro currency sign
+            # line = line.replace('€', ' ')
 
-            sys.exit( "what happens when multiples of the above exist, read up on line.replace()")
-            # remove any &nbsp
-            line = line.replace('\u00A0', ' ')
+            # sys.exit( "what happens when multiples of the above exist, read up on line.replace()")
+            # # remove any &nbsp
+            # line = line.replace('\u00A0', ' ')
 
-            ###########################################################################
-            # WARN USER THAT SUCH CHARS WERE ENCOUNTERED
-            ###########################################################################
-            sys.exit( "working on: WARN USER THAT SUCH CHARS WERE ENCOUNTERED. Use this token to search for this sys.exit()" )
+            # ###########################################################################
+            # # WARN USER THAT SUCH CHARS WERE ENCOUNTERED
+            # ###########################################################################
+            # sys.exit( "working on: WARN USER THAT SUCH CHARS WERE ENCOUNTERED. Use this token to search for this sys.exit()" )
 
         if demux.verbosity == 3:
             if loggerName in logging.Logger.manager.loggerDict.keys():
@@ -717,9 +728,9 @@ def createDemultiplexDirectoryStructure(  ):
         os.mkdir( demux.demultiplexLogDirPath )     # log directory  for run
         os.mkdir( demux.demuxQCDirectoryFullPath )  # QC directory   for run
 
-        os.chmod( demux.demultiplexRunIdDir,            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
-        os.chmod( demux.demultiplexLogDirPath,          stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
-        os.chmod( demux.demuxQCDirectoryFullPath,       stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
+        os.chmod( demux.demultiplexRunIdDir,            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
+        os.chmod( demux.demultiplexLogDirPath,          stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
+        os.chmod( demux.demuxQCDirectoryFullPath,       stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
 
     except FileExistsError as err:
         demuxFailureLogger.critical( f"File already exists! Exiting!\n{err}" )
