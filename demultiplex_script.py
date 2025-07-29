@@ -361,20 +361,20 @@ class demux:
         tarFilesToTransferList      = [ ]
         loggerName                  = 'demuxLogger'
 
-        sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding= demux.decodeScheme )
+        sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding = demux.decodeScheme ) # demux.decodeScheme
         sampleSheetContent    = sampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
 
         ##########################################################################
         # check for non ASCII characters. if they exist, report them, then delete them
         #
-        if re.search(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent):
-            invalidChars = [(m.group(), m.start()) for m in re.finditer(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent)]
+        # if re.search(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent):
+        #     invalidChars = [(m.group(), m.start()) for m in re.finditer(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent)]
 
 
-            for char, position in invalidChars:
-                lineNumber = sampleSheetContent.count( '\n', 0, position ) + 1
-                columnNumber = position - sampleSheetContent.rfind( '\n', 0, position )
-                print( f"Invalid character '{char}' at line {lineNumber}, column {columnNumber}" )
+        #     for char, position in invalidChars:
+        #         lineNumber = sampleSheetContent.count( '\n', 0, position ) + 1
+        #         columnNumber = position - sampleSheetContent.rfind( '\n', 0, position )
+        #         print( f"Invalid character '{char}' at line {lineNumber}, column {columnNumber}" )
 
             # replace it according to rules below
             #
@@ -843,7 +843,7 @@ def demultiplex( ):
     text = f"Command to execute:"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + "ulimit -n 65535; " + " ".join( argv ) )
 
-    sys.exit("Checking to see if bcl2fastq will run faster with morethreads")
+    # sys.exit("Checking to see if bcl2fastq will run faster with morethreads")
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
