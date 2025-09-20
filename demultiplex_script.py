@@ -219,9 +219,10 @@ class demux:
     htmlSuffix                      = '.html'
     logSuffix                       = '.log'
     ######################################################
-    bcl2fastq_bin                   = f"{dataRootDirPath}/bin/bcl2fastq"
-    fastqc_bin                      = f"{dataRootDirPath}/bin/fastqc"
-    mutliqc_bin                     = f"{dataRootDirPath}/bin/multiqc"
+    executableProgramsPath          = f"/usr/local"
+    bcl2fastq_bin                   = f"{executableProgramsPath}/bin/bcl2fastq"
+    fastqc_bin                      = f"{executableProgramsPath}/bin/fastqc"
+    mutliqc_bin                     = f"{executableProgramsPath}/bin/multiqc"
     python3_bin                     = f"/usr/bin/python3.11" # Switching over to python3.11 for speed gains
     scriptFilePath                  = __file__
     ######################################################
