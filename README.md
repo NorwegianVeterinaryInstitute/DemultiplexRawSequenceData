@@ -34,11 +34,7 @@ Software requirements
     ├── rawdata                                                     raw data directory, sequencers write here
     │   ├── bad_runs                                                runs which are bad, or rejected
     │   └── control_runs                                            water/other control runs
-    ├── samplesheets                                                cummulative backups of all samplesheets
-    ├── M06578 -> /data/clarity/miseq/M06578/samplesheets/          symlink to sample sheets for convinience
-    ├── M09180 -> /data/clarity/miseq/M09180/samplesheets/          symlink to sample sheets for convinience
-    └── NB552450 -> /data/clarity/nextseq/NB552450/samplesheets/    symlink to sample sheets for convinience
-
+    └── samplesheets                                                cummulative backups of all samplesheets
 
 ## Procedure
 * MiSeq writes as MiSEQ- to /data/scratch; shared folder Z:\ (alias rawdata) in MiSeq
