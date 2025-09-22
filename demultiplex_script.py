@@ -240,7 +240,7 @@ class demux:
     footarfile                      = f"foo{tarSuffix}"      # class variable shared by all instances
     barzipfile                      = f"zip{zipSuffix}"
     totalTasks                      = 0
-    tabSpace                        = 8 
+    tabSpace                        = 8
     spacing1                        = 40
     spacing2                        = spacing1 + tabSpace
     spacing3                        = spacing2 + tabSpace
