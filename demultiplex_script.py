@@ -40,9 +40,11 @@ import termcolor
 from concurrent.futures import ProcessPoolExecutor
 from inspect import currentframe, getframeinfo
 
-
-from demux import demux # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
+# Breaking down the script into more digestible chunks
+from demux import demux # the demux object is where the whole initilizSation happens. read the top of demux/demux.py for more into
 from demux.util.buffering_smtp_handler import BufferingSMTPHandler
+from demux.envsetup.create_demultiplex_directory_structure import createDemultiplexDirectoryStructure
+from demux.envsetup.prepare_for_transfer_directory_structure import prepareForTransferDirectoryStructure
 
 
 """
@@ -136,23 +138,20 @@ WHAT DOES THE TAR FILE CONTAIN
         - one md5 file for the tar file
         - additional sha512 file for extra assurance the file is unique
 
-
 WHAT DOES THE QC TAR FILE CONTAIN
     The QC tar file contains all the files under the {demux.RunIDShort}_QC and multiqc_data directories 
     It is named as
         RunIDshort_QC, eg: 200624_M06578_QC
 
-
 WHERE ARE ALL THE VARIABLES CREATED
     In setupEnvironment( )
 
 WHY NOT USE MD5 ANY MORE AND PREFER SHA512
-    To be discussed
-
+    The md5 hash space is easy nowdays to be exausted. MD5 was proven to to be easily exaustible in 2002 with the then hardware. With the files available today and the faster, multicore hardware, md5 can easily have collision between two filenames that have nothing to do with each other.
+    the sha512 hash has more items in its search space more than 100 billion times the atoms in our universe, practically guaranteeing that collisions (and therefore files with the shame sha512 signature) will be highly improbable to happen.
 
 WHY THIS PROGRAM SHOULD EVENTUALLY BE A DAEMON
     To be discussed
-
 
 WHAT DOES THIS SCRIPT DO
     This script does the following things
@@ -182,108 +181,6 @@ LIMITATIONS
     - Relies only on output directory name and does not verify contents
 
 """
-
-
-
-########################################################################
-# createDirectory
-########################################################################
-
-def createDemultiplexDirectoryStructure(  ):
-    """
-    If the Demultiplexing directory or any relevant directory does not exist, create it
-        demux.RunIDShort format is in the pattern of (date +%y%m%d)_SEQUENCERSERIALNUMBER Example: 220314_M06578
-        {demultiplexDirRoot} == "/data/demultiplex" # default
-
-        {demultiplexDirRoot}/{demux.RunID}_{demultiplexDirSuffix}/
-        {demultiplexDirRoot}/{demux.RunID}_{demultiplexDirSuffix}/projectList[0]
-        {demultiplexDirRoot}/{demux.RunID}_{demultiplexDirSuffix}/projectList[1]
-        .
-        .
-        .
-        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/projectList[ len( projectList ) -1 ]
-        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/{demultiplexLogDir}
-        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/{demux.RunIDShort}{demux.qcSuffix}
-        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/Reports      # created by bcl2fastq
-        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/Stats        # created by bcl2fastq
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
-
-    text = "demultiplexRunIdDir:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexRunIdDir )
-    text = "demultiplexRunIdDir/demultiplexLogDir:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexLogDirPath )
-    text = "demultiplexRunIdDir/demuxQCDirectory:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demuxQCDirectoryFullPath )
-
-    # using absolute path names here
-    try:
-
-        # originalEgid = os.getegid()                           # get the effective group id for the run
-        # os.setgid( 10000 ) # set the effective group id for the run to "sambagroup", so labs can do manipulation of directories
-        # os.setegid( grp.getgrnam( demux.commonEgid ).gr_gid ) # set the effective group id for the run to "sambagroup", so labs can do manipulation of directories
-
-        # The following 3 lines have to be in this order
-        os.mkdir( demux.demultiplexRunIdDir )       # root directory for run
-        os.mkdir( demux.demultiplexLogDirPath )     # log directory  for run
-        os.mkdir( demux.demuxQCDirectoryFullPath )  # QC directory   for run
-
-        os.chmod( demux.demultiplexRunIdDir,            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
-        os.chmod( demux.demultiplexLogDirPath,          stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
-        os.chmod( demux.demuxQCDirectoryFullPath,       stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
-
-    except FileExistsError as err:
-        demuxFailureLogger.critical( f"File already exists! Exiting!\n{err}" )
-        demuxLogger.critical( f"File already exists! Exiting!\n{err}" )
-        logging.shutdown( )
-        sys.exit( )
-    except FileNotFoundError as err:
-        demuxFailureLogger.critical( f"A component of the passed path is missing! Exiting!\n{err}" )
-        demuxLogger.critical( f"A component of the passed path is missing! Exiting!\n{err}" )
-        logging.shutdown( )
-        sys.exit( )
-
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Create directory structure finished ==\n", color="red", attrs=["bold"] ) )
-
-
-
-
-########################################################################
-# demultiplex
-########################################################################
-
-def prepareForTransferDirectoryStructure( ):
-    """
-    create /data/for_transfer/RunID and any required subdirectories
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Create delivery directory structure under {demux.forTransferRunIdDir} started ==", color="green", attrs=["bold"] ) )
-
-
-    # ensure that demux.forTransferDir (/data/for_transfer) exists
-    if not os. path. isdir( demux.forTransferDir ):
-        text = f"{demux.forTransferDir} does not exist! Please re-run the ansible playbook! Exiting!"
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )    
-
-    try:
-        os.mkdir( demux.forTransferRunIdDir )       # try to create the demux.forTransferRunIdDir directory ( /data/for_transfer/220603_M06578_0105_000000000-KB7MY )
-        os.chmod( demux.forTransferRunIdDir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
-    except Exception as err:
-        text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks:  Create delivery directory structure under {demux.forTransferRunIdDir} ==\n", color="red", attrs=["bold"] ) )
-
 
 
 ########################################################################
@@ -2156,7 +2053,7 @@ def existsNewRun( ):
 
 
 ########################################################################
-# MAIN
+# displayNewRuns
 ########################################################################
 
 def displayNewRuns( ):
@@ -2188,8 +2085,8 @@ def main( RunID ):
     # if not existsNewRun( )                                                                                     # quit if a new run does not exist
     #     messageUser
     #     sys.exit( 0 )
-    # displayNewRuns( )                                                                                   # show all the new runs that need demultiplexing
-    createDemultiplexDirectoryStructure( )                                                              # create the directory structure under {demux.demultiplexRunIdDir}
+    # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
+    createDemultiplexDirectoryStructure( demux )                                                         # create the directory structure under {demux.demultiplexRunIdDir}
     # renameProjectListAccordingToAgreedPatttern( )                                                     # rename the contents of the projectList according to {RunIDShort}.{project}
     # #################### createDemultiplexDirectoryStructure( ) needs to be called before we start logging  ###########################################
     setupFileLogHandling( )                                                                             # setup the file event and log handing, which we left out
@@ -2202,7 +2099,7 @@ def main( RunID ):
     qualityCheck( )                                                                                     # execute QC on the incoming fastq files
     calcFileHash( demux.demultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIdDir
     changePermissions( demux.demultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
-    prepareForTransferDirectoryStructure( )                                                             # create /data/for_transfer/RunID and any required subdirectories
+    prepareForTransferDirectoryStructure( demux )                                                       # create /data/for_transfer/RunID and any required subdirectories
     prepareDelivery( )                                                                                  # prepare the delivery files
     calcFileHash( demux.forTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIdDir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
     changePermissions( demux.forTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
