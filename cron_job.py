@@ -3,7 +3,8 @@
 import os, sys, subprocess
 import time
 from time import strftime, localtime, time
-import demultiplex_script
+
+import demultiplex
 
 # LIMITATIONS/ASSUMPTIONS:
 #   This script cannot handle more than 1 new run
