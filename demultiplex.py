@@ -1778,6 +1778,7 @@ def main( RunID ):
 
 
 
+# TODO: get rid of this when we set up the module as full
 
 ########################################################################
 # MAIN
@@ -1785,6 +1786,8 @@ def main( RunID ):
 
 demuxLogger             = logging.getLogger( __name__ )
 demuxFailureLogger      = logging.getLogger( "SMTPFailureLogger" )
+
+
 
 if __name__ == '__main__':
 

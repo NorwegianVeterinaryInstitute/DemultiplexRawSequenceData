@@ -22,9 +22,12 @@ import logging
 import argparse
 from demultiplex import main
 
+
+# TODO: setup logging properly in its own module before anything else get started
 # Initialize loggers
 demuxLogger = logging.getLogger( __name__ )
 demuxFailureLogger = logging.getLogger( "SMTPFailureLogger" )
+
 
 if __name__ == "__main__":
     if sys.hexversion < 51056112:  # Require Python 3.11 or newer
