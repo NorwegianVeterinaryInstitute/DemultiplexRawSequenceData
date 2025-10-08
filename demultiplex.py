@@ -1743,8 +1743,7 @@ def main( RunID ):
     All actions are coordinated through here
     """
 
-    RunID                   = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
-    RunID                   = RunID.replace( ",", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
+    RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
 
     setupEventAndLogHandling( demux )                                                                   # setup the event and log handing, which we will use everywhere, sans file logging 
     setupEnvironment( RunID )                                                                           # set up variables needed in the running setupEnvironment  
@@ -1791,8 +1790,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    if sys.hexversion < 50923248: # Require Python 3.9 or newer
-        sys.exit( "Python 3.9 or newer is required to run this program." )
+    if sys.hexversion < 51056112: # Require Python 3.11 or newer
+        sys.exit( "Python 3.11 or newer is required to run this program." )
 
     # FIXMEFIXME add named arguments
     if len(sys.argv) == 1:

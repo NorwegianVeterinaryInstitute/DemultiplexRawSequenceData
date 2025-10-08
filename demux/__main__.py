@@ -23,12 +23,12 @@ import argparse
 from demultiplex import main
 
 # Initialize loggers
-demuxLogger = logging.getLogger(__name__)
-demuxFailureLogger = logging.getLogger("SMTPFailureLogger")
+demuxLogger = logging.getLogger( __name__ )
+demuxFailureLogger = logging.getLogger( "SMTPFailureLogger" )
 
 if __name__ == "__main__":
-    if sys.hexversion < 50923248:  # Require Python 3.9 or newer
-        sys.exit("Python 3.9 or newer is required to run this program.")
+    if sys.hexversion < 51056112:  # Require Python 3.11 or newer
+        sys.exit("Python 3.11 or newer is required to run this program.")
 
     parser = argparse.ArgumentParser()
 
