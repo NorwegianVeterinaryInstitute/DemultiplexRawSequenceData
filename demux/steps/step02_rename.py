@@ -22,7 +22,7 @@ def rename_directories( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("demuxLogger")        # logging to output
+    demuxLogger        = logging.getLogger("__main__")        # logging to output
     demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Renaming project directories from project_name to RunIDShort.project_name ==\n", color="green", attrs=["bold"] ) )

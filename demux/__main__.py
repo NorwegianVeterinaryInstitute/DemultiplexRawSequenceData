@@ -20,7 +20,7 @@ sys.pycache_prefix = f'/tmp/pycache/{username}'
 
 import logging
 import argparse
-from demultiplex_script import main
+from demultiplex import main
 
 # Initialize loggers
 demuxLogger = logging.getLogger(__name__)
@@ -36,7 +36,6 @@ if __name__ == "__main__":
         sys.exit("No RunID argument present. Exiting.")
 
     RunID = sys.argv[1]
-    RunID = RunID.replace("/", "")  # Be forgiving for copy-paste issues
-    RunID = RunID.replace(",", "")
+    RunID = RunID.rstrip('/,.')  # Be forgiving any ',' '/' or '.' during copy-paste
 
     main(RunID)

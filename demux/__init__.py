@@ -2,4 +2,4 @@
 
 # just load the demux object
 
-from .demux import demux
+import demux.core

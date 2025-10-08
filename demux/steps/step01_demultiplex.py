@@ -8,10 +8,10 @@ import sys
 import termcolor
 
 ########################################################################
-# demultiplex
+# bcl2fastq
 ########################################################################
 
-def demultiplex( demux ):
+def bcl2fastq( demux ):
     """
     Use Illumina's blc2fastq linux command-line tool to demultiplex each lane into an appropriate fastq file
 
@@ -32,7 +32,7 @@ def demultiplex( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("demuxLogger")        # logging to output
+    demuxLogger        = logging.getLogger("__main__")        # logging to output
     demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Demultiplexing started ==\n", color="green", attrs=["bold"] ) )

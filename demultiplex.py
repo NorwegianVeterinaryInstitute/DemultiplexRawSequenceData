@@ -35,15 +35,17 @@ import tarfile
 import termcolor
 
 from concurrent.futures import ProcessPoolExecutor
-from inspect import currentframe, getframeinfo
+from inspect            import currentframe, getframeinfo
 
 # Breaking down the script into more digestible chunks
-from demux import demux # the demux object is where the whole initilizSation happens. read the top of demux/demux.py for more into
-from demux.util.buffering_smtp_handler import BufferingSMTPHandler
-from demux.envsetup.create_demultiplex_directory_structure import createDemultiplexDirectoryStructure
+from demux.core         import demux                            # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
+
+from demux.util.buffering_smtp_handler                       import BufferingSMTPHandler
+from demux.envsetup.create_demultiplex_directory_structure   import createDemultiplexDirectoryStructure
 from demux.envsetup.prepare_for_transfer_directory_structure import prepareForTransferDirectoryStructure
-from demux.steps.demultiplex    import demultiplex
-from demux.steps.rename         import rename_files, rename_directories, rename_files_and_directories
+from demux.steps.step01_demultiplex                          import bcl2fastq
+from demux.steps.step02_rename                               import rename_files, rename_directories, rename_files_and_directories
+
 
 """
 demultiplex_script.py:
@@ -1159,7 +1161,7 @@ def detectNewRuns(  ):
 # setupEventAndLogHandling( )
 ########################################################################
 
-def setupEventAndLogHandling( ):
+def setupEventAndLogHandling( demux ):
     """
     Setup the event and log handling we will be using everywhere
     """
@@ -1744,25 +1746,19 @@ def main( RunID ):
     RunID                   = RunID.replace( "/", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
     RunID                   = RunID.replace( ",", "" ) # Just in case anybody just copy-pastes from a listing in the terminal, be forgiving
 
-    setupEventAndLogHandling( )                                                                         # setup the event and log handing, which we will use everywhere, sans file logging 
+    setupEventAndLogHandling( demux )                                                                   # setup the event and log handing, which we will use everywhere, sans file logging 
     setupEnvironment( RunID )                                                                           # set up variables needed in the running setupEnvironment  
-    # moved inside setupEnvironment( )
-    # demux.getProjectName( )                                                                             # get the list of projects in this current run
-    # getRawdataDirs( )                                                                                   # get the list of the rawdata directories
-    # getDemultiplexedDirs( )                                                                             # get the list of the already demultiplexed directories
-    # if not existsNewRun( )                                                                                     # quit if a new run does not exist
-    #     messageUser
-    #     sys.exit( 0 )
     # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
-    createDemultiplexDirectoryStructure( demux )                                                         # create the directory structure under {demux.demultiplexRunIdDir}
+    createDemultiplexDirectoryStructure( demux )                                                        # create the directory structure under {demux.demultiplexRunIdDir}
     # renameProjectListAccordingToAgreedPatttern( )                                                     # rename the contents of the projectList according to {RunIDShort}.{project}
+
     # #################### createDemultiplexDirectoryStructure( ) needs to be called before we start logging  ###########################################
     setupFileLogHandling( )                                                                             # setup the file event and log handing, which we left out
     printRunningEnvironment( )                                                                          # print our running environment
     checkRunningEnvironment( )                                                                          # check our running environment
     copySampleSheetIntoDemultiplexRunIdDir( )                                                           # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
     archiveSampleSheet( )                                                                               # make a copy of the Sample Sheet for future reference
-    demultiplex( demux )                                                                                # use blc2fastq to convert .bcl files to fastq.gz
+    bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
     rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
     qualityCheck( )                                                                                     # execute QC on the incoming fastq files
     calcFileHash( demux.demultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIdDir
