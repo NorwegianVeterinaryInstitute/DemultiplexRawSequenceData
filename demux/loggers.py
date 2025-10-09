@@ -8,8 +8,6 @@ import sys
 import syslog
 import termcolor
 
-from . import loggers as demux_logging # avoid naming loggers as logging cuz python might import the stdlib logging, depending on path
-
 demuxLogger = None
 demuxFailureLogger = None
 
@@ -17,7 +15,7 @@ demuxFailureLogger = None
 # set_loggers( )
 ########################################################################
 
-def set_loggers(main_logger, failure_logger):
+def set_loggers( main_logger, failure_logger ):
     global demuxLogger, demuxFailureLogger
     demuxLogger = main_logger
     demuxFailureLogger = failure_logger
@@ -34,7 +32,7 @@ def setup_event_and_log_handling( logging_level = logging.DEBUG ):
         This function should do one thing: wire handlers. Otherwise, you are itching for a chicken-and-egg log problem
     """
     # Initalize the logging for the script
-    demux_logging.set_loggers( logging.getLogger( "demux" ), logging.getLogger( "demux.smtp.failure" ) )
+    set_loggers( logging.getLogger( "demux" ), logging.getLogger( "demux.smtp.failure" ) )
 
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
