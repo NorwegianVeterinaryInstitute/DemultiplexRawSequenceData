@@ -25,8 +25,8 @@ from demultiplex import main
 
 # TODO: setup logging properly in its own module before anything else get started
 # Initialize loggers
-demuxLogger = logging.getLogger( __name__ )
-demuxFailureLogger = logging.getLogger( "SMTPFailureLogger" )
+demuxLogger = logging.getLogger( "demux" )
+demuxFailureLogger = logging.getLogger( "demux.smtp.failure" )
 
 
 if __name__ == "__main__":

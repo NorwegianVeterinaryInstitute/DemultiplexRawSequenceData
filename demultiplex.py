@@ -38,10 +38,13 @@ from concurrent.futures import ProcessPoolExecutor
 from inspect            import currentframe, getframeinfo
 
 # Breaking down the script into more digestible chunks
-from demux.core         import demux                            # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
+from demux.loggers                                              import setup_event_and_log_handling, setup_file_log_handling
+from demux.core                                                 import demux    # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
 
 from demux.util.buffering_smtp_handler                          import BufferingSMTPHandler
-from demux.envsetup.create_demultiplex_directory_structure      import createDemultiplexDirectoryStructure
+from demux.util.checksum                                        import hash_file, write_checksum_files, is_file_large, calc_file_hash # functions needed for checksum
+
+from demux.envsetup.create_demultiplex_directory_structure      import create_demultiplex_directory_structure
 from demux.envsetup.prepare_for_transfer_directory_structure    import prepareForTransferDirectoryStructure
 from demux.steps.step01_demultiplex                             import bcl2fastq
 from demux.steps.step02_rename                                  import rename_files, rename_directories, rename_files_and_directories
@@ -54,8 +57,8 @@ demultiplex_script.py:
 
     Module can run on its own, without needing to include in a library as such:
 
-    /data/bin/demultiplex_script.py    200306_M06578_0015_000000000-CWLBG
-    path to script                   | RunID directory from /data/rawdata
+    /data/bin/demultiplex.py   200306_M06578_0015_000000000-CWLBG
+    path to script           | RunID directory from /data/rawdata
 
 INPUTS:
     - RunID directory from /data/rawdata
@@ -182,148 +185,6 @@ LIMITATIONS
     - Relies only on output directory name and does not verify contents
 
 """
-
-########################################################################
-# hash_file
-########################################################################
-
-def hash_file(filepath):
-    """
-    Calculate the md5 and the sha512 hash of an object and return
-        filepath, md5sum, sha512sum
-    """
-    with open(filepath, 'rb') as filehandle:
-        filetobehashed = filehandle.read()
-    md5sum       = hashlib.md5(filetobehashed).hexdigest()
-    sha512sum    = hashlib.sha512(filetobehashed).hexdigest()
-    return filepath, md5sum, sha512sum
-
-
-########################################################################
-# write_checksum_files
-########################################################################
-
-def write_checksum_files(args):
-    """
-        Write the checksum files
-    """
-    filepath, md5sum, sha512sum = args
-
-    def write_file(suffix, content):
-        checksum_file = f"{filepath}{suffix}"
-        if not os.path.isfile(checksum_file):
-            with open(checksum_file, "w") as fh:
-                fh.write(content)
-            return f"{checksum_file}: written"
-        return f"{checksum_file}: exists, skipped"
-
-    twoMandatorySpaces = "  "
-    write_file(demux.md5Suffix,    f"{md5sum}{twoMandatorySpaces}{os.path.basename( filepath )}\n")     # the two spaces are mandatory to be re-verified after uploading via 'md5sum -c FILE'
-    write_file(demux.sha512Suffix, f"{sha512sum}{twoMandatorySpaces}{os.path.basename( filepath )}\n")  # the two spaces are mandatory to be re-verified after uploading via 'sha512sum -c FILE'
-    demuxLogger.debug(f"md5sum: {md5sum:{demux.md5Length}} | sha512sum: {sha512sum:{demux.sha512Length}} | filepath: {filepath}") # print for the benetif of the user
-
-
-
-########################################################################
-# is_file_large
-########################################################################
-
-def is_file_large( filepath, max_size_kb = 2 ):
-    """ Checks if a file exceeds the given size in KB. 
-    This is a check to make sure we are writing the resulting digest to file and not the entire bloody hash
-    """
-    try:
-        size_kb = os.path.getsize(filepath) / 1024  # Convert bytes to KB
-        if size_kb > max_size_kb:
-            demuxLogger.critical( termcolor.colored(  f"file {filepath} is over the kb range!", color="red", attrs=["bold"] ) )
-    except FileNotFoundError:
-        demuxLogger.critical( f"File not found: {filepath}" )
-
-
-
-########################################################################
-# calcFileHash
-########################################################################
-
-def calcFileHash( eitherRunIdDir ):
-    """
-    Calculate the md5 sum for files which are meant to be delivered:
-        .tar
-        .zip
-        .fasta.gz
-
-    INPUT
-        '''eitherRunIdDir refers to either demux.demultiplexRunIdDir or demux.forTransferRunIdDir; we use this method more than once
-
-    ORIGINAL EXAMPLE: /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
-
-    what we do here:
-        walk the tree
-        find relevant file
-        check if the file already has an .md5 file related to it
-        if not, hash it
-    
-    Disadvantages: this function is memory heavy, because it reads the contents of the files into memory
-
-    ORIGINAL COMMAND: /usr/bin/md5deep -r {demux.DemultiplexRunIdDir} | /usr/bin/sed s {demux.DemultiplexRunIdDir}  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
-    EXAMPLE: /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
-
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==", color="green", attrs=["bold"] ) )
-
-    if demux.debug:
-        demuxLogger.debug( f"for debug puproses, creating empty files {demux.demultiplexRunIdDir}/foo.tar and {demux.demultiplexRunIdDir}/bar.zip\n" )
-        pathlib.Path( os.path.join( demux.demultiplexRunIdDir, demux.footarfile ) ).touch( )
-        pathlib.Path( os.path.join( demux.demultiplexRunIdDir, demux.barzipfile ) ).touch( )
-
-
-    # build the filetree
-    demuxLogger.debug( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
-
-    fileList = list( )
-    for directoryRoot, dirnames, filenames, in os.walk( eitherRunIdDir, followlinks = False ):
-
-        for file in filenames:
-            if not any( var in file for var in [ demux.compressedFastqSuffix, demux.zipSuffix, demux.tarSuffix ] ): # grab only .zip, .fasta.gz and .tar files
-                continue
-
-            # Check if any filenames are .md5/.sha512 files
-            if any( var in file for var in [ demux.sha512Suffix, demux.md5Suffix  ] ):
-                text = f"{filepath} is already a sha512 file!."
-                demuxFailureLogger.critical( f"{ text }" )
-                demuxLogger.critical( f"{ text }" )
-                continue
-
-            filepath = os.path.join( directoryRoot, file )
-
-            if not os.path.isfile( filepath ):
-                text = f"{filepath} is not a file. Exiting."
-                demuxFailureLogger.critical( f"{ text }" )
-                demuxLogger.critical( f"{ text }" )
-                logging.shutdown( )
-                sys.exit( )
-
-            if not any( filepath ): # make sure it's not a zero length file 
-                demuxLogger.warning( termcolor.colored(  f"file {filepath} has zero length. Skipping.", color="purple", attrs=["bold"] ) )
-                continue
-
-            fileList.append( filepath )
-        
-    # since we got 96gb of ram, read all the files in and hash them in parallel
-    with ProcessPoolExecutor( ) as executor:
-        filePathAndHashesResults = list( executor.map( hash_file, fileList ) ) # hash_file( ) returns filepath, md5sum, sha512sum
-
-    # write the checksums to disk, in parallel
-    with ProcessPoolExecutor() as executor:
-        executor.map( write_checksum_files, filePathAndHashesResults )
-
-    # make sure we are writing files in the 2kb range and not abominations
-    with ProcessPoolExecutor() as executor:
-        executor.map( is_file_large, filePathAndHashesResults )
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files finished ==\n", color="red", attrs=["bold"] ) )
 
 
 
@@ -874,52 +735,6 @@ def detectNewRuns(  ):
     demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Detecting if new runs exist finished\n")
 
 
-
-
-########################################################################
-# setupEventAndLogHandling( )
-########################################################################
-
-def setupEventAndLogHandling( demux ):
-    """
-    Setup the event and log handling we will be using everywhere
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Set up the Event and Log handling ==\n", color="green", attrs=["bold"] ) )
-
-
-    # demuxLogFormatter = logging.Formatter( "%(asctime)s %(dns)s %(name)s %(levelname)s %(message)s", defaults = { "dns": socket.gethostname( ) } ) #
-    demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
-    demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
-
-    # setup loging for console
-    demuxConsoleLogHandler    = logging.StreamHandler( stream = sys.stderr )
-    demuxConsoleLogHandler.setFormatter( demuxLogFormatter )
-
-    # # setup logging for syslog
-    demuxSyslogLoggerHandler       = logging.handlers.SysLogHandler( address = '/dev/log', facility = syslog.LOG_USER ) # setup the syslog logger
-    demuxSyslogLoggerHandler.ident = f"{os.path.basename(__file__)} "
-    demuxSyslogLoggerHandler.setFormatter( demuxSyslogFormatter )
-
-    # # setup email notifications
-    demuxSMTPfailureLogHandler = BufferingSMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectFailure )
-    demuxSMTPsuccessLogHandler = BufferingSMTPHandler( demux.mailhost, demux.fromAddress, demux.toAddress, demux.subjectSuccess )
-
-    demuxLogger.addHandler( demuxSyslogLoggerHandler )
-    demuxLogger.addHandler( demuxConsoleLogHandler )
-    demuxLogger.addHandler( demuxSMTPsuccessLogHandler )
-
-    # this has to be in a separate logger because we are only logging to it when we fail
-    demuxFailureLogger.addHandler( demuxSMTPfailureLogHandler )
-
-    # # setup logging for messaging over Workplace
-    # demuxHttpsLogHandler       = logging.handlers.HTTPHandler( demux.httpsHandlerHost, demux.httpsHandlerUrl, method = 'GET', secure = True, credentials = None, context = None ) # FIXME later
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Set up the Event and Log handling ==\n", color="red", attrs=["bold"] ) )
-
-
-
 ########################################################################
 # copySampleSheetIntoDemultiplexRunIdDir( )
 ########################################################################
@@ -1007,101 +822,6 @@ def archiveSampleSheet( ):
 
 
 
-
-########################################################################
-# setupFileLogHandling( )
-########################################################################
-
-def setupFileLogHandling( ):
-    """
-    Setup the file event and log handling
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Setup the file event and log handling ==\n", color="green", attrs=["bold"] ) )
-
-    # make sure that the /data/log directory exists.
-    if not os.path.isdir( demux.logDirPath ) :
-        text = [    "Trying to setup demux.logDirPath failed. Reason:\n",
-                    "The parts of demux.logDirPath have the following values:\n",
-                    f"demux.dataRootDirPath:\t\t\t{demux.dataRootDirPath}\n",
-                    f"demux.logDirName:\t\t\t{demux.logDirName}\n",
-                    f"demux.logDirPath:\t\t\t\t{demux.logDirPath}\n"
-        ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-    # # set up logging for /data/log/{demux.RunID}.log
-    try: 
-        demuxFileLogHandler   = logging.FileHandler( demux.demuxRunLogFilePath, mode = 'w', encoding = demux.decodeScheme )
-    except Exception as err:
-        text = [    "Trying to setup demuxFileLogHandler failed. Reason:\n",
-                    str(err),
-                    "The parts of demux.demuxRunLogFilePath have the following values:\n",
-                    f"demux.demuxRunLogFilePath:\t\t\t{demux.demuxRunLogFilePath}\n",
-                    f"demux.RunID + demux.logSuffix:\t\t{demux.RunID} + {demux.logSuffix}\n",
-                    f"demux.logDirPath:\t\t\t\t{demux.logDirPath}\n"
-        ]
-        demuxFailureLogger.critical( *text  )
-        demuxLogger.critical( *text )
-        logging.shutdown( )
-        sys.exit( )
-
-    demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
-    demuxFileLogHandler.setFormatter( demuxLogFormatter )
-    demuxLogger.setLevel( demux.loggingLevel )
-
-    # set up cummulative logging in /data/log/demultiplex.log
-    try:
-        demuxFileCumulativeLogHandler   = logging.FileHandler( demux.demuxCumulativeLogFilePath, mode = 'a', encoding = demux.decodeScheme )
-    except Exception as err:
-        text = [    "Trying to setup demuxFileCumulativeLogHandler failed. Reason:\n",
-                    str(err),
-                    "The parts of demux.demuxRunLogFilePath have the following values:\n",
-                    f"demux.demuxCumulativeLogFilePath:\t\t\t{demux.demuxCumulativeLogFilePath}\n",
-                    f"demux.logDirPath:\t\t\t\t\t{demux.logDirPath}\n",
-                    f"demux.demultiplexLogDirName:\t\t\t{demux.demultiplexLogDirName}\n",
-        ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-    demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
-
-    # setup logging for /data/bin/demultiplex/demux.RunID/demultiplex_log/00_script.log
-    try:
-        demuxScriptLogHandler   = logging.FileHandler( demux.demultiplexScriptLogFilePath, mode = 'w', encoding = demux.decodeScheme )
-    except Exception as err:
-        text = [    "Trying to setup demuxScriptLogHandler failed. Reason:\n",
-                    str(err),
-                    "The parts of demux.DemultiplexScriptLogFilePath have the following values:\n",
-                    f"demux.demultiplexScriptLogFilePath:\t\t\t{demux.demultiplexScriptLogFilePath}\n",
-                    f"demux.demultiplexLogDirPath\t\t\t\t{demux.demultiplexLogDirPath}\n",
-                    f"demux.scriptRunLogFileName:\t\t\t\t{demux.scriptRunLogFileName}\n",
-                    f"demux.demultiplexRunIdDir:\t\t\t\t{demux.demultiplexRunIdDir}\n",
-                    f"demux.demultiplexLogDirName:\t\t\t\t{demux.demultiplexLogDirName}\n",
-                    f"demux.demultiplexDir:\t\t\t\t\t{demux.demultiplexDir}\n",
-                    f"RunID + demux.demultiplexDirSuffix:\t{demux.RunID} + {demux.demultiplexDirSuffix}\n",
-                    "Exiting.",
-        ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-    demuxScriptLogHandler.setFormatter( demuxLogFormatter )
-
-    demuxLogger.addHandler( demuxScriptLogHandler )
-    demuxLogger.addHandler( demuxFileLogHandler )
-    demuxLogger.addHandler( demuxFileCumulativeLogHandler )
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Setup the file event and log handling ==\n", color="red", attrs=["bold"] ) )
-
-
-
 ########################################################################
 # checkRunningEnvironment( )
 ########################################################################
@@ -1182,9 +902,6 @@ def printRunningEnvironment( ):
     demuxLogger.debug( "\n")
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Print out the current running environment ==\n", color="red", attrs=["bold"] ) )
-
-
-
 
 
 ########################################################################
@@ -1342,115 +1059,6 @@ def checkRunningDirectoryStructure( ):
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Check if the runtime directory structure is ready for processing ==\n", color="red" ) )
 
 
-########################################################################
-# getRawdataDirs
-########################################################################
-
-def getRawdataDirs( ):
-    """
-    foo
-    """
-
-    demuxLogger.info( f"==> Getting new rawdata directories started ==\n" )
-
-    for dirName in os.listdir( demux.rawDataDir ): # add directory names from the raw generated data directory
-
-        if demux.demultiplexDirSuffix in dirName: #  ignore any _demux dirs
-            continue
-        if any( tag in dirName for tags in [ demux.nextSeq, demux.miSeq ] for tag in tags ): # only add directories that have a sequncer tag
-            demux.RunList.append( dirName )
-
-    demuxLogger.info( f"==< Getting new rawdata directories finished ==\n" )
-
-    return
-
-
-
-########################################################################
-# getDemultiplexedDirs
-########################################################################
-
-def getDemultiplexedDirs( ):
-    """
-    bar
-    """
-
-    demuxLogger.info( f"==> Getting demultiplexed directories started ==\n")
-
-    for dirName in os.listdir( demux.demultiplexDir ):
-
-        if demux.demultiplexDirSuffix not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety in case any other dirs included in /data/demultiplex
-            continue
-        if any( tag in dirName for tags in [ demux.nextSeq, demux.miSeq ] for tag in tags ): # ignore directories that have no sequncer tag
-            demux.demultiplexList.append( dirName.replace( demux.demultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
-
-    demuxLogger.info( f"==> Getting demultiplexed directories finished ==\n")
-
-    return
-
-
-########################################################################
-# getDemultiplexedDirs
-########################################################################
-
-def existsNewRun( ):
-    """
-    kot
-    """
-    count = 0
-    demux.newRunList = [ ]  # needs moving
-    NewRunID = '' # turn this into an array
-    for item in RunList: # iterate over RunList to see if there a new item in DemultiplexList, effectively comparing the contents of the two directories
-        if item in DemultiplexList:
-            count += 1
-        else:
-            NewRunList.append( item )
-            NewRunID = item # any RunList item that is not in the demux list, gets processed
-
-    localTime = strftime( "%Y-%m-%d %H:%M:%S", localtime( ) ) 
-    demuxLogger.info( f"{ localTime } - { len( RunList ) } in rawdata and { len( DemultiplexList ) } in demultiplex: ")
-
-    if count == len( RunList ): # no new items in DemultiplexList, therefore count == len( RunList )
-         demuxLogger.info( 'all the runs have been demultiplexed\n' )
-         return True
-
-    if NewRunID: # TODO this needs it's own function.
-
-        flatNewRunList = ", ".join( demux.newRunList )
-        demuxLogger.info( f"{len(NewRunList)} new items to demux: {flatNewRunList}")
-
-        demuxLogger.info( f"Will work on this RunID: {NewRunID}\n" ) # caution: if the corresponding _demux directory is somehow corrupted (wrong data in SampleSheetFilename or incomplete files), this will be printed over and over in the log file
-
-        # essential condition to process is that RTAComplete.txt and SampleSheet.csv
-        if demux.rtaCompleteFile in os.listdir( os.path.join( demux.rawDataDir, NewRunID ) ) and demux.sampleSheetFileName in os.listdir( os.path.join( demux.rawDataDir, NewRunID ) ):
-
-            if not os.path.exists( demux.scriptFilePath ):
-                demuxLogger.info( f"{demux.scriptFilePath} does not exist!" )
-                exit( )
-
-            # EXAMPLE: /bin/python3.11 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
-            demultiplex_script.main( NewRunID )
-
-            demuxLogger.info( 'completed\n' )
-            return True
-        else:
-            demuxLogger.info( ', waiting for the run to complete\n' )
-            return False
-
-    return True
-
-
-
-########################################################################
-# displayNewRuns
-########################################################################
-
-def displayNewRuns( ):
-    """
-    buzz
-    """
-    return
-
 
 ########################################################################
 # MAIN
@@ -1464,21 +1072,22 @@ def main( RunID ):
 
     RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
 
-    setupEventAndLogHandling( demux )                                                                   # setup the event and log handing, which we will use everywhere, sans file logging 
+    setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
     setupEnvironment( RunID )                                                                           # set up variables needed in the running setupEnvironment  
     # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
-    createDemultiplexDirectoryStructure( demux )                                                        # create the directory structure under {demux.demultiplexRunIdDir}
-    # renameProjectListAccordingToAgreedPatttern( )                                                     # rename the contents of the projectList according to {RunIDShort}.{project}
-
-    # #################### createDemultiplexDirectoryStructure( ) needs to be called before we start logging  ###########################################
-    setupFileLogHandling( )                                                                             # setup the file event and log handing, which we left out
+    create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIdDir}
+    #####################################################################################################
+    # create_demultiplex_directory_structure( ) needs to be called before we start logging to file:
+    #   Cannot create a log *file* without having a specific *directory* structure, can we? 
+    #####################################################################################################
+    setup_file_log_handling( demux )                                                                    # setup the file event and log handing, which we left out
     printRunningEnvironment( )                                                                          # print our running environment
     checkRunningEnvironment( )                                                                          # check our running environment
     copySampleSheetIntoDemultiplexRunIdDir( )                                                           # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
     archiveSampleSheet( )                                                                               # make a copy of the Sample Sheet for future reference
     bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
     rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
-    quality_check( demux )                                                                               # execute QC on the incoming fastq files
+    quality_check( demux )                                                                              # execute QC on the incoming fastq files
     calcFileHash( demux.demultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIdDir
     changePermissions( demux.demultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
     prepareForTransferDirectoryStructure( demux )                                                       # create /data/for_transfer/RunID and any required subdirectories
@@ -1505,8 +1114,8 @@ def main( RunID ):
 # MAIN
 ########################################################################
 
-demuxLogger             = logging.getLogger( __name__ )
-demuxFailureLogger      = logging.getLogger( "SMTPFailureLogger" )
+# demuxLogger             = logging.getLogger( __name__ )
+# demuxFailureLogger      = logging.getLogger( "SMTPFailureLogger" )
 
 
 

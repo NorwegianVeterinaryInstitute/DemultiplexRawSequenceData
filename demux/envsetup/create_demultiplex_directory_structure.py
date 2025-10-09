@@ -6,12 +6,14 @@ import stat
 import sys
 import termcolor
 
+from demux.loggers import demuxLogger, demuxFailureLogger
+
 
 ########################################################################
 # createDirectory
 ########################################################################
 
-def createDemultiplexDirectoryStructure( demux ):
+def create_demultiplex_directory_structure( demux ):
     """
     If the Demultiplexing directory or any relevant directory does not exist, create it
         demux.RunIDShort format is in the pattern of (date +%y%m%d)_SEQUENCERSERIALNUMBER Example: 220314_M06578
@@ -31,7 +33,7 @@ def createDemultiplexDirectoryStructure( demux ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger = logging.getLogger("demuxLogger")
+
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
 
     text = "demultiplexRunIdDir:"
@@ -43,10 +45,6 @@ def createDemultiplexDirectoryStructure( demux ):
 
     # using absolute path names here
     try:
-
-        # originalEgid = os.getegid()                           # get the effective group id for the run
-        # os.setgid( 10000 ) # set the effective group id for the run to "sambagroup", so labs can do manipulation of directories
-        # os.setegid( grp.getgrnam( demux.commonEgid ).gr_gid ) # set the effective group id for the run to "sambagroup", so labs can do manipulation of directories
 
         # The following 3 lines have to be in this order
         os.mkdir( demux.demultiplexRunIdDir )       # root directory for run
