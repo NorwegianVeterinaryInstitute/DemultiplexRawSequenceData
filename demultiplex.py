@@ -860,10 +860,9 @@ def checkRunningEnvironment( ):
 
 
 ########################################################################
-# printRunningEnvironment( )
+# print_running_environment( )
 ########################################################################
-
-def printRunningEnvironment( ):
+def print_running_environment( demux ):
     """
     Print our running environment
     """
@@ -1081,7 +1080,7 @@ def main( RunID ):
     #   Cannot create a log *file* without having a specific *directory* structure, can we? 
     #####################################################################################################
     setup_file_log_handling( demux )                                                                    # setup the file event and log handing, which we left out
-    printRunningEnvironment( )                                                                          # print our running environment
+    print_running_environment( demux )                                                                  # print our running environment
     checkRunningEnvironment( )                                                                          # check our running environment
     copySampleSheetIntoDemultiplexRunIdDir( )                                                           # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
     archiveSampleSheet( )                                                                               # make a copy of the Sample Sheet for future reference

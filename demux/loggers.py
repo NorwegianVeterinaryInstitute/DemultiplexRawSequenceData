@@ -8,6 +8,8 @@ import sys
 import syslog
 import termcolor
 
+from . import loggers as demux_logging # avoid naming loggers as logging cuz python might import the stdlib logging, depending on path
+
 demuxLogger = None
 demuxFailureLogger = None
 
@@ -31,7 +33,8 @@ def setup_event_and_log_handling( logging_level = logging.DEBUG ):
         setup_event_and_log_handling() should not bump demux.n or emit "task started/finished" banners.
         This function should do one thing: wire handlers. Otherwise, you are itching for a chicken-and-egg log problem
     """
-
+    # Initalize the logging for the script
+    demux_logging.set_loggers( logging.getLogger( "demux" ), logging.getLogger( "demux.smtp.failure" ) )
 
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
@@ -77,6 +80,7 @@ def setup_file_log_handling( demux ):
     """
 
     demux.n = demux.n + 1
+
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Setup the file event and log handling ==\n", color="green", attrs=["bold"] ) )
 
     # make sure that the /data/log directory exists.

@@ -32,8 +32,6 @@ def bcl2fastq( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("__main__")        # logging to output
-    demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Demultiplexing started ==\n", color="green", attrs=["bold"] ) )
 

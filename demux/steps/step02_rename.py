@@ -22,8 +22,6 @@ def rename_directories( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("__main__")        # logging to output
-    demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Renaming project directories from project_name to RunIDShort.project_name ==\n", color="green", attrs=["bold"] ) )
 
@@ -82,8 +80,6 @@ def rename_files( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("demuxLogger")        # logging to output
-    demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Rename files ==\n", color="green" ) )
 
@@ -203,8 +199,6 @@ def rename_files_and_directories( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("demuxLogger")        # logging to output
-    demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Renaming started ==", color="green", attrs=["bold"] ) )
 

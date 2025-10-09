@@ -6,6 +6,8 @@ import stat
 import sys
 import termcolor
 
+from demux.loggers import demuxLogger, demuxFailureLogger
+
 ########################################################################
 # prepareForTransferDirectoryStructure
 ########################################################################
@@ -16,8 +18,6 @@ def prepareForTransferDirectoryStructure( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("demuxLogger")        # logging to output
-    demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Create delivery directory structure under {demux.forTransferRunIdDir} started ==", color="green", attrs=["bold"] ) )
 

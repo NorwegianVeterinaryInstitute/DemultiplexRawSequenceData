@@ -23,8 +23,6 @@ def prepare_multiqc( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("__main__")        # logging to output
-    demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for MultiQC started ==", color="yellow" ) )
 
@@ -150,8 +148,6 @@ def fastqc( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("__main__")        # logging to output
-    demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: fastQC started ==", color="yellow" ) )
 
@@ -214,8 +210,6 @@ def multiqc( demux ):
     """ 
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("__main__")        # logging to output
-    demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: multiQC started ==", color="yellow" ) )
 
@@ -287,8 +281,6 @@ def quality_check( demux ):
     """
 
     demux.n            = demux.n + 1
-    demuxLogger        = logging.getLogger("__main__")        # logging to output
-    demuxFailureLogger = logging.getLogger("demuxFailureLogger") # logging to email
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Quality Check started ==", color="green", attrs=["bold"] ) )
 
