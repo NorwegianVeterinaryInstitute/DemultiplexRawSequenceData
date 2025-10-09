@@ -838,18 +838,9 @@ def main( RunID ):
 
 
 
-# TODO: get rid of this when we set up the module as full]
-# this and demux/__main__.py are the same entry points, in theory.
-# when you turn this into a module, these will not be needed
-
 ########################################################################
 # MAIN
 ########################################################################
-
-# demuxLogger             = logging.getLogger( __name__ )
-# demuxFailureLogger      = logging.getLogger( "SMTPFailureLogger" )
-
-
 
 if __name__ == '__main__':
 
