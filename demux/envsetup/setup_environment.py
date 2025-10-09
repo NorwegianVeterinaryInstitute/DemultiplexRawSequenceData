@@ -2,7 +2,8 @@ import logging
 import os
 import termcolor
 
-from demux.core import demux
+from demux.core    import demux
+from demux.loggers import demuxLogger, demuxFailureLogger
 
 ########################################################################
 # setup_environment( )
@@ -15,10 +16,7 @@ def setup_environment( RunID ):
 
     demux.n = demux.n + 1
 
-    if 'demuxLogger' in logging.Logger.manager.loggerDict.keys():
-        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="green", attrs=["bold"] ) )
-    else:
-        print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="green", attrs=["bold"] ) )
 
     demux.RunID                         = RunID
     demux.RunIDShort                    = '_'.join( RunID.split('_')[0:2] ) # this should be turned into a setter in the demux object
