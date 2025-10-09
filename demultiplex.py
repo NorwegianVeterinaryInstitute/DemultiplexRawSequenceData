@@ -49,6 +49,7 @@ from demux.envsetup.create_demultiplex_directory_structure      import create_de
 from demux.envsetup.prepare_for_transfer_directory_structure    import prepareForTransferDirectoryStructure
 
 from demux.diagnostics.print_running_environment                import print_running_environment
+from demux.diagnostics.check_running_environment                import check_running_environment
 
 from demux.steps.step01_demultiplex                             import bcl2fastq
 from demux.steps.step02_rename                                  import rename_files, rename_directories, rename_files_and_directories
@@ -898,7 +899,7 @@ def main( RunID ):
     #####################################################################################################
     setup_file_log_handling( demux )                                                                    # setup the file event and log handing, which we left out
     print_running_environment( demux )                                                                  # print our running environment
-    checkRunningEnvironment( )                                                                          # check our running environment
+    check_running_environment( demux )                                                                  # check our running environment
     copySampleSheetIntoDemultiplexRunIdDir( )                                                           # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
     archiveSampleSheet( )                                                                               # make a copy of the Sample Sheet for future reference
     bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
