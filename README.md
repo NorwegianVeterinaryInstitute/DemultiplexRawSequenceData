@@ -50,7 +50,7 @@ Software requirements
 * Cron job runs every 15 minutes if it finds a new run, _RTAComplete.txt_ and _SampleSheet.csv_ files within the run new, it starts the demultiplexing script
 * It can be manually started as below
 ```bash
-clear; rm -rvf /data/{demultiplex,for_transfer}/<RunID>* && PYTHONPATH=/data/bin /usr/bin/python3.11 -m demux <RunID>
+clear; rm -rvf /data/{demultiplex,for_transfer}/<RunID>* && /data/bin/demultiplex.py <RunID>
 ```
 
 as the relevant user.

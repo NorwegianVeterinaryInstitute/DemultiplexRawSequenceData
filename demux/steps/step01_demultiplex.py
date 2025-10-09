@@ -7,6 +7,8 @@ import subprocess
 import sys
 import termcolor
 
+from demux.loggers import demuxLogger, demuxFailureLogger
+
 ########################################################################
 # bcl2fastq
 ########################################################################

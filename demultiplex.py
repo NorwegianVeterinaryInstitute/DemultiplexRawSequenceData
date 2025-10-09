@@ -57,6 +57,8 @@ from demux.steps.step01_demultiplex                             import bcl2fastq
 from demux.steps.step02_rename                                  import rename_files, rename_directories, rename_files_and_directories
 from demux.steps.step03_quality_check                           import quality_check, fastqc, prepare_multiqc, multiqc
 
+# do not uncomment the following line, it is here for copy-pasting into other modules
+# from demux.loggers import demuxLogger, demuxFailureLogger
 
 """
 demultiplex_script.py:
