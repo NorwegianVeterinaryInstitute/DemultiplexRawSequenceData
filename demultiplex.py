@@ -46,7 +46,9 @@ from demux.util.checksum                                        import hash_file
 
 from demux.envsetup.setup_environment                           import setup_environment
 from demux.envsetup.create_demultiplex_directory_structure      import create_demultiplex_directory_structure
-from demux.envsetup.prepare_for_transfer_directory_structure    import prepareForTransferDirectoryStructure
+from demux.envsetup.prepare_fortransfer_directory_structure     import prepare_fortransfer_directory_structure
+from demux.envsetup.copy_sample_sheet_into_demultiplex_runiddir import copy_sample_sheet_into_demultiplex_runiddir
+from demux.envsetup.archive_sample_sheet                        import archive_sample_sheet
 
 from demux.diagnostics.print_running_environment                import print_running_environment
 from demux.diagnostics.check_running_environment                import check_running_environment
@@ -716,7 +718,6 @@ def deliverFilesToNIRD(  ):
 
 
 
-
 ########################################################################
 # detectNewRuns
 ########################################################################
@@ -740,95 +741,7 @@ def detectNewRuns(  ):
     demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Detecting if new runs exist finished\n")
 
 
-########################################################################
-# copySampleSheetIntoDemultiplexRunIdDir( )
-########################################################################
-
-def copySampleSheetIntoDemultiplexRunIdDir( ):
-    """
-    Copy SampleSheet.csv from {demux.SampleSheetFilePath} to {demux.DemultiplexRunIdDir}
-        because bcl2fastq requires the file existing before it starts demultiplexing
-    """
-    #
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="green", attrs=["bold"] ) )
-
-    try:
-        currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetFilePath ).st_mode )
-        # os.chmod( demux.sampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
-        shutil.copy2( demux.sampleSheetFilePath, demux.demultiplexRunIdDir )
-    except Exception as err:
-        text = [    f"Copying {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} failed.",
-                    err.tostring( ),
-                    "Exiting."
-        ]
-        '\n'.join( text )
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="red", attrs=["bold"] ) )
-
-
-
-
-########################################################################
-# archiveSampleSheet( )
-########################################################################
-
-def archiveSampleSheet( ):
-    """
-
-    # Request by Cathrine: Copy the SampleSheet file to /data/samplesheet automatically
-
-    Check for validity of the filepath of the sample sheet
-    then
-        archive a copy
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Archive {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} ==\n", color="green", attrs=["bold"] ) )
-
-
-    if not os.path.exists( demux.sampleSheetFilePath ):
-        text = f"{demux.sampleSheetFilePath} does not exist! Demultiplexing cannot continue. Exiting."
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-
-    if not os.path.isfile( demux.sampleSheetFilePath ):
-        text = f"{demux.ampleSheetFilePath} is not a file! Exiting."
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-    try:
-        shutil.copy2( demux.sampleSheetFilePath, demux.sampleSheetArchiveFilePath )
-        currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetArchiveFilePath ).st_mode )
-        os.chmod( demux.sampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "o=rw,g=r,o=r"
-    except Exception as err:
-        frameinfo = getframeinfo( currentframe( ) )
-        text = [    f"Archiving {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} failed.",
-                    str(err),
-                    f" at {frameinfo.filename}:{frameinfo.lineno}."
-                    "Exiting.",
-        ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks:  Archive {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} ==\n", color="red", attrs=["bold"] ) )
-
-
-
-
-########################################################################
+#######################################################################
 # checkRunningDirectoryStructure( )
 ########################################################################
 
@@ -896,12 +809,12 @@ def main( RunID ):
     #####################################################################################################
     # create_demultiplex_directory_structure( ) needs to be called before we start logging to file:
     #   Cannot create a log *file* without having a specific *directory* structure, can we? 
-    #####################################################################################################
+    #####################################################################################################s
     setup_file_log_handling( demux )                                                                    # setup the file event and log handing, which we left out
     print_running_environment( demux )                                                                  # print our running environment
     check_running_environment( demux )                                                                  # check our running environment
-    copySampleSheetIntoDemultiplexRunIdDir( )                                                           # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
-    archiveSampleSheet( )                                                                               # make a copy of the Sample Sheet for future reference
+    copy_sample_sheet_into_demultiplex_runiddir( demux )                                                # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
+    archive_sample_sheet( demux )                                                                       # make a copy of the Sample Sheet for future reference
     bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
     rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
     quality_check( demux )                                                                              # execute QC on the incoming fastq files

@@ -9,10 +9,10 @@ import termcolor
 from demux.loggers import demuxLogger, demuxFailureLogger
 
 ########################################################################
-# prepareForTransferDirectoryStructure
+# prepare_fortransfer_directory_structure
 ########################################################################
 
-def prepareForTransferDirectoryStructure( demux ):
+def prepare_fortransfer_directory_structure( demux ):
     """
     create /data/for_transfer/RunID and any required subdirectories
     """
