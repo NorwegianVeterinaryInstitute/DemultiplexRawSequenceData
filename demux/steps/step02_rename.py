@@ -6,6 +6,8 @@ import os
 import sys
 import termcolor
 
+from demux.loggers import demuxLogger, demuxFailureLogger
+
 ########################################################################
 # renameDirectories( )
 ########################################################################
