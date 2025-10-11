@@ -1,15 +1,19 @@
-#!/usr/bin/python3.11
-
 import hashlib
+import inspect
 import logging
 import os
+import pathlib
 import subprocess
 import sys
+import termcolor
 
+from concurrent.futures import ProcessPoolExecutor
+
+from demux.loggers import demuxLogger, demuxFailureLogger
 
 """
 
-calculate the checksums module.
+calculate file checksums module.
 
 """
 
@@ -17,15 +21,15 @@ calculate the checksums module.
 # hash_file
 ########################################################################
 
-def hash_file(filepath):
+def hash_file( filepath ):
     """
     Calculate the md5 and the sha512 hash of an object and return
         filepath, md5sum, sha512sum
     """
-    with open(filepath, 'rb') as filehandle:
-        filetobehashed = filehandle.read()
-    md5sum       = hashlib.md5(filetobehashed).hexdigest()
-    sha512sum    = hashlib.sha512(filetobehashed).hexdigest()
+    with open( filepath, 'rb' ) as filehandle:
+        filetobehashed = filehandle.read( )
+    md5sum       = hashlib.md5(filetobehashed).hexdigest( )
+    sha512sum    = hashlib.sha512(filetobehashed).hexdigest( )
     return filepath, md5sum, sha512sum
 
 
@@ -33,7 +37,7 @@ def hash_file(filepath):
 # write_checksum_files
 ########################################################################
 
-def write_checksum_files(args):
+def write_checksum_files( args ):
     """
         Write the checksum files
     """
@@ -70,12 +74,11 @@ def is_file_large( filepath, max_size_kb = 2 ):
         demuxLogger.critical( f"File not found: {filepath}" )
 
 
-
 ########################################################################
-# calcFileHash
+# calc_file_hash
 ########################################################################
 
-def calc_file_hash( eitherRunIdDir ):
+def calc_file_hash( demux, dir_to_hash ):
     """
     Calculate the md5 sum for files which are meant to be delivered:
         .tar
@@ -83,7 +86,7 @@ def calc_file_hash( eitherRunIdDir ):
         .fasta.gz
 
     INPUT
-        '''eitherRunIdDir refers to either demux.demultiplexRunIdDir or demux.forTransferRunIdDir; we use this method more than once
+        '''dir_to_hash refers to either demux.demultiplexRunIDdir or demux.forTransferRunIDdir; we use this method more than once
 
     ORIGINAL EXAMPLE: /usr/bin/md5deep -r /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex | /usr/bin/sed s /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/  g | /usr/bin/grep -v md5sum | /usr/bin/grep -v script
 
@@ -103,22 +106,30 @@ def calc_file_hash( eitherRunIdDir ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==", color="green", attrs=["bold"] ) )
 
-    if demux.debug:
-        demuxLogger.debug( f"for debug puproses, creating empty files {demux.demultiplexRunIdDir}/foo.tar and {demux.demultiplexRunIdDir}/bar.zip\n" )
-        pathlib.Path( os.path.join( demux.demultiplexRunIdDir, demux.footarfile ) ).touch( )
-        pathlib.Path( os.path.join( demux.demultiplexRunIdDir, demux.barzipfile ) ).touch( )
+    print( f"dir_to_hash: {dir_to_hash}")
+    attr_name = dir_to_hash  # string key, e.g. "runOutputDir"
+    if hasattr(demux, attr_name):
+        dir_to_hash = getattr(demux, attr_name)
+    else:
+        raise AttributeError(f"demux has no attribute '{attr_name}'")
+    print(f"dir_to_hash resolved to: {dir_to_hash}")
+
+    sys.exit( )
+
 
 
     # build the filetree
-    demuxLogger.debug( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
+    # demuxLogger.debug( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')
+    demuxLogger.debug( f'= walk the file tree dir_to_hash: {dir_to_hash} ======================')
 
     fileList = list( )
-    for directoryRoot, dirnames, filenames, in os.walk( eitherRunIdDir, followlinks = False ):
+    for directoryRoot, dirnames, filenames, in os.walk( dir_to_hash, followlinks = False ):
 
         for file in filenames:
             if not any( var in file for var in [ demux.compressedFastqSuffix, demux.zipSuffix, demux.tarSuffix ] ): # grab only .zip, .fasta.gz and .tar files
                 continue
 
+            demuxLogger.debug( f'Working on file: ' )
             # Check if any filenames are .md5/.sha512 files
             if any( var in file for var in [ demux.sha512Suffix, demux.md5Suffix  ] ):
                 text = f"{filepath} is already a sha512 file!."
@@ -141,6 +152,10 @@ def calc_file_hash( eitherRunIdDir ):
 
             fileList.append( filepath )
         
+    # joined = '\n\t'.join(fileList)
+    # demuxLogger.debug( f"fileList:\n\t{joined}")
+    # print( f"demux.debug: {demux.debug}")
+
     # since we got 96gb of ram, read all the files in and hash them in parallel
     with ProcessPoolExecutor( ) as executor:
         filePathAndHashesResults = list( executor.map( hash_file, fileList ) ) # hash_file( ) returns filepath, md5sum, sha512sum

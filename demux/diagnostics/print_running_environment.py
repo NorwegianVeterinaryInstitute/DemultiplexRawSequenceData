@@ -17,8 +17,9 @@ def print_running_environment( demux ):
     stateLetter = "R"  # initialize the state of this mini-automaton with 'R' cuz first item in the demux.globalDictionary starts with 'R'
     logString   = "log"
 
+    # PYTHONPYCACHEPREFIX=/tmp/demultiplex tells Python to put all the __pycache__ directories under /tmp/demultiplex
     demuxLogger.info( f"To rerun this script run\n" )
-    demuxLogger.info( termcolor.colored( f"\tclear; rm -rvf /data/" + "{" + f"{demux.demultiplexDirName},{demux.forTransferDirName}" + "}" + f"/{demux.RunID}* " + f"&& /data/bin/demultiplex_script.py {demux.RunID}\n\n", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"\tclear; rm -rvf /data/" + "{" + f"{demux.demultiplexDirName},{demux.forTransferDirName}" + "}" + f"/{demux.RunID}* " + f"&& PYTHONPYCACHEPREFIX=/tmp/demultiplex /data/bin/demultiplex_script.py {demux.RunID}\n\n", attrs=["bold"] ) )
 
     demuxLogger.debug( "=============================================================================")
     for key, value2 in demux.globalDictionary.items( ):         # take the key/label and the value of the key from the global dictionary

@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/usr/bin/env python3.11
 
 ########################################################################
 # Demutliplex a MiSEQ or NextSEQ run, perform QC using FastQC and
@@ -16,7 +16,6 @@ import ast
 import pdb
 import glob
 import hashlib
-import inspect
 import grp
 import logging
 import logging.handlers
@@ -34,12 +33,11 @@ import syslog
 import tarfile
 import termcolor
 
-from concurrent.futures import ProcessPoolExecutor
 from inspect            import currentframe, getframeinfo
 
 # Breaking down the script into more digestible chunks
 from demux.loggers                                              import setup_event_and_log_handling, setup_file_log_handling
-from demux.core                                                 import demux    # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
+from demux.core                                                 import demux             # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
 
 from demux.util.buffering_smtp_handler                          import BufferingSMTPHandler
 from demux.util.checksum                                        import hash_file, write_checksum_files, is_file_large, calc_file_hash # functions needed for checksum
@@ -194,98 +192,6 @@ LIMITATIONS
     - Relies only on output directory name and does not verify contents
 
 """
-
-
-
-#######################################################################
-# changePermissions
-########################################################################
-
-def changePermissions( path ):
-    """
-    changePermissions: recursively walk down from {directoryRoot} and 
-        change the owner to :sambagroup
-        if directory
-            change permissions to 755
-        if file
-            change permissions to 644
-
-    INPUT
-        input is a generic path rather than demux.demultiplexRunID, because we use this method more than once
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Changing Permissions started ==", color="green", attrs=["bold"] ) )
-
-    demuxLogger.debug( termcolor.colored( f"= walk the file tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
-
-    for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
-    
-        # change ownership and access mode of files
-        for file in filenames:
-            filepath = os.path.join( directoryRoot, file )
-            demuxLogger.debug( " "*demux.spacing2 + f"chmod 664 {filepath}" ) # print chmod 664 {dirpath}
-
-            if not os.path.isfile( filepath ):
-                text = f"{filepath} is not a file. Exiting." 
-                demuxFailureLogger.critical( f"{ text }" )
-                demuxLogger.critical( f"{ text }" )
-                logging.shutdown( )
-                sys.exit( )
-
-            try:
-                # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-                os.chmod(filepath, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH) # rw-rw-r-- / 664 / read-write owner, read-write group, read others
-            except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                text = [    f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
-                            f"\terrno:\t{err.errno}",
-                            f"\tstrerror:\t{err.strerror}",
-                            f"\tfilename:\t{err.filename}",
-                            f"\tfilename2:\t{err.filename2}"
-                        ]
-                text = '\n'.join( text )
-                demuxFailureLogger.critical( f"{ text }" )
-                demuxLogger.critical( f"{ text }" )
-                logging.shutdown( )
-                sys.exit( )
-
-    # change ownership and access mode of directories
-    demuxLogger.debug( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
-    for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
-
-        for name in dirnames:
-            dirpath = os.path.join( directoryRoot, name )
-
-            demuxLogger.debug( " "*demux.spacing2 + f"chmod 775 {dirpath}" ) # print chmod 755 {dirpath}
-
-            if not os.path.isdir( dirpath ):
-                text = f"{dirpath} is not a directory. Exiting."
-                demuxFailureLogger.critical( f"{ text }" )
-                demuxLogger.critical( f"{ text }" )
-                logging.shutdown( )
-                sys.exit( )
-
-            try:
-                # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
-                os.chmod( dirpath, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others 
-            except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-                text = [
-                        f"\tFileNotFoundError in {inspect.stack()[0][3]}()",
-                        f"\terrno:\t{err.errno}",
-                        f"\tstrerror:\t{err.strerror}",
-                        f"\tfilename:\t{err.filename}",
-                        f"\tfilename2:\t{err.filename2}"
-                ]
-                text = '\n'.join( text )
-                demuxFailureLogger.critical( f"{ text }" )
-                demuxLogger.critical( f"{ text }" )
-                logging.shutdown( )
-                sys.exit( )
-
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Changing Permissions finished ==\n", color="red", attrs=["bold"] ) )
-
-
 
 
 ########################################################################
@@ -804,28 +710,28 @@ def main( RunID ):
 
     RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
 
-    setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
-    setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
-    # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
-    create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIdDir}
-    #####################################################################################################
-    # create_demultiplex_directory_structure( ) needs to be called before we start logging to file:
-    #   Cannot create a log *file* without having a specific *directory* structure, can we? 
-    #####################################################################################################s
-    setup_file_log_handling( demux )                                                                    # setup the file event and log handing, which we left out
-    print_running_environment( demux )                                                                  # print our running environment
-    check_running_environment( demux )                                                                  # check our running environment
-    copy_sample_sheet_into_demultiplex_runiddir( demux )                                                # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
-    archive_sample_sheet( demux )                                                                       # make a copy of the Sample Sheet for future reference
-    bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
-    rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
-    quality_check( demux )                                                                              # execute QC on the incoming fastq files
-    calcFileHash( demux.demultiplexRunIdDir )                                                           # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIdDir
-    changePermissions( demux.demultiplexRunIdDir  )                                                     # change permissions for the files about to be included in the tar files 
+    # setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
+    # setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
+    # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
+    # create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIdDir}
+    # #####################################################################################################
+    # # create_demultiplex_directory_structure( ) needs to be called before we start logging to file:
+    # #   Cannot create a log *file* without having a specific *directory* structure, can we? 
+    # #####################################################################################################s
+    # setup_file_log_handling( demux )                                                                    # setup the file event and log handing, which we left out
+    # print_running_environment( demux )                                                                  # print our running environment
+    # check_running_environment( demux )                                                                  # check our running environment
+    # copy_sample_sheet_into_demultiplex_runiddir( demux )                                                # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
+    # archive_sample_sheet( demux )                                                                       # make a copy of the Sample Sheet for future reference
+    # bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
+    # rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
+    # quality_check( demux )                                                                              # execute QC on the incoming fastq files
+    calc_file_hash( demux, "demultiplexRunIDdir" )                                                      # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIdDir
+    change_permissions( demux, "demultiplexRunIDdir" )                                                  # change permissions for the files about to be included in the tar files 
     prepareForTransferDirectoryStructure( demux )                                                       # create /data/for_transfer/RunID and any required subdirectories
     prepareDelivery( )                                                                                  # prepare the delivery files
-    calcFileHash( demux.forTransferRunIdDir )                                                           # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIdDir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
-    changePermissions( demux.forTransferRunIdDir  )                                                     # change permissions for all the delivery files, including QC
+    calc_file_hash( demux, "forTransferRunIdDir" )                                                      # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIdDir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
+    change_permissions( demux, "forTransferRunIDdir" )                                                  # change permissions for all the delivery files, including QC
     controlProjectsQC( )                                                                                # check to see if we need to create the report for any control projects present
     tarFileQualityCheck( )                                                                              # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
     deliverFilesToVIGASP( )                                                                             # Deliver the output files to VIGASP
@@ -853,7 +759,6 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         sys.exit( "No RunID argument present. Exiting." )
 
-    #demuxLogger             = logging.getLogger( __name__ )
     RunID                   = sys.argv[1]
 
     main( RunID )
