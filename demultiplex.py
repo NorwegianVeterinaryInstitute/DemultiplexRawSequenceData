@@ -710,8 +710,8 @@ def main( RunID ):
 
     RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
 
-    # setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
-    # setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
+    setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
+    setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
     # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
     # create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIdDir}
     # #####################################################################################################
