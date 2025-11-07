@@ -233,17 +233,17 @@ def tarProjectFiles( ):
             projectsToProcessList.append( project )
             demuxLogger.debug( f"{project:{demux.spacing2}} added to projectsToProcessList." )
 
-#---------- change the current working directory to demux.demultiplexRunIdDir, so we can get nice relative paths  ----------------------
+#---------- change the current working directory to demux.demultiplexRunIDdir, so we can get nice relative paths  ----------------------
 
-    os.chdir( demux.demultiplexRunIdDir )
+    os.chdir( demux.demultiplexRunIDdir )
 
-#---------- Use projectsToProcessList to tar files demux.demultiplexRunIdDir to demux.forTransferRunIdDir  ----------------------
+#---------- Use projectsToProcessList to tar files demux.demultiplexRunIDdir to demux.forTransferRunIdDir  ----------------------
 
-    # this mean that while we are sitting in data.demultiplexRunIdDir, we are saving tar files under demux.forTransferRunIdDir
+    # this mean that while we are sitting in data.demultiplexRunIDdir, we are saving tar files under demux.forTransferRunIdDir
     counter = 0         # used in counting how many projects we have archived so far
     for project in projectsToProcessList:
 
-        demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {demux.demultiplexRunIdDir}/{project} ======================", attrs=["bold"] ) )
+        demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {demux.demultiplexRunIDdir}/{project} ======================", attrs=["bold"] ) )
 
         tarFile    = os.path.join(  demux.forTransferRunIdDir, project + demux.tarSuffix )
 
@@ -256,7 +256,7 @@ def tarProjectFiles( ):
             logging.shutdown( )
             sys.exit( )
 
-#---------- Iterrate through demux.demultiplexRunIdDir/projectsToProcessList and make a single tar file for each project under data.forTransferRunIdDir   ----------------------
+#---------- Iterrate through demux.demultiplexRunIDdir/projectsToProcessList and make a single tar file for each project under data.forTransferRunIdDir   ----------------------
 
         counter = counter + 1
         demuxLogger.info( termcolor.colored( f"==> Archiving {project} ( {counter} out of { len( projectsToProcessList ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
@@ -581,7 +581,7 @@ def scriptComplete(  ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Finishing up script ==", color="green", attrs=["bold"] ) )
 
     try:
-        file = os.path.join( demux.demultiplexRunIdDir, demux.demultiplexCompleteFile )
+        file = os.path.join( demux.demultiplexRunIDdir, demux.demultiplexCompleteFile )
         pathlib.Path( file ).touch( mode=644, exist_ok=False)
     except Exception as e:  
         demuxLogger.critical( f"{file} already exists. Please delete it before running {__file__}.\n")
@@ -688,7 +688,7 @@ def checkRunningDirectoryStructure( ):
         logging.shutdown( )
         sys.exit( )
     if os.path.exists( demux.demultiplexDirRoot ):
-        text = f"{demux.demultiplexRunIdDir} exists. Delete the demultiplex folder before re-running the script"
+        text = f"{demux.demultiplexRunIDdir} exists. Delete the demultiplex folder before re-running the script"
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
@@ -708,29 +708,32 @@ def main( RunID ):
     All actions are coordinated through here
     """
 
+    if RunID != RunID.rstrip('/,.'):
+        print("Warning: RunID contained trailing punctuation or slashes, cleaned automatically.")
     RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
 
     setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
     setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
     # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
-    # create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIdDir}
+    create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIDdir}
     # #####################################################################################################
     # # create_demultiplex_directory_structure( ) needs to be called before we start logging to file:
     # #   Cannot create a log *file* without having a specific *directory* structure, can we? 
     # #####################################################################################################s
-    # setup_file_log_handling( demux )                                                                    # setup the file event and log handing, which we left out
-    # print_running_environment( demux )                                                                  # print our running environment
-    # check_running_environment( demux )                                                                  # check our running environment
-    # copy_sample_sheet_into_demultiplex_runiddir( demux )                                                # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir}
-    # archive_sample_sheet( demux )                                                                       # make a copy of the Sample Sheet for future reference
-    # bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
-    # rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
-    # quality_check( demux )                                                                              # execute QC on the incoming fastq files
-    calc_file_hash( demux, "demultiplexRunIDdir" )                                                      # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIdDir
+    setup_file_log_handling( demux )                                                                    # setup the file event and log handing, which we left out
+    print_running_environment( demux )                                                                  # print our running environment
+    check_running_environment( demux )                                                                  # check our running environment
+    copy_sample_sheet_into_demultiplex_runiddir( demux )                                                # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir}
+    archive_sample_sheet( demux )                                                                       # make a copy of the Sample Sheet for future reference
+    bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
+    rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
+    quality_check( demux )                                                                              # execute QC on the incoming fastq files
+    import pprint; pprint.pprint( vars( demux ) )
+    calc_file_hash( demux, "demultiplexRunIDdir" )                                                      # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIDdir
     change_permissions( demux, "demultiplexRunIDdir" )                                                  # change permissions for the files about to be included in the tar files 
     prepareForTransferDirectoryStructure( demux )                                                       # create /data/for_transfer/RunID and any required subdirectories
     prepareDelivery( )                                                                                  # prepare the delivery files
-    calc_file_hash( demux, "forTransferRunIdDir" )                                                      # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIdDir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
+    calc_file_hash( demux, "forTransferRunIdDir" )                                                      # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIDdir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
     change_permissions( demux, "forTransferRunIDdir" )                                                  # change permissions for all the delivery files, including QC
     controlProjectsQC( )                                                                                # check to see if we need to create the report for any control projects present
     tarFileQualityCheck( )                                                                              # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?

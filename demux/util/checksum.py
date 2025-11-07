@@ -106,19 +106,12 @@ def calc_file_hash( demux, dir_to_hash ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files started ==", color="green", attrs=["bold"] ) )
 
-    print( f"dir_to_hash:               {dir_to_hash}")
-    print( f"demux.demultiplexRunIDdir: {demux.demultiplexRunIDdir}")
+    print( "====================================================================================================================================")
+    print( "= Dumping demux object to see what is doing on")
+    import pprint; pprint.pprint( vars( demux ) )
+    print( "====================================================================================================================================")
     
-    # attr_name = dir_to_hash  # string key, e.g. "runOutputDir"
-    # if hasattr(demux, attr_name):
-    #     dir_to_hash = getattr(demux, attr_name)
-    # else:
-    #     raise AttributeError(f"demux has no attribute '{attr_name}'")
-    # print(f"dir_to_hash resolved to: {dir_to_hash}")
-
     sys.exit( )
-
-
 
     # build the filetree
     # demuxLogger.debug( f'= walk the file tree, {inspect.stack()[0][3]}() ======================')

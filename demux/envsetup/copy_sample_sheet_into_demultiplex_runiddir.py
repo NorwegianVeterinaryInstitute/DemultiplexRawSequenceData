@@ -19,14 +19,14 @@ def copy_sample_sheet_into_demultiplex_runiddir( demux ):
     #
 
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir} ==\n", color="green", attrs=["bold"] ) )
 
     try:
         currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetFilePath ).st_mode )
         # os.chmod( demux.sampleSheetFilePath, currentPermissions & ~stat.S_IEXEC  ) # demux.SampleSheetFilePath is probably +x, remnant from windows transfer, so remove execute bit
-        shutil.copy2( demux.sampleSheetFilePath, demux.demultiplexRunIdDir )
+        shutil.copy2( demux.sampleSheetFilePath, demux.demultiplexRunIDdir )
     except Exception as err:
-        text = [    f"Copying {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} failed.",
+        text = [    f"Copying {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir} failed.",
                     err.tostring( ),
                     "Exiting."
         ]
@@ -36,4 +36,4 @@ def copy_sample_sheet_into_demultiplex_runiddir( demux ):
         logging.shutdown( )
         sys.exit( )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir} ==\n", color="red", attrs=["bold"] ) )

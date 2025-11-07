@@ -63,7 +63,7 @@ def bcl2fastq( demux ):
          "--runfolder-dir",
         f"{demux.rawDataRunIDdir}",
          "--output-dir",
-        f"{demux.demultiplexRunIdDir}"
+        f"{demux.demultiplexRunIDdir}"
     ]
 
     text = f"Command to execute:"

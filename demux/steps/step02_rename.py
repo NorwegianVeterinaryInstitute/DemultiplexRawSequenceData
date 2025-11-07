@@ -15,7 +15,7 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 def rename_directories( demux ):
     """
         For each project directory in demux.projectList
-            rename the project directory  to conform from the {demux.demultiplexRunIdDir}/{project} pattern to the {demux.demultiplexRunIdDir}/{demux.RunIDShort}.{project}
+            rename the project directory  to conform from the {demux.demultiplexRunIDdir}/{project} pattern to the {demux.demultiplexRunIDdir}/{demux.RunIDShort}.{project}
 
         Why you ask?
             That's how the original script does it (TRADITION!)
@@ -34,8 +34,8 @@ def rename_directories( demux ):
 
     for project in demux.projectList: # rename the project directories
 
-        oldname = os.path.join( demux.demultiplexRunIdDir, project )
-        newname = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project )
+        oldname = os.path.join( demux.demultiplexRunIDdir, project )
+        newname = os.path.join( demux.demultiplexRunIDdir, demux.RunIDShort + '.' + project )
         olddirExists = os.path.isdir( oldname )
         newdirExists = os.path.isdir( newname )
 
@@ -96,7 +96,7 @@ def rename_files( demux ):
             demuxLogger.debug( f"Test project '{demux.testProject}' detected. Skipping." )
             continue
 
-        compressedFastQfilesDir = os.path.join( demux.demultiplexRunIdDir, project )
+        compressedFastQfilesDir = os.path.join( demux.demultiplexRunIDdir, project )
         # text1 = termcolor.colored( "Now working on project:", color="cyan", attrs=["reverse"] )
         text1 = "Now working on project:"
         text2 = "compressedFastQfilesDir:"
@@ -131,8 +131,8 @@ def rename_files( demux ):
             baseFileName = os.path.basename( file )
 
             oldname     = file
-            newname     = os.path.join( demux.demultiplexRunIdDir, project, demux.RunIDShort + '.' + baseFileName )
-            renamedFile = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + '.' + project, demux.RunIDShort + '.' + baseFileName ) # saving this var to use later when renaming directories
+            newname     = os.path.join( demux.demultiplexRunIDdir, project, demux.RunIDShort + '.' + baseFileName )
+            renamedFile = os.path.join( demux.demultiplexRunIDdir, demux.RunIDShort + '.' + project, demux.RunIDShort + '.' + baseFileName ) # saving this var to use later when renaming directories
                                 # The idea here is that the format of the new path is the fully renamed directory + fully renamed file
                                 #
                                 # DO NOT REMOVE THE DOTS. Look at https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/86#issuecomment-2527335084
@@ -169,7 +169,7 @@ def rename_files( demux ):
                     sys.exit( )
         demuxLogger.debug( "-----------------")
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIdDir} ==\n", color="red" ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir} ==\n", color="red" ) )
 
 ########################################################################
 # rename_files_and_directories( )
@@ -178,16 +178,16 @@ def rename_files( demux ):
 def rename_files_and_directories( demux ):
     """
     Rename any [sample-1_S1_R1_001.fastq.gz, .. , sample-1_S1_Rn_001.fastq.gz ] files inside 
-        {demux.demultiplexRunIdDir}/{demux.RunIDShort}/[ { projectList[0] }, .. , { projectList[n] } ] to match the pattern
+        {demux.demultiplexRunIDdir}/{demux.RunIDShort}/[ { projectList[0] }, .. , { projectList[n] } ] to match the pattern
         {demux.RunIDShort}.[sample-1_S1_R1_001.fastq.gz, .. , sample-1_S1_Rn_001.fastq.gz ]
     
     Then rename the 
-        {demux.demultiplexRunIdDir}/{demux.RunIDShort}/[ { projectList[0] }, .. , { projectList[n] } ] to match the pattern
-        {demux.demultiplexRunIdDir}/{demux.RunIDShort}/{demux.RunIDShort}.[ {projectList[0] }, .. , { projectList[n] } ] to match the pattern
+        {demux.demultiplexRunIDdir}/{demux.RunIDShort}/[ { projectList[0] }, .. , { projectList[n] } ] to match the pattern
+        {demux.demultiplexRunIDdir}/{demux.RunIDShort}/{demux.RunIDShort}.[ {projectList[0] }, .. , { projectList[n] } ] to match the pattern
         
     Examples:
     
-        demultiplexRunIdDir: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/
+        demultiplexRunIDdir: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/
         Sample_Project:      SAV-amplicon-MJH              ### DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
         demux.RunIDShort:    220314_M06578
 
@@ -204,8 +204,8 @@ def rename_files_and_directories( demux ):
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Renaming started ==", color="green", attrs=["bold"] ) )
 
-    text = f"demultiplexRunIdDir:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexRunIdDir )    # tabulation error
+    text = f"demultiplexRunIDdir:"
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexRunIDdir )    # tabulation error
     text = f"RunIDShort:"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.RunIDShort )
     if demux.verbosity == 2:

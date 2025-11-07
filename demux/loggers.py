@@ -142,7 +142,7 @@ def setup_file_log_handling( demux ):
                     f"demux.demultiplexScriptLogFilePath:\t\t\t{demux.demultiplexScriptLogFilePath}\n",
                     f"demux.demultiplexLogDirPath\t\t\t\t{demux.demultiplexLogDirPath}\n",
                     f"demux.scriptRunLogFileName:\t\t\t\t{demux.scriptRunLogFileName}\n",
-                    f"demux.demultiplexRunIdDir:\t\t\t\t{demux.demultiplexRunIdDir}\n",
+                    f"demux.demultiplexRunIDdir:\t\t\t\t{demux.demultiplexRunIDdir}\n",
                     f"demux.demultiplexLogDirName:\t\t\t\t{demux.demultiplexLogDirName}\n",
                     f"demux.demultiplexDir:\t\t\t\t\t{demux.demultiplexDir}\n",
                     f"RunID + demux.demultiplexDirSuffix:\t{demux.RunID} + {demux.demultiplexDirSuffix}\n",

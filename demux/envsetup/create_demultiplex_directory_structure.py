@@ -36,22 +36,22 @@ def create_demultiplex_directory_structure( demux ):
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Create directory structure started ==", color="green", attrs=["bold"] ) )
 
-    text = "demultiplexRunIdDir:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexRunIdDir )
-    text = "demultiplexRunIdDir/demultiplexLogDir:"
+    text = "demultiplexRunIDdir:"
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexRunIDdir )
+    text = "demultiplexRunIDdir/demultiplexLogDir:"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexLogDirPath )
-    text = "demultiplexRunIdDir/demuxQCDirectory:"
+    text = "demultiplexRunIDdir/demuxQCDirectory:"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demuxQCDirectoryFullPath )
 
     # using absolute path names here
     try:
 
         # The following 3 lines have to be in this order
-        os.mkdir( demux.demultiplexRunIdDir )       # root directory for run
+        os.mkdir( demux.demultiplexRunIDdir )       # root directory for run
         os.mkdir( demux.demultiplexLogDirPath )     # log directory  for run
         os.mkdir( demux.demuxQCDirectoryFullPath )  # QC directory   for run
 
-        os.chmod( demux.demultiplexRunIdDir,            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
+        os.chmod( demux.demultiplexRunIDdir,            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
         os.chmod( demux.demultiplexLogDirPath,          stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
         os.chmod( demux.demuxQCDirectoryFullPath,       stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
 

@@ -28,11 +28,11 @@ def setup_environment( RunID ):
     demux.getProjectName( )             # get the list of projects in this current run
 
 ######################################################
-    demux.demultiplexRunIdDir           = os.path.join( demux.demultiplexDir,       demux.RunID + demux.demultiplexDirSuffix ) 
-    demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIdDir,  demux.demultiplexLogDirName ) 
+    demux.demultiplexRunIDdir           = os.path.join( demux.demultiplexDir,       demux.RunID + demux.demultiplexDirSuffix ) 
+    demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIDdir,  demux.demultiplexLogDirName ) 
     demux.demuxQCDirectoryName          = demux.RunIDShort + demux.qcSuffix              # example: 200624_M06578_QC  # QCSuffix is defined in object demux
-    demux.demuxQCDirectoryFullPath      = os.path.join( demux.demultiplexRunIdDir,  demux.demuxQCDirectoryName  )
-    demux.bcl2FastqLogFile              = os.path.join( demux.demultiplexRunIdDir,  demux.demultiplexLogDirPath, demux.bcl2FastqLogFileName )
+    demux.demuxQCDirectoryFullPath      = os.path.join( demux.demultiplexRunIDdir,  demux.demuxQCDirectoryName  )
+    demux.bcl2FastqLogFile              = os.path.join( demux.demultiplexRunIDdir,  demux.demultiplexLogDirPath, demux.bcl2FastqLogFileName )
 ######################################################
     demux.forTransferRunIdDir           = os.path.join( demux.forTransferDir,       demux.RunID )
     demux.forTransferQCtarFile          = os.path.join( demux.forTransferRunIdDir,  demux.RunID + demux.qcSuffix + demux.tarSuffix )
@@ -41,7 +41,7 @@ def setup_environment( RunID ):
     # set up
     demux.demuxRunLogFilePath           = os.path.join( demux.logDirPath,            demux.RunID + demux.logSuffix )
     demux.demuxCumulativeLogFilePath    = os.path.join( demux.logDirPath,            demux.demuxCumulativeLogFileName )
-    demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIdDir,   demux.demultiplexLogDirName )
+    demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIDdir,   demux.demultiplexLogDirName )
     demux.demultiplexScriptLogFilePath  = os.path.join( demux.demultiplexLogDirPath, demux.scriptRunLogFileName )
     demux.fastQCLogFilePath             = os.path.join( demux.demultiplexLogDirPath, demux.fastqcLogFileName )
     demux.mutliQCLogFilePath            = os.path.join( demux.demultiplexLogDirPath, demux.multiqcLogFileName )
@@ -62,7 +62,7 @@ def setup_environment( RunID ):
         'rawDataRunIDdir'               : str( ),
         'rtaCompleteFilePath'           : str( ),
         'sampleSheetFilePath'           : str( ),
-        'demultiplexRunIdDir'           : str( ),
+        'demultiplexRunIDdir'           : str( ),
         'demultiplexLogDirPath'         : str( ),
         'demuxQCDirectoryFullPath'      : str( ),
         'demuxRunLogFilePath'           : str( ),
@@ -90,7 +90,7 @@ def setup_environment( RunID ):
     demux.globalDictionary[ 'rawDataRunIDdir'              ] = demux.rawDataRunIDdir
     demux.globalDictionary[ 'rtaCompleteFilePath'          ] = demux.rtaCompleteFilePath
     demux.globalDictionary[ 'sampleSheetFilePath'          ] = demux.sampleSheetFilePath
-    demux.globalDictionary[ 'demultiplexRunIdDir'          ] = demux.demultiplexRunIdDir
+    demux.globalDictionary[ 'demultiplexRunIDdir'          ] = demux.demultiplexRunIDdir
     demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
     demux.globalDictionary[ 'demuxQCDirectoryFullPath'     ] = demux.demuxQCDirectoryFullPath
     demux.globalDictionary[ 'demuxRunLogFilePath'          ] = demux.demuxRunLogFilePath

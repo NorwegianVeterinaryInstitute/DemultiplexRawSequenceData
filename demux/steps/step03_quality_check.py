@@ -29,8 +29,8 @@ def fastqc( demux ):
     demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{command} {arguments}")     # exclude the first element of the array # example for filename: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/
 
     try:
-        # EXAMPLE: /usr/local/bin/fastqc -t 4 {demux.demultiplexRunIdDir}/{project}/*fastq.gz > demultiplexRunIdDir/demultiplex_log/04_fastqc.log
-        result = subprocess.run( argv, capture_output = True, cwd = demux.demultiplexRunIdDir, check = True, encoding = demux.decodeScheme )
+        # EXAMPLE: /usr/local/bin/fastqc -t 4 {demux.demultiplexRunIDdir}/{project}/*fastq.gz > demultiplexRunIDdir/demultiplex_log/04_fastqc.log
+        result = subprocess.run( argv, capture_output = True, cwd = demux.demultiplexRunIDdir, check = True, encoding = demux.decodeScheme )
     except ChildProcessError as err: 
             text = [ "Caught exception!",
                      f"Command: {err.cmd}", # interpolated strings
@@ -74,7 +74,7 @@ def fastqc( demux ):
 def prepare_multiqc( demux ):
     """
     Preperation to run MultiQC:
-        copy *.zip and *.html from individual {demux.demultiplexRunIdDir}/{demux.RunIDShort}.{project} directories to the {demultiplexRunIdDirNewNamel}/{demux.RunIDShort}_QC directory
+        copy *.zip and *.html from individual {demux.demultiplexRunIDdir}/{demux.RunIDShort}.{project} directories to the {demultiplexRunIDdirNewNamel}/{demux.RunIDShort}_QC directory
   
     INPUT
         the renamed project list
@@ -106,8 +106,8 @@ def prepare_multiqc( demux ):
             demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
             continue
         else:
-            zipFilesPath   = os.path.join( demux.demultiplexRunIdDir, project ,'*' + demux.zipSuffix  ) # {project} here is already in the {RunIDShort}.{project_name} format
-            htmlFilesPath  = os.path.join( demux.demultiplexRunIdDir, project, '*' + demux.htmlSuffix ) # {project} here is already in the {RunIDShort}.{project_name} format
+            zipFilesPath   = os.path.join( demux.demultiplexRunIDdir, project ,'*' + demux.zipSuffix  ) # {project} here is already in the {RunIDShort}.{project_name} format
+            htmlFilesPath  = os.path.join( demux.demultiplexRunIDdir, project, '*' + demux.htmlSuffix ) # {project} here is already in the {RunIDShort}.{project_name} format
             globZipFiles   = glob.glob( zipFilesPath )
             globHTMLFiles  = glob.glob( htmlFilesPath )
             countZipFiles  = len( globZipFiles )
@@ -118,7 +118,7 @@ def prepare_multiqc( demux ):
         if not globZipFiles or not globHTMLFiles:
             demuxLogger.debug( f"globZipFiles or globHTMLFiles came back empty on project {project}" )
             text = "DemultiplexRunIdDir/project:"
-            demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{demux.demultiplexRunIdDir}/{project}" )
+            demuxLogger.debug( f"{text:{demux.spacing2}}" + f"{demux.demultiplexRunIDdir}/{project}" )
             text = "globZipFiles:"
             demuxLogger.debug( f"{text:{demux.spacing3}}" + f"{ ' '.join( globZipFiles  ) }"         )
             text = "globHTMLFiles:"
@@ -150,13 +150,13 @@ def prepare_multiqc( demux ):
 
 
     if ( not zipFiles[0] or not HTMLfiles[0] ):
-        demuxLogger.critical( f"zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.demultiplexRunIdDir}. Exiting.")
+        demuxLogger.critical( f"zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.demultiplexRunIDdir}. Exiting.")
         logging.shutdown( )
         sys.exit( )
 
     demuxLogger.debug( "-----------------")
     sourcefiles = zipFiles + HTMLfiles
-    destination = os.path.join( demux.demultiplexRunIdDir, demux.RunIDShort + demux.qcSuffix )     # QC folder eg /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578_QC/
+    destination = os.path.join( demux.demultiplexRunIDdir, demux.RunIDShort + demux.qcSuffix )     # QC folder eg /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578_QC/
     if demux.verbosity == 2:
         text        = "sourcefiles:"
         demuxLogger.debug( f"{text:{demux.spacing3}}" + str( ' '.join( sourcefiles ) ) + '\n' )
@@ -170,7 +170,7 @@ def prepare_multiqc( demux ):
         sys.exit( )
 
     if not os.path.isdir( destination ) :
-        text =  f"Directory {destination} does not exist. Please check the logs. You can also just delete {demux.demultiplexRunIdDir} and try again."
+        text =  f"Directory {destination} does not exist. Please check the logs. You can also just delete {demux.demultiplexRunIDdir} and try again."
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
@@ -217,8 +217,8 @@ def multiqc( demux ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: multiQC started ==", color="yellow" ) )
 
     command = demux.mutliqc_bin
-    argv    = [ command, demux.demultiplexRunIdDir,
-               '-o', demux.demultiplexRunIdDir 
+    argv    = [ command, demux.demultiplexRunIDdir,
+               '-o', demux.demultiplexRunIDdir 
               ]
     args    = " ".join(argv[1:]) # ignore the command part so we can logging.debug this string below, fresh all the time, in case we change tool command name
 
@@ -226,9 +226,9 @@ def multiqc( demux ):
     demuxLogger.debug( f"{text:{demux.spacing2}}{command} {args}" )
 
     try:
-        # EXAMPLE: /usr/local/bin/multiqc {demux.demultiplexRunIdDir} -o {demux.demultiplexRunIdDir} 2> {demux.demultiplexRunIdDir}/demultiplex_log/05_multiqc.log
+        # EXAMPLE: /usr/local/bin/multiqc {demux.demultiplexRunIDdir} -o {demux.demultiplexRunIDdir} 2> {demux.demultiplexRunIDdir}/demultiplex_log/05_multiqc.log
         # WARNING: MULTIQC IS SINGLE-THREADED . No way to parallelize it. And we are using multiqc on a single directory, so, this step is a bottleneck: no way to parallelize it
-        result = subprocess.run( argv, capture_output = True, cwd = demux.demultiplexRunIdDir, check = True, encoding = demux.decodeScheme )
+        result = subprocess.run( argv, capture_output = True, cwd = demux.demultiplexRunIDdir, check = True, encoding = demux.decodeScheme )
     except ChildProcessError as err: 
         text = [    f"Caught exception!",
                     f"Command:\t{err.cmd}", # interpolated strings
