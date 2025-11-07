@@ -1,5 +1,5 @@
 # Entry point 
-# (calls main(  )function in `demultiplex_script.py`
+# (calls main(  )function in `demultiplex.py`
 #
 #########################################################################
 # To run this:

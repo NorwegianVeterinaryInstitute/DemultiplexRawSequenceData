@@ -59,7 +59,7 @@ from demux.steps.step03_quality_check                           import quality_c
 # from demux.loggers import demuxLogger, demuxFailureLogger
 
 """
-demultiplex_script.py:
+demultiplex.py:
     Demultiple Illumina bcl files and prepearing them for delivery to the individual NVI systems for subprocessing
 
     Module can run on its own, without needing to include in a library as such:
