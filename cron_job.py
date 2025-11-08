@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/usr/bin/env -S -- /usr/bin/python3.11 -X pycache_prefix=/tmp/demultiplex
 
 import os, sys, subprocess
 import time

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.11
+#!/usr/bin/env -S -- /usr/bin/python3.11 -X pycache_prefix=/tmp/demultiplex
 
 ########################################################################
 # Demutliplex a MiSEQ or NextSEQ run, perform QC using FastQC and
