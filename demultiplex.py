@@ -728,13 +728,13 @@ def main( RunID ):
     bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
     rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
     quality_check( demux )                                                                              # execute QC on the incoming fastq files
-    import pprint; pprint.pprint( vars( demux ) )
-    calc_file_hash( demux, "demultiplexRunIDdir" )                                                      # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIDdir
-    change_permissions( demux, "demultiplexRunIDdir" )                                                  # change permissions for the files about to be included in the tar files 
+    demux.state = "demultiplexRunIDdir"                                                                 # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
+    calc_file_hash( demux )                                                                             # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIDdir
+    change_permissions( demux )                                                                         # change permissions for the files about to be included in the tar files 
     prepareForTransferDirectoryStructure( demux )                                                       # create /data/for_transfer/RunID and any required subdirectories
     prepareDelivery( )                                                                                  # prepare the delivery files
-    calc_file_hash( demux, "forTransferRunIdDir" )                                                      # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIDdir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
-    change_permissions( demux, "forTransferRunIDdir" )                                                  # change permissions for all the delivery files, including QC
+    calc_file_hash( demux )                                                                             # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIDdir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
+    change_permissions( demux )                                                                         # change permissions for all the delivery files, including QC
     controlProjectsQC( )                                                                                # check to see if we need to create the report for any control projects present
     tarFileQualityCheck( )                                                                              # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
     deliverFilesToVIGASP( )                                                                             # Deliver the output files to VIGASP

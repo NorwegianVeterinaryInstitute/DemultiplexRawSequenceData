@@ -11,7 +11,7 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 # change_permissions
 ########################################################################
 
-def change_permissions( demux, dir_to_chmod ):
+def change_permissions( demux ):
     """
     changePermissions: recursively walk down from {directoryRoot} and 
         change the owner to :sambagroup
@@ -28,7 +28,11 @@ def change_permissions( demux, dir_to_chmod ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Changing Permissions started ==", color="green", attrs=["bold"] ) )
 
     # Dynamic resolution of the absolute path to recursively chmod
-    dir_to_chmod = getattr(demux, dir_to_hash)
+    if( "demultiplexRunIDdir" == demux.state ):
+        dir_to_chmod = demux.demultiplexRunIDdir
+        demux.state = "42" # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
+    else:
+        dir_to_chmod = demux.forTransferRunIdDir
 
     demuxLogger.debug( termcolor.colored( f"= walk the file tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
 

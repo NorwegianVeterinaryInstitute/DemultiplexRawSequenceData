@@ -23,6 +23,9 @@ import syslog
 import tarfile
 import termcolor
 
+import demux.config.constants
+
+
 """
 The demux object is the central configuration/state holder for the whole pipeline.  It:
     - Defines all constants, paths, suffixes, executables, logging setup, and state variables used in the run
@@ -43,8 +46,9 @@ class demux:
     """
 
     ######################################################
-    debug     = True
-    verbosity = 2
+    debug      = True
+    verbosity  = 2
+    state      = "demultiplexRunIDdir"                  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
     ######################################################
     dataRootDirPath                 = '/data'
     rawDataDirName                  = 'rawdata'
@@ -64,11 +68,11 @@ class demux:
     csvSuffix                       = '.csv'
     demultiplexDirSuffix            = '_demultiplex'
     multiqc_data                    = 'multiqc_data'
-    md5Suffix                       = '.md5'
-    md5Length                       = 16  # 128 bits
+    md5Suffix                       = demux.config.constants.MD5_SUFFIX
+    md5Length                       = demux.config.constants.MD5_LENGTH     # 128 bits
     qcSuffix                        = '_QC'
-    sha512Suffix                    = '.sha512'
-    sha512Length                    = 64  # 512 bits
+    sha512Suffix                    = demux.config.constants.SHA512_SUFFIX
+    sha512Length                    = demux.config.constants.SHA512_LENGTH  # 512 bits
     tarSuffix                       = '.tar'
     temp                            = 'temp'
     zipSuffix                       = '.zip'
@@ -267,8 +271,6 @@ class demux:
             #     # \uFF66-\uFF9F: Half-width Katakana.
             #     # \u3400-\u4DBF: CJK Extension A (additional Chinese characters)
             # vietnameseCharactersPattern = r'[ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂễỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰ]'
-
-
 
 
             ##########################################################################
