@@ -64,7 +64,6 @@ class demux:
     ######################################################
     commonEgid = 'sambagroup'
     ######################################################
-    compressedFastqSuffix           = '.fastq.gz' 
     csvSuffix                       = '.csv'
     demultiplexDirSuffix            = '_demultiplex'
     multiqc_data                    = 'multiqc_data'
@@ -73,9 +72,7 @@ class demux:
     qcSuffix                        = '_QC'
     sha512Suffix                    = demux.config.constants.SHA512_SUFFIX
     sha512Length                    = demux.config.constants.SHA512_LENGTH  # 512 bits
-    tarSuffix                       = '.tar'
     temp                            = 'temp'
-    zipSuffix                       = '.zip'
     htmlSuffix                      = '.html'
     logSuffix                       = '.log'
     ######################################################
