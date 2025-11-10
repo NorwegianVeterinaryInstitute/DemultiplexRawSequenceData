@@ -57,9 +57,12 @@ from demux.steps.step01_demultiplex                             import bcl2fastq
 from demux.steps.step02_rename                                  import rename_files_and_directories
 from demux.steps.step03_quality_check                           import quality_check
 from demux.steps.step04_prepare_delivery                        import prepare_delivery
+from demux.steps.step05_control_projects_qc                     import control_projects_qc
+from demux.steps.step06_tar_file_quality_check                  import tar_file_quality_check
+from demux.steps.step07_deliver_files_to_VIGASP                 import deliver_files_to_VIGASP
+from demux.steps.step08_deliver_files_to_NIRD                   import deliver_files_to_NIRD
+from demux.steps.step99_finalize                                import finalize
 
-# do not uncomment the following line, it is here for copy-pasting into other modules
-# from demux.loggers import demuxLogger, demuxFailureLogger
 
 """
 demultiplex.py:
@@ -197,186 +200,6 @@ LIMITATIONS
 """
 
 
-########################################################################
-# Water Control Negative report
-########################################################################
-
-def controlProjectsQC(  ):
-    """
-    This function creeates a report if any water 1 samples are submitted for sequence ( and subsequently, analysis )
-
-    If there are no water control samples, no report is generated.
-
-    If there are water control samples,
-        create the full report ONLY if any amplicons are found
-    Otherwise
-        just mention in green text that no results are detected (and move on)
-    """
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard proejcts started ==", color="green", attrs=["bold"] ) )
-
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard proejcts finished ==", color="red", attrs=["bold"] ) )
-
-
-
-
-########################################################################
-# Perform a sha512 comparision
-########################################################################
-
-def sha512FileQualityCheck(  ):
-    """
-    re-perform (quietly) the sha512 calculation and compare that with the result on file for the specific file.
-    """
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: sha512 files check started ==", color="green", attrs=["bold"] ) )
-
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: sha512 files check finished ==", color="red", attrs=["bold"] ) )
-
-
-
-
-
-########################################################################
-# tarFileQualityCheck: verify tar files before upload
-########################################################################
-
-def tarFileQualityCheck(  ):
-    """
-    Perform a final quality check on the tar files before uploading them.
-    If there are errors in the untarring or the sha512 check, halt.
-    If there are no errors, go ahead with the uploading
-
-
-    steps for completing this function:
-        Step 1: create a /data/for_transfer/RunID/test directory
-        Step 2: copy any tar file for relevant RunIDShort into the test directory
-        Step 3: untar files under /data/for_transfer/RunID/test
-        Step 4: recalculate sha512 hash for each file
-        compare result with hash file on disk
-            stuff result in sql database?
-        delete {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} and contents
-        return True/false depending on answer
-
-    INPUT
-        Input is RunID rather than demux.RunID or some other variable because we can use this method later to check the tarFile quality of any fetched tar file from archive
-    """
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Tar files quaility check started ==", color="green", attrs=["bold"] ) )
-
-    forTransferRunIdDirTestName = os.path.join( demux.forTransferRunIdDir,demux.forTransferRunIdDirTestName )
-
-#---- Step 1: create a /data/for_transfer/RunID/test directory -------------------------------------------------------------------------------------------
-
-    # ensure that demux.forTransferDir (/data/for_transfer) exists
-    if not os. path. isdir( demux.forTransferDir ):
-        text = f"{demux.forTransferDir} does not exist! Please re-run the ansible playbook! Exiting!"
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )    
-
-    try: 
-        os.mkdir( forTransferRunIdDirTestName )
-    except Exception as err:
-        text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
-        demuxFailureLogger.critical( f"{ text }" )
-        demuxLogger.critical( f"{ text }" )
-        logging.shutdown( )
-        sys.exit( )
-
-# there is no point in making this complicated: tar files can be easily edited, they are just a simple container and any attacker can easily alter the file insitu,
-# recalculate the hash and replace the hash again in situ
-#
-# So the only thing we can do is basically untar the file to ensure that it was packed correctly in this program,
-# then delete the test_tar directory
-
-# for file in $TARFILES; do printf '\n==== tar file: $file============================='; tar --verbose --compare --file=$file | grep -v 'Mod time differs'; done
-#---- Step 2: untar all demux.tarFilesToTransferList in {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} ------------------------------------------------------------
-    for tarFile in demux.tarFilesToTransferList:
-        try:
-            text = "Now extracting tarfile:"
-            demuxLogger.debug( f"{text:{demux.spacing3}}" + tarFile )
-            tarFileHandle = tarfile.open( name = tarFile, mode = "r:" )     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
-            tarFileHandle.extractall( path = forTransferRunIdDirTestName  )
-            tarFileHandle.close( )
-        except Exception as err:
-            text = f"{forTransferRunIdDirTestName}/{tarFile} cannot be created: { str( err ) }\nExiting!"
-            demuxFailureLogger.critical( f"{ text }" )
-            demuxLogger.critical( f"{ text }" )
-            logging.shutdown( )
-            sys.exit( )
-
-#---- Step 3: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} and contents ------------------------------------------------------------
-    # clean up
-    text = "Cleanup up path:"
-    demuxLogger.info( f"{text:{demux.spacing2}}" + forTransferRunIdDirTestName )
-    shutil.rmtree( forTransferRunIdDirTestName )
-
-
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Tar files quaility check finished ==", color="red", attrs=["bold"] ) )
-
-
-
-
-
-########################################################################
-# script_completion_file
-########################################################################
-
-def scriptComplete(  ):
-    """
-    Create the {DemultiplexDir}/{demux.DemultiplexCompleteFile} file to signal that this script has finished
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Finishing up script ==", color="green", attrs=["bold"] ) )
-
-    try:
-        file = os.path.join( demux.demultiplexRunIDdir, demux.demultiplexCompleteFile )
-        pathlib.Path( file ).touch( mode=644, exist_ok=False)
-    except Exception as e:  
-        demuxLogger.critical( f"{file} already exists. Please delete it before running {__file__}.\n")
-        sys.exit( )
-
-    demuxLogger.debug( f"demux.demultiplexCompleteFile {file} created.")
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Finishing up script ==", color="red", attrs=["bold"] ) )
-
-
-
-########################################################################
-# deliverFilesToVIGASP
-########################################################################
-
-def deliverFilesToVIGASP(  ):
-    """
-    Write the uploader file needed to upload the data to VIGASP and then
-        upload the relevant files.
-    """
-    demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for uploading to VIGASP started\n")
-
-
-    demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for uploading to VIGASP finished\n")
-
-
-
-
-########################################################################
-# deliverFilesToNIRD
-########################################################################
-
-def deliverFilesToNIRD(  ):
-    """
-    Make connection to NIRD and upload the data
-    """
-    demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n")
-
-
-    demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n")
-
-
 
 ########################################################################
 # MAIN
@@ -393,7 +216,7 @@ def main( RunID ):
     RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
 
     setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
-    # # RunID = detect_new_runs                                                                           # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/122
+    # # RunID = detect_new_runs( demux )                                                                  # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/122
     setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
     # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
     create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIDdir}
@@ -415,11 +238,11 @@ def main( RunID ):
     prepare_delivery( demux )                                                                           # prepare the delivery files
     calc_file_hash( demux )                                                                             # create .md5/.sha512 checksum files for the delivery .fastqc.gz/.tar/.zip files under demultiplexRunIDdir, but this 2nd fime do it for the new .tar files created by prepareDelivery( )
     change_permissions( demux )                                                                         # change permissions for all the delivery files, including QC
-    controlProjectsQC( )                                                                                # check to see if we need to create the report for any control projects present
-    tarFileQualityCheck( )                                                                              # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
-    deliverFilesToVIGASP( )                                                                             # Deliver the output files to VIGASP
-    deliverFilesToNIRD( )                                                                               # deliver the output files to NIRD
-    scriptComplete( )                                                                                   # mark the script as complete
+    control_projects_qc( demux )                                                                        # check to see if we need to create the report for any control projects present
+    tar_file_quality_check( demux )                                                                     # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
+    deliver_files_to_VIGASP( demux )                                                                    # Deliver the output files to VIGASP
+    deliver_files_to_NIRD( demux )                                                                      # deliver the output files to NIRD
+    finalize( demux )                                                                                   # mark the script as complete
     # shutdownEventAndLoggingHandling( )                                                                # shutdown logging before exiting.
 
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
