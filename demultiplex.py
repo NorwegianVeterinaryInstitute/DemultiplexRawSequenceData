@@ -63,6 +63,8 @@ from demux.steps.step07_deliver_files_to_VIGASP                 import deliver_f
 from demux.steps.step08_deliver_files_to_NIRD                   import deliver_files_to_NIRD
 from demux.steps.step99_finalize                                import finalize
 
+from demux.loggers import demuxLogger, demuxFailureLogger
+
 
 """
 demultiplex.py:
