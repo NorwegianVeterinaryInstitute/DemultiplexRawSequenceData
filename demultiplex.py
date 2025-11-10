@@ -44,6 +44,7 @@ from demux.util.checksum                                        import calc_file
 from demux.util.change_permissions                              import change_permissions
 
 from demux.envsetup.setup_environment                           import setup_environment
+from demux.envsetup.detect_new_runs                             import detect_new_runs
 from demux.envsetup.create_demultiplex_directory_structure      import create_demultiplex_directory_structure
 from demux.envsetup.prepare_fortransfer_directory_structure     import prepare_fortransfer_directory_structure
 from demux.envsetup.copy_sample_sheet_into_demultiplex_runiddir import copy_sample_sheet_into_demultiplex_runiddir
@@ -378,78 +379,6 @@ def deliverFilesToNIRD(  ):
 
 
 ########################################################################
-# detectNewRuns
-########################################################################
-
-def detectNewRuns(  ):
-    """
-    Detect if a new run has been uploaded to /data/rawdata
-    """
-
-#########
-# TODO TODO TODO
-#
-#   new feature: logging.info out all the new runs detected
-#       mention which one is being processed
-#       mention which one are remaining
-#########
-    demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Detecting if new runs exist started\n")
-
-
-    demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Detecting if new runs exist finished\n")
-
-
-#######################################################################
-# checkRunningDirectoryStructure( )
-########################################################################
-
-def checkRunningDirectoryStructure( ):
-    """
-    Check if the runtime directory structure is ready for processing
-    """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Check if the runtime directory structure is ready for processing ==\n", color="green", attrs=["bold"] ) )
-
-    # init:
-
-    #   check if sequencing run has completed, exit if not
-    #       Completion of sequencing run is signaled by the existance of the file {demux.rtaCompleteFilePath} ( {demux.sequenceRunOriginDir}/{demux.rtaCompleteFile} )
-    if not os.path.isfile( f"{demux.rtaCompleteFilePath}" ):
-        text = f"{demux.RunID} is not finished sequencing yet!"
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-    #   check if {demux.demultiplexDirRoot} exists
-    #       exit if not
-    if not os.path.exists( demux.demultiplexDirRoot ):
-        text = f"{demux.demultiplexDirRoot} is not present, please use the provided ansible file to create the root directory hierarchy"
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-    if not os.path.isdir( demux.demultiplexDirRoot ):
-        text = f"{demux.demultiplexDirRoot} is not a directory! Cannot stored demultiplex data in a non-directory structure! Exiting." 
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-    if os.path.exists( demux.demultiplexDirRoot ):
-        text = f"{demux.demultiplexRunIDdir} exists. Delete the demultiplex folder before re-running the script"
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
-        logging.shutdown( )
-        sys.exit( )
-
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Check if the runtime directory structure is ready for processing ==\n", color="red" ) )
-
-
-
-########################################################################
 # MAIN
 ########################################################################
 
@@ -464,6 +393,7 @@ def main( RunID ):
     RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
 
     setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
+    # # RunID = detect_new_runs                                                                           # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/122
     setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
     # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
     create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIDdir}
