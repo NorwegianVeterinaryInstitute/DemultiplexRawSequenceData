@@ -1,6 +1,6 @@
+import termcolor
 
 from demux.loggers import demuxLogger, demuxFailureLogger
-
 
 ########################################################################
 # deliver_files_to_NIRD
