@@ -31,8 +31,8 @@ def detect_new_runs(  ):
 
 
     # LIMITATIONS/ASSUMPTIONS:
-    #   This script cannot handle more than 1 new run
-    #       if more than 1 new run exists in /data/rawdata/ the script will pick the first
+    #   This method cannot handle more than 1 new run
+    #       if more than 1 new run exists in /data/rawdata/ the method will pick the first
     #       directory  os.listdir() will return, THERE IS NO GUARANTEE FOR LEXICOGRAPHICAL
     #       ORDER.
     #
@@ -49,7 +49,7 @@ def detect_new_runs(  ):
     #           Need to work on this: $COMMAND_TO_RUN, waiting for the run to complete
     #
     # WHAT DOES THIS SCRIPT DO:
-    #       This script sets up the demultiplexing:
+    #       This method sets up the demultiplexing:
     #           Picks up all the existing folders within /data/rawdata/*M06578*_demultiplex in variable runList     
     #       Initializes a new variable
     #           fills it up with the var from runList
@@ -59,13 +59,13 @@ def detect_new_runs(  ):
     #           FIXME comparison needs revision, inefficient
     #
     #       if there is a difference between the two lists
-    #           the script starts a new run by
+    #           the method starts a new run by
     #               creating the dir path to be demultiplexed
     #               checks if /data/rawdata/$NEWRUN/SampleSheet.csv exists
     #           executes /bin/python3 /data/bin/current_demultiplex_script.py
     #               with the new dir name as argument, example
     #                   /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK_copy   
-    #           script waits for the output of /data/bin/current_demultiplex_script.py and appends it to
+    #           method waits for the output of /data/bin/current_demultiplex_script.py and appends it to
     #               /data/bin/cron_out.log
 
 
@@ -95,7 +95,7 @@ def detect_new_runs(  ):
     print( f"==> Getting demultiplexed directories finished ==\n")
 
 
-    # Right now the script operates on only one run at a time, but in the future we might want to run miltiple things at a time
+    # Right now the method operates on only one run at a time, but in the future we might want to run miltiple things at a time
 
     count = 0
     newRunList = [ ]
