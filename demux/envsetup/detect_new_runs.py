@@ -1,10 +1,10 @@
 
-import os, sys, subprocess
+import os
+import sys
+import subprocess
 import time
 
 from time import strftime, localtime, time
-
-import demultiplex
 
 from demux.loggers import demuxLogger, demuxFailureLogger
 
@@ -13,7 +13,7 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 # detect_new_runs
 ########################################################################
 
-def detect_new_runs(  ):
+def detect_new_runs( demux ):
     """
     Detect if a new run has been uploaded to /data/rawdata
     https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/122
@@ -131,8 +131,9 @@ def detect_new_runs(  ):
                 exit( )
 
             # EXAMPLE: /bin/python3.11 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
-            main( newRunID )
-            # return newRunID
+            return newRunID 
+            # or
+            return newRunIDs
 
             print( 'completed\n' )
         else:
