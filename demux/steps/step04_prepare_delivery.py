@@ -13,16 +13,16 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 # tar_project_files
 ########################################################################
 
-def tar_project_files( demux ):
-    """
 
+def collect_projects_to_tar( demux ):
+   
     """
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Adding files to tape archives started ==", color="yellow" ) )
-
-#---------- Prepare a list of the projects to tar under /data/for_transfer ----------------------
+    Prepare a list of the projects to tar under /data/for_transfer 
+    """
 
     # this looks duplicated from demux.getProjects( ) and it is, but I am not sure how to resolve the duplication. Let's keep this for now as second check, as this is more complete than
     # the one found in demux.getProjects( )
+    # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/87
     
     tarFile = ""
     projectsToProcessList = [ ]
@@ -48,15 +48,22 @@ def tar_project_files( demux ):
             projectsToProcessList.append( project )
             demuxLogger.debug( f"{project:{demux.spacing2}} added to projectsToProcessList." )
 
-#---------- change the current working directory to demux.demultiplexRunIDdir, so we can get nice relative paths  ----------------------
+    return projectsToProcessList
 
-    os.chdir( demux.demultiplexRunIDdir )
+def tar_project_files( demux ):
+    """
+    tar all project files
 
-#---------- Use projectsToProcessList to tar files demux.demultiplexRunIDdir to demux.forTransferRunIdDir  ----------------------
+    """
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Adding files to tape archives started ==", color="yellow" ) )
 
-    # this mean that while we are sitting in data.demultiplexRunIDdir, we are saving tar files under demux.forTransferRunIdDir
+    projectsToProcessList = [ ]
+    projectsToProcessList = collect_projects_to_tar( demux ) # get the projectsToProcessList to tar files from demux.demultiplexRunIDdir to demux.forTransferRunIdDir
+    os.chdir( demux.demultiplexRunIDdir )       # change the current working directory to demux.demultiplexRunIDdir, so we can get nice relative paths 
+
+    # this means that while we are sitting in data.demultiplexRunIDdir, we are saving tar files under demux.forTransferRunIdDir
     counter = 0         # used in counting how many projects we have archived so far
-    for project in projectsToProcessList:
+    for project in projectsToProcessList: # this needs to be pregenerated # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/120
 
         demuxLogger.debug( termcolor.colored( f"\n== walk the file tree, {inspect.stack()[0][3]}() , {demux.demultiplexRunIDdir}/{project} ======================", attrs=["bold"] ) )
 
@@ -93,7 +100,7 @@ def tar_project_files( demux ):
         demuxLogger.info( termcolor.colored( f'==< Archived {project} ({counter} out of { len( projectsToProcessList ) } projects ) ==================\n', color="yellow", attrs=["bold"] ) )
 
 #---------- Finished taring   -----------------------------------------------------------------------------------------------------------------------------------------------------
-
+    
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Adding files to tape archives finished ==", color="cyan" ) )
 
 
