@@ -1,4 +1,5 @@
 
+import inspect
 import logging
 import os
 import stat
@@ -68,7 +69,7 @@ def change_permissions( demux ):
 
     # change ownership and access mode of directories
     demuxLogger.debug( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
-    for directoryRoot, dirnames, filenames, in os.walk( path, followlinks = False ):
+    for directoryRoot, dirnames, filenames, in os.walk( dir_to_chmod, followlinks = False ):
 
         for name in dirnames:
             dirpath = os.path.join( directoryRoot, name )
