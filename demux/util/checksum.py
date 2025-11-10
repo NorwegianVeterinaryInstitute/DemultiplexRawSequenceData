@@ -53,7 +53,7 @@ def write_checksum_files( args ):
             # print( f"{checksum_file}: written" )
             return checksum_file
 
-        print( f"{checksum_file}: exists, skipped" )
+        demuxLogger.critical( f"{checksum_file}: exists, skipped" )
         return checksum_file
 
     twoMandatorySpaces              = "  "
@@ -137,13 +137,13 @@ def calc_file_hash( demux ):
     for directoryRoot, dirnames, filenames, in os.walk( dir_to_hash, followlinks = False ):
 
         for file in filenames:
-            if not any( var in file for var in [ constants.COMPRESSED_FASTQ_SUFFIX, constants.ZIP_SUFFIX, constants.TAR_SUFFIX ] ): # grab only .zip, .fasta.gz and .tar files
+            if not any( var in file for var in [ demux.compressedFastqSuffix, demux.zipSuffix, demux.tarSuffix ] ): # grab only .zip, .fasta.gz and .tar files
                 continue
 
             filepath = os.path.join( directoryRoot, file )
 
             # Check if any filenames are .md5/.sha512 files
-            if any( var in file for var in [ constants.SHA512_SUFFIX, constants.MD5_SUFFIX ] ):
+            if any( var in file for var in [ demux.sha512Suffix, demux.md5Suffix ] ):
                 text = f"{filepath} is already an sha512/md5 file!."
                 demuxFailureLogger.critical( f"{ text }" )
                 demuxLogger.critical( f"{ text }" )
@@ -178,7 +178,5 @@ def calc_file_hash( demux ):
     # make sure we are writing hash files in the 2kb range and not abominations
     with ProcessPoolExecutor() as executor:
         list( executor.map( is_file_large, filePathAndHashesResults ) )
-
-    sys.exit( "does this still need work?")
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Calculating md5/sha512 sums for .tar and .gz files finished ==\n", color="red", attrs=["bold"] ) )

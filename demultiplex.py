@@ -728,7 +728,6 @@ def main( RunID ):
     bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
     rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
     quality_check( demux )                                                                              # execute QC on the incoming fastq files
-    demux.state = "demultiplexRunIDdir"                                                                 # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
     calc_file_hash( demux )                                                                             # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIDdir
     change_permissions( demux )                                                                         # change permissions for the files about to be included in the tar files 
     prepareForTransferDirectoryStructure( demux )                                                       # create /data/for_transfer/RunID and any required subdirectories

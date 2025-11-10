@@ -13,7 +13,7 @@ import sys
 import logging
 import argparse
 
-from demultiplex import main
+# from demultiplex import main
 
 if __name__ == "__main__":
     if sys.hexversion < 51056112:  # Require Python 3.11 or newer

@@ -72,6 +72,9 @@ class demux:
     qcSuffix                        = '_QC'
     sha512Suffix                    = demux.config.constants.SHA512_SUFFIX
     sha512Length                    = demux.config.constants.SHA512_LENGTH  # 512 bits
+    tarSuffix                       = demux.config.constants.TAR_SUFFIX
+    zipSuffix                       = demux.config.constants.ZIP_SUFFIX
+    compressedFastqSuffix           = demux.config.constants.COMPRESSED_FASTQ_SUFFIX
     temp                            = 'temp'
     htmlSuffix                      = '.html'
     logSuffix                       = '.log'
@@ -94,8 +97,8 @@ class demux:
     miSeq                           = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
     nextSeq                         = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
     decodeScheme                    = "utf-8"
-    footarfile                      = f"foo{tarSuffix}"      # class variable shared by all instances
-    barzipfile                      = f"zip{zipSuffix}"
+    footarfile                      = f"foo{demux.config.constants.TAR_SUFFIX}"      # class variable shared by all instances
+    barzipfile                      = f"zip{demux.config.constants.ZIP_SUFFIX}"
     totalTasks                      = 0
     tabSpace                        = 8
     spacing1                        = 40
@@ -372,7 +375,7 @@ class demux:
                 controlProjectsFoundList.append( project )
                 continue
             elif project not in tarFilesToTransferList:
-                tarFilesToTransferList.append(  os.path.join( demux.forTransferDir, demux.RunID, project + demux.tarSuffix ) )
+                tarFilesToTransferList.append(  os.path.join( demux.forTransferDir, demux.RunID, project + demux.tarSuffix) )
 
 #---------- Let's make sure that demux.projectList and demux.newProjectNameList are not empty ----------------------
 
