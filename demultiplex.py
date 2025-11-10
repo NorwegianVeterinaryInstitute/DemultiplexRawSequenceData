@@ -212,12 +212,12 @@ def main( RunID ):
     Main function for the demultiplex script.
     All actions are coordinated through here
     """
+    setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
 
     if RunID != RunID.rstrip('/,.'):
-        print("Warning: RunID contained trailing punctuation or slashes, cleaned automatically.")
+        demuxLogger.info( "Warning: RunID contained trailing punctuation or slashes, cleaned automatically." )
     RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
 
-    setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
     # # RunID = detect_new_runs( demux )                                                                  # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/122
     setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
     # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
@@ -244,7 +244,7 @@ def main( RunID ):
     tar_file_quality_check( demux )                                                                     # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
     deliver_files_to_VIGASP( demux )                                                                    # Deliver the output files to VIGASP
     deliver_files_to_NIRD( demux )                                                                      # deliver the output files to NIRD
-    finalize( demux )                                                                                   # mark the script as complete
+    # finalize( demux )                                                                                   # mark the script as complete
     # shutdownEventAndLoggingHandling( )                                                                # shutdown logging before exiting.
 
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
