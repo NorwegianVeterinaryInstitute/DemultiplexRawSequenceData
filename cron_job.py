@@ -48,11 +48,11 @@ import demultiplex
 RunList = []
 print( f"==> Getting new rawdata directories started ==\n")
 
-for dirName in os.listdir( demultiplex_script.demux.rawDataDir ): # add directory names from the raw generated data directory
+for dirName in os.listdir( demultiplex.demux.rawDataDir ): # add directory names from the raw generated data directory
 
-    if demultiplex_script.demux.demultiplexDirSuffix in dirName: #  ignore any _demux dirs
+    if demultiplex.demux.demultiplexDirSuffix in dirName: #  ignore any _demux dirs
         continue
-    if any( tag in dirName for tags in [ demultiplex_script.demux.nextSeq, demultiplex_script.demux.miSeq ] for tag in tags ): # only add directories that have a sequncer tag
+    if any( tag in dirName for tags in [ demultiplex.demux.nextSeq, demultiplex.demux.miSeq ] for tag in tags ): # only add directories that have a sequncer tag
         RunList.append( dirName )
 
 print( f"==< Getting new rawdata directories finished ==\n")
@@ -61,12 +61,12 @@ print( f"==< Getting new rawdata directories finished ==\n")
 DemultiplexList = [] 
 print( f"==> Getting demultiplexed directories started ==\n")
 
-for dirName in os.listdir( demultiplex_script.demux.demultiplexDir ):
+for dirName in os.listdir( demultiplex.demux.demultiplexDir ):
 
-    if demultiplex_script.demux.demultiplexDirSuffix not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety in case any other dirs included in /data/demultiplex
+    if demultiplex.demux.demultiplexDirSuffix not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety in case any other dirs included in /data/demultiplex
         continue
-    if any( tag in dirName for tags in [ demultiplex_script.demux.nextSeq, demultiplex_script.demux.miSeq ] for tag in tags ): # ignore directories that have no sequncer tag
-        DemultiplexList.append( dirName.replace( demultiplex_script.demux.demultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
+    if any( tag in dirName for tags in [ demultiplex.demux.nextSeq, demultiplex.demux.miSeq ] for tag in tags ): # ignore directories that have no sequncer tag
+        DemultiplexList.append( dirName.replace( demultiplex.demux.demultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
 
 print( f"==> Getting demultiplexed directories finished ==\n")
 
@@ -97,17 +97,17 @@ if NewRunID:
     print( f"Will work on this RunID: {NewRunID}\n" ) # caution: if the corresponding _demux directory is somehow corrupted (wrong data in SampleSheetFilename or incomplete files), this will be printed over and over in the log file
 
     # essential condition to process is that RTAComplete.txt and SampleSheet.csv
-    if demultiplex_script.demux.rtaCompleteFile in os.listdir( os.path.join( demultiplex_script.demux.rawDataDir, NewRunID ) ) and demultiplex_script.demux.sampleSheetFileName in os.listdir( os.path.join( demultiplex_script.demux.rawDataDir, NewRunID ) ):
+    if demultiplex.demux.rtaCompleteFile in os.listdir( os.path.join( demultiplex.demux.rawDataDir, NewRunID ) ) and demultiplex.demux.sampleSheetFileName in os.listdir( os.path.join( demultiplex.demux.rawDataDir, NewRunID ) ):
 
-        # if demultiplex_script.demux.debug: 
-            # print( f"{demultiplex_script.demux.python3_bin} {demultiplex_script.demux.scriptFilePath} {NewRunID}")
+        # if demultiplex.demux.debug: 
+            # print( f"{demultiplex.demux.python3_bin} {demultiplex.demux.scriptFilePath} {NewRunID}")
 
-        if not os.path.exists( demultiplex_script.demux.scriptFilePath ):
-            print( f"{demultiplex_script.demux.scriptFilePath} does not exist!" )
+        if not os.path.exists( demultiplex.demux.scriptFilePath ):
+            print( f"{demultiplex.demux.scriptFilePath} does not exist!" )
             exit( )
 
         # EXAMPLE: /bin/python3.11 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
-        demultiplex_script.main( NewRunID )
+        demultiplex.main( NewRunID )
 
         print( 'completed\n' )
     else:
@@ -115,11 +115,11 @@ if NewRunID:
 
 #
 ########################################################################
-# Turning demultiplex_script into a python module, by placing it in a
+# Turning demultiplex into a python module, by placing it in a
 # package structure
 ########################################################################
 #
-# from demultiplex.demultiplex_script import main
+# from demultiplex.demultiplex import main
 #
 # def run_cron_job():
 #     RunID = "example_run_id"  # Replace with actual logic to retrieve RunID
