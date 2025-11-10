@@ -5,7 +5,7 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 # Water Control Negative report
 ########################################################################
 
-def control_projects_qc(  ):
+def control_projects_qc(  demux ):
     """
     This function creeates a report if any water 1 samples are submitted for sequence ( and subsequently, analysis )
 
