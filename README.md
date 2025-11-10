@@ -2,13 +2,15 @@
 
 Demutliplex a MiSEQ or NextSEQ run, perform QC using FastQC and MultiQC and deliver files either to VIGASP for analysis or NIRD for archiving
 
-Replace <RunId> with relevant run id. Example <RunID>: "190912_M06578_0001_000000000-CNNTP". RunID breaks down like this (date +%y%m%d/yymmdd_MACHINE-SERIAL-NUMBER_AUTOINCREASING-NUMBER-OF-RUN_000000000-FlowcellID-used-for-this-run . 
+<RunID> is an Illumina designated string, used as the root folder for the specified sequence, e.g. "190912_M06578_0001_000000000-CNNTP". 
+
+RunID breaks down like this (date +%y%m%d/yymmdd_MACHINE-SERIAL-NUMBER_AUTOINCREASING-NUMBER-OF-RUN_000000000-FlowcellID-used-for-this-run . 
 
     Note: don't bother with enforcing ISO dates for the directory name. It is an Illumina standard and they do not care.
 
 Software requirements
 
-    Python > v3.9
+    Python > v3.11
     bcl2fastq ( from https://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software/downloads.html )
     FastQC    ( https://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )
     MultiQC   ( pip3 install multiqc )
@@ -37,15 +39,13 @@ Software requirements
     └── samplesheets                                                cummulative backups of all samplesheets
 
 ## Procedure
-* MiSeq writes as MiSEQ- to /data/scratch; shared folder Z:\ (alias rawdata) in MiSeq
-* Lab members modify an existing  _SampleSheet.csv_ file to include the new project data, then save the new file to the \<RunId\> folder in Z:\ and a copy within Z:\SampleSheets\ as \<RunId\>\SampleSheet.csv
+* MiSeq/NextSeq instrument writes as MiSEQ-serialID/NextSeq-serialID to /data/rawdata; shared folder Z:\ (alias rawdata) in MiSeq/NextSeq
+* Lab members use template made by @magnulei to generate a new SampleSheet.csv, then save the new file to the Z:\<RunId\> folder
 
 > Example:
 
-    Z:\190912_M06578_0001_000000000-CNNTP
-            ├── SampleSheets.csv
-    Z:\SampleSheets
-            ├── 190912_M06578_0001_000000000-CNNTP.csv
+    Z:\rawdata\190912_M06578_0001_000000000-CNNTP
+                     ├── SampleSheets.csv
 
 * Cron job runs every 15 minutes if it finds a new run, _RTAComplete.txt_ and _SampleSheet.csv_ files within the run new, it starts the demultiplexing script
 * It can be manually started as below
@@ -54,5 +54,3 @@ clear; rm -rvf /data/{demultiplex,for_transfer}/<RunID>* && /data/bin/demultiple
 ```
 
 as the relevant user.
-
-NIRD delivery directory: /projects/NS9305K/SEQ-TECH/data_delivery/
