@@ -111,8 +111,8 @@ def tar_project_files( demux ):
 
 def create_qc_tar_file( demux ):
     """
-    create the qc.tar file by reading from /data/demultiplex/RunID/RunID_QC and writing the tar file to /data/for_transfer/RunID/demux.RunIDShort_qc.tar
-    What to put inside the QC file: {demux.RunIDShort}_QC and multiqc_data
+    create the qc.tar file by reading from /data/demultiplex/RunID/RunID_QC and writing the tar file to /data/for_transfer/RunID/demux.runIDShort_qc.tar
+    What to put inside the QC file: {demux.runIDShort}_QC and multiqc_data
 
     """
 
@@ -183,7 +183,7 @@ def create_multiqc_tar_file( demux ):
             text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
             demuxLogger.info( text + filenameToTar )
 
-    # bothisfiledemux.RunIDShort}_QC and multidata_qc go in the same tar file
+    # bothisfiledemux.runIDShort}_QC and multidata_qc go in the same tar file
     multiQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
     demuxLogger.info( termcolor.colored( f"==> Archived {demux.multiqc_data} ==================", color="yellow", attrs=["bold"] ) )    
 
@@ -210,7 +210,7 @@ def prepare_delivery( demux ):
             delete the DemultiplexRunIdDir/temp directory
 
     WHAT TO PUT INSIDE THE QC FILE
-        {demux.RunIDShort}_QC/
+        {demux.runIDShort}_QC/
         multiqc_data/
 
     WHAT TO IGNORE

@@ -104,8 +104,8 @@ WHY DOES THIS PROGRAM EXIST
     So, essentially, this script is an attempt at automation workflow:
         sequencing -> demultiplexing -> quality checking -> delivering the results of the demultiplexing and the QC to the appropriate places, in the case of NVI, VIGASP and NIRD
 
-WHERE DO PROJECTS GET THEIR NEW {RunIDShort}.{project} NAME?
-    In demux.getProjectName( ) . We are building the project names there, might as well put the compliance as well. (This might change)
+WHERE DO PROJECTS GET THEIR NEW {runIDShort}.{project} NAME?
+    In demux.parse_sample_sheet( ) . We are building the project names there, might as well put the compliance as well.
 
 WHAT DO THE FASTQ.GZ FILES CONTAIN
     The .fastq.gz contain all the fastq files from the blc2fastq demultiplexing
@@ -158,7 +158,7 @@ WHAT DOES THE TAR FILE CONTAIN
         - additional sha512 file for extra assurance the file is unique
 
 WHAT DOES THE QC TAR FILE CONTAIN
-    The QC tar file contains all the files under the {demux.RunIDShort}_QC and multiqc_data directories 
+    The QC tar file contains all the files under the {demux.runIDShort}_QC and multiqc_data directories 
     It is named as
         RunIDshort_QC, eg: 200624_M06578_QC
 
@@ -232,7 +232,7 @@ def main( RunID ):
     copy_sample_sheet_into_demultiplex_runiddir( demux )                                                # copy SampleSheet.csv from {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir}
     archive_sample_sheet( demux )                                                                       # make a copy of the Sample Sheet for future reference
     bcl2fastq( demux )                                                                                  # use blc2fastq to convert .bcl files to fastq.gz
-    rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {RunIDShort}.{project} convention
+    rename_files_and_directories( demux )                                                               # rename the *.fastq.gz files and the directory project to comply to the {runIDShort}.{project} convention
     quality_check( demux )                                                                              # execute QC on the incoming fastq files
     calc_file_hash( demux )                                                                             # create .md5/.sha512 checksum files for every .fastqc.gz/.tar/.zip file under demultiplexRunIDdir
     change_permissions( demux )                                                                         # change permissions for the files about to be included in the tar files 

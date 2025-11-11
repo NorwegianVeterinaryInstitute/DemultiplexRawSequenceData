@@ -18,19 +18,22 @@ def setup_environment( RunID ):
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="green", attrs=["bold"] ) )
 
+    # this should be moved into the object initilization, not the environment init
+    # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/127
+
     demux.RunID                         = RunID
-    demux.RunIDShort                    = '_'.join( RunID.split('_')[0:2] ) # this should be turned into a setter in the demux object
+    demux.runIDShort                    = '_'.join( RunID.split('_')[0:2] ) # this should be turned into a setter in the demux object
 ######################################################
     demux.rawDataRunIDdir               = os.path.join( demux.rawDataDir,           demux.RunID )
     demux.sampleSheetFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.sampleSheetFileName )
     demux.rtaCompleteFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.rtaCompleteFile )
 
-    demux.getProjectName( )             # get the list of projects in this current run
+    demux.parse_sample_sheet( )         # get the list of projects in this current run
 
 ######################################################
     demux.demultiplexRunIDdir           = os.path.join( demux.demultiplexDir,       demux.RunID + demux.demultiplexDirSuffix ) 
     demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIDdir,  demux.demultiplexLogDirName ) 
-    demux.demuxQCDirectoryName          = demux.RunIDShort + demux.qcSuffix              # example: 200624_M06578_QC  # QCSuffix is defined in object demux
+    demux.demuxQCDirectoryName          = demux.runIDShort + demux.qcSuffix              # example: 200624_M06578_QC  # QCSuffix is defined in object demux
     demux.demuxQCDirectoryFullPath      = os.path.join( demux.demultiplexRunIDdir,  demux.demuxQCDirectoryName  )
     demux.bcl2FastqLogFile              = os.path.join( demux.demultiplexRunIDdir,  demux.demultiplexLogDirPath, demux.bcl2FastqLogFileName )
 ######################################################
@@ -58,7 +61,7 @@ def setup_environment( RunID ):
     # maintain the order added this way, so our little stateLetter trick will work
     demux.globalDictionary = {  
         'RunID'                         : str( ),
-        'RunIDShort'                    : str( ),
+        'runIDShort'                    : str( ),
         'rawDataRunIDdir'               : str( ),
         'rtaCompleteFilePath'           : str( ),
         'sampleSheetFilePath'           : str( ),
@@ -86,7 +89,7 @@ def setup_environment( RunID ):
     demux.tarFilesToTransferList.append( demux.forTransferQCtarFile )
     # maintain the order added this way, so our little stateLetter trick will work
     demux.globalDictionary[ 'RunID'                        ] = demux.RunID
-    demux.globalDictionary[ 'RunIDShort'                   ] = demux.RunIDShort
+    demux.globalDictionary[ 'runIDShort'                   ] = demux.runIDShort
     demux.globalDictionary[ 'rawDataRunIDdir'              ] = demux.rawDataRunIDdir
     demux.globalDictionary[ 'rtaCompleteFilePath'          ] = demux.rtaCompleteFilePath
     demux.globalDictionary[ 'sampleSheetFilePath'          ] = demux.sampleSheetFilePath

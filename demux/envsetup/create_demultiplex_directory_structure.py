@@ -16,7 +16,7 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 def create_demultiplex_directory_structure( demux ):
     """
     If the Demultiplexing directory or any relevant directory does not exist, create it
-        demux.RunIDShort format is in the pattern of (date +%y%m%d)_SEQUENCERSERIALNUMBER Example: 220314_M06578
+        demux.runIDShort format is in the pattern of (date +%y%m%d)_SEQUENCERSERIALNUMBER Example: 220314_M06578
         {demultiplexDirRoot} == "/data/demultiplex" # default
 
         {demultiplexDirRoot}/{demux.RunID}_{demultiplexDirSuffix}/
@@ -27,7 +27,7 @@ def create_demultiplex_directory_structure( demux ):
         .
         {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/projectList[ len( projectList ) -1 ]
         {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/{demultiplexLogDir}
-        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/{demux.RunIDShort}{demux.qcSuffix}
+        {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/{demux.runIDShort}{demux.qcSuffix}
         {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/Reports      # created by bcl2fastq
         {demultiplexDirRoot}{demux.RunID}_{demultiplexDirSuffix}/Stats        # created by bcl2fastq
     """

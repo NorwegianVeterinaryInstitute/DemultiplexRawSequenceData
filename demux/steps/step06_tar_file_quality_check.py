@@ -20,7 +20,7 @@ def tar_file_quality_check( demux ):
 
     steps for completing this function:
         Step 1: create a /data/for_transfer/RunID/test directory
-        Step 2: copy any tar file for relevant RunIDShort into the test directory
+        Step 2: copy any tar file for relevant runIDShort into the test directory
         Step 3: untar files under /data/for_transfer/RunID/test
         Step 4: recalculate sha512 hash for each file
         compare result with hash file on disk

@@ -68,13 +68,13 @@ def fastqc( demux ):
 
 
 ########################################################################
-# prepareMultiQC
+# prepare_multiqc
 ########################################################################
 
 def prepare_multiqc( demux ):
     """
     Preperation to run MultiQC:
-        copy *.zip and *.html from individual {demux.demultiplexRunIDdir}/{demux.RunIDShort}.{project} directories to the {demultiplexRunIDdirNewNamel}/{demux.RunIDShort}_QC directory
+        copy *.zip and *.html from individual {demux.demultiplexRunIDdir}/{demux.runIDShort}.{project} directories to the {demultiplexRunIDdirNewNamel}/{demux.runIDShort}_QC directory
   
     INPUT
         the renamed project list
@@ -106,8 +106,8 @@ def prepare_multiqc( demux ):
             demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
             continue
         else:
-            zipFilesPath   = os.path.join( demux.demultiplexRunIDdir, project ,'*' + demux.zipSuffix  ) # {project} here is already in the {RunIDShort}.{project_name} format
-            htmlFilesPath  = os.path.join( demux.demultiplexRunIDdir, project, '*' + demux.htmlSuffix ) # {project} here is already in the {RunIDShort}.{project_name} format
+            zipFilesPath   = os.path.join( demux.demultiplexRunIDdir, project ,'*' + demux.zipSuffix  ) # {project} here is already in the {runIDShort}.{project_name} format
+            htmlFilesPath  = os.path.join( demux.demultiplexRunIDdir, project, '*' + demux.htmlSuffix ) # {project} here is already in the {runIDShort}.{project_name} format
             globZipFiles   = glob.glob( zipFilesPath )
             globHTMLFiles  = glob.glob( htmlFilesPath )
             countZipFiles  = len( globZipFiles )
@@ -155,8 +155,10 @@ def prepare_multiqc( demux ):
         sys.exit( )
 
     demuxLogger.debug( "-----------------")
-    sourcefiles = zipFiles + HTMLfiles
-    destination = os.path.join( demux.demultiplexRunIDdir, demux.RunIDShort + demux.qcSuffix )     # QC folder eg /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578_QC/
+    sourcefiles = zipFiles + HTMLfiles # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/129
+    # destination = os.path.join( demux.demultiplexRunIDdir, demux.runIDShort + demux.qcSuffix )     # QC folder eg /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578_QC/
+    destination = os.path.join( demux.demultiplexRunIDdir, demux.demuxQCDirectoryName )     # QC folder eg /data/demultiplex/220603_M06578_0105_000000000-KB7MY_demultiplex/220603_M06578_QC/ https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/128
+
     if demux.verbosity == 2:
         text        = "sourcefiles:"
         demuxLogger.debug( f"{text:{demux.spacing3}}" + str( ' '.join( sourcefiles ) ) + '\n' )
@@ -177,7 +179,7 @@ def prepare_multiqc( demux ):
         sys.exit( )
 
     try:
-        # EXAMPLE: /usr/bin/cp project/*zip project/*html DemultiplexDir/demux.RunIDShort.short_QC # (destination is a directory)
+        # EXAMPLE: /usr/bin/cp project/*zip project/*html DemultiplexDir/demux.runIDShort.short_QC # (destination is a directory)
         for source  in sourcefiles :
             text    = "Command to execute:"
             command = f"/usr/bin/cp {source} {destination}"
