@@ -187,14 +187,15 @@ class demux:
     ########################################################################
     # getProjectName
     ########################################################################
-    def getProjectName( ):
+    def parse_sample_sheet( ):
         """
-        Get the associated project name from SampleSheet.csv
+        Parse the NVI SampleSheet.csv into an object and get the associated project name(s)
 
         Requires:
            /data/rawdata/RunID/SampleSheet.csv
 
         Returns:
+            Samplesheet object
             List of included Sample Projects. 
                 Example of returned projectList:     {'SAV-amplicon-MJH'}
 
@@ -211,11 +212,9 @@ class demux:
         """
 
         demux.n = demux.n + 1
-        if 'demuxLogger' in logging.Logger.manager.loggerDict.keys():
-            demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
-        else:
-            print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
 
+        demuxLogger.debug( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
+        
         projectLineCheck            = False
         projectIndex                = 0
         sampleSheetContents         = [ ]
@@ -225,95 +224,19 @@ class demux:
         tarFilesToTransferList      = [ ]
         loggerName                  = 'demuxLogger'
 
-        sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding = demux.decodeScheme ) # demux.decodeScheme
-        sampleSheetContent    = sampleSheetFileHandle.read( )     # read the contents of the SampleSheet here
+        # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/125
+        # sampleSheetContent = ""
+        # sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding = demux.decodeScheme ) # demux.decodeScheme
+        # sampleSheetContent    = sampleSheetFileHandle.read( )                                         # read the contents of the SampleSheet here
+        # sampleSheetContent    = check_for_illegal_characters( sampleSheetContent )
+        # sampleSheetFileHandle.write(sampleSheetContent)
+        # sampleSheetFileHandle.close()
 
-        ##########################################################################
-        # check for non ASCII characters. if they exist, report them, then delete them
-        #
-        # if re.search(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent):
-        #     invalidChars = [(m.group(), m.start()) for m in re.finditer(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent)]
+        sampleSheetContent = SampleSheet( demux.sampleSheetFilePath )
 
-
-        #     for char, position in invalidChars:
-        #         lineNumber = sampleSheetContent.count( '\n', 0, position ) + 1
-        #         columnNumber = position - sampleSheetContent.rfind( '\n', 0, position )
-        #         print( f"Invalid character '{char}' at line {lineNumber}, column {columnNumber}" )
-
-            # replace it according to rules below
-            #
-            # if char found is not in the rules, notify user
-
-            # When you edit files in CSV format, some software saves the values surrounded by quotes
-            # and some do not. So, precautionary strip single and double quotes
-            #
-
-
-            ##########################################################################
-            # The following lists are designed to ensure compatibility with ASCII
-            # as required by Illumina's bcl2fastq, eliminating character sets which
-            # may be used by personnel in the lab handling the SampleSheet but are not
-            # compatible with bcl2fastq.
-            #
-            # norwegianDanishCharactersPattern = r'[ÅÆØåæø]'
-            # swedishFinnishCharactersPattern = r'[ÄÖäö]'
-            # icelandicCharactersPattern = r'[ÁÐÍÓÚÝÞÖáðíóúýþ]'
-            # # Ñ and ñ are Spanish-specific characters, everything else brazilianPortugueseCharactersPattern covers
-            # spanishCharacterspattern = r'[Ññ]'
-            # # Œ, œ, and ÿ are French-specific characters, everything else brazilianPortugueseCharactersPattern covers
-            # frenchCharactersPattern = r'[Œœÿ]'
-            # # Â,À,Ç are baptized as Brazilian Portugese cuz we got more Portugese speakers in the building
-            # brazilianPortugueseCharactersPattern = r'[ÂÃÁÀÊÉÍÓÔÕÚÇâãáàêéíóôõúç]'
-            # otherCharactersPattern = r'[\'\"=]'
-            # currencyCharactersPattern = r'[€]'
-
-            # # Catch Chinese, Japanese, and Korean (CJK) characters,
-            # cjkPattern = r'[\u4E00-\u9FFF\u3040-\u30FF\uFF66-\uFF9F\u3400-\u4DBF]'
-            #     # \u4E00-\u9FFF: Common and Unified CJK characters (Chinese, Japanese Kanji, Korean Hanja).
-            #     # \u3040-\u30FF: Japanese Hiragana and Katakana.
-            #     # \uFF66-\uFF9F: Half-width Katakana.
-            #     # \u3400-\u4DBF: CJK Extension A (additional Chinese characters)
-            # vietnameseCharactersPattern = r'[ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂễỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰ]'
-
-
-            ##########################################################################
-            # Classes of characters frequently found in SampleSheet
-
-            # Leftover single and double quotes
-            # line = line.replace( '\'', '' )
-            # line = line.replace( "\"", '' )
-
-            # # Norwegian characters
-            # line = line.replace('Â', 'A')
-            # line = line.replace('Å', 'A')
-            # line = line.replace('Æ', 'AE')
-            # line = line.replace('Ø', 'O')
-            # line = line.replace('â', 'a')
-            # line = line.replace('å', 'a')
-            # line = line.replace('æ', 'ae')
-            # line = line.replace('ø', 'o')
-
-            # # Spanish accented characters
-            # line = line.replace('Ã', 'A')
-            # line = line.replace('ã', 'a')
-
-            # # Euro currency sign
-            # line = line.replace('€', ' ')
-
-            # sys.exit( "what happens when multiples of the above exist, read up on line.replace()")
-            # # remove any &nbsp
-            # line = line.replace('\u00A0', ' ')
-
-            # ###########################################################################
-            # # WARN USER THAT SUCH CHARS WERE ENCOUNTERED
-            # ###########################################################################
-            # sys.exit( "working on: WARN USER THAT SUCH CHARS WERE ENCOUNTERED. Use this token to search for this sys.exit()" )
 
         if demux.verbosity == 3:
-            if loggerName in logging.Logger.manager.loggerDict.keys():
-                demuxLogger.debug( f"sampleSheetContent:\n{sampleSheetContent }" ) # logging.debug it
-            else:
-                print( f"sampleSheetContent:\n{sampleSheetContent }" )
+            demuxLogger.debug( f"sampl:\n{sampleSheetContent }" ) # logging.debug it
 
 #---------- Parse the contets of SampleSheet.csv ----------------------
 
@@ -348,7 +271,7 @@ class demux:
                         print( text )
                     
                 projectList.append( item )                                 # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
-                newProjectNameList.append( f"{demux.RunIDShort}.{item}" )  #  since we are here, we might construct the new name list.
+                newProjectNameList.append( f"{demux.runIDShort}.{item}" )  #  since we are here, we might construct the new name list.
 
             elif demux.Sample_Project in line: ### DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
 
