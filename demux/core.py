@@ -503,8 +503,104 @@ class demux:
         point any mistakes out to log
         """
         demux.n = demux.n + 1
-        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Check SampleSheet.csv for common human mistakes started ==\n", color="green", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Checking SampleSheet.csv for common human mistakes started ==\n", color="green", attrs=["bold"] ) )
 
-        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Check SampleSheet.csv for common human mistakes finished ==\n", color="red", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Checking SampleSheet.csv for common human mistakes finished ==\n", color="red", attrs=["bold"] ) )
+
+    ########################################################################
+    # check_for_illegal_characters( )
+    ########################################################################
+    def check_for_illegal_characters( sampleSheetContent ): # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/125
+        """
+        Find and remove characters within the samplesheet that might cause us headaches
+        """
+
+        demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Checking SampleSheet.csv for characters that might cause us headaches started ==\n", color="green", attrs=["bold"] ) )
+
+        ##########################################################################
+        # check for non ASCII characters. if they exist, report them, then delete them
+        #
+        # if re.search(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent):
+        #     invalidChars = [(m.group(), m.start()) for m in re.finditer(r'[^A-Za-z0-9_\-\n\r]', sampleSheetContent)]
+
+
+        #     for char, position in invalidChars:
+        #         lineNumber = sampleSheetContent.count( '\n', 0, position ) + 1
+        #         columnNumber = position - sampleSheetContent.rfind( '\n', 0, position )
+        #         print( f"Invalid character '{char}' at line {lineNumber}, column {columnNumber}" )
+
+            # replace it according to rules below
+            #
+            # if char found is not in the rules, notify user
+
+            # When you edit files in CSV format, some software saves the values surrounded by quotes
+            # and some do not. So, precautionary strip single and double quotes
+            #
+
+
+            ##########################################################################
+            # The following lists are designed to ensure compatibility with ASCII
+            # as required by Illumina's bcl2fastq, eliminating character sets which
+            # may be used by personnel in the lab handling the SampleSheet but are not
+            # compatible with bcl2fastq.
+            #
+            # norwegianDanishCharactersPattern = r'[ÅÆØåæø]'
+            # swedishFinnishCharactersPattern = r'[ÄÖäö]'
+            # icelandicCharactersPattern = r'[ÁÐÍÓÚÝÞÖáðíóúýþ]'
+            # # Ñ and ñ are Spanish-specific characters, everything else brazilianPortugueseCharactersPattern covers
+            # spanishCharacterspattern = r'[Ññ]'
+            # # Œ, œ, and ÿ are French-specific characters, everything else brazilianPortugueseCharactersPattern covers
+            # frenchCharactersPattern = r'[Œœÿ]'
+            # # Â,À,Ç are baptized as Brazilian Portugese cuz we got more Portugese speakers in the building
+            # brazilianPortugueseCharactersPattern = r'[ÂÃÁÀÊÉÍÓÔÕÚÇâãáàêéíóôõúç]'
+            # otherCharactersPattern = r'[\'\"=]'
+            # currencyCharactersPattern = r'[€]'
+
+            # # Catch Chinese, Japanese, and Korean (CJK) characters,
+            # cjkPattern = r'[\u4E00-\u9FFF\u3040-\u30FF\uFF66-\uFF9F\u3400-\u4DBF]'
+            #     # \u4E00-\u9FFF: Common and Unified CJK characters (Chinese, Japanese Kanji, Korean Hanja).
+            #     # \u3040-\u30FF: Japanese Hiragana and Katakana.
+            #     # \uFF66-\uFF9F: Half-width Katakana.
+            #     # \u3400-\u4DBF: CJK Extension A (additional Chinese characters)
+            # vietnameseCharactersPattern = r'[ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯưẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂễỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰ]'
+
+
+            ##########################################################################
+            # Classes of characters frequently found in SampleSheet
+
+            # Leftover single and double quotes
+            # line = line.replace( '\'', '' )
+            # line = line.replace( "\"", '' )
+
+            # # Norwegian characters
+            # line = line.replace('Â', 'A')
+            # line = line.replace('Å', 'A')
+            # line = line.replace('Æ', 'AE')
+            # line = line.replace('Ø', 'O')
+            # line = line.replace('â', 'a')
+            # line = line.replace('å', 'a')
+            # line = line.replace('æ', 'ae')
+            # line = line.replace('ø', 'o')
+
+            # # Spanish accented characters
+            # line = line.replace('Ã', 'A')
+            # line = line.replace('ã', 'a')
+
+            # # Euro currency sign
+            # line = line.replace('€', ' ')
+
+            # sys.exit( "what happens when multiples of the above exist, read up on line.replace()")
+            # # remove any &nbsp
+            # line = line.replace('\u00A0', ' ')
+
+            # ###########################################################################
+            # # WARN USER THAT SUCH CHARS WERE ENCOUNTERED
+            # ###########################################################################
+            # sys.exit( "working on: WARN USER THAT SUCH CHARS WERE ENCOUNTERED. Use this token to search for this sys.exit()" )
+
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Checking SampleSheet.csv for characters that might cause us headaches finished ==\n", color="red", attrs=["bold"] ) )
+
+        return sampleSheetContent
+
 
 
