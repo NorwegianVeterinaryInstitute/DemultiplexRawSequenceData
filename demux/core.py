@@ -28,8 +28,6 @@ import demux.config.constants
 
 from sample_sheet import SampleSheet # https://sample-sheet.readthedocs.io/quick-start.html
 
-import demux.loggers as demux_logging
-
 
 """
 The demux object is the central configuration/state holder for the whole pipeline.  It:
@@ -116,7 +114,7 @@ class demux:
 
     ######################################################
     RunID                           = ""
-    runIDShort                      = ""  # demux.runIDShort vs demux.RunIDShort https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/126 
+    runIDShort                      = ""  # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/126
     rawDataRunIDdir                 = ""
     demultiplexRunIDdir             = ""
     demultiplexLogDirPath           = ""
