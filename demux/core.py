@@ -213,7 +213,9 @@ class demux:
 
         demux.n = demux.n + 1
 
-        demuxLogger.debug( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
+        # demuxLogger.debug( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
+        # use print for now till we figure out what is going on with the logging
+        print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
         
         projectLineCheck            = False
         projectIndex                = 0
@@ -226,17 +228,16 @@ class demux:
 
         # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/125
         # sampleSheetContent = ""
-        # sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding = demux.decodeScheme ) # demux.decodeScheme
-        # sampleSheetContent    = sampleSheetFileHandle.read( )                                         # read the contents of the SampleSheet here
+        sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding = demux.decodeScheme ) # demux.decodeScheme
+        sampleSheetContent    = sampleSheetFileHandle.read( )                                         # read the contents of the SampleSheet here
         # sampleSheetContent    = check_for_illegal_characters( sampleSheetContent )
         # sampleSheetFileHandle.write(sampleSheetContent)
         # sampleSheetFileHandle.close()
-
-        sampleSheetContent = SampleSheet( demux.sampleSheetFilePath )
+        # sampleSheetContent = SampleSheet( demux.sampleSheetFilePath )
 
 
         if demux.verbosity == 3:
-            demuxLogger.debug( f"sampl:\n{sampleSheetContent }" ) # logging.debug it
+            demuxLogger.debug( f"sampl:\n{sampleSheetContent }" ) # refactor: fix logging to start first thing before anything else happens in the script # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/131 
 
 #---------- Parse the contets of SampleSheet.csv ----------------------
 
