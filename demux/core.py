@@ -225,6 +225,7 @@ class demux:
         controlProjectsFoundList    = [ ]
         tarFilesToTransferList      = [ ]
         loggerName                  = 'demuxLogger'
+        superflusschange            = ''
 
         # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/125
         # sampleSheetContent = ""
