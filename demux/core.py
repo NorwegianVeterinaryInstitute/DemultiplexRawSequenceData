@@ -11,6 +11,7 @@ import logging
 import logging.handlers
 import os
 import pathlib
+import pprint
 import re
 import resource
 import shutil
@@ -175,14 +176,52 @@ class demux:
     def __init__( self, RunID ):
         """
         __init__
-            Check for existance of RunID
+            Check for existence of RunID
                 Complain if not
             Checks to see if debug or not is set
         """
-        self.RunID      = RunID # variables in __init___ are unique to each instance
+        self.RunID = RunID # variables in __init___ are unique to each instance
+        # # self.RunID = discover_new_runs( )  # this is for later # apparently this si a bad idea
 
+    def _get_unique_sample_projects( sample_sheet ):
+        """
+        Returns the list of sample project names from the sample sheet, preserving their original order and removing duplicates.
+        """
+        return list( dict.fromkeys( sample_obj.Sample_Project for sample_obj in sample_sheet.samples ) )
 
+    def _create_renamed_demux_project_list( projectList ):
+        """
+        Returns the list of project names with test and control projects removed and all remaining projects renamed using runIDShort.
+        """
+        newProjectNameList = [ ]
 
+        for project in projectList:
+            if any( var in project for var in [ demux.testProject ] ):                 # skip the test project, 'FOO-blahblah-BAR'
+                continue
+            elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
+                controlProjectsFoundList.append( project )
+                continue
+            elif project not in newProjectNameList:
+                newProjectNameList.append( f"{demux.runIDShort}.{project}" )  #  since we are here, we might construct the new name list.
+
+        return newProjectNameList
+
+    def _create_tar_files_to_transfer_list( newProjectNameList ):
+        """
+        Builds and returns the list of absolute tar file paths to transfer, skipping test and control projects and appending the tar suffix for each remaining project.
+        """
+        tarFilesToTransferList = [ ]
+
+        for index, project in enumerate( newProjectNameList ):
+            if any( var in project for var in [ demux.testProject ] ):                 # skip the test project, 'FOO-blahblah-BAR'
+                continue
+            elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
+                controlProjectsFoundList.append( project )
+                continue
+            elif project not in tarFilesToTransferList:
+                tarFilesToTransferList.append(  os.path.join( demux.forTransferDir, demux.RunID, project + demux.tarSuffix) )
+
+        return tarFilesToTransferList
 
     ########################################################################
     # getProjectName
@@ -199,152 +238,27 @@ class demux:
             List of included Sample Projects. 
                 Example of returned projectList:     {'SAV-amplicon-MJH'}
 
-        Parsing is simple:
-            go line-by-line
-            ignore all the we do not need until
-                we hit the line that contains 'Sample_Project'
-                if 'Sample_Project' found
-                    split the line and 
-                        save the value of 'Sample_Project'
-            return an set of the values of all values of 'Sample_Project' and 'Analysis'
-
-        # DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
+        Parsing is done by the sample_sheet library
         """
 
         demux.n = demux.n + 1
 
+        # loggerName                  = 'demuxLogger' # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/125
         # demuxLogger.debug( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
         # use print for now till we figure out what is going on with the logging
         print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
         
-        projectLineCheck            = False
-        projectIndex                = 0
-        sampleSheetContents         = [ ]
-        projectList                 = [ ]
-        newProjectNameList          = [ ]
-        controlProjectsFoundList    = [ ]
-        tarFilesToTransferList      = [ ]
-        loggerName                  = 'demuxLogger'
 
-        # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/125
-        # sampleSheetContent = ""
-        sampleSheetFileHandle = open( demux.sampleSheetFilePath, 'r', encoding = demux.decodeScheme ) # demux.decodeScheme
-        sampleSheetContent    = sampleSheetFileHandle.read( )                                         # read the contents of the SampleSheet here
-        # sampleSheetContent    = check_for_illegal_characters( sampleSheetContent )
-        # sampleSheetFileHandle.write(sampleSheetContent)
-        # sampleSheetFileHandle.close()
-        # sampleSheetContent = SampleSheet( demux.sampleSheetFilePath )
+        sample_sheet = SampleSheet( demux.sampleSheetFilePath )
+        demux.projectList            = demux._get_unique_sample_projects( sample_sheet )  # 
+        demux.newProjectNameList     = demux._create_renamed_demux_project_list( demux.projectList )
+        demux.tarFilesToTransferList = demux._create_tar_files_to_transfer_list( demux.newProjectNameList )
 
-
+        # if we are debugging, print out the list of projects.
         if demux.verbosity == 3:
-            demuxLogger.debug( f"sampl:\n{sampleSheetContent }" ) # refactor: fix logging to start first thing before anything else happens in the script # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/131 
+            pprint( "projectList: ", demux.projectList, width = 120 )
 
-#---------- Parse the contets of SampleSheet.csv ----------------------
-
-        sampleSheetContents   = sampleSheetContent.split( '\n' )  # then split it in lines
-        for line in sampleSheetContents:
-
-            if demux.verbosity == 3:
-                text = f"procesing line '{line}'"
-                if loggerName in logging.Logger.manager.loggerDict.keys():
-                    demuxLogger.debug( text )
-                else:
-                    print( text )
-
-            if any( line ): # line != '' is not the same as 'not line'
-                line = line.rstrip()
-                if demux.verbosity == 3:
-                    text = f"projectIndex: {projectIndex}" 
-                    if loggerName in logging.Logger.manager.loggerDict.keys():
-                        demuxLogger.debug( text )
-                    else:
-                        print( text )
-                item = line.split(',')[projectIndex]
-            else:
-                continue
-
-            if projectLineCheck == True and item not in projectList:
-                if demux.verbosity == 2:
-                    text = f"{'item:':{demux.spacing1}}{item}"
-                    if loggerName in logging.Logger.manager.loggerDict.keys():
-                        demuxLogger.debug( text )
-                    else:
-                        print( text )
-                    
-                projectList.append( item )                                 # + '.' + line.split(',')[analysis_index]) # this is the part where .x shows up. Removed.
-                newProjectNameList.append( f"{demux.runIDShort}.{item}" )  #  since we are here, we might construct the new name list.
-
-            elif demux.Sample_Project in line: ### DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
-
-                projectIndex     = line.split(',').index( demux.Sample_Project ) # DO NOT change Sample_Project to sampleProject. The relevant heading column in the .csv is litereally named 'Sample_Project'
-                if demux.verbosity == 2:
-                    text = f"{'projectIndex:':{demux.spacing1}}{projectIndex}"
-                    if loggerName in logging.Logger.manager.loggerDict.keys():
-                        demuxLogger.debug( text )
-                    else:
-                        print( text )
-                projectLineCheck = True
-            else:
-                continue
-
-        text = "\n"
-        if loggerName in logging.Logger.manager.loggerDict.keys():
-            demuxLogger.info( text )
-        else:
-            print( text )
-
-#---------- Prepare a list of the projects to tar under /data/for_transfer/RunID ----------------------
-
-        for index, project in enumerate( newProjectNameList ):
-            if any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
-                continue
-            elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
-                controlProjectsFoundList.append( project )
-                continue
-            elif project not in tarFilesToTransferList:
-                tarFilesToTransferList.append(  os.path.join( demux.forTransferDir, demux.RunID, project + demux.tarSuffix) )
-
-#---------- Let's make sure that demux.projectList and demux.newProjectNameList are not empty ----------------------
-
-        if not any( projectList ):
-            text = f"line {getframeinfo( currentframe( ) ).lineno} demux.projectList is empty! Exiting!"
-            if loggerName in logging.Logger.manager.loggerDict.keys():
-                demuxFailureLogger.critical( text  )
-                demuxLogger.critical( text )
-                logging.shutdown( )
-            else:
-                print( text )
-            sys.exit( )
-        elif not any( newProjectNameList ):
-            text = f"line {getframeinfo( currentframe( ) ).lineno}: demux.newProjectNameList is empty! Exiting!"
-            if loggerName in logging.Logger.manager.loggerDict.keys():
-                demuxFailureLogger.critical( text  )
-                demuxLogger.critical( text )
-                logging.shutdown( )
-            else:
-                print( text )
-            sys.exit( )
-        else:
-            text1 = f"projectList:"
-            text1 = f"{text1:{demux.spacing2}}{projectList}"
-            text2 = f"newProjectNameList:"
-            text2 = f"{text2:{demux.spacing2}}{newProjectNameList}\n"
-            if demux.verbosity == 3:
-                demuxLogger.debug( text1 )
-                demuxLogger.debug( text2 )
-
-        demux.projectList               = projectList                        
-        demux.newProjectNameList        = newProjectNameList
-        demux.controlProjectsFoundList  = controlProjectsFoundList
-        demux.tarFilesToTransferList    = tarFilesToTransferList
-
-        text = termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] )
-        if loggerName in logging.Logger.manager.loggerDict.keys():
-            demuxLogger.info( text )
-        else:
-            print( text )
-
-
+        print( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] ) )
 
 
     ########################################################################
