@@ -1,5 +1,9 @@
 '''
 This is a file with all the constant-constants: things that should be parametrized but they will never change
+
+use by
+
+from demux.config import constants as constants
 '''
 
 # directory names

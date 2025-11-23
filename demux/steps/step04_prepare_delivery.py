@@ -7,6 +7,8 @@ import logging
 import inspect
 import termcolor
 
+from demux.config import constants as constants
+
 from demux.loggers import demuxLogger, demuxFailureLogger
 
 ########################################################################
@@ -28,7 +30,7 @@ def collect_projects_to_tar( demux ):
     projectsToProcessList = [ ]
     for project in demux.newProjectNameList:                                        # this loop is a check against project names which are not suppossed to be eventually tarred
 
-        if any( var in project for var in [ demux.qcSuffix ] ):                     # skip anything that includes '_QC'
+        if any( var in project for var in [ constants.QC_SUFFIX ] ):                     # skip anything that includes '_QC'
             demuxLogger.warning( f"{demux.qcSuffix} directory found in projects. Skipping." )
             continue
         elif any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
@@ -112,7 +114,11 @@ def tar_project_files( demux ):
 def create_qc_tar_file( demux ):
     """
     create the qc.tar file by reading from /data/demultiplex/RunID/RunID_QC and writing the tar file to /data/for_transfer/RunID/demux.runIDShort_qc.tar
-    What to put inside the QC file: {demux.runIDShort}_QC and demux.config.constants.MULTIQC_DATA_DIR
+    What to put inside the QC file: demux.multiqc_run_dir and demux.config.constants.MULTIQC_DATA_DIR_NAME
+    # The difference between the two vars is
+    #   * demux.multiqc_run_dir is the directory created after running demux.multiqc_bin, eg 251110_M09180_qc/
+    #   * demux.config.constants.MULTIQC_DATA_DIR_NAME is the name for the directory we create to copy all resulting files from demux.multiqc_run_dir, after renaming them and before tarring them, eg multiqc_data/
+    # both are kept for inspection and debugging purposes
 
     """
 
@@ -121,8 +127,8 @@ def create_qc_tar_file( demux ):
     if demux.verbosity == 2:
         text = "demuxQCDirectoryFullPath:"
         demuxLogger.debug( f"{text:{demux.spacing3}}" + demux.demuxQCDirectoryFullPath )
-        text = f"{demux.config.constants.MULTIQC_DATA_DIR}:"
-        demuxLogger.debug( f"{text:{demux.spacing3}}" + demux.config.constants.MULTIQC_DATA_DIR )
+        text = f"multiqc_data:"
+        demuxLogger.debug( f"{text:{demux.spacing3}}" + constants.MULTIQC_DATA_DIR_NAME )
 
     if not os.path.isfile( demux.forTransferQCtarFile ): # exit if /data/for_transfer/RunID/qc.tar file exists.
         tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "w:" )
@@ -160,7 +166,7 @@ def create_multiqc_tar_file( demux ):
     """
     Add the multiqc_data to the qc.tar under /data/for_transfer/RunID
     """
-    demuxLogger.info( termcolor.colored( f"==> Archiving {demux.demultiplexRunIDdir}/{demux.demux.config.constants.MULTIQC_DATA_DIR} ==================", color="yellow", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> Archiving {demux.demultiplexRunIDdir}/{constants.MULTIQC_DATA_DIR_NAME} ==================", color="yellow", attrs=["bold"] ) )
 
     if os.path.isfile( demux.forTransferQCtarFile ): # /data/for_transfer/RunID/qc.tar must exist before writi
         multiQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "a:" ) # "a:" for exclusive, uncompresed append.
@@ -172,12 +178,12 @@ def create_multiqc_tar_file( demux ):
         sys.exit( )
 
     # paths are relative here, cuz we chdir( ) in tarProjectFiles( )
-    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( demux.demux.config.constants.MULTIQC_DATA_DIR ), followlinks = False ): 
+    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( constants.MULTIQC_DATA_DIR_NAME ), followlinks = False ): 
          for file in filenames:
             # add one file at a time so we can give visual feedback to the user that the script is processing files
             # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
             # of output that make users uncomfortable
-            filenameToTar = os.path.join( demux.demux.config.constants.MULTIQC_DATA_DIR, file )
+            filenameToTar = os.path.join( constants.MULTIQC_DATA_DIR_NAME, file )
             multiQCFileHandle.add( name = filenameToTar, recursive = False )
             text = "filenameToTar"
             text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
@@ -185,7 +191,7 @@ def create_multiqc_tar_file( demux ):
 
     # bothisfiledemux.runIDShort}_QC and multidata_qc go in the same tar file
     multiQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
-    demuxLogger.info( termcolor.colored( f"==> Archived {demux.demultiplexRunIDdir}/{demux.demux.config.constants.MULTIQC_DATA_DIR} ==================", color="yellow", attrs=["bold"] ) )    
+    demuxLogger.info( termcolor.colored( f"==> Archived {demux.demultiplexRunIDdir}/{constants.MULTIQC_DATA_DIR_NAME} ==================", color="yellow", attrs=["bold"] ) )    
 
 
 

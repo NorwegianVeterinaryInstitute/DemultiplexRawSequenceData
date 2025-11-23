@@ -52,6 +52,13 @@ class demux:
     # values that their values change per run, go to __init__( )
     # constanths like /data/rawdata and the corresponding values are in demux/config/constants.py
 
+    ######################################################
+    # the following three need to be moved into __init__ on later date.
+    ######################################################
+    debug      = True
+    verbosity  = 2
+    state      = "demultiplexRunIDdir"  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
+
     rawDataDir                      = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.RAW_DATA_DIR_NAME     )
     demultiplexDir                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.DEMULTIPLEX_DIR_NAME  )
     forTransferDir                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.FOR_TRANSFER_DIR_NAME )
@@ -63,7 +70,7 @@ class demux:
     multiqc_data                    = 'multiqc_data'
     md5Suffix                       = demux.config.constants.MD5_SUFFIX
     md5Length                       = demux.config.constants.MD5_LENGTH     # 128 bits
-    qcSuffix                        = '_QC'
+    # qcSuffix                        = '_QC'
     sha512Suffix                    = demux.config.constants.SHA512_SUFFIX
     sha512Length                    = demux.config.constants.SHA512_LENGTH  # 512 bits
     tarSuffix                       = demux.config.constants.TAR_SUFFIX
@@ -114,6 +121,7 @@ class demux:
     demuxQCDirectoryFullPath        = ""
     forTransferRunIDdir             = ""
     forTransferQCtarFile            = ""
+    multiqc_run_dir                 = ""
     sampleSheetFilePath             = os.path.join( sampleSheetDirPath, sampleSheetFileName )
     sampleSheetArchiveFilePath      = ""                                                            # demux/envsetup/setup_environment.py
     ######################################################
@@ -171,10 +179,7 @@ class demux:
                 Complain if not
             Checks to see if debug or not is set
         """
-        self.RunID = RunID # variables in __init___ are unique to each instance
-        self.debug = True
-        self.verbosity  = 2
-        self.state      = "demultiplexRunIDdir"  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
+        self.RunID      = RunID # variables in __init___ are unique to each instance
 
 
 

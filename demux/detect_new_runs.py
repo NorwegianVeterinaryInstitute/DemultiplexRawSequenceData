@@ -11,7 +11,7 @@ Module to put methods for new run discovery
 # displayNewRuns
 ########################################################################
 
-def displayNewRuns( ):
+def detect_new_runs( ):
     """
     buzz
     """

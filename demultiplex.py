@@ -36,6 +36,7 @@ import termcolor
 from inspect            import currentframe, getframeinfo
 
 # Breaking down the script into more digestible chunks
+
 from demux.loggers                                              import setup_event_and_log_handling, setup_file_log_handling
 from demux.core                                                 import demux             # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
 
@@ -43,8 +44,9 @@ from demux.util.buffering_smtp_handler                          import Buffering
 from demux.util.checksum                                        import calc_file_hash
 from demux.util.change_permissions                              import change_permissions
 
+from demux.detect_new_runs                                      import detect_new_runs
+
 from demux.envsetup.setup_environment                           import setup_environment
-from demux.envsetup.detect_new_runs                             import detect_new_runs
 from demux.envsetup.create_demultiplex_directory_structure      import create_demultiplex_directory_structure
 from demux.envsetup.prepare_fortransfer_directory_structure     import prepare_fortransfer_directory_structure
 from demux.envsetup.copy_sample_sheet_into_demultiplex_runiddir import copy_sample_sheet_into_demultiplex_runiddir
