@@ -48,27 +48,18 @@ class demux:
     demux: make an object of the entire demultiplex process.
     """
 
+    # any variables here are *class* variables, their values do not change. 
+    # values that their values change per run, go to __init__( )
+    # constanths like /data/rawdata and the corresponding values are in demux/config/constants.py
+
+    rawDataDir                      = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.RAW_DATA_DIR_NAME     )
+    demultiplexDir                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.DEMULTIPLEX_DIR_NAME  )
+    forTransferDir                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.FOR_TRANSFER_DIR_NAME )
+    sampleSheetDirPath              = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.SAMPLESHEET_DIR_NAME  )
+    logDirPath                      = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.LOG_DIR_NAME          )
     ######################################################
-    debug      = True
-    verbosity  = 2
-    state      = "demultiplexRunIDdir"                  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
+    # commonEgid = 'sambagroup' # i don't know where i was going with this...
     ######################################################
-    dataRootDirPath                 = '/data'
-    rawDataDirName                  = 'rawdata'
-    rawDataDir                      = os.path.join( dataRootDirPath, rawDataDirName )
-    demultiplexDirName              = "demultiplex"
-    demultiplexDir                  = os.path.join( dataRootDirPath, demultiplexDirName )
-    forTransferDirName              = 'for_transfer'
-    forTransferDir                  = os.path.join( dataRootDirPath, forTransferDirName )
-    sampleSheetDirName              = 'samplesheets'
-    sampleSheetDirPath              = os.path.join( dataRootDirPath, sampleSheetDirName )
-    logDirName                      = "log"
-    logDirPath                      = os.path.join( dataRootDirPath, logDirName )
-    ######################################################
-    commonEgid = 'sambagroup'
-    ######################################################
-    csvSuffix                       = '.csv'
-    demultiplexDirSuffix            = '_demultiplex'
     multiqc_data                    = 'multiqc_data'
     md5Suffix                       = demux.config.constants.MD5_SUFFIX
     md5Length                       = demux.config.constants.MD5_LENGTH     # 128 bits
@@ -124,7 +115,7 @@ class demux:
     forTransferRunIDdir             = ""
     forTransferQCtarFile            = ""
     sampleSheetFilePath             = os.path.join( sampleSheetDirPath, sampleSheetFileName )
-    sampleSheetArchiveFilePath      = ""
+    sampleSheetArchiveFilePath      = ""                                                            # demux/envsetup/setup_environment.py
     ######################################################
     projectList                     = [ ]
     newProjectNameList              = [ ]
@@ -182,6 +173,10 @@ class demux:
         """
         self.RunID = RunID # variables in __init___ are unique to each instance
         self.debug = True
+        self.verbosity  = 2
+        self.state      = "demultiplexRunIDdir"  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
+
+
 
 
     ########################################################################

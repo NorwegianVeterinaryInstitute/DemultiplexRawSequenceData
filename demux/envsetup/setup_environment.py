@@ -31,14 +31,14 @@ def setup_environment( RunID ):
     demux.parse_sample_sheet( )         # get the list of projects in this current run
 
 ######################################################
-    demux.demultiplexRunIDdir           = os.path.join( demux.demultiplexDir,       demux.RunID + demux.demultiplexDirSuffix ) 
+    demux.demultiplexRunIDdir           = os.path.join( demux.demultiplexDir,       demux.RunID + demux.config.constants.DEMULTIPLEX_DIR_SUFFIX ) 
     demux.demultiplexLogDirPath         = os.path.join( demux.demultiplexRunIDdir,  demux.demultiplexLogDirName ) 
-    demux.demuxQCDirectoryName          = demux.runIDShort + demux.qcSuffix              # example: 200624_M06578_QC  # QCSuffix is defined in object demux
+    demux.demuxQCDirectoryName          = demux.runIDShort + demux.config.constants.QC_SUFFIX                       # example: 200624_M06578_QC  # QCSuffix is defined in demux.config.constants.QC_SUFFIX
     demux.demuxQCDirectoryFullPath      = os.path.join( demux.demultiplexRunIDdir,  demux.demuxQCDirectoryName  )
     demux.bcl2FastqLogFile              = os.path.join( demux.demultiplexRunIDdir,  demux.demultiplexLogDirPath, demux.bcl2FastqLogFileName )
 ######################################################
     demux.forTransferRunIdDir           = os.path.join( demux.forTransferDir,       demux.RunID )
-    demux.forTransferQCtarFile          = os.path.join( demux.forTransferRunIdDir,  demux.RunID + demux.qcSuffix + demux.tarSuffix )
+    demux.forTransferQCtarFile          = os.path.join( demux.forTransferRunIdDir,  demux.RunID + demux.config.constants.QC_SUFFIX + demux.tarSuffix )
 ######################################################
 
     # set up
@@ -48,7 +48,7 @@ def setup_environment( RunID ):
     demux.demultiplexScriptLogFilePath  = os.path.join( demux.demultiplexLogDirPath, demux.scriptRunLogFileName )
     demux.fastQCLogFilePath             = os.path.join( demux.demultiplexLogDirPath, demux.fastqcLogFileName )
     demux.mutliQCLogFilePath            = os.path.join( demux.demultiplexLogDirPath, demux.multiqcLogFileName )
-    demux.sampleSheetArchiveFilePath    = os.path.join( demux.sampleSheetDirPath,    demux.RunID + demux.csvSuffix ) # .dot is included in csvSuffix
+    demux.sampleSheetArchiveFilePath    = os.path.join( demux.sampleSheetDirPath,    demux.RunID + demux.config.constants.CSV_SUFFIX ) # .dot is included in demux.config.constants.CSV_SUFFIX
 
 
 ######################################################################################################################################################

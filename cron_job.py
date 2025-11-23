@@ -50,7 +50,7 @@ print( f"==> Getting new rawdata directories started ==\n")
 
 for dirName in os.listdir( demultiplex.demux.rawDataDir ): # add directory names from the raw generated data directory
 
-    if demultiplex.demux.demultiplexDirSuffix in dirName: #  ignore any _demux dirs
+    if demux.config.constants.DEMULTIPLEX_DIR_SUFFIX in dirName: #  ignore any _demux dirs
         continue
     if any( tag in dirName for tags in [ demultiplex.demux.nextSeq, demultiplex.demux.miSeq ] for tag in tags ): # only add directories that have a sequncer tag
         RunList.append( dirName )
@@ -63,10 +63,10 @@ print( f"==> Getting demultiplexed directories started ==\n")
 
 for dirName in os.listdir( demultiplex.demux.demultiplexDir ):
 
-    if demultiplex.demux.demultiplexDirSuffix not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety in case any other dirs included in /data/demultiplex
+    if demux.config.constants.DEMULTIPLEX_DIR_SUFFIX not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety in case any other dirs included in /data/demultiplex
         continue
     if any( tag in dirName for tags in [ demultiplex.demux.nextSeq, demultiplex.demux.miSeq ] for tag in tags ): # ignore directories that have no sequncer tag
-        DemultiplexList.append( dirName.replace( demultiplex.demux.demultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
+        DemultiplexList.append( dirName.replace( demux.config.constants.DEMULTIPLEX_DIR_SUFFIX, '' ) ) # null _demultiplex so we can compare the two lists below
 
 print( f"==> Getting demultiplexed directories finished ==\n")
 
