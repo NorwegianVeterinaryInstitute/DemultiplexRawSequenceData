@@ -8,6 +8,9 @@ import sys
 import syslog
 import termcolor
 
+import demux.config.constants
+
+
 demuxLogger = None
 demuxFailureLogger = None
 
@@ -85,7 +88,7 @@ def setup_file_log_handling( demux ):
     if not os.path.isdir( demux.logDirPath ) :
         text = [    "Trying to setup demux.logDirPath failed. Reason:\n",
                     "The parts of demux.logDirPath have the following values:\n",
-                    f"demux.dataRootDirPath:\t\t\t{demux.dataRootDirPath}\n",
+                    f"demux.dataRootDirPath:\t\t\t{demux.config.constants.DATA_ROOT_DIR}\n",
                     f"demux.logDirName:\t\t\t{demux.logDirName}\n",
                     f"demux.logDirPath:\t\t\t\t{demux.logDirPath}\n"
         ]
@@ -145,7 +148,7 @@ def setup_file_log_handling( demux ):
                     f"demux.demultiplexRunIDdir:\t\t\t\t{demux.demultiplexRunIDdir}\n",
                     f"demux.demultiplexLogDirName:\t\t\t\t{demux.demultiplexLogDirName}\n",
                     f"demux.demultiplexDir:\t\t\t\t\t{demux.demultiplexDir}\n",
-                    f"RunID + demux.demultiplexDirSuffix:\t{demux.RunID} + {demux.demultiplexDirSuffix}\n",
+                    f"RunID + demux.config.constants.DEMULTIPLEX_DIR_SUFFIX:\t\t\t\t{demux.RunID} + {demux.config.constants.DEMULTIPLEX_DIR_SUFFIX}\n",
                     "Exiting.",
         ]
         demuxFailureLogger.critical( text  )

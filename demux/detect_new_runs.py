@@ -11,7 +11,7 @@ Module to put methods for new run discovery
 # displayNewRuns
 ########################################################################
 
-def displayNewRuns( ):
+def detect_new_runs( ):
     """
     buzz
     """
@@ -83,10 +83,10 @@ def getDemultiplexedDirs( ):
 
     for dirName in os.listdir( demux.demultiplexDir ):
 
-        if demux.demultiplexDirSuffix not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety in case any other dirs included in /data/demultiplex
+        if demux.config.constants.DEMULTIPLEX_DIR_SUFFIX not in dirName: #  demultiplexed directories must have the  _demultiplex suffix # safety in case any other dirs included in /data/demultiplex
             continue
         if any( tag in dirName for tags in [ demux.nextSeq, demux.miSeq ] for tag in tags ): # ignore directories that have no sequncer tag
-            demux.demultiplexList.append( dirName.replace( demux.demultiplexDirSuffix, '' ) ) # null _demultiplex so we can compare the two lists below
+            demux.demultiplexList.append( dirName.replace( demux.config.constants.DEMULTIPLEX_DIR_SUFFIX, '' ) ) # null _demultiplex so we can compare the two lists below
 
     demuxLogger.info( f"==> Getting demultiplexed directories finished ==\n")
 
@@ -105,7 +105,7 @@ def getRawdataDirs( ):
 
     for dirName in os.listdir( demux.rawDataDir ): # add directory names from the raw generated data directory
 
-        if demux.demultiplexDirSuffix in dirName: #  ignore any _demux dirs
+        if demux.config.constants.DEMULTIPLEX_DIR_SUFFIX in dirName: #  ignore any _demux dirs
             continue
         if any( tag in dirName for tags in [ demux.nextSeq, demux.miSeq ] for tag in tags ): # only add directories that have a sequncer tag
             demux.RunList.append( dirName )
