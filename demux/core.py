@@ -164,7 +164,7 @@ class demux:
     httpsHandlerHost                = 'veterinaerinstituttet307.workplace.com'
     httpsHandlerUrl                 = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
     ######################################################
-    nird_upload_host                = "login.saga.sigma2.no"
+    nird_upload_host                = "login.nird.sigma2.no"
     nird_scp_port                   = "12" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
     nird_username                   = ""
     nird_base_upload_path           = "/nird/projects/NS9305K/SEQ-TECH/data_delivery"
