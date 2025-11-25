@@ -15,36 +15,25 @@ class demux:
     RunID                   = "251110_M09180_0048_000000000-M7V7K"
     originating_directory   = "/data/for_transfer/251110_M09180_0048_000000000-M7V7K"
     projectList             = [ '21217', '23015', '31218', '330403', '0048' ]
-    md5List                 = [ '251110_M09180.21217-Sta-faar-eus_Staphylococcus.tar.md5',
-                              '251110_M09180.23015-APEC_Escherichia.tar.md5',
-                              '251110_M09180.31218-INIKA_Escherichia.tar.md5',
-                              '251110_M09180.31218-INIKA_Klebsiella.tar.md5', 
-                              '251110_M09180.330403-001-A4-GENSURV_Escherichia.tar.md5',
-                              '251110_M09180_0048_000000000-M7V7K_qc.tar.md5'
-                            ]
-    sha512List              = [ '251110_M09180.21217-Sta-faar-eus_Staphylococcus.tar.sha512',
-                              '251110_M09180.23015-APEC_Escherichia.tar.sha512',
-                              '251110_M09180.31218-INIKA_Escherichia.tar.sha512',
-                              '251110_M09180.31218-INIKA_Klebsiella.tar.sha512', 
-                              '251110_M09180.330403-001-A4-GENSURV_Escherichia.tar.sha512',
-                              '251110_M09180_0048_000000000-M7V7K_qc.tar.sha512'
-                            ]
     tarFilesToTransferList  = [ '251110_M09180.21217-Sta-faar-eus_Staphylococcus.tar',
-                              '251110_M09180.23015-APEC_Escherichia.tar',
-                              '251110_M09180.31218-INIKA_Escherichia.tar',
-                              '251110_M09180.31218-INIKA_Klebsiella.tar', 
-                              '251110_M09180.330403-001-A4-GENSURV_Escherichia.tar',
-                              '251110_M09180_0048_000000000-M7V7K_qc.tar'
+                                '251110_M09180.23015-APEC_Escherichia.tar',
+                                '251110_M09180.31218-INIKA_Escherichia.tar',
+                                '251110_M09180.31218-INIKA_Klebsiella.tar', 
+                                '251110_M09180.330403-001-A4-GENSURV_Escherichia.tar',
+                                '251110_M09180_0048_000000000-M7V7K_qc.tar'
                             ]
-    fortransfer_directory           = f"/data/for_transfer/{RunID}"
-    nird_upload_host                = "laptop"
-    nird_scp_port                   = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
-    nird_username                   = "gmarselis"
-    nird_base_upload_path           = "/data/for_transfer/tmp"
-    nird_key_filename               = "/home/gmarselis/.ssh/id_ed25519.3jane"
 
+    fortransfer_directory   = f"/data/for_transfer/{RunID}"
+    nird_upload_host        = "laptop"
+    nird_scp_port           = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
+    nird_username           = "gmarselis"
+    nird_base_upload_path   = "/data/for_transfer/tmp"
+    nird_key_filename       = "/home/gmarselis/.ssh/id_ed25519.3jane"
 
-
+    MD5_SUFFIX              = ".md5"
+    MD5_LENGTH              = 16  # 128 bits
+    SHA512_SUFFIX           = ".sha512"
+    SHA512_LENGTH           = 64  # 512 bits
 
 
 def _upload_one(local_path):  # worker per file
@@ -79,10 +68,6 @@ def compute_remote_sha512( ssh_client, remote_path ):
 def deliver_files_to_NIRD( demux ):
     """
     Make connection to NIRD and upload the data
-    """
-    demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n")
-
     # the idea is to to 
     # 1. check if the remore the remote directory exists
     # 2.    create if not
@@ -91,7 +76,16 @@ def deliver_files_to_NIRD( demux ):
     #   4.1 in parallel
     # 5. check the remote sha512 and see if it matches local.
 
-    config_path = os.path.expanduser( "~/.ssh/config" )
+    """
+
+    demux.n = demux.n + 1
+    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n")
+
+    checksums = { }
+    for tar in demux.tarFilesToTransferList:
+          checksums[tar] = {"md5": f"{tar}{demux.MD5_SUFFIX}", "sha512": f"{tar}{demux.SHA512_SUFFIX}" } # dot preexists in either suffix string
+
+    config_path = os.path.expanduser( "~/.ssh/config" ) # this needs to be infered from environment somehow
     host_config = {}
 
     if os.path.exists( config_path ):
@@ -107,7 +101,7 @@ def deliver_files_to_NIRD( demux ):
     port     = int( host_cfg.get( "port", demux.nird_scp_port ) )
     hostname = host_cfg.get( "hostname", demux.nird_upload_host )
     username = host_cfg.get( "user", demux.nird_username ) 
-    key_file = host_cfg.get( "identityfile", [ demux.nird_key_filename ] )[0]
+    key_file = host_cfg.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
 
     ssh_client = SSHClient( )
     ssh_client.load_system_host_keys( )
@@ -141,10 +135,26 @@ def deliver_files_to_NIRD( demux ):
 
             # construct the ABSOLUTE remote tar file name
             # Usingf the ABSOLUTE PATH IS ESSENTIAL! otherwise SCP will drop everything in $HOME ! 
-            tar_file_local  = os.path.join( demux.fortransfer_directory, tar_file )
-            tar_file_remote = os.path.join( remote_absolute_dir_path, tar_file )
+            tar_file_local     = os.path.join( demux.fortransfer_directory, tar_file )
+            tar_file_remote    = os.path.join( remote_absolute_dir_path, tar_file )
+            md5_file_local     = f"{tar_file_local}{demux.MD5_SUFFIX}"      # dot preexists in either suffix string
+            sha512_file_local  = f"{tar_file_local}{demux.SHA512_SUFFIX}"   # dot preexists in either suffix string
+            md5_file_remote    = f"{tar_file_remote}{demux.MD5_SUFFIX}"     # dot preexists in either suffix string
+            sha512_file_remote = f"{tar_file_remote}{demux.SHA512_SUFFIX}"  # dot preexists in either suffix string
 
-            print( f"LOCAL:{tar_file_local}\t\t\tREMOTE:{hostname}:{tar_file_remote}" )
+            if not os.path.exists( tar_file_local ):
+                print( f"File {tar_file_local} does not exist. Check for the file and try again." )
+                sys.exit(1)
+            if not os.path.exists( md5_file_local ):
+                print( f"File {md5_file_local} does not exist. Check for the file and try again." )
+                sys.exit(1)
+            if not os.path.exists( sha512_file_local ):
+                print( f"File {sha512_file_local} does not exist. Check for the file and try again." )
+                sys.exit(1)
+
+            print( f"LOCAL:{tar_file_local}\t\t\tREMOTE:{hostname}:{tar_file_remote}" ) 
+
+            # sys.exit( "I NEED PROPER TABULATION HERE")
 
             # prevent overwriting.
             # test if the tar file we are about to upload exists already
@@ -153,11 +163,42 @@ def deliver_files_to_NIRD( demux ):
                 print( f"RuntimeError: Remote file already exists: {hostname}:{tar_file_remote}" )
                 print( f"Refusing to overwrite. Delete/ remote file first and then try to upload again." )
                 sys.exit( 1 )
-            # copy the file
+
             try:
+                # upload file
                 scp_client.put( tar_file_local, tar_file_remote )
+                # calculate remote checksum via md5
+                # calculate remote checksum via sha512
+                # check md5 checksum
+                # check sha512 checksum
+                # copy the file
+                # copy the md5 file
+                # copy the sha512 file
+                md5sum_stdin,    md5sum_stdout,    md5sum_stderr    = ssh_client.exec_command( f'/usr/bin/md5sum {shlex.quote( tar_file_remote )}' )    # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
+                sha512sum_stdin, sha512sum_stdout, sha512sum_stderr = ssh_client.exec_command( f'/usr/bin/sha512sum {shlex.quote( tar_file_remote )}' ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
+
+                remote_md5    = md5sum_stdout.read( ).decode( ).split( )[0]
+                remote_sha512 = sha512sum_stdout.read( ).decode( ).split( )[0]
+
+                local_md5    = open( md5_file_local   ).read( ).split( )[0]
+                local_sha512 = open( sha512_file_local).read( ).split( )[0]
+
+                if local_md5 != remote_md5:
+                    print( f"Error: Local md5 differs from calculated remote md5:" )
+                    print( f"LOCAL MD5:  {local_md5}\nREMOTE MD5: {remote_md5}" )
+                    print( f"Please check both files, delete/move what is wrong and try uploading again.")
+                    sys.exit(1)
+                if local_sha512 != remote_sha512:
+                    print( f"Error: Local sha512 differs from calculated remote sha512:" )
+                    print( f"LOCAL SHA512:  {local_sha512}\nREMOTE SHA512: {remote_sha512}" ) # extra space after LOCAL SHA512 to align hashes for easier comparisson
+                    print( f"Please check both files, delete/move what is wrong and try uploading again.")
+                    sys.exit(1)
+
+                scp_client.put( md5_file_local, md5_file_remote )
+                scp_client.put( sha512_file_local, sha512_file_remote )
+
             except Exception as error:
-                print( f"RuntimeError: SCP upload failed for {hostname}:{tar_file_remote}: {error!r}" )
+                print( f"RuntimeError: SCP upload failed for {hostname}:{tar_file_remote}: {error}" )
                 sys.exit( 1 )     
 
         # with ThreadPoolExecutor(max_workers=min(5, len(demux.tarFilesToTransferList))) as pool: list(pool.map(upload_one, demux.tarFilesToTransferList))
@@ -168,4 +209,3 @@ def deliver_files_to_NIRD( demux ):
     ssh_client.close()
 
     demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n")
-    
