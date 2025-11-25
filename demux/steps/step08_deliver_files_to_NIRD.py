@@ -85,7 +85,7 @@ def deliver_files_to_NIRD( demux ):
     for tar in demux.tarFilesToTransferList:
           checksums[tar] = {"md5": f"{tar}{demux.MD5_SUFFIX}", "sha512": f"{tar}{demux.SHA512_SUFFIX}" } # dot preexists in either suffix string
 
-    config_path = os.path.expanduser( "~/.ssh/config" ) # this needs to be infered from environment somehow
+    config_path = os.path.expanduser( "~/.ssh/config" ) # this needs to be infered from environment somehow https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
     host_config = {}
 
     if os.path.exists( config_path ):
