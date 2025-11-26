@@ -1,51 +1,84 @@
+#!/usr/bin/env -S -- /usr/bin/python3.11 -X pycache_prefix=/tmp/demultiplex
+
 import hashlib
 import os
 import shlex
 import sys
+import termcolor
 
 from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy
 from scp import SCPClient
 
 from concurrent.futures import ThreadPoolExecutor
 
-from demux.loggers      import demuxLogger, demuxFailureLogger
 
-class demux: 
-
-    RunID                   = "251110_M09180_0048_000000000-M7V7K"
-    originating_directory   = "/data/for_transfer/251110_M09180_0048_000000000-M7V7K"
-    projectList             = [ '21217', '23015', '31218', '330403', '0048' ]
-    tarFilesToTransferList  = [ '251110_M09180.21217-Sta-faar-eus_Staphylococcus.tar',
-                                '251110_M09180.23015-APEC_Escherichia.tar',
-                                '251110_M09180.31218-INIKA_Escherichia.tar',
-                                '251110_M09180.31218-INIKA_Klebsiella.tar', 
-                                '251110_M09180.330403-001-A4-GENSURV_Escherichia.tar',
-                                '251110_M09180_0048_000000000-M7V7K_qc.tar'
-                            ]
-
-    fortransfer_directory   = f"/data/for_transfer/{RunID}"
-    nird_upload_host        = "laptop"
-    nird_scp_port           = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
-    nird_username           = "gmarselis"
-    nird_base_upload_path   = "/data/for_transfer/tmp"
-    nird_key_filename       = "/home/gmarselis/.ssh/id_ed25519.3jane"
-
-    MD5_SUFFIX              = ".md5"
-    MD5_LENGTH              = 16  # 128 bits
-    SHA512_SUFFIX           = ".sha512"
-    SHA512_LENGTH           = 64  # 512 bits
-
-
-def _upload_files(local_path):  # worker per file
+def _upload_and_verify_file( demux, tar_file ):  # worker per file
     """
-    _upload_files uploads a single local tar file to the NIRD absolute upload path using a new SSH transport each time.
+    Upload and verify a single local tar file to the NIRD absolute upload path using a new SSH transport each time.
     """
-    try:
-        with SCPClient( ssh_client.get_transport( ) ) as scp_client:
-            remote_path = os.path.join( nird_upload_path, os.path.basename( local_path ) )
-            scp_client.put( local_path, remote_path )
-    except Exception as error:
-        raise RuntimeError(f"SCP upload failed for {local_path}: {error}")
+    ssh_client = SSHClient( )
+    ssh_client.load_system_host_keys( )
+    # Check if the key already exists in the known_hosts 
+    #   else reject the connection.
+    if ssh_client._system_host_keys.lookup( demux.hostname ) is None:
+        raise RuntimeError( f"Host key for {demux.hostname} not found in known_hosts" )
+
+    # ssh_client.set_missing_host_key_policy( AutoAddPolicy( ) )
+    ssh_client.set_missing_host_key_policy( RejectPolicy( ) ) # do not accept host keys that are not already in place
+    ssh_client.connect( hostname = demux.hostname, port = demux.port, username = demux.username, key_filename = demux.key_file )
+    # Find the longest string in demux.absoluteFilesToTransferList and tabulate for that
+    longest_local_path = max( len( item['tar_file_local'] ) for item in demux.absoluteFilesToTransferList.values( ) )
+
+    with SCPClient( ssh_client.get_transport( ) ) as scp_client:
+
+        print( f"Transfering: {demux.absoluteFilesToTransferList[tar_file][ 'tar_file_local' ]}" )
+        # test if the tar file we are about to upload exists already, to prevent overwriting
+        stdin, stdout, stderr = ssh_client.exec_command( f"/usr/bin/test -f {shlex.quote( demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )}" ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
+        if stdout.channel.recv_exit_status( ) == 0 : # file exists
+            print( f"RuntimeError: Remote file already exists: {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}" )
+            print( f"Refusing to overwrite. Delete/move remote file first and then try to upload again." )
+            sys.exit( 1 )
+
+        try:
+            # upload file
+            scp_client.put( demux.absoluteFilesToTransferList[tar_file]['tar_file_local'], demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )
+            # calculate remote checksum via md5
+            # calculate remote checksum via sha512
+            # check md5 checksum; check sha512 checksum
+            # copy the tar file, the md5 file and then the sha512 file
+            md5sum_stdin,    md5sum_stdout,    md5sum_stderr    = ssh_client.exec_command( f"/usr/bin/md5sum {shlex.quote( demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )}" )    # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
+            sha512sum_stdin, sha512sum_stdout, sha512sum_stderr = ssh_client.exec_command( f"/usr/bin/sha512sum {shlex.quote( demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )}" ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
+
+            remote_md5    = md5sum_stdout.read( ).decode( ).split( )[0]
+            remote_sha512 = sha512sum_stdout.read( ).decode( ).split( )[0]
+            local_md5    = open( demux.absoluteFilesToTransferList[tar_file]['md5_file_local'] ).read( ).split( )[0]
+            local_sha512 = open( demux.absoluteFilesToTransferList[tar_file]['sha512_file_local'] ).read( ).split( )[0]
+
+            if local_md5 != remote_md5:
+                print( f"Error: Local md5 differs from calculated remote md5:" )
+                print( f"LOCAL MD5:  {local_md5}\nREMOTE MD5: {remote_md5}" ) # extra space after LOCAL MD5 to align hashes for easier comparison
+                print( f"Please check both files, delete/move as appropriate and try uploading again.")
+                sys.exit(1)
+            if local_sha512 != remote_sha512:
+                print( f"Error: Local sha512 differs from calculated remote sha512:" )
+                print( f"LOCAL SHA512:  {local_sha512}\nREMOTE SHA512: {sha512_file_remote}" ) # extra space after LOCAL SHA512 to align hashes for easier comparison
+                print( f"Please check both files, delete/move as appropriate and try uploading again.")
+                sys.exit(1)
+
+            # for an explaination of why there is no point checksumming the checksum see
+            # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/26#issuecomment-3578085128
+            scp_client.put( demux.absoluteFilesToTransferList[tar_file]['md5_file_local'],    demux.absoluteFilesToTransferList[tar_file]['md5_file_remote'] )
+            scp_client.put( demux.absoluteFilesToTransferList[tar_file]['sha512_file_local'], demux.absoluteFilesToTransferList[tar_file]['sha512_file_remote'] )
+
+            print( f"Done: LOCAL:{demux.absoluteFilesToTransferList[tar_file]['tar_file_local']:<{longest_local_path}} REMOTE:{demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}" )
+
+
+        except Exception as error:
+            print( f"RuntimeError: SCP upload failed for {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {error}" )
+            sys.exit( 1 )     
+
+        ssh_client.close()
+
 
 def _build_absolute_paths( demux ):
     """
@@ -82,26 +115,11 @@ def _verify_local_files( absoluteFilesToTransferList ):
             sys.exit(1)
 
 
-########################################################################
-# deliver_files_to_NIRD
-########################################################################
-
-def deliver_files_to_NIRD( demux ):
+def _setup_ssh_connection( demux ):
     """
-    Make connection to NIRD and upload the data
-    # the idea is to to 
-    # 1. check if the remore the remote directory exists
-    # 2.    create if not
-    # 3. check status of local tar files in demux.tarFilesToTransferList
-    # 4. take each of the files in demux.tarFilesToTransferList and upload them
-    #   4.1 in parallel
-    # 5. check the remote sha512 and see if it matches local.
-
+    Parse ~/.ssh/config and initializes appropriate demux fields using the ssh config entry for the upload host.
+    If missing, method falls back to demux defaults.
     """
-
-    demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n")
-
     config_path = os.path.expanduser( "~/.ssh/config" ) # this needs to be infered from environment somehow https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
     host_config = { }
 
@@ -109,17 +127,22 @@ def deliver_files_to_NIRD( demux ):
         with open( config_path ) as handle:
             ssh_config = SSHConfig( )
             ssh_config.parse( handle )
-        host_cfg = ssh_config.lookup( demux.nird_upload_host )
+        host_config = ssh_config.lookup( demux.nird_upload_host )
 
     # more stuff that can be thrown into initilization of demux
-    demux.hostname = host_cfg.get( "hostname", demux.nird_upload_host )
-    demux.username = host_cfg.get( "user", demux.nird_username ) 
-    demux.key_file = host_cfg.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
-    demux.port     = int( host_cfg.get( "port", demux.nird_scp_port ) )
+    demux.hostname = host_config.get( "hostname", demux.nird_upload_host )
+    demux.username = host_config.get( "user", demux.nird_username ) 
+    demux.key_file = host_config.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
+    demux.port     = int( host_config.get( "port", demux.nird_scp_port ) )
+
+
+def _ensure_remote_run_directory( demux ):
+    """
+    Ensure the remote run directory exists by opening a fresh SSH connection, validating host keys, creating the directory if missing and aborting if it already exists.
+    """
 
     ssh_client = SSHClient( )
     ssh_client.load_system_host_keys( )
-
     # Check if the key already exists in the known_hosts 
     #   else reject the connection.
     if ssh_client._system_host_keys.lookup( demux.hostname ) is None:
@@ -142,73 +165,52 @@ def deliver_files_to_NIRD( demux ):
 
     ssh_client.close() # close for the commands we will open the same connection in the loop, so we can parallelize the  connections.
 
-    _build_absolute_paths( demux )                            # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
-    _verify_local_files( demux.absoluteFilesToTransferList )  # verify the local files exist before attempting to transfer them
-    # Find the longest string in absoluteFilesToTransferList and tabulate for that
-    longest_local_path = max( len( item['tar_file_local'] ) for item in demux.absoluteFilesToTransferList.values( ) )
+########################################################################
+# deliver_files_to_NIRD
+########################################################################
 
-    for tar_file in demux.tarFilesToTransferList: # for each tar file open a new ssh connection so, we can parallelize transfer
+def deliver_files_to_NIRD( demux ):
+    """
+    Make connection to NIRD and upload the data
+    # the idea is to to 
+    # 1. check if the remore the remote directory exists
+    # 2.    create if not
+    # 3. check status of local tar files in demux.tarFilesToTransferList
+    # 4. take each of the files in demux.tarFilesToTransferList and upload them
+    #   4.1 in parallel
+    # 5. check the remote sha512 and see if it matches local.
 
-        ssh_client = SSHClient( )
-        ssh_client.load_system_host_keys( )
-        # Check if the key already exists in the known_hosts 
-        #   else reject the connection.
-        if ssh_client._system_host_keys.lookup( demux.hostname ) is None:
-            raise RuntimeError( f"Host key for {demux.hostname} not found in known_hosts" )
+    """
 
-        # ssh_client.set_missing_host_key_policy( AutoAddPolicy( ) )
-        ssh_client.set_missing_host_key_policy( RejectPolicy( ) ) # do not accept host keys that are not already in place
-        ssh_client.connect( hostname = demux.hostname, port = demux.port, username = demux.username, key_filename = demux.key_file )
+    demux.n = demux.n + 1
+    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n")
 
-        with SCPClient( ssh_client.get_transport( ) ) as scp_client:
+    _setup_ssh_connection( demux )                              # setup the ssh connection details
+    _ensure_remote_run_directory( demux )                       # make sure demux.nird_base_upload_path/demux.RunID exists
+    _build_absolute_paths( demux )                              # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
+    _verify_local_files( demux.absoluteFilesToTransferList )    # verify the local files exist before attempting to transfer them
 
-            print( f"LOCAL:{demux.absoluteFilesToTransferList[tar_file]['tar_file_local']:<{longest_local_path}} REMOTE:{demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}" )
-            # test if the tar file we are about to upload exists already, to prevent overwriting
-            stdin, stdout, stderr = ssh_client.exec_command( f"/usr/bin/test -f {shlex.quote( demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )}" ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
-            if stdout.channel.recv_exit_status( ) == 0 : # file exists
-                print( f"RuntimeError: Remote file already exists: {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}" )
-                print( f"Refusing to overwrite. Delete/move remote file first and then try to upload again." )
-                sys.exit( 1 )
 
-            try:
-                # upload file
-                scp_client.put( demux.absoluteFilesToTransferList[tar_file]['tar_file_local'], demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )
-                # calculate remote checksum via md5
-                # calculate remote checksum via sha512
-                # check md5 checksum; check sha512 checksum
-                # copy the tar file, the md5 file and then the sha512 file
-                md5sum_stdin,    md5sum_stdout,    md5sum_stderr    = ssh_client.exec_command( f"/usr/bin/md5sum {shlex.quote( demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )}" )    # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
-                sha512sum_stdin, sha512sum_stdout, sha512sum_stderr = ssh_client.exec_command( f"/usr/bin/sha512sum {shlex.quote( demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )}" ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
+    # for tar_file in demux.tarFilesToTransferList: # for each tar file open a new ssh connection so, we can parallelize transfer
+    #     _upload_and_verify_file( demux, tar_file )
 
-                remote_md5    = md5sum_stdout.read( ).decode( ).split( )[0]
-                remote_sha512 = sha512sum_stdout.read( ).decode( ).split( )[0]
-                local_md5    = open( demux.absoluteFilesToTransferList[tar_file]['md5_file_local'] ).read( ).split( )[0]
-                local_sha512 = open( demux.absoluteFilesToTransferList[tar_file]['sha512_file_local'] ).read( ).split( )[0]
+    with ThreadPoolExecutor( max_workers = len( demux.tarFilesToTransferList ) ) as pool:
+        futures = [
+            pool.submit(_upload_and_verify_file, demux, tar_file ) for tar_file in demux.tarFilesToTransferList
+        ]
+        for future in futures:
+            future.result( )
 
-                if local_md5 != remote_md5:
-                    print( f"Error: Local md5 differs from calculated remote md5:" )
-                    print( f"LOCAL MD5:  {local_md5}\nREMOTE MD5: {remote_md5}" ) # extra space after LOCAL MD5 to align hashes for easier comparison
-                    print( f"Please check both files, delete/move as appropriate and try uploading again.")
-                    sys.exit(1)
-                if local_sha512 != remote_sha512:
-                    print( f"Error: Local sha512 differs from calculated remote sha512:" )
-                    print( f"LOCAL SHA512:  {local_sha512}\nREMOTE SHA512: {sha512_file_remote}" ) # extra space after LOCAL SHA512 to align hashes for easier comparison
-                    print( f"Please check both files, delete/move as appropriate and try uploading again.")
-                    sys.exit(1)
 
-                # for an explaination of why there is no point checksumming the checksum see
-                # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/26#issuecomment-3578085128
-                scp_client.put( demux.absoluteFilesToTransferList[tar_file]['md5_file_local'],    demux.absoluteFilesToTransferList[tar_file]['md5_file_remote'] )
-                scp_client.put( demux.absoluteFilesToTransferList[tar_file]['sha512_file_local'], demux.absoluteFilesToTransferList[tar_file]['sha512_file_remote'] )
 
-            except Exception as error:
-                print( f"RuntimeError: SCP upload failed for {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {error}" )
-                sys.exit( 1 )     
-
-                # with ThreadPoolExecutor(max_workers=min(5, len(demux.tarFilesToTransferList))) as pool: list(pool.map(upload_one, demux.tarFilesToTransferList))
-                # checksum_local, checksum_remote = compute_local_sha512( local_path ), compute_remote_sha512(ssh_client, remote_path);
-                # assert checksum_local == checksum_remote, f"Checksum mismatch for {local_path}:  {checksum_local} != {checksum_remote}"
-
-            ssh_client.close()
 
     demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n")
+
+
+########################################################################
+# MAIN
+########################################################################
+
+if __name__ == '__main__':
+
+    deliver_files_to_NIRD( demux )
