@@ -83,30 +83,13 @@ def _upload_and_verify_file( demux, tar_file ):  # worker per file
         ssh_client.close()
 
 
-def _build_absolute_paths( demux ):
-    """
-    Builds and returns a dictonary mapping each tar filename to its full local and remote paths,
-    including the associated .md5 and .sha512 files.
-    """
-    for tar_file in demux.tarFilesToTransferList:
-        local_base  = os.path.join( demux.fortransfer_directory, tar_file )
-        remote_base = os.path.join( demux.nird_base_upload_path, demux.RunID, tar_file )
-        demux.absoluteFilesToTransferList[ tar_file ] = {
-            'tar_file_local':     local_base,
-            'tar_file_remote':    remote_base,
-            'md5_file_local':     local_base  + demux.MD5_SUFFIX,
-            'md5_file_remote':    remote_base + demux.MD5_SUFFIX,
-            'sha512_file_local':  local_base  + demux.SHA512_SUFFIX,
-            'sha512_file_remote': remote_base + demux.SHA512_SUFFIX,
-        }
-
-
-def _verify_local_files( absoluteFilesToTransferList ):
+def _verify_local_files( demux ):
     """
     Verifies that all three required local files exist for every tar entry in absoluteFilesToTransferList: the tar file,
     its .md5, and its .sha512 file. Exits immediately on the first missing file.
     """
-    for entry in absoluteFilesToTransferList.values( ):
+
+    for entry in demux.absoluteFilesToTransferList.values( ):
         if not os.path.exists( entry[ 'tar_file_local' ] ):
             print( f"File {entry[ 'tar_file_local' ]} does not exist. Check for the existanse of the file and try again." )
             sys.exit(1)
@@ -138,6 +121,39 @@ def _setup_ssh_connection( demux ):
     demux.key_file = host_config.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
     demux.port     = int( host_config.get( "port", demux.nird_scp_port ) )
 
+
+def _build_absolute_paths( demux ):
+    """
+    Builds and returns a dictonary mapping each tar filename to its full local and remote paths,
+    including the associated .md5 and .sha512 files.
+    """
+
+    local_base  = os.path.join( demux.forTransferDir,        demux.RunID )
+    # remote_base = os.path.join( demux.nird_base_upload_path, demux.RunID )
+    remote_base = os.path.join( "/data/for_transfer/tmp/",   demux.RunID )
+
+
+    print("LOADED FROM:", demux.__file__)
+    print("CORE FROM:",   demux.core.__file__)
+    print("STEP08 FROM:", __file__)
+    print( f"_build_absolute_paths: remote_base is {remote_base}" )
+    print( f"_build_absolute_paths: demux.RunID is {demux.RunID}" )
+    print( f"_build_absolute_paths: demux.nird_base_upload_path is {demux.nird_base_upload_path}" )
+    print( f"The absolute path of the file being used is {os.path.abspath( __file__ )}" )
+    print( f"\n\n========================================================================================================\n\n")
+
+    for tar_file in demux.tarFilesToTransferList:
+        
+        demux.absoluteFilesToTransferList[ tar_file ] = {
+            'tar_file_local':     os.path.join( local_base,  tar_file ),
+            'tar_file_remote':    os.path.join( remote_base, tar_file ),
+            'md5_file_local':     os.path.join( local_base,  tar_file ) + constants.MD5_SUFFIX,
+            'md5_file_remote':    os.path.join( remote_base, tar_file ) + constants.MD5_SUFFIX,
+            'sha512_file_local':  os.path.join( local_base,  tar_file ) + constants.SHA512_SUFFIX,
+            'sha512_file_remote': os.path.join( remote_base, tar_file ) + constants.SHA512_SUFFIX,
+        }
+        pprint.pprint( demux.absoluteFilesToTransferList )
+    sys.exit( )
 
 def _ensure_remote_run_directory( demux ):
     """
