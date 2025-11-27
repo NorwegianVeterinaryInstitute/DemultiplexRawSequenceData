@@ -15,7 +15,7 @@ from demux.config  import constants
 from demux.loggers import demuxLogger, demuxFailureLogger
 
 
-def _upload_and_verify_file( demux, tar_file ):  # worker per file
+def _upload_and_verify_file( demux, tar_file ):  # worker per file, tar_file is in absolute path format
     """
     Upload and verify a single local tar file to the NIRD absolute upload path using a new SSH transport each time.
     """
@@ -129,31 +129,29 @@ def _build_absolute_paths( demux ):
     """
 
     local_base  = os.path.join( demux.forTransferDir,        demux.RunID )
-    # remote_base = os.path.join( demux.nird_base_upload_path, demux.RunID )
-    remote_base = os.path.join( "/data/for_transfer/tmp/",   demux.RunID )
-
-
-    print("LOADED FROM:", demux.__file__)
-    print("CORE FROM:",   demux.core.__file__)
-    print("STEP08 FROM:", __file__)
-    print( f"_build_absolute_paths: remote_base is {remote_base}" )
-    print( f"_build_absolute_paths: demux.RunID is {demux.RunID}" )
-    print( f"_build_absolute_paths: demux.nird_base_upload_path is {demux.nird_base_upload_path}" )
-    print( f"The absolute path of the file being used is {os.path.abspath( __file__ )}" )
-    print( f"\n\n========================================================================================================\n\n")
+    remote_base = os.path.join( demux.nird_base_upload_path, demux.RunID )
 
     for tar_file in demux.tarFilesToTransferList:
-        
+        # so here is a wierd one that took me two days to debug: if both paths are in absolute format,
+        # the last absolute path is returned and everything else is thrown away...
+        # demux.tarFilesToTransferList is already in absolute format, so this threw me the fuck off,
+        # returned only tar_file
+        # https://docs.python.org/3/library/os.path.html#os.path.join
+        #   "If a segment is an absolute path (which on Windows requires both a drive and a root), then 
+        # all previous segments are ignored and joining continues from the absolute path segment."
+        # So it returned tar_file only, fuuuuuuuuu
+        # So since we might meet demux.tarFilesToTransferList elsewhere, i am stripping here the absolute path
+        # and allowing the tar files to still remain in absolut format
+        basenamed_tar_file = os.path.basename( tar_file )
         demux.absoluteFilesToTransferList[ tar_file ] = {
-            'tar_file_local':     os.path.join( local_base,  tar_file ),
-            'tar_file_remote':    os.path.join( remote_base, tar_file ),
-            'md5_file_local':     os.path.join( local_base,  tar_file ) + constants.MD5_SUFFIX,
-            'md5_file_remote':    os.path.join( remote_base, tar_file ) + constants.MD5_SUFFIX,
-            'sha512_file_local':  os.path.join( local_base,  tar_file ) + constants.SHA512_SUFFIX,
-            'sha512_file_remote': os.path.join( remote_base, tar_file ) + constants.SHA512_SUFFIX,
+            'tar_file_local':     os.path.join( local_base,  basenamed_tar_file ),
+            'tar_file_remote':    os.path.join( remote_base, basenamed_tar_file ),
+            'md5_file_local':     os.path.join( local_base,  basenamed_tar_file ) + constants.MD5_SUFFIX,
+            'md5_file_remote':    os.path.join( remote_base, basenamed_tar_file ) + constants.MD5_SUFFIX,
+            'sha512_file_local':  os.path.join( local_base,  basenamed_tar_file ) + constants.SHA512_SUFFIX,
+            'sha512_file_remote': os.path.join( remote_base, basenamed_tar_file ) + constants.SHA512_SUFFIX,
         }
-        pprint.pprint( demux.absoluteFilesToTransferList )
-    sys.exit( )
+
 
 def _ensure_remote_run_directory( demux ):
     """
