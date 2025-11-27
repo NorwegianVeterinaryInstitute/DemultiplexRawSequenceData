@@ -132,7 +132,7 @@ def _build_absolute_paths( demux ):
     remote_base = os.path.join( demux.nird_base_upload_path, demux.RunID )
 
     for tar_file in demux.tarFilesToTransferList:
-        # so here is a wierd one that took me two days to debug: if both paths are in absolute format,
+        # so here is a weird one that took me two days to debug: if both paths are in absolute format,
         # the last absolute path is returned and everything else is thrown away...
         # demux.tarFilesToTransferList is already in absolute format, so this threw me the fuck off,
         # returned only tar_file
@@ -141,7 +141,7 @@ def _build_absolute_paths( demux ):
         # all previous segments are ignored and joining continues from the absolute path segment."
         # So it returned tar_file only, fuuuuuuuuu
         # So since we might meet demux.tarFilesToTransferList elsewhere, i am stripping here the absolute path
-        # and allowing the tar files to still remain in absolut format
+        # and allowing the tar files to still remain in absolute format
         basenamed_tar_file = os.path.basename( tar_file )
         demux.absoluteFilesToTransferList[ tar_file ] = {
             'tar_file_local':     os.path.join( local_base,  basenamed_tar_file ),
