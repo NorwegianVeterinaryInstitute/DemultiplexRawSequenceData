@@ -112,6 +112,7 @@ class demux:
     spacing6                        = spacing6 + tabSpace
 
     ######################################################
+    # All following are supposed to be filled in at run time
     RunID                           = ""
     runIDShort                      = ""  # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/126
     rawDataRunIDdir                 = ""
@@ -153,7 +154,6 @@ class demux:
     logFilePath                     = ""
     multiQCLogFilePath              = ""
     scriptRunLogFile                = ""
-    forTransferDirRoot              = ""
     ######################################################
     # mailhost                        = 'seqtech00.vetinst.no'
     mailhost                        = 'localhost'
@@ -165,11 +165,16 @@ class demux:
     httpsHandlerHost                = 'veterinaerinstituttet307.workplace.com'
     httpsHandlerUrl                 = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
     ######################################################
-    nird_upload_host                = "login.nird.sigma2.no"
-    nird_scp_port                   = "12" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
-    nird_username                   = ""
-    nird_base_upload_path           = "/nird/projects/NS9305K/SEQ-TECH/data_delivery"
-    nird_key_filename               = ""
+    nird_upload_host                = "laptop"
+    nird_scp_port                   = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
+    nird_username                   = "gmarselis" # change this to be the user running the script
+    # nird_base_upload_path           = "/nird/projects/NS9305K/SEQ-TECH/data_delivery"
+    nird_base_upload_path           = "/data/for_transfer/tmp"
+    nird_key_filename               = "/home/gmarselis/.ssh/id_ed25519.3jane"
+    hostname                        = ""
+    username                        = ""
+    key_file                        = ""
+    port                            = int( )
     ######################################################
     vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
     ######################################################

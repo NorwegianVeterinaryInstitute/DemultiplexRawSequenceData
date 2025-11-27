@@ -167,8 +167,7 @@ def _ensure_remote_run_directory( demux ):
     if ssh_client._system_host_keys.lookup( demux.hostname ) is None:
         raise RuntimeError( f"Host key for {demux.hostname} not found in known_hosts" )
 
-    # ssh_client.set_missing_host_key_policy( AutoAddPolicy( ) )
-    ssh_client.set_missing_host_key_policy( RejectPolicy( ) ) # do not accept host keys that are not already in place
+    ssh_client.set_missing_host_key_policy( RejectPolicy( ) )      # do not accept host keys that are not already in place
     ssh_client.connect( hostname = demux.hostname, port = demux.port, username = demux.username, key_filename = demux.key_file )
 
     # check if the '/nird/projects/NS9305K/SEQ-TECH/data_delivery' + runID directory exists
@@ -202,17 +201,19 @@ def deliver_files_to_NIRD( demux ):
     """
 
     demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n")
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n", color="green", attrs=["bold"] ) )
 
-    _setup_ssh_connection( demux )                              # setup the ssh connection details
-    _ensure_remote_run_directory( demux )                       # make sure demux.nird_base_upload_path/demux.RunID exists
-    _build_absolute_paths( demux )                              # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
-    _verify_local_files( demux.absoluteFilesToTransferList )    # verify the local files exist before attempting to transfer them
+    _setup_ssh_connection( demux )          # setup the ssh connection details
+    _build_absolute_paths( demux )          # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
+    _ensure_remote_run_directory( demux )   # make sure demux.nird_base_upload_path/demux.RunID exists
+    _verify_local_files( demux )            # verify the local files exist before attempting to transfer them
 
 
+    # serial version
     # for tar_file in demux.tarFilesToTransferList: # for each tar file open a new ssh connection so, we can parallelize transfer
     #     _upload_and_verify_file( demux, tar_file )
 
+    # parallel version
     with ThreadPoolExecutor( max_workers = len( demux.tarFilesToTransferList ) ) as pool:
         futures = [
             pool.submit(_upload_and_verify_file, demux, tar_file ) for tar_file in demux.tarFilesToTransferList
@@ -220,16 +221,4 @@ def deliver_files_to_NIRD( demux ):
         for future in futures:
             future.result( )
 
-
-
-
-    demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n")
-
-
-########################################################################
-# MAIN
-########################################################################
-
-if __name__ == '__main__':
-
-    deliver_files_to_NIRD( demux )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )
