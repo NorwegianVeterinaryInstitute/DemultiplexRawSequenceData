@@ -137,6 +137,7 @@ class demux:
     ######################################################
     forTransferRunIdDir             = ""
     forTransferQCtarFile            = ""
+    absoluteFilesToTransferList     = { }
     ######################################################
     demuxCumulativeLogFileName      = 'demultiplex.log'
     demultiplexLogDirName           = 'demultiplex_log'
