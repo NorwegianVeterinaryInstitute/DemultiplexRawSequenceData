@@ -1,15 +1,18 @@
-#!/usr/bin/env -S -- /usr/bin/python3.11 -X pycache_prefix=/tmp/demultiplex
 
 import hashlib
 import os
 import shlex
 import sys
 import termcolor
+import pprint
 
 from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy
 from scp import SCPClient
 
 from concurrent.futures import ThreadPoolExecutor
+
+from demux.config  import constants
+from demux.loggers import demuxLogger, demuxFailureLogger
 
 
 def _upload_and_verify_file( demux, tar_file ):  # worker per file
