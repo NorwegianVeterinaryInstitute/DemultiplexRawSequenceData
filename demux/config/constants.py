@@ -28,3 +28,9 @@ MD5_LENGTH              = 16  # 128 bits
 SHA512_SUFFIX           = ".sha512"
 SHA512_LENGTH           = 64  # 512 bits
 
+NIRD_MODE_SSH 			= "ssh"
+NIRD_MODE_MOUNTED 		= "mounted"
+
+SERIAL_COPYING  		= "serial"
+PARALLEL_COPYING 		= "parallel"
+

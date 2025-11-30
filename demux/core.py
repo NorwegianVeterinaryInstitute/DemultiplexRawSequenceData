@@ -26,7 +26,7 @@ import termcolor
 
 import demux.config.constants
 
-
+from collections import defaultdict
 from sample_sheet import SampleSheet # https://sample-sheet.readthedocs.io/quick-start.html
 
 
@@ -114,7 +114,7 @@ class demux:
     ######################################################
     # All following are supposed to be filled in at run time
     RunID                           = ""
-    runIDShort                      = ""  # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/126
+    runIDShort                      = ""                                                            # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/126
     rawDataRunIDdir                 = ""
     demultiplexRunIDdir             = ""
     demultiplexLogDirPath           = ""
@@ -126,6 +126,7 @@ class demux:
     multiqc_run_dir                 = ""
     sampleSheetFilePath             = os.path.join( sampleSheetDirPath, sampleSheetFileName )
     sampleSheetArchiveFilePath      = ""                                                            # demux/envsetup/setup_environment.py
+    project_samples_metadata        = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
     ######################################################
     projectList                     = [ ]
     newProjectNameList              = [ ]
@@ -165,17 +166,24 @@ class demux:
     httpsHandlerHost                = 'veterinaerinstituttet307.workplace.com'
     httpsHandlerUrl                 = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
     ######################################################
+    transfer_to_nird                = bool( )
+    nird_access_mode                = "mounted"
+    allowed_nird_access_modes       = [ "ssh", "mounted" ]
+    allowed_nird_copy_modes         = [ "serial", "parallel" ]
+    # nird_upload_host                = "login.nird.sigma2.no"
     nird_upload_host                = "laptop"
     nird_scp_port                   = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
     nird_username                   = "gmarselis" # change this to be the user running the script
-    # nird_base_upload_path           = "/nird/projects/NS9305K/SEQ-TECH/data_delivery"
-    nird_base_upload_path           = "/data/for_transfer/tmp"
+    nird_base_upload_path_ssh       = "/nird/projects/NS9305K/SEQ-TECH/data_delivery"
+    nird_base_upload_path_local     = "/data/tmp/nird"
+    nird_base_upload_path           = ""
     nird_key_filename               = "/home/gmarselis/.ssh/id_ed25519.3jane"
     hostname                        = ""
     username                        = ""
     key_file                        = ""
     port                            = int( )
     ######################################################
+    transfer_to_vigas               = bool( )
     vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
     ######################################################
     threadsToUse                    = 12                        # the amount of threads FastQC and other programs can utilize
@@ -237,8 +245,25 @@ class demux:
 
         return tarFilesToTransferList
 
+    def _build_project_sample_metadata( sample_sheet: SampleSheet) -> dict[str, dict[str, dict]]:
+        """
+        Build a nested mapping from Sample_Project to Sample_ID and all transfer-related metadata fields.
+        """
+        project_samples_metadata = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
+
+        for sample in sample_sheet.samples:
+            project_samples_metadata[ sample.Sample_Project ][ sample.Sample_ID ] = {
+                "transfer_to_vigas": sample.Transfer_VIGAS.lower( ) == "yes",
+                "vigas_project_id": int( sample.VIGASP_ID ),
+                "transfer_to_nird": sample.Transfer_NIRD.lower( ) == "yes",
+                "nird_location": sample.NIRD_Location,
+            }
+
+        return project_samples_metadata
+
+
     ########################################################################
-    # getProjectName
+    # parse_sample_sheet
     ########################################################################
     def parse_sample_sheet( ):
         """
@@ -261,12 +286,24 @@ class demux:
         # demuxLogger.debug( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
         # use print for now till we figure out what is going on with the logging
         print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
-        
 
-        sample_sheet = SampleSheet( demux.sampleSheetFilePath )
-        demux.projectList            = demux._get_unique_sample_projects( sample_sheet )  # 
-        demux.newProjectNameList     = demux._create_renamed_demux_project_list( demux.projectList )
-        demux.tarFilesToTransferList = demux._create_tar_files_to_transfer_list( demux.newProjectNameList )
+        sample_sheet                    = SampleSheet( demux.sampleSheetFilePath )
+        demux.projectList               = demux._get_unique_sample_projects( sample_sheet )    # get the project list
+        demux.newProjectNameList        = demux._create_renamed_demux_project_list( demux.projectList ) # translate the project list to absolute names
+        demux.tarFilesToTransferList    = demux._create_tar_files_to_transfer_list( demux.newProjectNameList ) # does not create the absolute path.
+        demux.project_samples_metadata  = demux._build_project_sample_metadata( sample_sheet ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
+
+
+        for project, tar_file in zip( demux.projectList, demux.tarFilesToTransferList ):
+            # take the project-level value directly from the first sample in that project
+            first_sample = next( iter( demux.project_samples_metadata[project].values( ) ) )
+            demux.absoluteFilesToTransferList[ tar_file ][ 'transfer_to_nird' ]  = {
+                'transfer_to_nird': first_sample[ 'transfer_to_nird' ]
+            }
+            # demux.absoluteFilesToTransferList[tar_file]["transfer_to_vigas"] = first_sample["transfer_to_vigas"]
+
+        demux.transfer_to_vigas     = all( entry[ 'transfer_to_vigas' ] for entry in demux.project_samples_metadata[ project ].values( ) ) # all( ) logical ANDs the values
+        demux.transfer_to_nird      = all( entry[ 'transfer_to_nird' ]  for entry in demux.project_samples_metadata[ project ].values( ) )
 
         # if we are debugging, print out the list of projects.
         if demux.verbosity == 3:

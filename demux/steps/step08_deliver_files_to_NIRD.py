@@ -13,8 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from demux.config  import constants
 from demux.loggers import demuxLogger, demuxFailureLogger
 
-
-def _upload_and_verify_file( demux, tar_file ):  # worker per file, tar_file is in absolute path format
+def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_file is in absolute path format
     """
     Upload and verify a single local tar file to the NIRD absolute upload path using a new SSH transport each time.
     """
@@ -82,6 +81,89 @@ def _upload_and_verify_file( demux, tar_file ):  # worker per file, tar_file is 
         ssh_client.close()
 
 
+def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
+    """
+    Upload and verify a single local tar file to NIRD via an already-mounted sshfs path.
+    """
+    file_info = demux.absoluteFilesToTransferList[tar_file]
+    longest_local_path = max( len( item[ 'tar_file_local' ] ) for item in demux.absoluteFilesToTransferList.values( ) )
+
+    if os.path.exists( file_info[ 'tar_file_remote' ] ):
+        demuxLogger.critical( f"RuntimeError: Remote file already exists: {file_info[ 'tar_file_remote' ]} ")
+        demuxLogger.critical( "Refusing to overwrite. Delete/move remote file first and then try to upload again." )
+        sys.exit( 1 )
+
+    READ_BINARY = "rb"
+
+    try:
+        shutil.copy2( file_info[ 'tar_file_local' ], file_info[ 'tar_file_remote' ] )  # requires import shutil
+
+        with open( file_info[ 'tar_file_remote' ], READ_BINARY ) as remote_handle:
+            remote_md5 = hashlib.file_digest( remote_handle, hashlib.md5( ) ).hexdigest( )
+        with open( file_info[ 'tar_file_remote' ], READ_BINARY ) as remote_handle:
+            remote_sha512 = hashlib.file_digest( remote_handle, hashlib.sha512( ) ).hexdigest( )
+
+        local_md5 = open(file_info[ 'md5_file_local' ] ).read( ).split( )[0]
+        local_sha512 = open(file_info[ 'sha512_file_local' ] ).read( ).split( )[0]
+
+        if local_md5 != remote_md5:
+            demuxLogger.critical( "Error: Local md5 differs from calculated remote md5:" )
+            demuxLogger.critical( f"LOCAL MD5:  {local_md5}\nREMOTE MD5: {remote_md5}" )
+            demuxLogger.critical( "Please check both files, delete/move as appropriate and try uploading again." )
+            sys.exit( 1 )
+
+        if local_sha512 != remote_sha512:
+            demuxLogger.critical( "Error: Local sha512 differs from calculated remote sha512:" )
+            demuxLogger.critical( f"LOCAL SHA512:  {local_sha512}\nREMOTE SHA512: {remote_sha512}" )
+            demuxLogger.critical( "Please check both files, delete/move as appropriate and try uploading again." )
+            sys.exit( 1 )
+
+        shutil.copy2( file_info[ 'md5_file_local' ], file_info[ 'md5_file_remote' ] )
+        shutil.copy2( file_info[ 'sha512_file_local' ], file_info[ 'sha512_file_remote' ] )
+
+        demuxLogger.info(
+            f"Done: LOCAL:{file_info[ 'tar_file_local' ]:<{longest_local_path}}"
+            f"REMOTE:{file_info['tar_file_remote']}"
+        )
+
+    except Exception as error:
+        demuxLogger.critical( f"RuntimeError: local sshfs upload failed for {file_info[ 'tar_file_remote' ]}: {error}" )
+        sys.exit( 1 )
+
+
+
+
+
+def _upload_files_to_nird( demux ):
+    """
+    Select the appropriate upload function based on NIRD access mode and execute all file transfers in either serial or parallel form.
+    """
+
+    # choose upload implementation
+    if demux.nird_access_mode == demux.NIRD_MODE_SSH:
+        upload_func = _upload_and_verify_file_via_ssh
+    elif demux.nird_access_mode == demux.NIRD_MODE_MOUNTED:
+        upload_func = _upload_and_verify_file_via_local_sshfs_mount
+    else:
+        demuxLogger.critical( f"Unknown NIRD access mode: {demux.nird_access_mode}" )
+        sys.exit( 1 )
+
+    # serial / parallel switching
+    if demux.copy_method == demux.SERIAL_COPYING:
+        for tar_file in demux.tarFilesToTransferList:
+            upload_func(demux, tar_file)
+
+    elif demux.copy_method == demux.PARALLEL_COPYING:
+        with ThreadPoolExecutor(max_workers=len(demux.tarFilesToTransferList)) as pool:
+            futures = [
+                pool.submit(upload_func, demux, tar_file)
+                for tar_file in demux.tarFilesToTransferList
+            ]
+            for future in futures:
+                future.result()
+
+
+
 def _verify_local_files( demux ):
     """
     Verifies that all three required local files exist for every tar entry in absoluteFilesToTransferList: the tar file,
@@ -127,6 +209,11 @@ def _build_absolute_paths( demux ):
     including the associated .md5 and .sha512 files.
     """
 
+    if demux.NIRD_MODE_MOUNTED == demux.nird_access_mode:
+        demux.nird_base_upload_path = demux.nird_base_upload_path_local
+    elif demux.NIRD_MODE_SSH == demux.nird_access_mode:
+        demux.nird_base_upload_path = demux.nird_base_upload_path_ssh
+
     local_base  = os.path.join( demux.forTransferDir,        demux.RunID )
     remote_base = os.path.join( demux.nird_base_upload_path, demux.RunID )
 
@@ -149,6 +236,7 @@ def _build_absolute_paths( demux ):
             'md5_file_remote':    os.path.join( remote_base, basenamed_tar_file ) + constants.MD5_SUFFIX,
             'sha512_file_local':  os.path.join( local_base,  basenamed_tar_file ) + constants.SHA512_SUFFIX,
             'sha512_file_remote': os.path.join( remote_base, basenamed_tar_file ) + constants.SHA512_SUFFIX,
+            # 'upload_to_nird' exists already, we are just adding here
         }
 
 
@@ -204,18 +292,6 @@ def deliver_files_to_NIRD( demux ):
     _build_absolute_paths( demux )          # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
     _ensure_remote_run_directory( demux )   # make sure demux.nird_base_upload_path/demux.RunID exists
     _verify_local_files( demux )            # verify the local files exist before attempting to transfer them
-
-
-    # serial version
-    # for tar_file in demux.tarFilesToTransferList: # for each tar file open a new ssh connection so, we can parallelize transfer
-    #     _upload_and_verify_file( demux, tar_file )
-
-    # parallel version
-    with ThreadPoolExecutor( max_workers = len( demux.tarFilesToTransferList ) ) as pool:
-        futures = [
-            pool.submit(_upload_and_verify_file, demux, tar_file ) for tar_file in demux.tarFilesToTransferList
-        ]
-        for future in futures:
-            future.result( )
+    _upload_files_to_nird( demux )          # send the demux object to a dedicated method and it will decide what mode of copying and type of upload it will use
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )

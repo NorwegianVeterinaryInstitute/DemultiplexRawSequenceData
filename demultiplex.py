@@ -244,16 +244,16 @@ def main( RunID ):
     change_permissions( demux )                                                                         # change permissions for all the delivery files, including QC
     control_projects_qc( demux )                                                                        # check to see if we need to create the report for any control projects present
     tar_file_quality_check( demux )                                                                     # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
-    if demux.upload_to_vigasp:
+    if demux.transfer_to_vigas:
         demuxLogger,debug( f"{RunID} has to be uploaded to VIGASP" )
         deliver_files_to_VIGASP( demux )                                                                # Deliver the output files to VIGASP
-    if demux.upload_to_nird:
+    if demux.transfer_to_nird:
         demuxLogger,debug( f"{RunID} has to be uploaded to NIRD" )
         deliver_files_to_NIRD( demux )                                                                  # deliver the output files to NIRD
     # finalize( demux )                                                                                 # mark the script as complete
     # shutdownEventAndLoggingHandling( )                                                                # shutdown logging before exiting.
 
-    if not ( demux.upload_to_vigasp and demux.upload_to_nird ):
+    if not ( demux.transfer_to_vigas and demux.transfer_to_nird ):
         demuxLogger.info( termcolor.colored( f"\n\nNo files uploaded.\n", color="light_cyan", attrs=["blink"] ) )
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
     logging.shutdown( )
