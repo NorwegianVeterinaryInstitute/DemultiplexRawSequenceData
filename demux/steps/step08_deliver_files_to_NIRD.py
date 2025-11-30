@@ -1,9 +1,11 @@
 import hashlib
 import os
+import shutil
 import shlex
 import sys
 import termcolor
 import pprint
+
 
 from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy
 from scp import SCPClient
@@ -38,7 +40,7 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
         if stdout.channel.recv_exit_status( ) == 0 : # file exists
             demuxLogger.critical( f"RuntimeError: Remote file already exists: {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}" )
             demuxLogger.critical( f"Refusing to overwrite. Delete/move remote file first and then try to upload again." )
-            sys.exit( 1 )
+            raise RuntimeError( )
 
         try:
             # upload file
@@ -57,14 +59,14 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
 
             if local_md5 != remote_md5:
                 demuxLogger.critical( f"Error: Local md5 differs from calculated remote md5:" )
-                demuxLogger.critical( f"LOCAL MD5:  {local_md5}\nREMOTE MD5: {remote_md5}" ) # extra space after LOCAL MD5 to align hashes for easier comparison
+                demuxLogger.critical( f"LOCAL MD5:  {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_local' ]}\nREMOTE MD5: {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_remote' ]}" ) # extra space after LOCAL MD5 to align hashes for easier comparison
                 demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
-                sys.exit(1)
+                raise RuntimeError( )
             if local_sha512 != remote_sha512:
                 demuxLogger.critical( f"Error: Local sha512 differs from calculated remote sha512:" )
-                demuxLogger.critical( f"LOCAL SHA512:  {local_sha512}\nREMOTE SHA512: {sha512_file_remote}" ) # extra space after LOCAL SHA512 to align hashes for easier comparison
+                demuxLogger.critical( f"LOCAL SHA512:  {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_local' ]}\nREMOTE SHA512: {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_remote' ]}" ) # extra space after LOCAL SHA512 to align hashes for easier comparison
                 demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
-                sys.exit(1)
+                raise RuntimeError( )
 
             # for an explaination of why there is no point checksumming the checksum see
             # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/26#issuecomment-3578085128
@@ -76,7 +78,7 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
 
         except Exception as error:
             demuxLogger.critical( f"RuntimeError: SCP upload failed for {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {error}" )
-            sys.exit( 1 )     
+            raise RuntimeError( )
 
         ssh_client.close()
 
@@ -91,7 +93,7 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
     if os.path.exists( file_info[ 'tar_file_remote' ] ):
         demuxLogger.critical( f"RuntimeError: Remote file already exists: {file_info[ 'tar_file_remote' ]} ")
         demuxLogger.critical( "Refusing to overwrite. Delete/move remote file first and then try to upload again." )
-        sys.exit( 1 )
+        raise RuntimeError( )
 
     READ_BINARY = "rb"
 
@@ -110,13 +112,13 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
             demuxLogger.critical( "Error: Local md5 differs from calculated remote md5:" )
             demuxLogger.critical( f"LOCAL MD5:  {local_md5}\nREMOTE MD5: {remote_md5}" )
             demuxLogger.critical( "Please check both files, delete/move as appropriate and try uploading again." )
-            sys.exit( 1 )
+            raise RuntimeError( )
 
         if local_sha512 != remote_sha512:
             demuxLogger.critical( "Error: Local sha512 differs from calculated remote sha512:" )
             demuxLogger.critical( f"LOCAL SHA512:  {local_sha512}\nREMOTE SHA512: {remote_sha512}" )
             demuxLogger.critical( "Please check both files, delete/move as appropriate and try uploading again." )
-            sys.exit( 1 )
+            raise RuntimeError( )
 
         shutil.copy2( file_info[ 'md5_file_local' ], file_info[ 'md5_file_remote' ] )
         shutil.copy2( file_info[ 'sha512_file_local' ], file_info[ 'sha512_file_remote' ] )
@@ -128,26 +130,24 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
 
     except Exception as error:
         demuxLogger.critical( f"RuntimeError: local sshfs upload failed for {file_info[ 'tar_file_remote' ]}: {error}" )
-        sys.exit( 1 )
-
+        raise RuntimeError( )
 
 
 def _upload_files_to_nird( demux ):
     """
     Select the appropriate upload function based on NIRD access mode and execute all file transfers in either serial or parallel form.
     """
-
     # choose upload implementation
-    if demux.nird_access_mode == demux.NIRD_MODE_SSH:
+    if demux.NIRD_MODE_SSH == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_ssh
-    elif demux.nird_access_mode == demux.NIRD_MODE_MOUNTED:
+    elif demux.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_local_sshfs_mount
     else:
         demuxLogger.critical( f"Unknown NIRD access mode: {demux.nird_access_mode}" )
-        sys.exit( 1 )
+        raise RuntimeError( )
 
     # serial / parallel switching
-    if  demux.SERIAL_COPYING == demux.nird_copy_mode:
+    if demux.SERIAL_COPYING == demux.nird_copy_mode:
         for tar_file in demux.tarFilesToTransferList:
             upload_func(demux, tar_file)
 
@@ -158,8 +158,11 @@ def _upload_files_to_nird( demux ):
                 for tar_file in demux.tarFilesToTransferList
             ]
             for future in futures:
-                future.result()
-
+                try:
+                    future.result( )
+                 except RuntimeError:
+                     demuxLogger.critical('Upload failed')
+                     raise
 
 
 def _verify_local_files( demux ):
@@ -171,13 +174,13 @@ def _verify_local_files( demux ):
     for entry in demux.absoluteFilesToTransferList.values( ):
         if not os.path.exists( entry[ 'tar_file_local' ] ):
             demuxLogger.critical( f"File {entry[ 'tar_file_local' ]} does not exist. Check for the existanse of the file and try again." )
-            sys.exit(1)
+            raise RuntimeError( )
         if not os.path.exists( entry[ 'md5_file_local' ] ):
             demuxLogger.critical( f"File {entry[ 'md5_file_local' ]} does not exist. Check for the file and try again." )
-            sys.exit(1)
+            raise RuntimeError( )
         if not os.path.exists( entry[ 'sha512_file_local' ] ):
             demuxLogger.critical( f"File {entry[ 'sha512_file_local' ]} does not exist. Check for the file and try again." )
-            sys.exit(1)
+            raise RuntimeError( )
 
 
 def _setup_ssh_connection( demux ):
@@ -262,9 +265,10 @@ def _ensure_remote_run_directory( demux ):
     else:
         demuxLogger.critical( f"RuntimeError: {demux.hostname}:{remote_absolute_dir_path} already exists." )
         demuxLogger.critical( f"Is this a repeat upload? If yes, delete/move the existing remote directory and try again." )
-        sys.exit( 1 )
+        raise RuntimeError( )
 
     ssh_client.close() # close for the commands we will open the same connection in the loop, so we can parallelize the  connections.
+
 
 ########################################################################
 # deliver_files_to_NIRD
