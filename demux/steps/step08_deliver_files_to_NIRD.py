@@ -132,8 +132,6 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
 
 
 
-
-
 def _upload_files_to_nird( demux ):
     """
     Select the appropriate upload function based on NIRD access mode and execute all file transfers in either serial or parallel form.
@@ -149,11 +147,11 @@ def _upload_files_to_nird( demux ):
         sys.exit( 1 )
 
     # serial / parallel switching
-    if demux.copy_method == demux.SERIAL_COPYING:
+    if  demux.SERIAL_COPYING == demux.nird_copy_mode:
         for tar_file in demux.tarFilesToTransferList:
             upload_func(demux, tar_file)
 
-    elif demux.copy_method == demux.PARALLEL_COPYING:
+    elif demux.PARALLEL_COPYING == demux.nird_copy_mode:
         with ThreadPoolExecutor(max_workers=len(demux.tarFilesToTransferList)) as pool:
             futures = [
                 pool.submit(upload_func, demux, tar_file)

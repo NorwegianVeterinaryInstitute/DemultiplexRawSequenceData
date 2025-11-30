@@ -166,9 +166,10 @@ class demux:
     httpsHandlerHost                = 'veterinaerinstituttet307.workplace.com'
     httpsHandlerUrl                 = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
     ######################################################
-    transfer_to_nird                = bool( )
+    transfer_to_nird                = bool( )               # determine if trasfers should happen to nird
     nird_access_mode                = "mounted"
     allowed_nird_access_modes       = [ "ssh", "mounted" ]
+    nird_copy_mode                  = "parallel"
     allowed_nird_copy_modes         = [ "serial", "parallel" ]
     # nird_upload_host                = "login.nird.sigma2.no"
     nird_upload_host                = "laptop"
@@ -183,8 +184,10 @@ class demux:
     key_file                        = ""
     port                            = int( )
     ######################################################
-    transfer_to_vigas               = bool( )
+    transfer_to_vigas               = bool( )               # determine if trasfers should happen to nird
     vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
+    vigasp_copy_mode                = "serial"
+    allowed_vigasp_copy_modes       = [ "serial", "parallel" ]
     ######################################################
     threadsToUse                    = 12                        # the amount of threads FastQC and other programs can utilize
     ######################################################
