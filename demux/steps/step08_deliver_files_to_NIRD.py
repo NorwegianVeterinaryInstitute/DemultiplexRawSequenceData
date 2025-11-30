@@ -30,7 +30,7 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
     ssh_client.set_missing_host_key_policy( RejectPolicy( ) ) # do not accept host keys that are not already in place
     ssh_client.connect( hostname = demux.hostname, port = demux.port, username = demux.username, key_filename = demux.key_file )
     # Find the longest string in demux.absoluteFilesToTransferList and tabulate for that
-    longest_local_path = max( len( item['tar_file_local'] ) for item in demux.absoluteFilesToTransferList.values( ) )
+    longest_local_path = max( len( item['tar_file_local'] ) for item in demux.absoluteFilesToTransferList.values( ) )  # 
 
     with SCPClient( ssh_client.get_transport( ) ) as scp_client:
 
@@ -54,8 +54,10 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
 
             remote_md5    = md5sum_stdout.read( ).decode( ).split( )[0]
             remote_sha512 = sha512sum_stdout.read( ).decode( ).split( )[0]
-            local_md5    = open( demux.absoluteFilesToTransferList[tar_file]['md5_file_local'] ).read( ).split( )[0]
-            local_sha512 = open( demux.absoluteFilesToTransferList[tar_file]['sha512_file_local'] ).read( ).split( )[0]
+            with open( demux.absoluteFilesToTransferList[ tar_file ][ 'md5_file_local' ], 'r' ) as handle_md5:
+                local_md5 = handle_md5.read( ).split( )[ 0 ]
+            with open( demux.absoluteFilesToTransferList[ tar_file ][ 'sha512_file_local' ], 'r' ) as handle_sha512:
+                local_sha512 = handle_sha512.read( ).split( )[ 0 ]
 
             if local_md5 != remote_md5:
                 demuxLogger.critical( f"Error: Local md5 differs from calculated remote md5:" )
@@ -250,7 +252,9 @@ def _ensure_remote_run_directory( demux ):
     ssh_client.load_system_host_keys( )
     # Check if the key already exists in the known_hosts 
     #   else reject the connection.
-    if ssh_client._system_host_keys.lookup( demux.hostname ) is None:
+    host_keys = ssh_client.get_host_keys()
+    if demux.hostname not in host_keys:
+    # if ssh_client._system_host_keys.lookup( demux.hostname ) is None:
         raise RuntimeError( f"Host key for {demux.hostname} not found in known_hosts" )
 
     ssh_client.set_missing_host_key_policy( RejectPolicy( ) )      # do not accept host keys that are not already in place
