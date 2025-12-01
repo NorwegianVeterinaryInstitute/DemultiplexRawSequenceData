@@ -243,7 +243,9 @@ def _build_absolute_paths( demux ):
         }
 
 
-def _ensure_remote_run_directory( demux ):
+def _ensure_remote_run_directory_mounted( demux ):
+
+def _ensure_remote_run_directory_ssh( demux ):
     """
     Ensure the remote run directory exists by opening a fresh SSH connection, validating host keys, creating the directory if missing and aborting if it already exists.
     """
@@ -272,6 +274,10 @@ def _ensure_remote_run_directory( demux ):
         raise RuntimeError( )
 
     ssh_client.close() # close for the commands we will open the same connection in the loop, so we can parallelize the  connections.
+
+
+def _ensure_remote_run_directory( demux ):
+    mountpoint -q /absolute/path returns exit code 0 if mounted, 1 if not
 
 
 ########################################################################
