@@ -126,9 +126,9 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
         with open(file_info[ 'sha512_file_local' ], READ_TEXT    ) as sha512_handle_local:
             sha512_file_local  = sha512_handle_local.read().split( )[0]
         with open( file_info[ 'tar_file_remote' ], READ_BINARY ) as md5_handle_remote:
-            md5_file_remote    = hashlib.file_digest( file_info[ 'tar_file_remote' ], hashlib.md5( ) ).hexdigest( )
+            md5_file_remote    = hashlib.file_digest( md5_handle_remote, hashlib.md5( ) ).hexdigest( )
         with open( file_info[ 'tar_file_remote' ], READ_BINARY ) as sha512_handle_remote:
-            sha512_file_remote = hashlib.file_digest( file_info[ 'tar_file_remote' ], hashlib.sha512( ) ).hexdigest( )
+            sha512_file_remote = hashlib.file_digest( sha512_handle_remote, hashlib.sha512( ) ).hexdigest( )
 
         if md5_file_local != md5_file_remote:
             demuxLogger.critical( f"Error: Local md5 differs from calculated remote md5:" )
@@ -170,14 +170,14 @@ def _upload_files_to_nird( demux ):
     if demux.SERIAL_COPYING == demux.nird_copy_mode:
         if len( demux.tarFilesToTransferList ) == 0:
             demuxLogger.critical( f"Length of demux.tarFilesToTransferList is zero while serial copying." )
-            raise  # ensure that we get notified there is something wrong
+            raise RuntimeError( ) # ensure that we get notified there is something wrong
         for tar_file in demux.tarFilesToTransferList:
             upload_func( demux, tar_file )
 
     elif demux.PARALLEL_COPYING == demux.nird_copy_mode:
         if len( demux.tarFilesToTransferList ) == 0:
             demuxLogger.critical( f"Length of demux.tarFilesToTransferList is zero while parallel copying." )
-            raise  # ensure that the threadpool does not receive zero workers and we get notified there is something wrong
+            raise RuntimeError( ) # ensure that we get notified there is something wrong
         with ThreadPoolExecutor( max_workers = len( demux.tarFilesToTransferList ) ) as pool:
             futures = [
                 pool.submit( upload_func, demux, tar_file )
