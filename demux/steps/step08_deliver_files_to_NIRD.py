@@ -316,7 +316,7 @@ def _ensure_remote_run_directory_ssh( demux ):
     try:
         # check if the '/nird/projects/NS9305K/SEQ-TECH/data_delivery' + runID directory exists
         remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID ) 
-        stdin, stdout, stderr    = ssh_client.exec_command( f"TERM=xterm /usr/bin/test -d {shlex.quote( remote_absolute_dir_path )}" ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
+        stdin, stdout, stderr    = ssh_client.exec_command( f"TERM=xterm /usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}" ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
 
         if stdout.channel.recv_exit_status( ) != 0 : # directory does not exist, wwe can make it
             ssh_client.exec_command( f'TERM=xterm /usr/bin/mkdir -p {shlex.quote( remote_absolute_dir_path )}' )
