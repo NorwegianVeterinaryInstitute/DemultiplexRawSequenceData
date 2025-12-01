@@ -120,7 +120,7 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
             md5_file_local     = md5_handle_local.read( ).split( )[ 0 ]
         with open(file_info[ 'sha512_file_local' ], READ_TEXT    ) as sha512_handle_local:
             sha512_file_local  = sha512_handle_local.read().split( )[0]
-        with open( file_info[ 'md5_file_remote' ], READ_BINARY ) as md5_handle_remote:
+        with open( file_info[ 'tar_file_remote' ], READ_BINARY ) as md5_handle_remote:
             md5_file_remote    = hashlib.file_digest( md5_handle_remote, hashlib.md5( ) ).hexdigest( )
         with open( file_info[ 'sha512_file_remote' ], READ_BINARY ) as sha512_handle_remote:
             sha512_file_remote = hashlib.file_digest( sha512_handle_remote, hashlib.sha512( ) ).hexdigest( )
