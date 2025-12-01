@@ -36,67 +36,67 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
     items = demux.absoluteFilesToTransferList.values( )
     current_len = len( demux.absoluteFilesToTransferList[tar_file][ 'tar_file_local' ] )
     longest_local_path = max( (len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
+    try:
+        with SCPClient( ssh_client.get_transport( ) ) as scp_client:
 
-    with SCPClient( ssh_client.get_transport( ) ) as scp_client:
-
-        demuxLogger.info( f"Transfering: {demux.absoluteFilesToTransferList[tar_file][ 'tar_file_local' ]}" )
-        # test if the tar file we are about to upload exists already, to prevent overwriting
-        stdin, stdout, stderr = ssh_client.exec_command( f"/usr/bin/test -f -- {shlex.quote( demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote'] )}" )  # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
-        if stdout.channel.recv_exit_status( ) == 0 : # file exists
-            demuxLogger.critical( f"RuntimeError: Remote file already exists: {demux.hostname}:{demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote' ]}" )
-            demuxLogger.critical( f"Refusing to overwrite. Delete/move remote file first and then try to upload again." )
-            raise RuntimeError( )
-
-        try:
-            # upload file
-            scp_client.put( demux.absoluteFilesToTransferList[tar_file]['tar_file_local'], demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )
-            # calculate remote checksum via md5
-            # calculate remote checksum via sha512
-            # check md5 checksum; check sha512 checksum
-            # copy the tar file, the md5 file and then the sha512 file
-            md5sum_stdin,    md5sum_stdout,    md5sum_stderr    = ssh_client.exec_command( f"/usr/bin/md5sum {shlex.quote( demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote' ] )}" )    # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
-            sha512sum_stdin, sha512sum_stdout, sha512sum_stderr = ssh_client.exec_command( f"/usr/bin/sha512sum {shlex.quote( demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote' ] )}" ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
-
-            # check exit status
-            if md5sum_stdout.channel.recv_exit_status( ) != 0:
-                demuxLogger.critical( f"RuntimeError: remote md5sum failed for {demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {md5sum_stderr.read( ).decode( ).strip( )}" )
-                raise RuntimeError( )
-            if sha512sum_stdout.channel.recv_exit_status( ) != 0:
-                demuxLogger.critical( f"RuntimeError: remote sha512sum failed for {demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {sha512sum_stderr.read( ).decode( ).strip( ) }" )
-                raise RuntimeError()
-
-            md5_file_remote    = md5sum_stdout.read( ).decode( ).split( )[0]
-            sha512_file_remote = sha512sum_stdout.read( ).decode( ).split( )[0]
-            with open( demux.absoluteFilesToTransferList[ tar_file ][ 'md5_file_local' ], 'r' ) as handle_md5:
-                md5_file_local = handle_md5.read( ).split( )[ 0 ]
-            with open( demux.absoluteFilesToTransferList[ tar_file ][ 'sha512_file_local' ], 'r' ) as handle_sha512:
-                sha512_file_local = handle_sha512.read( ).split( )[ 0 ]
-
-            if md5_file_local != md5_file_remote:
-                demuxLogger.critical( f"Error: Local md5 differs from calculated remote md5:" )
-                demuxLogger.critical( f"LOCAL MD5:  {md5_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_local' ]}" )
-                demuxLogger.critical( f"REMOTE MD5: {md5_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_remote' ]}" )
-                demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
-                raise RuntimeError( )
-            if sha512_file_local != sha512_file_remote:
-                demuxLogger.critical( f"Error: Local sha512 differs from calculated remote sha512:" )
-                demuxLogger.critical( f"LOCAL SHA512:  {sha512_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_local' ]}" )
-                demuxLogger.critical( f"REMOTE SHA512: {sha512_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_remote' ]}" )
-                demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
+            demuxLogger.info( f"Transfering: {demux.absoluteFilesToTransferList[tar_file][ 'tar_file_local' ]}" )
+            # test if the tar file we are about to upload exists already, to prevent overwriting
+            stdin, stdout, stderr = ssh_client.exec_command( f"/usr/bin/test -f -- {shlex.quote( demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote'] )}" )  # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
+            if stdout.channel.recv_exit_status( ) == 0 : # file exists
+                demuxLogger.critical( f"RuntimeError: Remote file already exists: {demux.hostname}:{demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote' ]}" )
+                demuxLogger.critical( f"Refusing to overwrite. Delete/move remote file first and then try to upload again." )
                 raise RuntimeError( )
 
-            # for an explaination of why there is no point checksumming the checksum see
-            # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/26#issuecomment-3578085128
-            scp_client.put( demux.absoluteFilesToTransferList[tar_file]['md5_file_local'],    demux.absoluteFilesToTransferList[tar_file]['md5_file_remote'] )
-            scp_client.put( demux.absoluteFilesToTransferList[tar_file]['sha512_file_local'], demux.absoluteFilesToTransferList[tar_file]['sha512_file_remote'] )
+            try:
+                # upload file
+                scp_client.put( demux.absoluteFilesToTransferList[tar_file]['tar_file_local'], demux.absoluteFilesToTransferList[tar_file]['tar_file_remote'] )
+                # calculate remote checksum via md5
+                # calculate remote checksum via sha512
+                # check md5 checksum; check sha512 checksum
+                # copy the tar file, the md5 file and then the sha512 file
+                md5sum_stdin,    md5sum_stdout,    md5sum_stderr    = ssh_client.exec_command( f"/usr/bin/md5sum {shlex.quote( demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote' ] )}" )    # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
+                sha512sum_stdin, sha512sum_stdout, sha512sum_stderr = ssh_client.exec_command( f"/usr/bin/sha512sum {shlex.quote( demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote' ] )}" ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
 
-            demuxLogger.info( f"Done: LOCAL:{demux.absoluteFilesToTransferList[tar_file]['tar_file_local']:<{longest_local_path}} REMOTE:{demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}" )
+                # check exit status
+                if md5sum_stdout.channel.recv_exit_status( ) != 0:
+                    demuxLogger.critical( f"RuntimeError: remote md5sum failed for {demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {md5sum_stderr.read( ).decode( ).strip( )}" )
+                    raise RuntimeError( )
+                if sha512sum_stdout.channel.recv_exit_status( ) != 0:
+                    demuxLogger.critical( f"RuntimeError: remote sha512sum failed for {demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {sha512sum_stderr.read( ).decode( ).strip( ) }" )
+                    raise RuntimeError()
 
-        except Exception as error:
-            demuxLogger.critical( f"RuntimeError: SCP upload failed for {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {error}" )
-            raise RuntimeError( )
-        finally:
-            ssh_client.close()
+                md5_file_remote    = md5sum_stdout.read( ).decode( ).split( )[0]
+                sha512_file_remote = sha512sum_stdout.read( ).decode( ).split( )[0]
+                with open( demux.absoluteFilesToTransferList[ tar_file ][ 'md5_file_local' ], 'r' ) as handle_md5:
+                    md5_file_local = handle_md5.read( ).split( )[ 0 ]
+                with open( demux.absoluteFilesToTransferList[ tar_file ][ 'sha512_file_local' ], 'r' ) as handle_sha512:
+                    sha512_file_local = handle_sha512.read( ).split( )[ 0 ]
+
+                if md5_file_local != md5_file_remote:
+                    demuxLogger.critical( f"Error: Local md5 differs from calculated remote md5:" )
+                    demuxLogger.critical( f"LOCAL MD5:  {md5_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_local' ]}" )
+                    demuxLogger.critical( f"REMOTE MD5: {md5_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_remote' ]}" )
+                    demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
+                    raise RuntimeError( )
+                if sha512_file_local != sha512_file_remote:
+                    demuxLogger.critical( f"Error: Local sha512 differs from calculated remote sha512:" )
+                    demuxLogger.critical( f"LOCAL SHA512:  {sha512_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_local' ]}" )
+                    demuxLogger.critical( f"REMOTE SHA512: {sha512_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_remote' ]}" )
+                    demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
+                    raise RuntimeError( )
+
+                # for an explaination of why there is no point checksumming the checksum see
+                # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/26#issuecomment-3578085128
+                scp_client.put( demux.absoluteFilesToTransferList[tar_file]['md5_file_local'],    demux.absoluteFilesToTransferList[tar_file]['md5_file_remote'] )
+                scp_client.put( demux.absoluteFilesToTransferList[tar_file]['sha512_file_local'], demux.absoluteFilesToTransferList[tar_file]['sha512_file_remote'] )
+
+                demuxLogger.info( f"Done: LOCAL:{demux.absoluteFilesToTransferList[tar_file]['tar_file_local']:<{longest_local_path}} REMOTE:{demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}" )
+
+            except Exception as error:
+                demuxLogger.critical( f"RuntimeError: SCP upload failed for {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {error}" )
+                raise RuntimeError( )
+    finally:
+        ssh_client.close()
 
 
 def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
