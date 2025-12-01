@@ -299,11 +299,10 @@ class demux:
 
         for project, tar_file in zip( demux.projectList, demux.tarFilesToTransferList ):
             # take the project-level value directly from the first sample in that project
-            first_sample = next( iter( demux.project_samples_metadata[project].values( ) ) )
-            demux.absoluteFilesToTransferList[ tar_file ][ 'transfer_to_nird' ]  = {
+            first_sample = next( iter( demux.project_samples_metadata[ project ].values( ) ) )
+            demux.absoluteFilesToTransferList[ tar_file ]  = {
                 'transfer_to_nird': first_sample[ 'transfer_to_nird' ]
             }
-            # demux.absoluteFilesToTransferList[tar_file]["transfer_to_vigas"] = first_sample["transfer_to_vigas"]
 
         demux.transfer_to_vigas     = all( entry[ 'transfer_to_vigas' ] for entry in demux.project_samples_metadata[ project ].values( ) ) # all( ) logical ANDs the values
         demux.transfer_to_nird      = all( entry[ 'transfer_to_nird' ]  for entry in demux.project_samples_metadata[ project ].values( ) )

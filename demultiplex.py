@@ -245,10 +245,10 @@ def main( RunID ):
     control_projects_qc( demux )                                                                        # check to see if we need to create the report for any control projects present
     tar_file_quality_check( demux )                                                                     # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
     if demux.transfer_to_vigas:
-        demuxLogger,debug( f"{RunID} has to be uploaded to VIGASP" )
+        demuxLogger.debug( f"{RunID} has to be uploaded to VIGASP" )
         deliver_files_to_VIGASP( demux )                                                                # Deliver the output files to VIGASP
     if demux.transfer_to_nird:
-        demuxLogger,debug( f"{RunID} has to be uploaded to NIRD" )
+        demuxLogger.debug( f"{RunID} has to be uploaded to NIRD" )
         deliver_files_to_NIRD( demux )                                                                  # deliver the output files to NIRD
     # finalize( demux )                                                                                 # mark the script as complete
     # shutdownEventAndLoggingHandling( )                                                                # shutdown logging before exiting.

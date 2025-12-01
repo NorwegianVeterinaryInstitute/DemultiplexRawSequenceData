@@ -236,9 +236,9 @@ def _build_absolute_paths( demux ):
     including the associated .md5 and .sha512 files.
     """
 
-    if demux.NIRD_MODE_MOUNTED == demux.nird_access_mode:
+    if constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         demux.nird_base_upload_path = demux.nird_base_upload_path_local
-    elif demux.NIRD_MODE_SSH == demux.nird_access_mode:
+    elif constats.NIRD_MODE_SSH == demux.nird_access_mode:
         demux.nird_base_upload_path = demux.nird_base_upload_path_ssh
 
     local_base  = os.path.join( demux.forTransferDir,        demux.RunID )
@@ -283,17 +283,17 @@ def _ensure_remote_run_directory_mounted( demux ):
 
     if not mount_found:
         demuxLogger.critical( f"RuntimeError: base path {demux.nird_base_upload_path} not found in mounted filesystems. Aborting." )
-        raise RuntimeError( )
+        raise RuntimeError( f"RuntimeError: base path {demux.nird_base_upload_path} not found in mounted filesystems. Aborting." )
 
     try:
         os.mkdir(remote_absolute_dir_path)
     except FileExistsError:
         demuxLogger.critical( f"RuntimeError: {remote_absolute_dir_path} already exists." )
         demuxLogger.critical(  "Is this a repeat upload? If yes, delete/move the existing remote directory and try again." )
-        raise RuntimeError()
+        raise RuntimeError( )
     except FileNotFoundError:
         demuxLogger.critical(f"RuntimeError: Cannot create {remote_absolute_dir_path} because its parent directory ({os.path.dirname(remote_absolute_dir_path)}) does not exist on the mounted filesystem.")
-        raise RuntimeError()
+        raise RuntimeError( )
 
 
 def _ensure_remote_run_directory_ssh( demux ):
@@ -333,10 +333,10 @@ def _ensure_remote_run_directory(demux):
     Dispatch to the correct remote-directory preparation method
     based on NIRD access mode.
     """
-    if demux.NIRD_MODE_SSH == demux.nird_access_mode:
+    if constants.NIRD_MODE_SSH == demux.nird_access_mode:
         _ensure_remote_run_directory_ssh(demux)
 
-    elif demux.NIRD_MODE_MOUNTED == demux.nird_access_mode:
+    elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         _ensure_remote_run_directory_mounted(demux)
 
     else:
