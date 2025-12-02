@@ -168,7 +168,7 @@ class demux:
     ######################################################
     upload_nird_enabled             = True                  # determine if the feature of uploading to nird is enabled
     transfer_to_nird                = bool( )               # determine from sample sheet if we have any uploads
-    nird_access_mode                = "ssh"
+    nird_access_mode                = "mounted"
     allowed_nird_access_modes       = [ "ssh", "mounted" ]
     nird_copy_mode                  = "parallel"
     allowed_nird_copy_modes         = [ "serial", "parallel" ]
