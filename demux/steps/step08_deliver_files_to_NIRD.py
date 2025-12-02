@@ -24,10 +24,6 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
     ssh_client.load_system_host_keys( )
     # The remote host key must already exist known_hosts 
     #   else reject the connection.
-    host_keys = ssh_client.get_host_keys()
-    if demux.hostname not in host_keys:
-        demuxLogger.critical( f"RuntimeError: Host key for {demux.hostname} not found in known_hosts" )
-        raise RuntimeError( )
 
     # ssh_client.set_missing_host_key_policy( AutoAddPolicy( ) )
     ssh_client.set_missing_host_key_policy( RejectPolicy( ) ) # do not accept host keys that are not already in place
