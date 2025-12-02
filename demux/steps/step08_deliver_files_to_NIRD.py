@@ -288,8 +288,9 @@ def _ensure_remote_run_directory_mounted( demux ):
     try:
         os.mkdir(remote_absolute_dir_path)
     except FileExistsError:
+        message = f"RuntimeError: {remote_absolute_dir_path} already exists.\nIs this a repeat upload? If yes, delete/move the existing remote directory and try again."
         demuxLogger.critical( f"RuntimeError: {remote_absolute_dir_path} already exists." )
-        demuxLogger.critical(  "Is this a repeat upload? If yes, delete/move the existing remote directory and try again." )
+        demuxLogger.critical(   )
         raise RuntimeError( )
     except FileNotFoundError:
         demuxLogger.critical(f"RuntimeError: Cannot create {remote_absolute_dir_path} because its parent directory ({os.path.dirname(remote_absolute_dir_path)}) does not exist on the mounted filesystem.")

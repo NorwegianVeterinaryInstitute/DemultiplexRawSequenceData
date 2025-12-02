@@ -185,8 +185,8 @@ class demux:
     key_file                        = ""
     port                            = int( )
     ######################################################
-    upload_vigas_enabled            = True                  # determine if the feature of uploading to nird is enabled
-    transfer_to_vigasp              = bool( )               # determine if trasfers should happen to nird
+    upload_vigas_enabled            = True                  # determine if the feature of uploading to vigas is enabled
+    transfer_to_vigas               = bool( )               # determine if trasfers should happen to nird
     vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
     vigasp_copy_mode                = "serial"
     allowed_vigasp_copy_modes       = [ "serial", "parallel" ]
@@ -258,7 +258,7 @@ class demux:
 
         for sample in sample_sheet.samples:
             project_samples_metadata[ sample.Sample_Project ][ sample.Sample_ID ] = {
-                'transfer_to_vigasp': sample.Transfer_VIGAS.lower( ) == "yes",
+                'transfer_to_vigas': sample.Transfer_VIGAS.lower( ) == "yes",
                 'vigas_project_id': int( sample.VIGASP_ID ),
                 'transfer_to_nird': sample.Transfer_NIRD.lower( ) == "yes",
                 'nird_location': sample.NIRD_Location,
