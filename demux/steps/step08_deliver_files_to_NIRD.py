@@ -158,26 +158,26 @@ def _upload_files_to_nird( demux ):
     Select the appropriate upload function based on NIRD access mode and execute all file transfers in either serial or parallel form.
     """
     # choose upload implementation
-    if demux.NIRD_MODE_SSH == demux.nird_access_mode:
+    if constants.NIRD_MODE_SSH == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_ssh
-    elif demux.NIRD_MODE_MOUNTED == demux.nird_access_mode:
+    elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_local_sshfs_mount
     else:
-        demuxLogger.critical( f"Unknown NIRD access mode: {demux.nird_access_mode}" )
-        raise RuntimeError( )
+        demuxLogger.critical(  )
+        raise RuntimeError( f"Unknown NIRD access mode: {demux.nird_access_mode}" )
 
     # serial / parallel switching
-    if demux.SERIAL_COPYING == demux.nird_copy_mode:
+    if constants.SERIAL_COPYING == demux.nird_copy_mode:
+        demuxLogger.info( "Serial copying enabled." )
         if len( demux.tarFilesToTransferList ) == 0:
-            demuxLogger.critical( f"Length of demux.tarFilesToTransferList is zero while serial copying." )
-            raise RuntimeError( ) # ensure that we get notified there is something wrong
+            raise RuntimeError( f"Length of demux.tarFilesToTransferList is zero while serial copying." ) # ensure that we get notified there is something wrong
         for tar_file in demux.tarFilesToTransferList:
             upload_func( demux, tar_file )
 
-    elif demux.PARALLEL_COPYING == demux.nird_copy_mode:
+    elif constants.PARALLEL_COPYING == demux.nird_copy_mode:
+        demuxLogger.info( "Parallel copying enabled." )
         if len( demux.tarFilesToTransferList ) == 0:
-            demuxLogger.critical( f"Length of demux.tarFilesToTransferList is zero while parallel copying." )
-            raise RuntimeError( ) # ensure that we get notified there is something wrong
+            raise RuntimeError( f"Length of demux.tarFilesToTransferList is zero while parallel copying." ) # ensure that we get notified there is something wrong
         with ThreadPoolExecutor( max_workers = len( demux.tarFilesToTransferList ) ) as pool:
             futures = [
                 pool.submit( upload_func, demux, tar_file )
@@ -306,10 +306,6 @@ def _ensure_remote_run_directory_ssh( demux ):
     ssh_client.load_system_host_keys( )
     # Check if the key already exists in the known_hosts 
     #   else reject the connection.
-    host_keys = ssh_client.get_host_keys()
-    if demux.hostname not in host_keys:
-    # if ssh_client._system_host_keys.lookup( demux.hostname ) is None:
-        raise RuntimeError( f"Host key for {demux.hostname} not found in known_hosts" )
 
     ssh_client.set_missing_host_key_policy( RejectPolicy( ) )      # do not accept host keys that are not already in place
     ssh_client.connect( hostname = demux.hostname, port = demux.port, username = demux.username, key_filename = demux.key_file )
