@@ -238,7 +238,7 @@ def _build_absolute_paths( demux ):
 
     if constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         demux.nird_base_upload_path = demux.nird_base_upload_path_local
-    elif constats.NIRD_MODE_SSH == demux.nird_access_mode:
+    elif constants.NIRD_MODE_SSH == demux.nird_access_mode:
         demux.nird_base_upload_path = demux.nird_base_upload_path_ssh
 
     local_base  = os.path.join( demux.forTransferDir,        demux.RunID )
