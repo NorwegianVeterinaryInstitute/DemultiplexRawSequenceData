@@ -166,7 +166,8 @@ class demux:
     httpsHandlerHost                = 'veterinaerinstituttet307.workplace.com'
     httpsHandlerUrl                 = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
     ######################################################
-    transfer_to_nird                = bool( )               # determine if trasfers should happen to nird
+    upload_nird_enabled             = True                  # determine if the feature of uploading to nird is enabled
+    transfer_to_nird                = bool( )               # determine from sample sheet if we have any uploads
     nird_access_mode                = "mounted"
     allowed_nird_access_modes       = [ "ssh", "mounted" ]
     nird_copy_mode                  = "parallel"
@@ -184,7 +185,8 @@ class demux:
     key_file                        = ""
     port                            = int( )
     ######################################################
-    transfer_to_vigas               = bool( )               # determine if trasfers should happen to nird
+    upload_vigas_enabled            = True                  # determine if the feature of uploading to nird is enabled
+    transfer_to_vigasp              = bool( )               # determine if trasfers should happen to nird
     vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
     vigasp_copy_mode                = "serial"
     allowed_vigasp_copy_modes       = [ "serial", "parallel" ]
@@ -256,10 +258,10 @@ class demux:
 
         for sample in sample_sheet.samples:
             project_samples_metadata[ sample.Sample_Project ][ sample.Sample_ID ] = {
-                "transfer_to_vigas": sample.Transfer_VIGAS.lower( ) == "yes",
-                "vigas_project_id": int( sample.VIGASP_ID ),
-                "transfer_to_nird": sample.Transfer_NIRD.lower( ) == "yes",
-                "nird_location": sample.NIRD_Location,
+                'transfer_to_vigasp': sample.Transfer_VIGAS.lower( ) == "yes",
+                'vigas_project_id': int( sample.VIGASP_ID ),
+                'transfer_to_nird': sample.Transfer_NIRD.lower( ) == "yes",
+                'nird_location': sample.NIRD_Location,
             }
 
         return project_samples_metadata
