@@ -127,17 +127,21 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
             sha512_file_remote = hashlib.file_digest( sha512_handle_remote, hashlib.sha512 ).hexdigest( )
 
         if md5_file_local != md5_file_remote:
-            demuxLogger.critical( f"Error: Local md5 differs from calculated remote md5:" )
-            demuxLogger.critical( f"LOCAL MD5:  {md5_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_local' ]}" )
-            demuxLogger.critical( f"REMOTE MD5: {md5_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_remote' ]}" )
-            demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
-            raise RuntimeError( )
+            message = ( f"Error: Local md5 differs from calculated remote md5:\n"                                               +
+                        f"LOCAL MD5:  {md5_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_local' ]}\n"  +
+                        f"REMOTE MD5: {md5_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_remote' ]}"   +
+                        f"Please check both files, delete/move as appropriate and try uploading again."
+                    )
+            demuxLogger.critical( message )
+            raise RuntimeError( message )
         if sha512_file_local != sha512_file_remote:
-            demuxLogger.critical( f"Error: Local sha512 differs from calculated remote sha512:" )
-            demuxLogger.critical( f"LOCAL SHA512:  {sha512_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_local' ]}" )
-            demuxLogger.critical( f"REMOTE SHA512: {sha512_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_remote' ]}" )
-            demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
-            raise RuntimeError( )
+            message = ( f"Error: Local sha512 differs from calculated remote sha512:"                                                   +
+                        f"LOCAL SHA512:  {sha512_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_local' ]}"   +
+                        f"REMOTE SHA512: {sha512_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_remote' ]}"  + 
+                        f"Please check both files, delete/move as appropriate and try uploading again."
+                    )
+            demuxLogger.critical( message )
+            raise RuntimeError( message )
 
         shutil.copy2( file_info[ 'md5_file_local' ], file_info[ 'md5_file_remote' ] )
         shutil.copy2( file_info[ 'sha512_file_local' ], file_info[ 'sha512_file_remote' ] )
@@ -145,8 +149,9 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
         demuxLogger.info( f"Done: LOCAL:{file_info[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{file_info[ 'tar_file_remote' ]}" )
 
     except Exception as error:
-        demuxLogger.critical( f"RuntimeError: local sshfs upload failed for {file_info[ 'tar_file_remote' ]}: {error}" )
-        raise RuntimeError( )
+        message = f"RuntimeError: local sshfs upload failed for {file_info[ 'tar_file_remote' ]}: {error}"
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
 
 
 def _upload_files_to_nird( demux ):
@@ -285,12 +290,12 @@ def _ensure_remote_run_directory_mounted( demux ):
         os.mkdir(remote_absolute_dir_path)
     except FileExistsError:
         message = f"RuntimeError: {remote_absolute_dir_path} already exists.\nIs this a repeat upload? If yes, delete/move the existing remote directory and try again."
-        demuxLogger.critical( f"RuntimeError: {remote_absolute_dir_path} already exists." )
-        demuxLogger.critical(   )
-        raise RuntimeError( )
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
     except FileNotFoundError:
-        demuxLogger.critical(f"RuntimeError: Cannot create {remote_absolute_dir_path} because its parent directory ({os.path.dirname(remote_absolute_dir_path)}) does not exist on the mounted filesystem.")
-        raise RuntimeError( )
+        message = f"RuntimeError: Cannot create {remote_absolute_dir_path} because its parent directory ({os.path.dirname(remote_absolute_dir_path)}) does not exist on the mounted filesystem."
+        demuxLogger.critical( message )
+        raise RuntimeError( message)
 
 
 def _ensure_remote_run_directory_ssh( demux ):
