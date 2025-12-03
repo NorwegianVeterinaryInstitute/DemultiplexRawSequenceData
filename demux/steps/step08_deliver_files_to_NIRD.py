@@ -235,7 +235,6 @@ def _setup_ssh_connection( demux ):
     demux.port     = int( host_config.get( "port", demux.nird_scp_port ) )
 
 
-)hgbhjgjkjjkjkjk//////\
 def _select_nird_base_upload_path( demux ):
     """
     """
