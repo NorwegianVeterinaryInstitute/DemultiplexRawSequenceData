@@ -69,17 +69,21 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
                     sha512_file_local = handle_sha512.read( ).split( )[ 0 ]
 
                 if md5_file_local != md5_file_remote:
-                    demuxLogger.critical( f"Error: Local md5 differs from calculated remote md5:" )
-                    demuxLogger.critical( f"LOCAL MD5:  {md5_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_local' ]}" )
-                    demuxLogger.critical( f"REMOTE MD5: {md5_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_remote' ]}" )
-                    demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
-                    raise RuntimeError( )
+                    message = ( f"Error: Local md5 differs from calculated remote md5:\n"                                               +
+                                f"LOCAL MD5:  {md5_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_local' ]}\n"  +
+                                f"REMOTE MD5: {md5_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_remote' ]}"   +
+                                f"Please check both files, delete/move as appropriate and try uploading again."
+                            )
+                    demuxLogger.critical( message )
+                    raise RuntimeError( message )
                 if sha512_file_local != sha512_file_remote:
-                    demuxLogger.critical( f"Error: Local sha512 differs from calculated remote sha512:" )
-                    demuxLogger.critical( f"LOCAL SHA512:  {sha512_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_local' ]}" )
-                    demuxLogger.critical( f"REMOTE SHA512: {sha512_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_remote' ]}" )
-                    demuxLogger.critical( f"Please check both files, delete/move as appropriate and try uploading again.")
-                    raise RuntimeError( )
+                    message = ( f"Error: Local sha512 differs from calculated remote sha512:"                                                   +
+                                f"LOCAL SHA512:  {sha512_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_local' ]}"   +
+                                f"REMOTE SHA512: {sha512_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_remote' ]}"  + 
+                                f"Please check both files, delete/move as appropriate and try uploading again."
+                            )
+                    demuxLogger.critical( message )
+                    raise RuntimeError( message )
 
                 # for an explaination of why there is no point checksumming the checksum see
                 # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/26#issuecomment-3578085128
@@ -231,16 +235,26 @@ def _setup_ssh_connection( demux ):
     demux.port     = int( host_config.get( "port", demux.nird_scp_port ) )
 
 
+def _select_nird_base_upload_path( demux ):
+    """
+    """
+    upload_path = ""
+    if constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
+        upload_path = demux.nird_base_upload_path_local
+    elif constants.NIRD_MODE_SSH == demux.nird_access_mode:
+        upload_path = demux.nird_base_upload_path_ssh
+
+    return upload_path
+
+
+
 def _build_absolute_paths( demux ):
     """
     Builds and returns a dictonary mapping each tar filename to its full local and remote paths,
     including the associated .md5 and .sha512 files.
     """
 
-    if constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
-        demux.nird_base_upload_path = demux.nird_base_upload_path_local
-    elif constants.NIRD_MODE_SSH == demux.nird_access_mode:
-        demux.nird_base_upload_path = demux.nird_base_upload_path_ssh
+    demux.nird_base_upload_path = _select_nird_base_upload_path( demux )
 
     local_base  = os.path.join( demux.forTransferDir,        demux.RunID )
     remote_base = os.path.join( demux.nird_base_upload_path, demux.RunID )
@@ -264,7 +278,7 @@ def _build_absolute_paths( demux ):
             'md5_file_remote':    os.path.join( remote_base, basenamed_tar_file ) + constants.MD5_SUFFIX,
             'sha512_file_local':  os.path.join( local_base,  basenamed_tar_file ) + constants.SHA512_SUFFIX,
             'sha512_file_remote': os.path.join( remote_base, basenamed_tar_file ) + constants.SHA512_SUFFIX,
-            # 'upload_to_nird' exists already, we are just adding here
+            # 'upload_to_nird' exists already, we are just adding here the rest of the keys
         }
 
 
