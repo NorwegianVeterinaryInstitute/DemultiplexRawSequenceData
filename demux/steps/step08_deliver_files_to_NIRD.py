@@ -237,6 +237,7 @@ def _setup_ssh_connection( demux ):
 
 def _select_nird_base_upload_path( demux ):
     """
+    Select which base upload path to use depending on access mode (sshfs vs SSH). Central place to extend path-selection rules; if path logic needs augmentation, add it here.
     """
     upload_path = ""
     if constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
