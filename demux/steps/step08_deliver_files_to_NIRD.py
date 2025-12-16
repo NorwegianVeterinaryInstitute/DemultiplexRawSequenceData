@@ -395,7 +395,7 @@ def deliver_files_to_NIRD( demux ):
 
     sys.exit( "I Probably need to initialize the transport here")
 
-    nird_transport = paramiko.Tranport( )
+    nird_transport = _init_nird_transport( ) # cuz we got 3 ways to choose
 
     _setup_ssh_connection( demux )          # setup the ssh connection details
     _build_absolute_paths( demux )          # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
