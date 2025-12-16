@@ -17,8 +17,11 @@ from demux.config  import constants
 from demux.loggers import demuxLogger, demuxFailureLogger
 
 
+
+
 def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per file, tar_file is in absolute path format
     sys.exit(f"{__func__} not yet implemented" )
+
 
 def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_file is in absolute path format
     """
@@ -347,16 +350,22 @@ def _ensure_remote_run_directory_ssh( demux ):
         ssh_client.close() # close for the commands we will open the same connection in the loop, so we can parallelize the  connections.
 
 
-def _ensure_remote_run_directory(demux):
+def _ensure_remote_run_directory_ssh_2fa( demux ):
+    sys.exit( f"{__func__} is not yet implemented" )
+
+def _ensure_remote_run_directory( demux ):
     """
     Dispatch to the correct remote-directory preparation method
     based on NIRD access mode.
     """
     if constants.NIRD_MODE_SSH == demux.nird_access_mode:
-        _ensure_remote_run_directory_ssh(demux)
+        _ensure_remote_run_directory_ssh( demux )
+
+    elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
+        _ensure_remote_run_directory_ssh_2fa( demux )
 
     elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
-        _ensure_remote_run_directory_mounted(demux)
+        _ensure_remote_run_directory_mounted( demux )
 
     else:
         demuxLogger.critical(f"Unknown NIRD access mode: {demux.nird_access_mode}")
@@ -383,6 +392,10 @@ def deliver_files_to_NIRD( demux ):
 
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n", color="green", attrs=["bold"] ) )
+
+    sys.exit( "I Probably need to initialize the transport here")
+
+    nird_transport = paramiko.Tranport( )
 
     _setup_ssh_connection( demux )          # setup the ssh connection details
     _build_absolute_paths( demux )          # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
