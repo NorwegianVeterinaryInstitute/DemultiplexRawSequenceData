@@ -484,6 +484,11 @@ class demux:
             # sys.exit( "what happens when multiples of the above exist, read up on line.replace()")
             # # remove any &nbsp
             # line = line.replace('\u00A0', ' ')
+            #
+            # Not allowed the damn em dash so popular from chat gtp
+            # line = line.replace('—', ' ')     # em dash
+            # line = line.replace('–', ' ')     # en dash
+
 
             # ###########################################################################
             # # WARN USER THAT SUCH CHARS WERE ENCOUNTERED
