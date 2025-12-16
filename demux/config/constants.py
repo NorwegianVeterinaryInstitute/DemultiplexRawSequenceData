@@ -29,6 +29,7 @@ SHA512_SUFFIX           = ".sha512"
 SHA512_LENGTH           = 64  # 512 bits
 
 NIRD_MODE_SSH 			= "ssh"
+NIRD_MODE_SSH_2FA 		= "ssh_2fa"
 NIRD_MODE_MOUNTED 		= "mounted"
 
 SERIAL_COPYING  		= "serial"

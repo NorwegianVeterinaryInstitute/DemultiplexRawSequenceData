@@ -16,6 +16,10 @@ from concurrent.futures import ThreadPoolExecutor
 from demux.config  import constants
 from demux.loggers import demuxLogger, demuxFailureLogger
 
+
+def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per file, tar_file is in absolute path format
+    sys.exit(f"{__func__} not yet implemented" )
+
 def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_file is in absolute path format
     """
     Upload and verify a single local tar file to the NIRD absolute upload path using a new SSH transport each time.
@@ -163,8 +167,10 @@ def _upload_files_to_nird( demux ):
     Select the appropriate upload function based on NIRD access mode and execute all file transfers in either serial or parallel form.
     """
     # choose upload implementation
-    if constants.NIRD_MODE_SSH == demux.nird_access_mode:
+    if constants.NIRD_MODE_SSH       == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_ssh
+    elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
+        upload_func = _upload_and_verify_file_via_ssh_2fa
     elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_local_sshfs_mount
     else:
