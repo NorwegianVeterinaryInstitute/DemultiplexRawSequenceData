@@ -14,6 +14,25 @@ REMOTE_PORT         = 22
 SAFETY_SECONDS = 5
 
 
+def can_connect( ssh_client, remote_host ):
+    """
+    Returns True if hostname runs successfully, otherwise False
+    """
+    try:
+        ssh_client.connect( remote_host )
+        stdin_stream, stdout_stream, stderr_stream = ssh_client.exec_command( "/usr/bin/hostname" )
+        output = stdout_stream.read( )
+        return bool(output.strip( ) )
+    except Exception:
+        return False
+    finally:
+        try:
+            ssh_client.close()
+        except Exception:
+            pass
+
+
+
 def run_bw( args ):
     result = subprocess.run( [BITWARDEN_CLI_PATH] + args, check = True, capture_output = True, text = True )
     return result.stdout.strip( )
@@ -51,6 +70,19 @@ def keyboard_interactive_handler( title, instructions, prompts ):
 
 
 def main( ):
+
+    # what do we want to do?
+    #   authenticate via the transport layer (however this must be done, abstracted )
+    #   then open as many channels as we need to execute the command we want (mkdir and whatnot)
+    #   terminate the above channesl, keep transport open
+    #   open new channels
+    #       one channel per file copied
+    #       upload to *.unhashed
+    #       run remote hash and compare
+    #       then mv to final name
+    #           commit point, filename moves are atomic
+    #           transaction finished.
+
     item = get_login_item( )
     username = item["login"]["username"]
     password = get_password( )
