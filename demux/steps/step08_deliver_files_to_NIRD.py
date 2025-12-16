@@ -230,7 +230,7 @@ def _setup_ssh_connection( demux ):
 
     # more stuff that can be thrown into initilization of demux
     demux.hostname = host_config.get( "hostname", demux.nird_upload_host )
-    demux.username = host_config.get( "user", demux.nird_username ) 
+    demux.username = host_config.get( "user", demux.nird_username )
     demux.key_file = host_config.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
     demux.port     = int( host_config.get( "port", demux.nird_scp_port ) )
 
