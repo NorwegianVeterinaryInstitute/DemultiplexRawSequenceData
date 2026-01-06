@@ -20,6 +20,23 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 
 
 def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per file, tar_file is in absolute path format
+    """
+    Upload and verify a single local tar file to the NIRD absolute upload path using a new SSH transport each time, via 2FA
+    """
+
+    # get from bitwarden, using demux.hostname:
+    #   * username
+    #   * password
+    #   * 2fa
+    #   store all in dictionary
+    # connect using socket
+    # instanciate transport
+    #   present username, 2FA
+    #   present username, password
+    # instanciate ssh client using transport
+    #   exec /usr/bin/hostname
+    # 50 times
+
     sys.exit(f"{__func__} not yet implemented" )
 
 
@@ -131,7 +148,7 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
         with open( file_info[ 'md5_file_local' ],  READ_TEXT   ) as md5_handle_local:
             md5_file_local     = md5_handle_local.read( ).split( )[ 0 ]
         with open(file_info[ 'sha512_file_local' ], READ_TEXT    ) as sha512_handle_local:
-            sha512_file_local  = sha512_handle_local.read().split( )[0]
+            sha512_file_local  = sha512_handle_local.read().split( )[ 0 ]
         with open( file_info[ 'tar_file_remote' ], READ_BINARY ) as md5_handle_remote:
             md5_file_remote    = hashlib.file_digest( md5_handle_remote, hashlib.md5 ).hexdigest( )
         with open( file_info[ 'tar_file_remote' ], READ_BINARY ) as sha512_handle_remote:
@@ -180,7 +197,7 @@ def _upload_files_to_nird( demux ):
         demuxLogger.critical(  )
         raise RuntimeError( f"Unknown NIRD access mode: {demux.nird_access_mode}" )
 
-    # serial / parallel switching
+    # serial / parallel copying switching
     if constants.SERIAL_COPYING == demux.nird_copy_mode:
         demuxLogger.info( "Serial copying enabled." )
         if len( demux.tarFilesToTransferList ) == 0:
@@ -307,8 +324,9 @@ def _ensure_remote_run_directory_mounted( demux ):
                 break  # loop until first match, then abort
 
     if not mount_found:
-        demuxLogger.critical( f"RuntimeError: base path {demux.nird_base_upload_path} not found in mounted filesystems. Aborting." )
-        raise RuntimeError( f"RuntimeError: base path {demux.nird_base_upload_path} not found in mounted filesystems. Aborting." )
+        message =  f"RuntimeError: base path {demux.nird_base_upload_path} not found in mounted filesystems. Aborting."
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
 
     try:
         os.mkdir(remote_absolute_dir_path)
@@ -387,6 +405,7 @@ def deliver_files_to_NIRD( demux ):
     # 4. take each of the files in demux.tarFilesToTransferList and upload them
     #   4.1 in parallel
     # 5. check the remote sha512 and see if it matches local.
+    # 6. report upload exit status
 
     """
 
@@ -399,8 +418,8 @@ def deliver_files_to_NIRD( demux ):
 
     _setup_ssh_connection( demux )          # setup the ssh connection details
     _build_absolute_paths( demux )          # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
-    _ensure_remote_run_directory( demux )   # make sure demux.nird_base_upload_path/demux.RunID exists
     _verify_local_files( demux )            # verify the local files exist before attempting to transfer them
+    _ensure_remote_run_directory( demux )   # make sure demux.nird_base_upload_path/demux.RunID exists
     _upload_files_to_nird( demux )          # send the demux object to a dedicated method and it will decide what mode of copying and type of upload it will use
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )
