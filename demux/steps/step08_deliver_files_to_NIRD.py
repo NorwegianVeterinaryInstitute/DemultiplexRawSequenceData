@@ -83,7 +83,7 @@ def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
         message = f"Cannot connect to the bw-serve.service socket {demux.bw_port} on {demux.bw_localhost}. Use\n"
         message += termcolor.colored( "    systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
         message += "as the seqtech user to see if it is running."
-        Message += "Failling back to the command line BitWarden client."
+        message += "Failling back to the command line BitWarden client."
         demuxLogger.critical( message )
 
     else:
