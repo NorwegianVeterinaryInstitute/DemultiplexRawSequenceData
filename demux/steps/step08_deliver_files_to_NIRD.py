@@ -475,7 +475,7 @@ def _ensure_remote_run_directory_ssh( demux ):
 
 
 def _ensure_remote_run_directory_ssh_2fa( demux ):
-    sys.exit( f"{sys._getframe( ).f_code.co_name} is not yet implemented" )
+    print( f"{sys._getframe( ).f_code.co_name} is not yet implemented" )
 
 
 def _ensure_remote_run_directory( demux ):
