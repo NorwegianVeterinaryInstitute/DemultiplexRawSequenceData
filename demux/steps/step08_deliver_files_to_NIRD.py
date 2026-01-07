@@ -78,8 +78,8 @@ def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
     except Exception:
         # port_open = False is already set
         message = f"Cannot connect to the bw-serve.service socket {demux.bw_port} on {demux.bw_localhost}. Use\n"
-        message = message + termcolor.colored( "    systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
-        message = message + " as the seqtech user to see if it is running."
+        message += termcolor.colored( "    systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
+        message += " as the seqtech user to see if it is running."
         demuxLogger.critical( message )
         raise Exception( message )
 
@@ -89,9 +89,11 @@ def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
             vault_unlocked = json.load( r )[ "data"][ "template" ][ "status" ] == "unlocked" # assigns true to vault_unlocked, if unlocked.
     except Exception:
         vault_unlocked = False
-        message = "Cannot connect to the bw serve vault. Vault is locked. Use\n"
-        message = message + termcolor.colored( f"    curl --request POST --ouput /dev/null --header \"Content-Type: application/json\" -d \'\{\"password\":\"VaultPasswordForPersonResponsible\"\}\' {demux.bw_baseurl}/unlock\n", color="cyan", attrs=["bold"] ) # spaces at the begining are intentional
-        message = message + "on the command line to unlock. Substitute the appropriate password"
+        unlock_vault_cmd = "    /usr/local/bin/unlock_vault.sh"
+        unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
+        message += "Cannot connect to the bw serve vault. Vault is locked. Use\n"
+        message += unlock_vault_cmd
+        message += "on the command line to unlock. Substitute the appropriate password."
         demuxLogger.critical( message )
         raise Exception( message )
 
@@ -154,9 +156,10 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
             # test if the tar file we are about to upload exists already, to prevent overwriting
             stdin, stdout, stderr = ssh_client.exec_command( f"/usr/bin/test -f -- {shlex.quote( demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote'] )}" )  # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
             if stdout.channel.recv_exit_status( ) == 0 : # file exists
-                demuxLogger.critical( f"RuntimeError: Remote file already exists: {demux.hostname}:{demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote' ]}" )
-                demuxLogger.critical( f"Refusing to overwrite. Delete/move remote file first and then try to upload again." )
-                raise RuntimeError( )
+                message =  f"RuntimeError: Remote file already exists: {demux.hostname}:{demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_remote' ]}"
+                message += f"Refusing to overwrite. Delete/move remote file first and then try to upload again."
+                demuxLogger.critical( message )
+                raise RuntimeError( messsage )
 
             try:
                 # upload file
@@ -170,11 +173,13 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
 
                 # check exit status
                 if md5sum_stdout.channel.recv_exit_status( ) != 0:
-                    demuxLogger.critical( f"RuntimeError: remote md5sum failed for {demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {md5sum_stderr.read( ).decode( ).strip( )}" )
-                    raise RuntimeError( )
+                    message = f"RuntimeError: remote md5sum failed for {demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {md5sum_stderr.read( ).decode( ).strip( )}"
+                    demuxLogger.critical( message )
+                    raise RuntimeError( message )
                 if sha512sum_stdout.channel.recv_exit_status( ) != 0:
-                    demuxLogger.critical( f"RuntimeError: remote sha512sum failed for {demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {sha512sum_stderr.read( ).decode( ).strip( ) }" )
-                    raise RuntimeError()
+                    message = f"RuntimeError: remote sha512sum failed for {demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {sha512sum_stderr.read( ).decode( ).strip( ) }"
+                    demuxLogger.critical( message )
+                    raise RuntimeError( message )
 
                 md5_file_remote    = md5sum_stdout.read( ).decode( ).split( )[0]
                 sha512_file_remote = sha512sum_stdout.read( ).decode( ).split( )[0]
@@ -208,10 +213,11 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
                 demuxLogger.info( f"Done: LOCAL:{demux.absoluteFilesToTransferList[tar_file]['tar_file_local']:<{longest_local_path}} REMOTE:{demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}" )
 
             except Exception as error:
-                demuxLogger.critical( f"RuntimeError: SCP upload failed for {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {error}" )
-                raise RuntimeError( )
+                message = f"RuntimeError: SCP upload failed for {demux.hostname}:{demux.absoluteFilesToTransferList[tar_file]['tar_file_remote']}: {error}"
+                demuxLogger.critical( message )
+                raise RuntimeError( message )
     finally:
-        ssh_client.close()
+        ssh_client.close( )
 
 
 def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
@@ -225,9 +231,10 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
     longest_local_path = max( (len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
 
     if os.path.exists( file_info[ 'tar_file_remote' ] ):
-        demuxLogger.critical( f"RuntimeError: Remote file already exists: {file_info[ 'tar_file_remote' ]} ")
-        demuxLogger.critical( "Refusing to overwrite. Delete/move remote file first and then try to upload again." )
-        raise RuntimeError( )
+        message = f"RuntimeError: Remote file already exists: {file_info[ 'tar_file_remote' ]}"
+        message += "Refusing to overwrite. Delete/move remote file first and then try to upload again." 
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
 
     try:
         shutil.copy2( file_info[ 'tar_file_local' ], file_info[ 'tar_file_remote' ] )  # requires import shutil
@@ -285,21 +292,26 @@ def _upload_files_to_nird( demux ):
     elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_local_sshfs_mount
     else:
-        demuxLogger.critical(  )
-        raise RuntimeError( f"Unknown NIRD access mode: {demux.nird_access_mode}" )
+        message = f"Unknown NIRD access mode: {demux.nird_access_mode}"
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
 
     # serial / parallel copying switching
     if constants.SERIAL_COPYING == demux.nird_copy_mode:
         demuxLogger.info( "Serial copying enabled." )
         if len( demux.tarFilesToTransferList ) == 0:
-            raise RuntimeError( f"Length of demux.tarFilesToTransferList is zero while serial copying." ) # ensure that we get notified there is something wrong
+            message = f"Length of demux.tarFilesToTransferList is zero while serial copying." # ensure that we get notified there is something wrong
+            demuxLogger.critical( message )
+            raise RuntimeError( message )
         for tar_file in demux.tarFilesToTransferList:
             upload_func( demux, tar_file )
 
     elif constants.PARALLEL_COPYING == demux.nird_copy_mode:
         demuxLogger.info( "Parallel copying enabled." )
         if len( demux.tarFilesToTransferList ) == 0:
-            raise RuntimeError( f"Length of demux.tarFilesToTransferList is zero while parallel copying." ) # ensure that we get notified there is something wrong
+            message = f"Length of demux.tarFilesToTransferList is zero while parallel copying." # ensure that we get notified there is something wrong
+            demuxLogger.critical( message )
+            raise RuntimeError( message )
         with ThreadPoolExecutor( max_workers = len( demux.tarFilesToTransferList ) ) as pool:
             futures = [
                 pool.submit( upload_func, demux, tar_file )
@@ -308,9 +320,10 @@ def _upload_files_to_nird( demux ):
             for future in futures:
                 try:
                     future.result( )
-                except RuntimeError:
-                     demuxLogger.critical( "Upload failed" )
-                     raise
+                except RuntimeError as error:
+                    message = f"Upload failed: {error}"
+                    demuxLogger.critical( message )
+                    raise RuntimeError( message )
 
 
 def _verify_local_files( demux ):
@@ -452,15 +465,17 @@ def _ensure_remote_run_directory_ssh( demux ):
         if stdout.channel.recv_exit_status( ) != 0 : # directory does not exist, wwe can make it
             ssh_client.exec_command( f'TERM=xterm /usr/bin/mkdir -p {shlex.quote( remote_absolute_dir_path )}' )
         else:
-            demuxLogger.critical( f"RuntimeError: {demux.hostname}:{remote_absolute_dir_path} already exists." )
-            demuxLogger.critical( f"Is this a repeat upload? If yes, delete/move the existing remote directory and try again." )
-            raise RuntimeError( )
+            message = f"RuntimeError: {demux.hostname}:{remote_absolute_dir_path} already exists."
+            message += f"Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
+            demuxLogger.critical( message )
+            raise RuntimeError( message )
     finally:
         ssh_client.close() # close for the commands we will open the same connection in the loop, so we can parallelize the  connections.
 
 
 def _ensure_remote_run_directory_ssh_2fa( demux ):
-    sys.exit( f"{__func__} is not yet implemented" )
+    sys.exit( f"{sys._getframe( ).f_code.co_name} is not yet implemented" )
+
 
 def _ensure_remote_run_directory( demux ):
     """
