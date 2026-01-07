@@ -47,9 +47,12 @@ def _get_login_credentials_via_api( demux ) -> Tuple[ str, str, str ]:
     password = ""
     totp     = ""
 
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/username/{demux.nird_upload_host}", timeout=1 ) as r: username = r.read( ).decode( ).strip( )
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/password/{demux.nird_upload_host}", timeout=1 ) as r: password = r.read( ).decode( ).strip( )
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{demux.nird_upload_host}",     timeout=1 ) as r: totp     = r.read( ).decode( ).strip( )
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/username/{demux.nird_upload_host}", timeout=1 ) as r:
+        username = json.load( r )[ "data" ][ "data" ]
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/password/{demux.nird_upload_host}", timeout=1 ) as r:
+        password = json.load( r )[ "data" ][ "data" ]
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{demux.nird_upload_host}",     timeout=1 ) as r:
+        totp     = json.load( r )[ "data" ][ "data" ]
 
     return ( username, password, totp )
 
