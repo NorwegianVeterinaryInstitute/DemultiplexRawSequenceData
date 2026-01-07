@@ -42,16 +42,14 @@ def _get_login_credentials_via_api( demux ) -> Tuple[ str, str, str ]:
     Fetch username, password, and TOTP via bw serve (localhost HTTP API).
     Returns (username, password, totp) as strings.
     """
+    username = ""
+    password = ""
+    totp     = ""
 
-    REPLACE THESE WITH urllib.request.urlopen( )
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/username/{demux.nird_upload_host}", timeout=1 ) as r: username = r.read( ).decode( ).strip( )
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/password/{demux.nird_upload_host}", timeout=1 ) as r: password = r.read( ).decode( ).strip( )
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{demux.nird_upload_host}",     timeout=1 ) as r: totp     = r.read( ).decode( ).strip( )
 
-    username_process = subprocess.run( ["/usr/bin/curl", "--silent", "--fail", f"{demux.bw_baseurl}/object/username/{demux.nird_upload_host}"], check=True, capture_output=True, text=True )
-    password_process = subprocess.run( ["/usr/bin/curl", "--silent", "--fail", f"{demux.bw_baseurl}/object/password/{demux.nird_upload_host}"], check=True, capture_output=True, text=True )
-    totp_process     = subprocess.run( ["/usr/bin/curl", "--silent", "--fail", f"{demux.bw_baseurl}/object/totp/{demux.nird_upload_host}"],     check=True, capture_output=True, text=True )
-
-    username = username_process.stdout.strip( )
-    password = password_process.stdout.strip( )
-    totp = totp_process.stdout.strip( )
     return ( username, password, totp )
 
 
@@ -75,7 +73,7 @@ def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
     vault_unlocked = False
 
     try:
-        socket.create_connection( ( demux.bw_locahost, demux.bw_port ), timeout = 1 ).close( )
+        socket.create_connection( ( demux.bw_localhost, demux.bw_port ), timeout = 1 ).close( )
         port_open = True
     except Exception:
         # port_open = False is already set
@@ -126,7 +124,7 @@ def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per fil
     # instanciate ssh client using transport
     #   exec /usr/bin/hostname
     # 50 times
-    username, password, totp = _get_login_credentials( )
+    username, password, totp = _get_login_credentials( demux )
 
     pprint( f"credentials: {username, password, totp}" )
 
