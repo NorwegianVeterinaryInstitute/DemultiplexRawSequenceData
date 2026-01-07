@@ -136,7 +136,7 @@ def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per fil
 
     username, password, totp = _get_login_credentials( demux )
 
-    pprint.pprint( f"username: {username} | password: {password} | TOTP: {totp}" )
+    pprint.pprint( f"username: {username} | password: {password} | TOTP: {totp}\n" )
 
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA finished\n", color="red", attrs=["bold"] ) )
