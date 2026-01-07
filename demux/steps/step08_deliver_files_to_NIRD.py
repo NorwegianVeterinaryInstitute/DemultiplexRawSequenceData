@@ -10,6 +10,7 @@ import sys
 import termcolor
 import urllib.request
 
+from typing import Tuple
 
 from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy
 from scp import SCPClient
