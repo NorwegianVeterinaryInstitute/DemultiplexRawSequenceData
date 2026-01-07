@@ -627,8 +627,8 @@ def _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
         stdin, stdout, stderr = ssh_client.exec_command( f"TERM=xterm /usr/bin/mkdir {shlex.quote( remote_absolute_dir_path )}" )
         mkdir_status = stdout.channel.recv_exit_status( )
         if mkdir_status != 0:
-            message = f"Directory creation error: Cannot create {demux.hostname}:{remote_absolute_dir_path} even after original check.\n"
-            message += "Consult the remote end and try to create the directory manually to see what error you get, could be\n"
+            message = f"Directory creation error: Cannot create {demux.hostname}:{remote_absolute_dir_path} even after original check. "
+            message += "Consult the remote end and try to create the directory manually to see what error you get, could be "
             message += "that parent changed permission or was moved.\n"
             message += f"Remote error: {stderr.read().decode().strip()}"
             demuxLogger.critical( message )
