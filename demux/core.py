@@ -189,6 +189,10 @@ class demux:
     key_file                        = ""
     port                            = int( )
     ######################################################
+    bw_port                         = 8087
+    bw_localhost                    = "127.0.0.1" # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. refering it by IP allows us to deterministically resolve the address
+    bw_baseurl                      = f"http://{bw_localhost}:{bw_port}"
+    ######################################################
     upload_vigas_enabled            = True                  # determine if the feature of uploading to vigas is enabled
     transfer_to_vigas               = bool( )               # determine if trasfers should happen to nird
     vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
