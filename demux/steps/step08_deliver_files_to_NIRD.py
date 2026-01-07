@@ -56,6 +56,103 @@ def _get_login_credentials_via_api( demux ) -> Tuple[ str, str, str ]:
 
     return ( username, password, totp )
 
+def _probe_bw_api_state( demux ) -> Tuple[ bool, bool ]:
+    """
+    Probe the Bitwarden bw-serve HTTP API.
+
+    Performs a low-level socket connect to determine whether the bw-serve service
+    is running, and if reachable, queries /status to determine whether the vault
+    is unlocked.
+
+    Returns:
+        (port_open: bool, vault_unlocked: bool)
+
+    Raises:
+        Exception only on unexpected internal errors (not for normal "service down"
+        or "vault locked" states).
+    """
+    port_open      = False
+    vault_unlocked = False
+
+    try:
+        socket.create_connection( ( demux.bw_localhost, demux.bw_port ), timeout = 1 ).close( )
+        port_open = True
+    except Exception:
+        # port_open = False is already set
+        message = f"Cannot connect to the bw-serve.service socket {demux.bw_port} on {demux.bw_localhost}. Use\n"
+        message += termcolor.colored( "    systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
+        message += "as the seqtech user to see if it is running.\n"
+        message += "Failing back to the command line BitWarden client."
+        demuxLogger.critical( message )
+
+    else:
+        try:
+            # for more details on the API: https://bitwarden.com/help/vault-management-api/
+            with urllib.request.urlopen( f"{demux.bw_baseurl}/status", timeout = 1 ) as r:
+                vault_unlocked = json.load( r )[ "data"][ "template" ][ "status" ] == "unlocked" # assigns true to vault_unlocked, if unlocked.
+        except Exception:
+            vault_unlocked = False
+            unlock_vault_cmd = "    /usr/local/bin/unlock_vault.sh"
+            unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
+            message += "Cannot connect to the bw serve vault. Vault is locked. Use\n"
+            message += unlock_vault_cmd
+            message += "on the command line to unlock."
+            demuxLogger.critical( message )
+            raise Exception( message )
+
+    return ( port_open, vault_unlocked )
+
+
+def _probe_bw_cli_state( demux ) -> bool:
+    """
+    Probe the Bitwarden command-line client state.
+
+    Verifies that the bw CLI is available and determines whether the local
+    Bitwarden vault is unlocked for the current user context.
+
+    Returns:
+        True if the CLI exists and the vault is unlocked.
+        False if the CLI exists but the vault is locked.
+
+    Raises:
+        Exception only on unexpected errors (e.g. bw binary present but unusable).
+    """
+
+    if not os.access( constants.BITWARDEN_CLI_PATH, os.X_OK ):
+        message = f"Bitwarden CLI exists but is not executable: {constants.BITWARDEN_CLI_PATH}"
+        demuxLogger.critical(message)
+        raise PermissionError(message)
+
+    cli_state_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "status" ], check=True, capture_output=True, text=True )
+
+    try:
+        status = json.loads( cli_state_process.stdout ).get( "status", "" )
+    except json.JSONDecodeError as error:
+        message = f"Failed to parse Bitwarden CLI JSON output. Raw output was: {cli_state_process.stdout!r}"
+        demuxLogger.critical( message )
+        raise ValueError( message ) from error
+
+    if status == "unauthenticated":
+        unlock_vault_cmd = "    /usr/local/bin/bw login"
+        unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
+        message += f"{constants.BITWARDEN_CLI_PATH} reports that the vault user is not authenticated. Use\n"
+        message += unlock_vault_cmd
+        message += "on the command line to unlock."
+        demuxLogger.critical( message )
+        raise Exception( message )
+
+    if status == "locked":
+        unlock_vault_cmd = "    /usr/local/bin/bw unlock"
+        unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
+        message += f"{constants.BITWARDEN_CLI_PATH} reports that the vault is locked. Use\n"
+        message += unlock_vault_cmd
+        message += "on the command line to unlock."
+        demuxLogger.critical( message )
+        raise Exception( message )
+
+
+    return status == "unlocked"
+
 
 def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
     """
@@ -76,40 +173,16 @@ def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
     port_open      = False
     vault_unlocked = False
 
-    try:
-        socket.create_connection( ( demux.bw_localhost, demux.bw_port ), timeout = 1 ).close( )
-        port_open = True
-    except Exception:
-        # port_open = False is already set
-        message = f"Cannot connect to the bw-serve.service socket {demux.bw_port} on {demux.bw_localhost}. Use\n"
-        message += termcolor.colored( "    systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
-        message += "as the seqtech user to see if it is running."
-        message += "Failling back to the command line BitWarden client."
-        demuxLogger.critical( message )
-
-    else:
-        try:
-            # for more details on the API: https://bitwarden.com/help/vault-management-api/
-            with urllib.request.urlopen( f"{demux.bw_baseurl}/status", timeout = 1 ) as r:
-                vault_unlocked = json.load( r )[ "data"][ "template" ][ "status" ] == "unlocked" # assigns true to vault_unlocked, if unlocked.
-        except Exception:
-            vault_unlocked = False
-            unlock_vault_cmd = "    /usr/local/bin/unlock_vault.sh"
-            unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
-            message += "Cannot connect to the bw serve vault. Vault is locked. Use\n"
-            message += unlock_vault_cmd
-            message += "on the command line to unlock. Substitute the appropriate password."
-            demuxLogger.critical( message )
-            raise Exception( message )
+    port_open, vault_unlocked = _probe_bw_api_state( demux )
 
     # Tri-state check: make sure if the port is not open or if the binary does not exist
     #   we return an error.
     if port_open and vault_unlocked:
         return _get_login_credentials_via_api( demux )
-    elif os.path.isfile( constants.BITWARDEN_CLI_PATH ):
+    elif os.path.isfile( constants.BITWARDEN_CLI_PATH ) and _probe_bw_cli_state( demux ) :
         return _get_login_credentials_via_bw_cli( demux )
     else:
-        message = f"bw-serve.service is not running and the command line client does not exist. Contact your system administrator."
+        message = f"bw-serve.service is not running and the command line client does not exist or is locked. Contact your system administrator."
         demuxLogger.critical( message)
         raise FileNotFoundError( message )
 
