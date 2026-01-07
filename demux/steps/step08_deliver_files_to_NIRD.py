@@ -129,7 +129,7 @@ def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per fil
     # 50 times
     username, password, totp = _get_login_credentials( demux )
 
-    pprint( f"credentials: {username, password, totp}" )
+    pprint( f"username: {username} | password: {password} | TOTP: {totp}" )
 
     sys.exit(f"not yet fully implemented" )
 
