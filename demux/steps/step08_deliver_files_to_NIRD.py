@@ -23,9 +23,8 @@ def _get_login_credentials_via_bw_cli( demux ) -> Tuple[ str, str, str ]:
     Fetch username, password, and TOTP via bw CLI.
     Returns (username, password, totp) as strings.
     """
-    if not os.path.isfile( constants.BITWARDEN_CLI_PATH ):
-        raise FileNotFoundError( constants.BITWARDEN_CLI_PATH )
 
+    # no need to check again if constants.BITWARDEN_CLI_PATH exists, again
     username_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "username", demux.nird_upload_host ], check=True, capture_output=True, text=True )
     password_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "password", demux.nird_upload_host ], check=True, capture_output=True, text=True )
     totp_process     = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "totp",     demux.nird_upload_host ], check=True, capture_output=True, text=True )
@@ -34,7 +33,7 @@ def _get_login_credentials_via_bw_cli( demux ) -> Tuple[ str, str, str ]:
     password = password_process.stdout.strip( )
     totp     = totp_process.stdout.strip( )
 
-    return (username, password, totp)
+    return ( username, password, totp )
 
 
 def _get_login_credentials_via_api( demux ) -> Tuple[ str, str, str ]:
