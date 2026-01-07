@@ -17,6 +17,33 @@ from demux.config  import constants
 from demux.loggers import demuxLogger, demuxFailureLogger
 
 
+def _get_login_credentials( ):
+    """
+    Get the logging credentials from bitwarden
+        if 'bw serve' exists on port 8087 on localhost, it gets
+            curl --silent --no-progress-meter -w '\n' \
+                http://127.0.0.1:8087/object/username/login.nird.sigma2.no \
+                http://127.0.0.1:8087/object/password/login.nird.sigma2.no \
+                http://127.0.0.1:8087/object/totp/login.nird.sigma2.no | jq -r '.data.data'
+        failing that, it falls back to the command line, which is much much slower: for each
+            process, we got to decrypt the vault. which takes 12-14 seconds. So if we got
+            fifty tar files to upload, this will take a minute and a half just to authenticate.
+    
+        So, we will use bw serve as a user systemd process and make curl calls to that, as it
+        decrypts the vault once and if that fails, we will go back ot the command line client.
+    """
+
+
+    
+    # Make sure the bitwarden binary exists under constants.BITWARDEN_CLI_PATH
+    if not os.path.isfile( constants.BITWARDEN_CLI_PATH ):
+        raise FileNotFoundError( constants.BITWARDEN_CLI_PATH )
+
+    # get the username, password and totp
+    username = subprocess.run( [constants.BITWARDEN_CLI_PATH, "get", "username", demux.nird_upload_host], check = True, capture_output = True, text = True )
+    password = subprocess.run( [constants.BITWARDEN_CLI_PATH, "get", "password", demux.nird_upload_host], check = True, capture_output = True, text = True )
+    totp     = subprocess.run( [constants.BITWARDEN_CLI_PATH, "get", "totp",     demux.nird_upload_host], check = True, capture_output = True, text = True )
+    return ( username, password, totp )
 
 
 def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per file, tar_file is in absolute path format
@@ -36,6 +63,9 @@ def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per fil
     # instanciate ssh client using transport
     #   exec /usr/bin/hostname
     # 50 times
+    credentials = _get_login_credentials( )
+
+    pprint( f"credentials: {credentials}" )
 
     sys.exit(f"{__func__} not yet implemented" )
 

@@ -35,3 +35,4 @@ NIRD_MODE_MOUNTED 		= "mounted"
 SERIAL_COPYING  		= "serial"
 PARALLEL_COPYING 		= "parallel"
 
+BITWARDEN_CLI_PATH      = "/usr/local/bin/bw"
