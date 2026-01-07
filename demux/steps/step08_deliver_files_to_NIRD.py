@@ -130,11 +130,17 @@ def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per fil
     # instanciate ssh client using transport
     #   exec /usr/bin/hostname
     # 50 times
+
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA started\n", color="green", attrs=["bold"] ) )
+
+
     username, password, totp = _get_login_credentials( demux )
 
     pprint.pprint( f"username: {username} | password: {password} | TOTP: {totp}" )
 
     sys.exit( f"{sys._getframe( ).f_code.co_name} is not yet implemented" )
+
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA finished\n", color="red", attrs=["bold"] ) )
 
 
 def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_file is in absolute path format
