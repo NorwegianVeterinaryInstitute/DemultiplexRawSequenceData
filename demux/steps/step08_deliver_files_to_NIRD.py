@@ -519,10 +519,6 @@ def deliver_files_to_NIRD( demux ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n", color="green", attrs=["bold"] ) )
 
-    sys.exit( "I Probably need to initialize the transport here")
-
-    nird_transport = _init_nird_transport( ) # cuz we got 3 ways to choose
-
     _setup_ssh_connection( demux )          # setup the ssh connection details
     _build_absolute_paths( demux )          # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
     _verify_local_files( demux )            # verify the local files exist before attempting to transfer them
