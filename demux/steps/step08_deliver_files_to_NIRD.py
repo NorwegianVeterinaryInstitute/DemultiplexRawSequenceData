@@ -76,31 +76,39 @@ demux.bw_locahost needs defining
     port_open      = False
     vault_unlocked = False
 
-    ##########################################################################################
-    # I NEED A TRI-STATE HERE TO SAY "OK, WEB IS NOT RUNNING, COMMAND LINE DOES NOT EXIST, WE ARE FUCKED"
-    ##########################################################################################
+
+    REPLACE STRINGS WITH CONSTANTS
 
     try:
         socket.create_connection( ( "127.0.0.1", 8087 ), timeout = 1 ).close( )
         port_open = True
     except Exception:
-        port_open = False
-        demuxLogger.critical( f"Cannot connect to the bw serve socket {demux.bw_socket} on {demux.bw_localhost}. Use `systemctl --user status bw-serve.service` to see if it is running." )
-        raise Exception( f"Cannot connect to the bw serve socket {demux.bw_socket} on {demux.bw_localhost}. Use `systemctl --user status bw-serve.service` to see if it is running." )
+        # port_open = False is already set
+        message = f"Cannot connect to the bw-serve.service socket {demux.bw_socket} on {demux.bw_localhost}. Use `systemctl --user status bw-serve.service` as the seqtech user to see if it is running."
+        demuxLogger.critical( message )
+        raise Exception( message )
 
     try:
         with urllib.request.urlopen( "http://127.0.0.1:8087/status", timeout = 1 ) as r:
-        vault_unlocked = json.load(r)["data"]["template"]["status"] == "unlocked"
+            vault_unlocked = json.load(r)["data"]["template"]["status"] == "unlocked"
     except Exception:
+        vault_unlocked = False
+        message = "Cannot connect to the bw serve vault. Vault is locked. Use\n"
+        message = message + "curl --request POST --ouput /dev/null --header \"Content-Type: application/json\" -d \'\{\"password\":\"VaultPasswordForPersonResponsible\"\}\' http://127.0.0.1:8087/unlock\n
+        message = message + "on the command line to unlock"
+        demuxLogger.critical( message )
+        raise Exception( message )
 
+    # Tri-state check: make sure if the port is not open or if the binary does not exist
+    #   we return an error.
     if port_open and vault_unlocked:
         return _get_login_credentials_via_api( demux )
     elif os.path.isfile( constants.BITWARDEN_CLI_PATH ):
         return _get_login_credentials_via_bw_cli( demux )
     else:
-        demuxLogger.critical( "bw serve not running and the command line client does not exist, we are fucked")
-        raise Exception( "bw serve not running and the command line client does not exist, we are fucked" )
-        raise FileNotFoundError( constants.BITWARDEN_CLI_PATH )
+        message = f"bw-serve.service is not running and the command line client does not exist. Contact your system administrator"
+        demuxLogger.critical( message)
+        raise FileNotFoundError( message )
 
 
 def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per file, tar_file is in absolute path format
