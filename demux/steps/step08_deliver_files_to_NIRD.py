@@ -13,6 +13,7 @@ import urllib.request
 from typing import Tuple
 
 from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy
+from paramiko.ssh_exception import AuthenticationException
 from scp import SCPClient
 
 from concurrent.futures import ThreadPoolExecutor
