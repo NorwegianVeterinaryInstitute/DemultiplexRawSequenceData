@@ -138,9 +138,10 @@ def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per fil
 
     pprint.pprint( f"username: {username} | password: {password} | TOTP: {totp}" )
 
-    sys.exit( f"{sys._getframe( ).f_code.co_name} is not yet implemented" )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA finished\n", color="red", attrs=["bold"] ) )
+
+    sys.exit( f"{sys._getframe( ).f_code.co_name} is not yet implemented" )
 
 
 def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_file is in absolute path format
