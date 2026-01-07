@@ -1,11 +1,13 @@
 import hashlib
 import os
-import shutil
-import shlex
-import sys
-import termcolor
 import pprint
 import psutil
+import shlex
+import shutil
+import socket
+import sys
+import termcolor
+import urllib.request
 
 
 from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy
@@ -16,8 +18,44 @@ from concurrent.futures import ThreadPoolExecutor
 from demux.config  import constants
 from demux.loggers import demuxLogger, demuxFailureLogger
 
+def _get_login_credentials_via_bw_cli( demux ) -> Tuple[ str, str, str ]:
+    """
+    Fetch username, password, and TOTP via bw CLI.
+    Returns (username, password, totp) as strings.
+    """
+    if not os.path.isfile( constants.BITWARDEN_CLI_PATH ):
+        raise FileNotFoundError( constants.BITWARDEN_CLI_PATH )
 
-def _get_login_credentials( ):
+    username_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "username", demux.nird_upload_host ], check=True, capture_output=True, text=True )
+    password_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "password", demux.nird_upload_host ], check=True, capture_output=True, text=True )
+    totp_process     = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "totp",     demux.nird_upload_host ], check=True, capture_output=True, text=True )
+
+    username = username_process.stdout.strip( )
+    password = password_process.stdout.strip( )
+    totp     = totp_process.stdout.strip( )
+
+    return (username, password, totp)
+
+
+def _get_login_credentials_via_api( demux ) -> Tuple[ str, str, str ]:
+    """
+    Fetch username, password, and TOTP via bw serve (localhost HTTP API).
+    Returns (username, password, totp) as strings.
+    """
+    base_url = "http://127.0.0.1:8087"
+    item_id = demux.nird_upload_host
+
+    username_process = subprocess.run( ["/usr/bin/curl", "--silent", "--fail", f"{base_url}/object/username/{item_id}"], check=True, capture_output=True, text=True )
+    password_process = subprocess.run( ["/usr/bin/curl", "--silent", "--fail", f"{base_url}/object/password/{item_id}"], check=True, capture_output=True, text=True )
+    totp_process     = subprocess.run( ["/usr/bin/curl", "--silent", "--fail", f"{base_url}/object/totp/{item_id}"],     check=True, capture_output=True, text=True )
+
+    username = username_process.stdout.strip( )
+    password = password_process.stdout.strip( )
+    totp = totp_process.stdout.strip( )
+    return ( username, password, totp )
+
+
+def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
     """
     Get the logging credentials from bitwarden
         if 'bw serve' exists on port 8087 on localhost, it gets
@@ -33,17 +71,37 @@ def _get_login_credentials( ):
         decrypts the vault once and if that fails, we will go back ot the command line client.
     """
 
+demux.bw_socket needs defining
+demux.bw_locahost needs defining
 
-    
-    # Make sure the bitwarden binary exists under constants.BITWARDEN_CLI_PATH
-    if not os.path.isfile( constants.BITWARDEN_CLI_PATH ):
+    port_open      = False
+    vault_unlocked = False
+
+    ##########################################################################################
+    # I NEED A TRI-STATE HERE TO SAY "OK, WEB IS NOT RUNNING, COMMAND LINE DOES NOT EXIST, WE ARE FUCKED"
+    ##########################################################################################
+
+    try:
+        socket.create_connection( ( "127.0.0.1", 8087 ), timeout = 1 ).close( )
+        port_open = True
+    except Exception:
+        port_open = False
+        demuxLogger.critical( f"Cannot connect to the bw serve socket {demux.bw_socket} on {demux.bw_localhost}. Use `systemctl --user status bw-serve.service` to see if it is running." )
+        raise Exception( f"Cannot connect to the bw serve socket {demux.bw_socket} on {demux.bw_localhost}. Use `systemctl --user status bw-serve.service` to see if it is running." )
+
+    try:
+        with urllib.request.urlopen( "http://127.0.0.1:8087/status", timeout = 1 ) as r:
+        vault_unlocked = json.load(r)["data"]["template"]["status"] == "unlocked"
+    except Exception:
+
+    if port_open and vault_unlocked:
+        return _get_login_credentials_via_api( demux )
+    elif os.path.isfile( constants.BITWARDEN_CLI_PATH ):
+        return _get_login_credentials_via_bw_cli( demux )
+    else:
+        demuxLogger.critical( "bw serve not running and the command line client does not exist, we are fucked")
+        raise Exception( "bw serve not running and the command line client does not exist, we are fucked" )
         raise FileNotFoundError( constants.BITWARDEN_CLI_PATH )
-
-    # get the username, password and totp
-    username = subprocess.run( [constants.BITWARDEN_CLI_PATH, "get", "username", demux.nird_upload_host], check = True, capture_output = True, text = True )
-    password = subprocess.run( [constants.BITWARDEN_CLI_PATH, "get", "password", demux.nird_upload_host], check = True, capture_output = True, text = True )
-    totp     = subprocess.run( [constants.BITWARDEN_CLI_PATH, "get", "totp",     demux.nird_upload_host], check = True, capture_output = True, text = True )
-    return ( username, password, totp )
 
 
 def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per file, tar_file is in absolute path format
