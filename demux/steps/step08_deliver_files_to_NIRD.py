@@ -592,7 +592,7 @@ def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
         responses = [ ]
         for prompt_text, echo in prompt_list:
             prompt_lower = prompt_text.lower( )
-            if ( "totp" in prompt_lower ) or ( "token" in prompt_lower ) or ( "verification" in prompt_lower ) or ( "code" in prompt_lower ):
+            if  ( "One-time password".lower( ) in prompt_lower) or ( "totp" in prompt_lower ) or ( "token" in prompt_lower ) or ( "verification" in prompt_lower ) or ( "code" in prompt_lower ) :
                 responses.append( totp )
             elif "password" in prompt_lower:
                 responses.append( password )
