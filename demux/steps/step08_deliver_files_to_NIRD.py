@@ -133,17 +133,15 @@ def _probe_bw_cli_state( demux ) -> bool:
         raise ValueError( message ) from error
 
     if status == "unauthenticated":
-        unlock_vault_cmd = "    /usr/local/bin/bw login"
-        unlock_vault_cmd += termcolor.colored( unlock_vault_cmd, color="cyan", attrs=["bold"] )
+        unauthenticated_vault_cmd = termcolor.colored( "    /usr/local/bin/bw login\n", color="cyan", attrs=["bold"] )
         message = f"{constants.BITWARDEN_CLI_PATH} reports that the vault user is not authenticated. Use\n"
-        message += unlock_vault_cmd
+        message += unauthenticated_vault_cmd
         message += "on the command line to authenticate.\n"
         demuxLogger.critical( message )
         raise Exception( message )
 
     if status == "locked":
-        unlock_vault_cmd = "    /usr/local/bin/bw unlock"
-        unlock_vault_cmd += termcolor.colored( unlock_vault_cmd, color="cyan", attrs=["bold"] )
+        unlock_vault_cmd = termcolor.colored( "    /usr/local/bin/bw unlock\n", color="cyan", attrs=["bold"] )
         message = f"{constants.BITWARDEN_CLI_PATH} reports that the vault is locked. Use\n"
         message += unlock_vault_cmd
         message += "on the command line to unlock.\n"
