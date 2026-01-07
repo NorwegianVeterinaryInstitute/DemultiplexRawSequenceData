@@ -592,7 +592,7 @@ def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
         responses = [ ]
         for prompt_text, echo in prompt_list:
             prompt_lower = prompt_text.lower( )
-            if  ( "One-time password".lower( ) in prompt_lower) or ( "totp" in prompt_lower ) or ( "token" in prompt_lower ) or ( "verification" in prompt_lower ) or ( "code" in prompt_lower ) :
+            if  ( "One-time password".lower( ) in prompt_lower ) or ( "totp" in prompt_lower ) or ( "token" in prompt_lower ) or ( "verification" in prompt_lower ) or ( "code" in prompt_lower ) :
                 responses.append( totp )
             elif "password" in prompt_lower:
                 responses.append( password )
@@ -707,6 +707,8 @@ def _ensure_remote_run_directory( demux ):
     Dispatch to the correct remote-directory preparation method
     based on NIRD access mode.
     """
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: checking if remote directrory exists started\n", color="green", attrs=["bold"] ) )
+
     if constants.NIRD_MODE_SSH == demux.nird_access_mode:
         _ensure_remote_run_directory_ssh( demux )
 
@@ -719,6 +721,9 @@ def _ensure_remote_run_directory( demux ):
     else:
         demuxLogger.critical(f"Unknown NIRD access mode: {demux.nird_access_mode}")
         raise RuntimeError()
+
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )
+
 
 
 
