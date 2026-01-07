@@ -13,7 +13,7 @@ import urllib.request
 
 from typing import Tuple
 
-from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy
+from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport
 from paramiko.ssh_exception import AuthenticationException
 from scp import SCPClient
 
@@ -529,7 +529,7 @@ def _ensure_remote_run_directory_mounted( demux ):
         raise RuntimeError( message)
 
 
-def _open_transport_and_validate_hostkey( demux ) -> paramiko.Transport:
+def _open_transport_and_validate_hostkey( demux ) -> Transport:
     """
     Open a new SSH transport to the remote host and strictly validate its host key
     against the local known_hosts database.
