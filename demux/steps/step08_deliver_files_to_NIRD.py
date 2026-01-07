@@ -701,10 +701,6 @@ def _ensure_remote_run_directory_ssh( demux ):
         ssh_client.close() # close for the commands we will open the same connection in the loop, so we can parallelize the  connections.
 
 
-def _ensure_remote_run_directory_ssh_2fa( demux ):
-    print( f"{sys._getframe( ).f_code.co_name} is not yet implemented" )
-
-
 def _ensure_remote_run_directory( demux ):
     """
     Dispatch to the correct remote-directory preparation method
