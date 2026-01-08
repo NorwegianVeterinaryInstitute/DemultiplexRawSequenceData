@@ -29,9 +29,9 @@ def _get_login_credentials_via_bw_cli( demux ) -> Tuple[ str, str, str ]:
     """
 
     # no need to check again if constants.BITWARDEN_CLI_PATH exists, again
-    username_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "username", demux.nird_upload_host ], check=True, capture_output=True, text=True )
-    password_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "password", demux.nird_upload_host ], check=True, capture_output=True, text=True )
-    totp_process     = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "totp",     demux.nird_upload_host ], check=True, capture_output=True, text=True )
+    username_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "username", demux.nird_upload_host ], check = True, capture_output = True, text = True )
+    password_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "password", demux.nird_upload_host ], check = True, capture_output = True, text = True )
+    totp_process     = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "totp",     demux.nird_upload_host ], check = True, capture_output = True, text = True )
 
     username = username_process.stdout.strip( )
     password = password_process.stdout.strip( )
@@ -49,11 +49,11 @@ def _get_login_credentials_via_api( demux ) -> Tuple[ str, str, str ]:
     password = ""
     totp     = ""
 
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/username/{demux.nird_upload_host}", timeout=1 ) as r:
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/username/{demux.nird_upload_host}", timeout = 1 ) as r:
         username = json.load( r )[ "data" ][ "data" ]
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/password/{demux.nird_upload_host}", timeout=1 ) as r:
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/password/{demux.nird_upload_host}", timeout = 1 ) as r:
         password = json.load( r )[ "data" ][ "data" ]
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{demux.nird_upload_host}",     timeout=1 ) as r:
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{demux.nird_upload_host}",     timeout = 1 ) as r:
         totp     = json.load( r )[ "data" ][ "data" ]
 
     return ( username, password, totp )
@@ -125,7 +125,7 @@ def _probe_bw_cli_state( demux ) -> bool:
         demuxLogger.critical(message)
         raise PermissionError(message)
 
-    cli_state_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "status" ], check=True, capture_output=True, text=True )
+    cli_state_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "status" ], check = True, capture_output = True, text = True )
 
     try:
         status = json.loads( cli_state_process.stdout ).get( "status", "" )
@@ -201,8 +201,6 @@ def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per fil
 
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA finished\n", color="red", attrs=["bold"] ) )
-
-    # sys.exit( f"{sys._getframe( ).f_code.co_name} is not yet implemented" )
 
 
 def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_file is in absolute path format
