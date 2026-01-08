@@ -22,7 +22,6 @@ from concurrent.futures import ThreadPoolExecutor
 from demux.util.bitwarden import _get_login_credentials
 
 from demux.config  import constants
-from demux.util    import bitwarden
 from demux.loggers import demuxLogger, demuxFailureLogger
 
 # def _get_login_credentials_via_bw_cli( demux ) -> Tuple[ str, str, str ]:
