@@ -599,6 +599,12 @@ def _ensure_remote_run_directory_ssh_2fa( demux ):
 
         ssh_client = SSHClient( )
         ssh_client._transport = transport
+
+        if not demux.nird_base_upload_path:
+            message = f"demux.nird_base_upload_path is empty ({demux.nird_base_upload_path}). Refusing to continue, as any transfer will "
+            message += "end up in the home directory of the uploading user."
+            raise ValueError( message )
+
         remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID )
 
         _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
