@@ -674,8 +674,9 @@ def _ensure_remote_run_directory( demux ):
         _ensure_remote_run_directory_mounted( demux )
 
     else:
-        demuxLogger.critical(f"Unknown NIRD access mode: {demux.nird_access_mode}")
-        raise RuntimeError()
+        message = f"Unknown NIRD access mode: {demux.nird_access_mode}"
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )
 
