@@ -371,25 +371,25 @@ def _verify_local_files( demux ):
             raise FileNotFoundError( message )
 
 
-def _setup_ssh_connection( demux ):
-    """
-    Parse ~/.ssh/config and initializes appropriate demux fields using the ssh config entry for the upload host.
-    If missing, method falls back to demux defaults.
-    """
-    config_path = os.path.expanduser( "~/.ssh/config" ) # this needs to be infered from environment somehow https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
-    host_config = { }
+# def _setup_ssh_connection( demux ):
+#     """
+#     Parse ~/.ssh/config and initializes appropriate demux fields using the ssh config entry for the upload host.
+#     If missing, method falls back to demux defaults.
+#     """
+#     config_path = os.path.expanduser( "~/.ssh/config" ) # this needs to be infered from environment somehow https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
+#     host_config = { }
 
-    if os.path.exists( config_path ):
-        with open( config_path ) as handle:
-            ssh_config = SSHConfig( )
-            ssh_config.parse( handle )
-        host_config = ssh_config.lookup( demux.nird_upload_host )
+#     if os.path.exists( config_path ):
+#         with open( config_path ) as handle:
+#             ssh_config = SSHConfig( )
+#             ssh_config.parse( handle )
+#         host_config = ssh_config.lookup( demux.nird_upload_host )
 
-    # more stuff that can be thrown into initilization of demux
-    demux.hostname = host_config.get( "hostname", demux.nird_upload_host )
-    demux.username = host_config.get( "user", demux.nird_username )
-    demux.key_file = host_config.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
-    demux.port     = int( host_config.get( "port", demux.nird_scp_port ) )
+#     # more stuff that can be thrown into initilization of demux
+#     demux.hostname = host_config.get( "hostname", demux.nird_upload_host )
+#     demux.username = host_config.get( "user", demux.nird_username )
+#     demux.key_file = host_config.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
+#     demux.port     = int( host_config.get( "port", demux.nird_scp_port ) )
 
 
 def _select_nird_base_upload_path( demux ):
@@ -397,10 +397,15 @@ def _select_nird_base_upload_path( demux ):
     Select which base upload path to use depending on access mode (sshfs vs SSH). Central place to extend path-selection rules; if path logic needs augmentation, add it here.
     """
     upload_path = ""
-    if constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
+    if constants.NIRD_MODE_MOUNTED   == demux.nird_access_mode:
         upload_path = demux.nird_base_upload_path_local
-    elif constants.NIRD_MODE_SSH == demux.nird_access_mode:
+    elif constants.NIRD_MODE_SSH     == demux.nird_access_mode:
         upload_path = demux.nird_base_upload_path_ssh
+    elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode
+        upload_path = demux.nird_base_upload_path_ssh
+    else:
+        message = f"ValueError: NIRD upload method does not guarantee remote directory value. Refusing to continue"
+        raise ValueError( message )
 
     return upload_path
 
