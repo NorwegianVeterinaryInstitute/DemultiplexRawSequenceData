@@ -192,19 +192,6 @@ def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per fil
     Upload and verify a single local tar file to the NIRD absolute upload path using a new SSH transport each time, via 2FA
     """
 
-    # get from bitwarden, using demux.hostname:
-    #   * username
-    #   * password
-    #   * 2fa
-    #   store all in dictionary
-    # connect using socket
-    # instanciate transport
-    #   present username, 2FA
-    #   present username, password
-    # instanciate ssh client using transport
-    #   exec /usr/bin/hostname
-    # 50 times
-
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA started\n", color="green", attrs=["bold"] ) )
 
 
