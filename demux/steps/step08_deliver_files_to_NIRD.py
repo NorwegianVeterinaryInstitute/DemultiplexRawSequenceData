@@ -19,6 +19,8 @@ from scp import SCPClient
 
 from concurrent.futures import ThreadPoolExecutor
 
+from demux.util.bitwarden import _get_login_credentials
+
 from demux.config  import constants
 from demux.util    import bitwarden
 from demux.loggers import demuxLogger, demuxFailureLogger
