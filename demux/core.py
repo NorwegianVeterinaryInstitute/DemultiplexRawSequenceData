@@ -180,6 +180,7 @@ class demux:
     nird_scp_port                   = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
     nird_username                   = "gmarselis" # change this to be the user running the script
     # nird_base_upload_path_ssh       = "/nird/projects/NS9305K/SEQ-TECH/data_delivery"
+    nird_base_upload_path_ssh       = "/nird/datapeak/NS9305K/georgetest"
     nird_base_upload_path_ssh       = "/data/tmp/nird"
     nird_base_upload_path_local     = "/data/tmp/nird"
     nird_base_upload_path           = ""
