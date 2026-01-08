@@ -1,5 +1,6 @@
 # all ssh transport related stuff
 
+import paramiko
 import os
 
 from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
