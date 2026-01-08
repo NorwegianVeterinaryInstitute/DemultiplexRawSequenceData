@@ -687,7 +687,7 @@ def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
         remains unauthenticated after the interactive exchange.
     """
 
-    username, password, totp = demux.util._get_login_credentials( demux )
+    username, password, totp = _get_login_credentials( demux )
 
     def _kbdint_handler( title, instructions, prompt_list ):
         responses = [ ]
