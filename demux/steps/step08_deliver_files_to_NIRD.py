@@ -20,7 +20,7 @@ from scp import SCPClient
 from concurrent.futures import ThreadPoolExecutor
 
 from demux.config  import constants
-from demux.config  import bitwarden
+from demux.util    import bitwarden
 from demux.loggers import demuxLogger, demuxFailureLogger
 
 # def _get_login_credentials_via_bw_cli( demux ) -> Tuple[ str, str, str ]:
