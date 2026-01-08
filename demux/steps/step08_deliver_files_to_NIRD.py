@@ -187,20 +187,134 @@ def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
         raise FileNotFoundError( message )
 
 
-def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ):     # worker per file, tar_file is in absolute path format
+def _upload_tar_via_scp( demux, ssh_client, scp_client, file_entry ) -> None:
     """
-    Upload and verify a single local tar file to the NIRD absolute upload path using a new SSH transport each time, via 2FA
+    Upload a single local tar file to its remote path via an existing SCP session.
+
+    Asserts that the remote target does not already exist, then performs a single
+    SCP put operation. Does not perform verification by hashing the uploaded files.
+
+    Returns None on success.
+
+    Raises RuntimeError if remote file exists.
     """
 
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA started\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( f"Transferring: {file_entry[ 'tar_file_local' ]}" )
+
+    stdin, stdout, stderr = ssh_client.exec_command( f"/usr/bin/test -f -- {shlex.quote( file_entry[ 'tar_file_remote' ] )}" )
+    if stdout.channel.recv_exit_status( ) == 0:
+        message  = f"RuntimeError: Remote file already exists: {demux.hostname}:{file_entry[ 'tar_file_remote' ]}"
+        message += "Refusing to overwrite. Delete/move remote file first and then try to upload again."
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
+
+    scp_client.put( file_entry[ "tar_file_local" ], file_entry[ "tar_file_remote" ] )
 
 
-    username, password, totp = _get_login_credentials( demux )
+def _verify_remote_hashes_against_local_files( demux, ssh_client, file_entry ) -> None:
+    """
+    Verify remote file integrity by computing remote MD5 and SHA-512 hashes and
+    comparing them against the corresponding local checksum files.
 
-    print( f"username: {username} | password: {password} | TOTP: {totp}\n" )
+    Calculates hashes on the remote host via SSH and reads local checksum files.
+
+    Returns None on success.
+
+    Raises RuntimeError on remote md5sum/sha512sum failure or on any hash mismatch.
+    """
 
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA finished\n", color="red", attrs=["bold"] ) )
+    entries              = demux.absoluteFilesToTransferList.values( )
+    current_len          = len( file_entry[ 'tar_file_local' ] )
+    longest_local_path   = max( ( len( entry[ 'tar_file_local' ] ) for entry in entries ), default = current_len )
+
+    md5sum_stdin,    md5sum_stdout,    md5sum_stderr    = ssh_client.exec_command( f"/usr/bin/md5sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}" )
+    sha512sum_stdin, sha512sum_stdout, sha512sum_stderr = ssh_client.exec_command( f"/usr/bin/sha512sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}" )
+
+    if md5sum_stdout.channel.recv_exit_status( ) != 0:
+        message = f"RuntimeError: remote md5sum failed for {file_entry['tar_file_remote']}: {md5sum_stderr.read( ).decode( ).strip( )}"
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
+
+    if sha512sum_stdout.channel.recv_exit_status( ) != 0:
+        message = f"RuntimeError: remote sha512sum failed for {file_entry['tar_file_remote']}: {sha512sum_stderr.read( ).decode( ).strip( )}"
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
+
+    md5_file_remote    = md5sum_stdout.read( ).decode( ).split( )[ 0 ]
+    sha512_file_remote = sha512sum_stdout.read( ).decode( ).split( )[ 0 ]
+
+    with open( file_entry[ "md5_file_local" ], "r" ) as handle_md5:
+        md5_file_local = handle_md5.read( ).split( )[ 0 ]
+    with open( file_entry[ "sha512_file_local" ], "r" ) as handle_sha512:
+        sha512_file_local = handle_sha512.read( ).split( )[ 0 ]
+
+    if md5_file_local != md5_file_remote:
+        message  = "Error: Local md5 differs from calculated remote md5:\n"
+        message += f"LOCAL MD5:  {md5_file_local}  | {file_entry[ 'md5_file_local' ]}\n"
+        message += f"REMOTE MD5: {md5_file_remote} | {file_entry[ 'md5_file_remote' ]}"
+        message += "Please check both files, delete/move as appropriate and try uploading again."
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
+
+    if sha512_file_local != sha512_file_remote:
+        message  = "Error: Local sha512 differs from calculated remote sha512:\n"
+        message += f"LOCAL SHA512:  {sha512_file_local}  | {file_entry[ 'sha512_file_local' ]}\n"
+        message += f"REMOTE SHA512: {sha512_file_remote} | {file_entry[ 'sha512_file_remote' ]}\n"
+        message += "Please check both files, delete/move as appropriate and try uploading again."
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
+
+    demuxLogger.info( f"Done: LOCAL:{file_entry[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{demux.hostname}:{file_entry[ 'tar_file_remote' ]}" )
+
+
+
+def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ) -> None:  # worker per file, tar_file is in absolute path format
+    """
+    Upload and integrity-verify a single local tar file to the remote NIRD upload path
+    using a fresh SSH transport authenticated via 2FA.
+
+    Opens and authenticates a new SSH transport, uploads the tar file via SCP with
+    overwrite protection, verifies remote integrity by comparing remote MD5 and
+    SHA-512 hashes against local checksum files, and finally uploads the checksum
+    files themselves.
+
+    All transport, SCP, or verification failures propagate as exceptions; policy violations 
+    (for example, remote file already exists) raise RuntimeError.
+
+    Returns None on success. 
+    """
+
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA started\n", color = "green", attrs = ["bold"] ) )
+
+    transport  = None
+    ssh_client = None
+
+    file_entry = demux.absoluteFilesToTransferList[ tar_file ]
+
+    try:
+        transport = _open_transport_and_validate_hostkey( demux )
+        _auth_transport_2fa( demux, transport )
+
+        ssh_client = SSHClient( )
+        ssh_client._transport = transport
+
+        with SCPClient( transport ) as scp_client:
+            _upload_tar_via_scp( demux, ssh_client, scp_client, file_entry )
+            _verify_remote_hashes_against_local_files( demux, ssh_client, file_entry )
+            # Upload checksum files as metadata only; tar integrity is already verified against local checksums
+            # so, there is no need to checksum the checksum files. Do so only when they become legally/audit-critical
+            # artifacts.
+            scp_client.put( file_entry[ "md5_file_local" ],    file_entry[ "md5_file_remote" ] )
+            scp_client.put( file_entry[ "sha512_file_local" ], file_entry[ "sha512_file_remote" ] )
+
+    finally:
+        if ssh_client is not None:
+            ssh_client.close( )
+        elif transport is not None:
+            transport.close( )
+        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA finished\n", color = "red", attrs = ["bold"] ) )
+
 
 
 def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_file is in absolute path format
