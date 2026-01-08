@@ -1,5 +1,7 @@
 # all ssh transport related stuff
 
+import os
+
 from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception import AuthenticationException
 from scp import SCPClient
@@ -72,7 +74,6 @@ def _open_transport_and_validate_hostkey( demux ) -> Transport:
         raise RuntimeError( message )
 
     return transport
-
 
 
 def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
