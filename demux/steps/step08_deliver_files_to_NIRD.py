@@ -93,6 +93,7 @@ def _verify_remote_hashes_against_local_files( demux, ssh_client, file_entry ) -
         message += f"REMOTE MD5: {md5_file_remote} | {file_entry[ 'md5_file_remote' ]}"
         message += "Please check both files, delete/move as appropriate and try uploading again."
         demuxLogger.critical( message )
+        # raise RemoteHashMismatchError( message ) https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
         raise RuntimeError( message )
 
     if sha512_file_local != sha512_file_remote:
@@ -101,6 +102,7 @@ def _verify_remote_hashes_against_local_files( demux, ssh_client, file_entry ) -
         message += f"REMOTE SHA512: {sha512_file_remote} | {file_entry[ 'sha512_file_remote' ]}\n"
         message += "Please check both files, delete/move as appropriate and try uploading again."
         demuxLogger.critical( message )
+        # raise RemoteHashMismatchError( message ) https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
         raise RuntimeError( message )
 
     demuxLogger.info( f"Done: LOCAL:{file_entry[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{demux.hostname}:{file_entry[ 'tar_file_remote' ]}" )
