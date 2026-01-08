@@ -354,16 +354,21 @@ def _verify_local_files( demux ):
     its .md5, and its .sha512 file. Exits immediately on the first missing file.
     """
 
+    message = ""
+
     for entry in demux.absoluteFilesToTransferList.values( ):
         if not os.path.exists( entry[ 'tar_file_local' ] ):
-            demuxLogger.critical( f"File {entry[ 'tar_file_local' ]} does not exist. Check for the existanse of the file and try again." )
-            raise RuntimeError( )
+            message = f"File {entry[ 'tar_file_local' ]} does not exist. Check for the existanse of the file and try again."
+            demuxLogger.critical( message )
+            raise FileNotFoundError( message )
         if not os.path.exists( entry[ 'md5_file_local' ] ):
-            demuxLogger.critical( f"File {entry[ 'md5_file_local' ]} does not exist. Check for the file and try again." )
-            raise RuntimeError( )
+            message = f"File {entry[ 'md5_file_local' ]} does not exist. Check for the file and try again."
+            demuxLogger.critical( message )
+            raise FileNotFoundError( message )
         if not os.path.exists( entry[ 'sha512_file_local' ] ):
-            demuxLogger.critical( f"File {entry[ 'sha512_file_local' ]} does not exist. Check for the file and try again." )
-            raise RuntimeError( )
+            message = f"File {entry[ 'sha512_file_local' ]} does not exist. Check for the file and try again."
+            demuxLogger.critical( message )
+            raise FileNotFoundError( message )
 
 
 def _setup_ssh_connection( demux ):
