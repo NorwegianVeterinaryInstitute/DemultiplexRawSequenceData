@@ -79,9 +79,14 @@ def _open_transport_and_validate_hostkey( demux ) -> Transport:
     return transport
 
 
+def _auth_transport_ssh_keys( demux, transport: paramiko.Transport ) -> None:
+    return None
+
+
 def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
     """
-    Authenticate an existing SSH transport using keyboard-interactive 2FA.
+    Authenticate an existing SSH transport using keyboard-interactive 2FA 
+    (paramiko considers this "keyboard-interactive" even if there is not a real user typing)
 
     Retrieves username, password and TOTP credentials and performs interactive
     authentication on the provided transport. Mutates the transport in place.
@@ -90,7 +95,6 @@ def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
         AuthenticationException: if 2FA authentication fails or the transport
         remains unauthenticated after the interactive exchange.
     """
-
     username, password, totp = _get_login_credentials( demux )
 
     def _kbdint_handler( title, instructions, prompt_list ):
