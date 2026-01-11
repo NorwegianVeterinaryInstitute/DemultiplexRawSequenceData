@@ -13,17 +13,16 @@ import urllib.request
 
 from typing import Tuple
 
-from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
-from paramiko.ssh_exception import AuthenticationException
-from scp import SCPClient
+from paramiko                 import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
+from paramiko.ssh_exception   import AuthenticationException
+from scp                      import SCPClient
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures       import ThreadPoolExecutor
 
-from demux.util.bitwarden    import _get_login_credentials
 from demux.util.ssh_transport import _setup_ssh_connection, _ensure_remote_run_directory_ssh
 
-from demux.config  import constants
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.config             import constants
+from demux.loggers            import demuxLogger, demuxFailureLogger
 
 
 def _upload_tar_via_scp( demux, ssh_client, scp_client, file_entry ) -> None:
