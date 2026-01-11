@@ -1,14 +1,16 @@
 # all ssh transport related stuff
 
-import paramiko
 import os
+import paramiko
+import shlex
 
-from paramiko import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
+from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception import AuthenticationException
-from scp import SCPClient
+from scp                    import SCPClient
 
-from demux.config  import constants
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.util.bitwarden  import _get_login_credentials
+from demux.config          import constants
+from demux.loggers         import demuxLogger, demuxFailureLogger
 
 
 def _setup_ssh_connection( demux ) -> None:
@@ -108,7 +110,31 @@ def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
     if not transport.is_authenticated( ):
         message = f"AuthenticationException: SSH 2FA authentication failed for {username}@{demux.hostname}:{demux.port} ."
         demuxLogger.critical( message )
+        # treat any raised AuthenticationException from auth_interactive() as failure
+        # no other reliable signal exists that NIRD changed the TOTP token prompt
         raise AuthenticationException( message )
+
+def _auth_transport( demux, transport: paramiko.Transport ) -> None:
+    """
+    Authenticate an existing SSH transport using ssh keys or keyboard-interactive 2FA.
+
+    Selects the appropriate mode via the demux.nird_access_mode user configuration
+
+    Raises:
+        RuntimeError: when the access mode is misconfigured
+    """
+
+    if constants.NIRD_MODE_SSH       == demux.nird_access_mode:
+        _auth_transport_ssh_keys( demux, transport )
+    elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
+        _auth_transport_2fa( demux, transport )
+    elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
+        pass # nothing to authenticate here, the sysadmin has already done that part manually or via systemd
+    else:
+        message = f"RuntimeError: Unknown NIRD access mode: {demux.nird_access_mode}" # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
+
 
 
 
@@ -144,35 +170,45 @@ def _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
         raise SSHException( message )
 
 
-def _ensure_remote_run_directory_ssh_2fa( demux ):
+def _ensure_remote_run_directory_ssh( demux ) -> None:
     """
-    Ensure the remote run directory exists using SSH with 2FA authentication.
+    Ensure the remote RunID upload directory exists, using SSH key authentication or 2FA.
+    Credentials are chosen via user configuration.
 
-    Establishes an authenticated SSH session, verifies the existence of the
-    remote run directory and creates it if missing.
+    Opens a fresh SSH connection with strict known_hosts checking, validates that
+    demux.nird_base_upload_path is non-empty then checks for the remote
+    directory (base path + RunID). Creates it if missing; aborts if it already
+    exists. Closes the SSH connection unconditionally.
 
     Raises:
         AuthenticationException: 2FA or credential failure.
-        SSHException: remote command execution failure
+        SSHException: remote command execution failure (directory existing)
         RuntimeException: everyting else that needs to percolate
+        ValueError if demux.nird_base_upload_path is empty
+
+    Returns:
+        None
     """
 
     transport = None
     ssh_client = None
 
+    # check if the '/nird/projects/NS9305K/SEQ-TECH/data_delivery' directory exists
+    if not demux.nird_base_upload_path:
+        message = f"ValueError: demux.nird_base_upload_path is empty: ({demux.nird_base_upload_path}). Refusing to continue, as any transfer will "
+        message += "end up in the home directory of the uploading user."
+        raise ValueError( message )
+    
+    remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID ) 
+
     try:
         transport = _open_transport_and_validate_hostkey( demux )
-        _auth_transport_2fa( demux, transport )
+
+        # _auth_transport_2fa( demux, transport ) 
+        _auth_transport( demux, transport ) 
 
         ssh_client = SSHClient( )
         ssh_client._transport = transport
-
-        if not demux.nird_base_upload_path:
-            message = f"ValueError: demux.nird_base_upload_path is empty: ({demux.nird_base_upload_path}). Refusing to continue, as any transfer will "
-            message += "end up in the home directory of the uploading user."
-            raise ValueError( message )
-
-        remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID )
 
         _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
 
@@ -181,32 +217,3 @@ def _ensure_remote_run_directory_ssh_2fa( demux ):
             ssh_client.close( )
         elif transport is not None:
             transport.close( )
-
-
-def _ensure_remote_run_directory_ssh( demux ):
-    """
-    Ensure the remote run directory exists by opening a fresh SSH connection, validating host keys, creating the directory if missing and aborting if it already exists.
-    """
-
-    ssh_client = SSHClient( )
-    ssh_client.load_system_host_keys( )
-    # Check if the key already exists in the known_hosts 
-    #   else reject the connection.
-
-    ssh_client.set_missing_host_key_policy( RejectPolicy( ) )      # do not accept host keys that are not already in place
-    ssh_client.connect( hostname = demux.hostname, port = demux.port, username = demux.username, key_filename = demux.key_file )
-
-    try:
-        # check if the '/nird/projects/NS9305K/SEQ-TECH/data_delivery' + runID directory exists
-        remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID ) 
-        stdin, stdout, stderr    = ssh_client.exec_command( f"TERM=xterm /usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}" ) # we are not really doing anything with the stdin, stdout, stderr but keep them anyway
-
-        if stdout.channel.recv_exit_status( ) != 0 : # directory does not exist, wwe can make it
-            ssh_client.exec_command( f'TERM=xterm /usr/bin/mkdir -p {shlex.quote( remote_absolute_dir_path )}' )
-        else:
-            message = f"RuntimeError: {demux.hostname}:{remote_absolute_dir_path} already exists."
-            message += f"Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
-            demuxLogger.critical( message )
-            raise RuntimeError( message )
-    finally:
-        ssh_client.close() # close for the commands we will open the same connection in the loop, so we can parallelize the  connections.

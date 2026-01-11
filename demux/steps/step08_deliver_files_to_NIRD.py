@@ -20,7 +20,7 @@ from scp import SCPClient
 from concurrent.futures import ThreadPoolExecutor
 
 from demux.util.bitwarden    import _get_login_credentials
-from demux.util.ssh_transport import _setup_ssh_connection
+from demux.util.ssh_transport import _setup_ssh_connection, _ensure_remote_run_directory_ssh
 
 from demux.config  import constants
 from demux.loggers import demuxLogger, demuxFailureLogger
@@ -471,7 +471,10 @@ def _ensure_remote_run_directory( demux ):
         _ensure_remote_run_directory_ssh( demux )
 
     elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
-        _ensure_remote_run_directory_ssh_2fa( demux )
+        # this used to be named _ensure_remote_run_directory_ssh_2fa, but got refactored
+        # down to credentials logic detected at run time. I am leaving the switch here for
+        # verbocity, and to match the 3case we got for selecting a run mode.
+        _ensure_remote_run_directory_ssh( demux )
 
     elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         _ensure_remote_run_directory_mounted( demux )
