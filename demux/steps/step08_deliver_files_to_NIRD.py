@@ -3,7 +3,6 @@ import json
 import os
 import paramiko
 import psutil
-import shlex
 import shutil
 import socket
 import subprocess
@@ -19,7 +18,7 @@ from scp                      import SCPClient
 
 from concurrent.futures       import ThreadPoolExecutor
 
-from demux.util.ssh_transport import _setup_ssh_connection, _ensure_remote_run_directory_ssh
+from demux.util.ssh_transport import _setup_ssh_connection, _ensure_remote_run_directory_ssh, _auth_transport_2fa
 
 from demux.config             import constants
 from demux.loggers            import demuxLogger, demuxFailureLogger
