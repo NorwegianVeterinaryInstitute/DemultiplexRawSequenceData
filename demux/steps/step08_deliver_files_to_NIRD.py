@@ -18,7 +18,7 @@ from scp                      import SCPClient
 
 from concurrent.futures       import ThreadPoolExecutor
 
-from demux.util.ssh_transport import _setup_ssh_connection, _ensure_remote_run_directory_ssh, _auth_transport_2fa
+from demux.util.ssh_transport import _setup_ssh_connection, _ensure_remote_run_directory_ssh, _auth_transport_2fa, _open_transport_and_validate_hostkey
 
 from demux.config             import constants
 from demux.loggers            import demuxLogger, demuxFailureLogger
