@@ -13,7 +13,7 @@ import urllib.request
 
 from typing import Tuple
 
-from paramiko                 import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
+# from paramiko                 import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception   import AuthenticationException
 from scp                      import SCPClient
 
@@ -386,7 +386,7 @@ def _select_nird_base_upload_path( demux ):
     elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
         upload_path = demux.nird_base_upload_path_ssh
     else:
-        message = f"ValueError: NIRD upload method does not guarantee remote directory value. Refusing to continue"
+        message = f"ValueError: NIRD upload method does not guarantee remote directory value. Refusing to continue."
         raise ValueError( message )
 
     return upload_path

@@ -168,11 +168,11 @@ class demux:
     ######################################################
     upload_nird_enabled             = True                  # determine if the feature of uploading to nird is enabled
     transfer_to_nird                = bool( )               # determine from sample sheet if we have any uploads
-    nird_access_mode                = "ssf2fa"
+    nird_access_mode                = "ssh2fa"
                                     # "ssh" uses only keys
                                     # "ssh_2fa" uses username, password, TOTP, from bitwarden
                                     # "mounted" uses sshfs but only with keys
-    allowed_nird_access_modes       = [ "ssh", "ssf_2fa" "mounted" ]
+    allowed_nird_access_modes       = [ "ssh", "ssh2fa" "mounted" ]
     nird_copy_mode                  = "parallel"
     allowed_nird_copy_modes         = [ "serial", "parallel" ]
     # nird_upload_host                = "login.nird.sigma2.no"
