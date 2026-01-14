@@ -3,6 +3,7 @@
 import os
 import paramiko
 import shlex
+import sys
 
 from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception import AuthenticationException
@@ -12,40 +13,19 @@ from demux.util.bitwarden  import _get_login_credentials
 from demux.config          import constants
 from demux.loggers         import demuxLogger, demuxFailureLogger
 
-
-def _setup_ssh_connection( demux ) -> None:
+def _parse_ssh_config_entry( config_path: str, host_alias: str ) -> dict:
     """
     Parse ~/.ssh/config and initializes appropriate demux fields using the ssh config entry for the upload host.
     If missing, method falls back to demux defaults.
     """
-    config_path = os.path.expanduser( "~/.ssh/config" ) # this needs to be infered from environment somehow https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
-    host_config = { }
-
-    if os.path.exists( config_path ):
-        with open( config_path ) as handle:
-            ssh_config = SSHConfig( )
-            ssh_config.parse( handle )
-        host_config = ssh_config.lookup( demux.nird_upload_host )
-
-    # more stuff that can be thrown into initilization of demux
-    demux.hostname = host_config.get( "hostname", demux.nird_upload_host )
-    demux.username = host_config.get( "user", demux.nird_username )
-    demux.key_file = host_config.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
-    demux.port     = int( host_config.get( "port", demux.nird_scp_port ) )
+    sys.exit( "1. for specified host, which can be dns or a host alias in ssh config, look up the real dns entry in that host ")
+    sys.exit( "2. if there is no dns entry use given hostname. We do not work straight with IPs.")
+    sys.exit( "3. given the hostname alias, lookup: username, key ( we accept only ed25519 and jumphost)")
+    sys.exit( "4. if the value of jumphost is not entry,  create an ordered list of host that we will pass back to the calling function")
 
 
-def _open_transport_and_validate_hostkey( demux ) -> Transport:
-    """
-    Open a new SSH transport to the remote host and strictly validate its host key
-    against the local known_hosts database.
 
-    Establishes the TCP/SSH session, retrieves the server host key and rejects the
-    connection if the key is missing or does not match the known_hosts entry.
-    Returns an unauthenticated SSH Transport with a verified host key; no user
-    authentication has been performed.
-    """
-
-    transport = paramiko.Transport( ( demux.hostname, demux.port ) )
+def _validate_hostkey( transport: Transport )
     transport.start_client( timeout = 5 )
 
     # Validate host key against known_hosts (RejectPolicy equivalent)
@@ -74,8 +54,46 @@ def _open_transport_and_validate_hostkey( demux ) -> Transport:
     if not accepted:
         message = f"RuntimeError: Host key mismatch for {demux.hostname}:{demux.port}. Refusing connection."
         demuxLogger.critical( message )
-        raise RuntimeError( message )
+        raise RuntimeError( message ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
 
+def _setup_ssh_connection( demux ) -> None:
+    config_path = os.path.expanduser( "~/.ssh/config" ) # this needs to be infered from environment somehow https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
+    host_config = _parse_ssh_config_entry( config_path, demux.nird_upload_host )
+
+    if os.path.exists( config_path ):
+        with open( config_path, constants.READ_ONLY_TEXT, encoding = demux.decodeScheme ) as config_handle: # read-only, utf-8 # demux.decodeScheme, while mostly not changing, it can be configured by the user
+            ssh_config = SSHConfig( )
+            ssh_config.parse( config_handle )
+        host_config  = ssh_config.lookup( demux.nird_upload_host )
+
+    # more stuff that can be thrown into initilization of demux
+    
+    # over here what we are doing is selected either user configurable things or putting in default values
+    demux.nird_hostname   = host_config.get( "hostname", demux.nird_upload_host )
+    demux.nird_username   = host_config.get( "user", demux.nird_username )
+    demux.nird_key_file   = host_config.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
+    demux.nird_port       = int( host_config.get( "port", demux.nird_scp_port ) )
+    # OpenSSH config keywords are case-insensitive; SSHConfig in Paramiko normalizes to lowercase
+    proxy_jump = host_config.get( "proxyjump" )
+    if proxy_jump:
+        demux.proxy_jump = proxy_jump
+        demux.proxy_jump_chain = [ hop.strip( ) for hop in proxy_jump.split( "," ) if hop.strip( ) ] # yield an ordered list of jump hosts.
+
+
+def _open_transport( demux ) -> Transport:
+    """
+    Open a new SSH transport to the remote host and strictly validate its host key
+    against the local known_hosts database.
+
+    Establishes the TCP/SSH session, retrieves the server host key and rejects the
+    connection if the key is missing or does not match the known_hosts entry.
+    Returns an unauthenticated SSH Transport with a verified host key; no user
+    authentication has been performed.
+    """
+
+    # get the ssh connection going and initialize a transport from which we can spawn channels
+    transport = _setup_ssh_connection( demux ) # if the user running this has an ~/.ssh/config, load and use it; otherwise, use defaults.
+    # transport = paramiko.Transport( ( demux.nird_hostname, demux.nird_port ) )
     return transport
 
 
@@ -206,7 +224,9 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
     remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID ) 
 
     try:
-        transport = _open_transport_and_validate_hostkey( demux )
+        # transport = _open_transport_and_validate_hostkey( demux )
+        transport = _open_transport( demux )
+        _validate_hostkey( transport )
 
         # _auth_transport_2fa( demux, transport ) 
         _auth_transport( demux, transport ) 
