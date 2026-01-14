@@ -37,3 +37,6 @@ PARALLEL_COPYING        = "parallel"
 
 BITWARDEN_CLI_PATH      = "/usr/local/bin/bw"
 # CURL_CLI_PATH           = "/usr/bin/curl" # we do not need curl, we are making the API calls using urllib of python
+
+READ_ONLY_BINARY        = "rb"
+READ_ONLY_TEXT          = "r"
