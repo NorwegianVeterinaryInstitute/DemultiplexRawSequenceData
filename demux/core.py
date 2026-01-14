@@ -175,6 +175,8 @@ class demux:
     allowed_nird_access_modes       = [ "ssh", "ssh2fa" "mounted" ]
     nird_copy_mode                  = "parallel"
     allowed_nird_copy_modes         = [ "serial", "parallel" ]
+    ######################################################
+    # defaults
     # nird_upload_host                = "login.nird.sigma2.no"
     nird_upload_host                = "rei.vetinst.no"
     # nird_upload_host                = "laptop"
@@ -187,8 +189,10 @@ class demux:
     nird_key_filename               = "/home/gmarselis/.ssh/id_ed25519.3jane"
     hostname                        = ""
     username                        = ""
-    key_file                        = ""
     port                            = int( )
+    key_file                        = ""
+    proxy_jump                      = ""
+    proxy_jump_chain                = [ ]
     ######################################################
     bw_port                         = 8087
     bw_localhost                    = "127.0.0.1" # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. refering it by IP allows us to deterministically resolve the address
