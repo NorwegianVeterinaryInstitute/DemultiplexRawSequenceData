@@ -98,7 +98,7 @@ class demux:
     md5File                         = 'md5sum.txt'
     miSeq                           = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
     nextSeq                         = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
-    decodeScheme                    = "utf-8"
+    encoding = decodeScheme         = "utf-8"
     footarfile                      = f"foo{demux.config.constants.TAR_SUFFIX}"      # class variable shared by all instances
     barzipfile                      = f"zip{demux.config.constants.ZIP_SUFFIX}"
     totalTasks                      = 0

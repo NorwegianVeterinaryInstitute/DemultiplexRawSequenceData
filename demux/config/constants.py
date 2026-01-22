@@ -40,3 +40,6 @@ BITWARDEN_CLI_PATH      = "/usr/local/bin/bw"
 
 READ_ONLY_BINARY        = "rb"
 READ_ONLY_TEXT          = "r"
+
+
+USER_SSH_CONFIG_PATH    = "~/.ssh/config"
