@@ -132,10 +132,8 @@ def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig 
     # Ensure we got an IdentityFile key-value and it is unique
     identity_file = target_lookup.get( "identityfile" )
     if isinstance( identity_file, list ):
-        if len( identity_file ) != 1:
+        if len( identity_file ) > 1:
             raise ValueError( f"IdentityFile must be a single entry for {target_lookup.get( 'hostname' )}, got {len( identity_file )}" )
-    elif not identity_file:
-        raise ValueError( f"Missing IdentityFile for host alias {target_lookup.get( 'hostname' )}")
 
     # Ensure we are serving only identities stated in ssh_config entry and that we do not spam the host with keys
     identities_only = str( target_lookup.get( "identitiesonly" ) or "" ).strip( ).lower( ) 
