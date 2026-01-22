@@ -2,8 +2,12 @@
 
 import os
 import paramiko
+import pprint
+import re
 import shlex
 import sys
+
+from typing import Any, Dict, List, Optional, Tuple, Mapping
 
 from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception import AuthenticationException
@@ -13,19 +17,152 @@ from demux.util.bitwarden  import _get_login_credentials
 from demux.config          import constants
 from demux.loggers         import demuxLogger, demuxFailureLogger
 
-def _parse_ssh_config_entry( config_path: str, host_alias: str ) -> dict:
+
+def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias: str ) -> List[ paramiko.config.SSHConfig ]:
     """
-    Parse ~/.ssh/config and initializes appropriate demux fields using the ssh config entry for the upload host.
-    If missing, method falls back to demux defaults.
+    Resolve a ProxyJump chain starting from a given SSH alias.
+
+    Raises RuntimeError on detecting a ProxyJump loop
+
+    Returns an ordered list of per-hop SSHConfig-derived option mappings,
+    with all nested ProxyJump directives expanded depth-first and cycles
+    detected. The resulting order is suitable for sequential SSH transport
+    construction (first hop -> next hop -> .. -> last hop).
     """
-    sys.exit( "1. for specified host, which can be dns or a host alias in ssh config, look up the real dns entry in that host ")
-    sys.exit( "2. if there is no dns entry use given hostname. We do not work straight with IPs.")
-    sys.exit( "3. given the hostname alias, lookup: username, key ( we accept only ed25519 and jumphost)")
-    sys.exit( "4. if the value of jumphost is not entry,  create an ordered list of host that we will pass back to the calling function")
+
+    resolved_hops, seen_aliases, pending_aliases = [ ], set( ), [ start_alias ]
+
+    while pending_aliases:
+        current_alias = pending_aliases.pop( 0 )
+
+        if current_alias in seen_aliases:
+            raise RuntimeError( f"ProxyJump loop detected at '{current_alias}'" )
+
+        seen_aliases.add( current_alias )
+        current_lookup = ssh_config.lookup( current_alias )
+        proxyjump_value = ( current_lookup.get( "proxyjump" ) or "" ).strip( )
+        hop_aliases = [ hop.strip( ) for hop in proxyjump_value.split(" ") if hop.strip( ) ]
+        # ProxyJump allows [user@]host[:port] and ssh:// URIs. We reject them to enforce
+        # single-source-of-truth per hop, keep parsing trivial, and avoid user/port
+        # override ambiguity. ProxyJump must reference aliases only.
+        INLINE_JUMP_RE = re.compile( r"^(?:ssh://)?(?:[^@/]+@)?[^:/\s,]+(?::\d+)?(?:/.*)?$" )
+        if any( INLINE_JUMP_RE.match( hop_alias ) and ( ( "@" in hop_alias ) or ( ":" in hop_alias ) or hop_alias.startswith( "ssh://" ) ) for hop_alias in hop_aliases ):
+            raise ValueError( f"ProxyJump must be aliases only; This library has no support for [user@]host[:port] or ssh:// URIs in ssh client config." )
+        if hop_aliases:
+            pending_aliases = hop_aliases + pending_aliases
+        else:
+            resolved_hops.append( current_lookup )
+    return resolved_hops
+
+
+def _parse_ssh_config( demux ) -> List[ paramiko.config.SSHConfig ]:
+    """
+
+    Raises:
+    
+    Returns:
+        paramiko.config.SSHConfig for the given demux.nird_upload_host
+        if there is a proxy jump on the first item, then we initiate a list of paramiko.config.SSHConfig
+        and create an ordered chain of which we got to jump through to reach demux.nird_upload_host
+    """
+
+    # check if the ssh config file exists for the current user
+    ssh_config_path = os.path.abspath( os.path.expanduser( constants.USER_SSH_CONFIG_PATH ) )
+    if not os.path.isfile( ssh_config_path ):
+        raise FileNotFoundError(f"User SSH client config not found: {ssh_config_path}")
+
+    with open( ssh_config_path, constants.READ_ONLY_TEXT , encoding = demux.encoding ) as handle:
+        ssh_config = paramiko.config.SSHConfig( )
+        ssh_config.parse( handle )
+
+    target_lookup = ssh_config.lookup( demux.nird_upload_host )
+
+    # make sure the ssh config is up to spec with our stuff
+    _verify_ssh_config_policy_for_hop( target_lookup )
+
+    return _resolve_proxyjump_chain( ssh_config, target_lookup.get( "hostname" ) )
+
+
+def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig ) -> None:
+    """
+    Verify that a single SSH hop configuration complies with enforced security
+    and simplicity policy.
+
+    Validates required SSH options (host key checking, identity usage, user,
+    hostname, known-hosts handling) and rejects unsupported or ambiguous
+    configurations. Main design principle is to Keep It Simple.
+
+    Raises:
+        ValueError/Keyerror on policy violations
+
+    Returns:
+        None on success.
+    """
+
+    # Ensure StrictHostKeyChecking is set to yes.
+    strict_hostkey_checking = str( target_lookup.get( "stricthostkeychecking" ) ).strip( ).lower( )
+    if strict_hostkey_checking != "yes":
+        raise ValueError( f"StrictHostKeyChecking must be 'yes' for {target_lookup.get( 'hostname' )}" )
+
+    # Ensure VerifyHostKeyDNS is set to yes
+    verify_hostkey_dns = str( target_lookup.get( "verifyhostkeydns" ) ).strip( ).lower( )
+    if strict_hostkey_checking != "yes":
+        raise ValueError( f"VerifyHostKeyDNS must be 'yes' for {target_lookup.get( 'hostname' )}" )
+
+    # Ensure there is a Hostname key-value
+    hostname = ( target_lookup.get( "hostname" ) or "" ).strip( )
+    if not hostname:
+        raise KeyError( f"Missing HostName for host alias {target_lookup.get( 'hostname' )}" )
+
+    # Ensure we got a User key-value
+    username = ( target_lookup.get( "user" ) or "" ).strip( )
+    if not username:
+        raise ValueError( f"Missing User for host alias {target_lookup.get( 'hostname' )}" )
+
+    # Ensure we got a Port User key-value
+    # port_text = str( hop_port or target_lookup.get( "port" ) or "22" ).strip( )
+    # try:
+    #   port = int( port_text )
+    # except ValueError as error:
+    #    # from is the only mechanism that allows you to chain the cought exception while allowing
+    #    # you to add a custom message
+    #    raise ValueError( f"Invalid Port {port_text} for host alias {target_lookup.get( 'hostname )}'" ) from error
+
+
+    # Ensure we got an IdentityFile key-value and it is unique
+    identity_file = target_lookup.get( "identityfile" )
+    if isinstance( identity_file, list ):
+        if len( identity_file ) != 1:
+            raise ValueError( f"IdentityFile must be a single entry for {target_lookup.get( 'hostname' )}, got {len( identity_file )}" )
+    elif not identity_file:
+        raise ValueError( f"Missing IdentityFile for host alias {target_lookup.get( 'hostname' )}")
+
+    # Ensure we are serving only identities stated in ssh_config entry and that we do not spam the host with keys
+    identities_only = str( target_lookup.get( "identitiesonly" ) or "" ).strip( ).lower( ) 
+    if identities_only != "yes":
+        raise ValueError( f"IdentitiesOnly must be 'yes' for {target_lookup.get( 'hostname' )}, so we do not spam the server with keys" )
+
+    # Ensure that we keep things simple by having only one UserKnownHostsFile
+    user_known_hosts_file = target_lookup.get( "userknownhostsfile" )
+    if isinstance( user_known_hosts_file, list ) and len( user_known_hosts_file ) != 1:
+        raise ValueError( f"Multiple IdentityFile values for host alias {target_lookup.get( 'hostname' )}")
 
 
 
-def _validate_hostkey( transport: Transport )
+def _validate_hostkey( transport: Transport ):
+    """
+    Validate the remote server host key for an already-created SSH Transport.
+
+    Performs strict known_hosts verification (RejectPolicy semantics) without opening
+    or authenticating the transport.
+    Looks up host keys by hostname and by [host]:port for non-22 ports.
+
+    Raise:
+        RuntimeError if the host key is missing or does not exactly match; no
+        accepting any non-known ssh keys, that is the job of the infra team to
+        deal with
+    """
+
     transport.start_client( timeout = 5 )
 
     # Validate host key against known_hosts (RejectPolicy equivalent)
@@ -56,29 +193,18 @@ def _validate_hostkey( transport: Transport )
         demuxLogger.critical( message )
         raise RuntimeError( message ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
 
-def _setup_ssh_connection( demux ) -> None:
-    config_path = os.path.expanduser( "~/.ssh/config" ) # this needs to be infered from environment somehow https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
-    host_config = _parse_ssh_config_entry( config_path, demux.nird_upload_host )
+def _setup_ssh_connection( demux ) -> paramiko.Transport:
 
-    if os.path.exists( config_path ):
-        with open( config_path, constants.READ_ONLY_TEXT, encoding = demux.decodeScheme ) as config_handle: # read-only, utf-8 # demux.decodeScheme, while mostly not changing, it can be configured by the user
-            ssh_config = SSHConfig( )
-            ssh_config.parse( config_handle )
-        host_config  = ssh_config.lookup( demux.nird_upload_host )
+    _parse_ssh_config_entry( demux )
+    _first_transport( )
+    _validate_hostkey( )
+    _auth_transport( ) # _first_transport() returns and you rebind it each hop.
+     demux.proxy_jump_chain:
+        _itterate_through_jump_hosts( )
+        _validate_hostkey( )
+        _auth_transport( )
 
-    # more stuff that can be thrown into initilization of demux
-    
-    # over here what we are doing is selected either user configurable things or putting in default values
-    demux.nird_hostname   = host_config.get( "hostname", demux.nird_upload_host )
-    demux.nird_username   = host_config.get( "user", demux.nird_username )
-    demux.nird_key_file   = host_config.get( "identityfile", [ demux.nird_key_filename ] )[0]  # must have arrays, incase there are more than 1 identity files. therefore we encase the default key filename in an array, itself
-    demux.nird_port       = int( host_config.get( "port", demux.nird_scp_port ) )
-    # OpenSSH config keywords are case-insensitive; SSHConfig in Paramiko normalizes to lowercase
-    proxy_jump = host_config.get( "proxyjump" )
-    if proxy_jump:
-        demux.proxy_jump = proxy_jump
-        demux.proxy_jump_chain = [ hop.strip( ) for hop in proxy_jump.split( "," ) if hop.strip( ) ] # yield an ordered list of jump hosts.
-
+    return transport
 
 def _open_transport( demux ) -> Transport:
     """
