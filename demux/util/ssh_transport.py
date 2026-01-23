@@ -58,13 +58,20 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
 
 def _parse_ssh_config( demux ) -> List[ paramiko.config.SSHConfig ]:
     """
+    @in_use by step08_03_setup_ssh_connection.py:_setup_ssh_connection
+    Parse the user SSH client configuration and resolve the effective connection chain for
+    demux.nird_upload_host.
+
+    Reads the SSH config file, validates the target host entry against demux policy and
+    resolves any ProxyJump directives into an ordered list of paramiko.config.SSHConfig hop
+    definitions representing the full jump chain.
+
+    Returns:
+        List[paramiko.config.SSHConfig]: Ordered hop configurations from the local client to
+        the final target host.
 
     Raises:
-    
-    Returns:
-        paramiko.config.SSHConfig for the given demux.nird_upload_host
-        if there is a proxy jump on the first item, then we initiate a list of paramiko.config.SSHConfig
-        and create an ordered chain of which we got to jump through to reach demux.nird_upload_host
+        FileNotFoundError: If the user SSH client configuration file does not exist.
     """
 
     # check if the ssh config file exists for the current user
