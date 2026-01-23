@@ -34,6 +34,7 @@ from demux.loggers            import demuxLogger, demuxFailureLogger
 
 def deliver_files_to_NIRD( demux ):
     """
+    @in_use
     Make connection to NIRD and upload the data
     # the idea is to to 
     # 1. check status of local tar files in demux.tarFilesToTransferList
