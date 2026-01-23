@@ -191,34 +191,6 @@ def _validate_hostkey( transport: Transport ):
         demuxLogger.critical( message )
         raise RuntimeError( message ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
 
-def _setup_ssh_connection( demux ) -> paramiko.Transport:
-
-    _parse_ssh_config_entry( demux )
-    _first_transport( )
-    _validate_hostkey( )
-    _auth_transport( ) # _first_transport() returns and you rebind it each hop.
-     demux.proxy_jump_chain:
-        _itterate_through_jump_hosts( )
-        _validate_hostkey( )
-        _auth_transport( )
-
-    return transport
-
-def _open_transport( demux ) -> Transport:
-    """
-    Open a new SSH transport to the remote host and strictly validate its host key
-    against the local known_hosts database.
-
-    Establishes the TCP/SSH session, retrieves the server host key and rejects the
-    connection if the key is missing or does not match the known_hosts entry.
-    Returns an unauthenticated SSH Transport with a verified host key; no user
-    authentication has been performed.
-    """
-
-    # get the ssh connection going and initialize a transport from which we can spawn channels
-    transport = _setup_ssh_connection( demux ) # if the user running this has an ~/.ssh/config, load and use it; otherwise, use defaults.
-    # transport = paramiko.Transport( ( demux.nird_hostname, demux.nird_port ) )
-    return transport
 
 
 def _auth_transport_ssh_keys( demux, transport: paramiko.Transport ) -> None:
@@ -260,29 +232,6 @@ def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
         # no other reliable signal exists that NIRD changed the TOTP token prompt
         raise AuthenticationException( message )
 
-def _auth_transport( demux, transport: paramiko.Transport ) -> None:
-    """
-    Authenticate an existing SSH transport using ssh keys or keyboard-interactive 2FA.
-
-    Selects the appropriate mode via the demux.nird_access_mode user configuration
-
-    Raises:
-        RuntimeError: when the access mode is misconfigured
-    """
-
-    if constants.NIRD_MODE_SSH       == demux.nird_access_mode:
-        _auth_transport_ssh_keys( demux, transport )
-    elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
-        _auth_transport_2fa( demux, transport )
-    elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
-        pass # nothing to authenticate here, the sysadmin has already done that part manually or via systemd
-    else:
-        message = f"RuntimeError: Unknown NIRD access mode: {demux.nird_access_mode}" # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
-        demuxLogger.critical( message )
-        raise RuntimeError( message )
-
-
-
 
 def _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path ) -> None:
     """
@@ -316,52 +265,24 @@ def _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
         raise SSHException( message )
 
 
-def _ensure_remote_run_directory_ssh( demux ) -> None:
+
+def _get_transport( demux ) -> paramiko.Transport:
     """
-    Ensure the remote RunID upload directory exists, using SSH key authentication or 2FA.
-    Credentials are chosen via user configuration.
+    @in_use
+    @still_being_thought_out
+    Open a new SSH transport to the remote host and strictly validate its host key
+    against the local known_hosts database.
 
-    Opens a fresh SSH connection with strict known_hosts checking, validates that
-    demux.nird_base_upload_path is non-empty then checks for the remote
-    directory (base path + RunID). Creates it if missing; aborts if it already
-    exists. Closes the SSH connection unconditionally.
-
-    Raises:
-        AuthenticationException: 2FA or credential failure.
-        SSHException: remote command execution failure (directory existing)
-        RuntimeException: everyting else that needs to percolate
-        ValueError if demux.nird_base_upload_path is empty
-
-    Returns:
-        None
+    Establishes the TCP/SSH session, retrieves the server host key and rejects the
+    connection if the key is missing or does not match the known_hosts entry.
+    Returns an authenticated SSH Transport with a verified host key
     """
 
-    transport = None
-    ssh_client = None
+    # get the ssh connection going and initialize a transport from which we can spawn channels
+    hop_config  = _setup_ssh_connection( demux ) # if the user running this has an ~/.ssh/config, load and use it; otherwise, use defaults.
+    transport   = _connect_to_upload_host( hop_config )
+    _validate_hostkey( transport )
+    _auth_transport( demux, transport ) 
 
-    # check if the '/nird/projects/NS9305K/SEQ-TECH/data_delivery' directory exists
-    if not demux.nird_base_upload_path:
-        message = f"ValueError: demux.nird_base_upload_path is empty: ({demux.nird_base_upload_path}). Refusing to continue, as any transfer will "
-        message += "end up in the home directory of the uploading user."
-        raise ValueError( message )
-    
-    remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID ) 
+    return transport
 
-    try:
-        # transport = _open_transport_and_validate_hostkey( demux )
-        transport = _open_transport( demux )
-        _validate_hostkey( transport )
-
-        # _auth_transport_2fa( demux, transport ) 
-        _auth_transport( demux, transport ) 
-
-        ssh_client = SSHClient( )
-        ssh_client._transport = transport
-
-        _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
-
-    finally: # we enclosed the whole thing in a try/finally so we can close the client and the transport
-        if ssh_client is not None:
-            ssh_client.close( )
-        elif transport is not None:
-            transport.close( )
