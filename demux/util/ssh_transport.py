@@ -20,6 +20,7 @@ from demux.loggers         import demuxLogger, demuxFailureLogger
 
 def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias: str ) -> List[ paramiko.config.SSHConfig ]:
     """
+    @in_use by ssh_transport:_parse_ssh_config
     Resolve a ProxyJump chain starting from a given SSH alias.
 
     Raises RuntimeError on detecting a ProxyJump loop
@@ -85,6 +86,7 @@ def _parse_ssh_config( demux ) -> List[ paramiko.config.SSHConfig ]:
 
 def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig ) -> None:
     """
+    @in_use by _parse_ssh_config
     Verify that a single SSH hop configuration complies with enforced security
     and simplicity policy.
 
@@ -268,7 +270,7 @@ def _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
 
 def _get_transport( demux ) -> paramiko.Transport:
     """
-    @in_use
+    @in_use by step08_04_ensure_remote_run_directory.py
     @still_being_thought_out
     Open a new SSH transport to the remote host and strictly validate its host key
     against the local known_hosts database.
