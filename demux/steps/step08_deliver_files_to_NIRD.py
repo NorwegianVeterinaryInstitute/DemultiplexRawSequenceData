@@ -50,9 +50,9 @@ def deliver_files_to_NIRD( demux ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n", color="green", attrs=["bold"] ) )
 
-    _setup_ssh_connection( demux )          # setup the ssh connection details
     _build_absolute_paths( demux )          # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
     _verify_local_files( demux )            # verify the local files exist before attempting to transfer them
+    _setup_ssh_connection( demux )          # setup the ssh connection details
     _ensure_remote_run_directory( demux )   # make sure demux.nird_base_upload_path/demux.RunID exists
     _upload_files_to_nird( demux )          # send the demux object to a dedicated method and it will decide what mode of copying and type of upload it will use
 
