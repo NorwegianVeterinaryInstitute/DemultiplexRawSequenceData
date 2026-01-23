@@ -14,15 +14,17 @@ import urllib.request
 from typing import Tuple
 
 # from paramiko                 import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
-from paramiko.ssh_exception   import AuthenticationException
-from scp                      import SCPClient
+# from paramiko.ssh_exception   import AuthenticationException
+# from scp                      import SCPClient
+# from concurrent.futures       import ThreadPoolExecutor
 
-from concurrent.futures       import ThreadPoolExecutor
+from demux.loggers              import demuxLogger, demuxFailureLogger
 
-from demux.util.ssh_transport import _setup_ssh_connection, _ensure_remote_run_directory_ssh, _auth_transport_2fa, _open_transport_and_validate_hostkey
-
-from demux.config             import constants
-from demux.loggers            import demuxLogger, demuxFailureLogger
+import demux.steps.step08_01_build_absolute_paths
+import demux.steps.step08_02_verify_local_files
+import demux.steps.step08_03_setup_ssh_connection 
+import demux.steps.step08_04_ensure_remote_run_directory 
+import demux.steps.step08_05_upload_files_to_nird 
 
 
 
