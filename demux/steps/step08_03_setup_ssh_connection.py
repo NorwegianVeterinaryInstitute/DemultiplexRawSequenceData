@@ -15,7 +15,7 @@ def _setup_ssh_connection( demux ) -> paramiko.Transport:
     # _connect_to_destination( hops_list )
     for hop in hops_list:
         _connect_to( hop )
-        _validate_hostkey( )
-        _auth_transport( ) # _first_transport() returns and you rebind it each hop.
+        _validate_hostkey( )    # this is practically written
+        _auth_transport( )      # this is practically written 
 
     return transport
