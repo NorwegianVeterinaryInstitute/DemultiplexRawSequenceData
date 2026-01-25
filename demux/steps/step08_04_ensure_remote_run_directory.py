@@ -95,10 +95,8 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
         raise ValueError( message )
 
     try:
-        transport = _get_transport( demux ) # this needs refactoring
-
         ssh_client = SSHClient( )
-        ssh_client._transport = transport
+        ssh_client._transport = _setup_ssh_connection( demux )
 
         _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
 
