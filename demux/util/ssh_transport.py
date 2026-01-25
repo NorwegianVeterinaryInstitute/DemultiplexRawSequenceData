@@ -278,26 +278,3 @@ def _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
         message += f"Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
         demuxLogger.critical( message )
         raise SSHException( message )
-
-
-
-def _get_transport( demux ) -> paramiko.Transport:
-    """
-    @in_use by step08_04_ensure_remote_run_directory.py
-    @still_being_thought_out
-    Open a new SSH transport to the remote host and strictly validate its host key
-    against the local known_hosts database.
-
-    Establishes the TCP/SSH session, retrieves the server host key and rejects the
-    connection if the key is missing or does not match the known_hosts entry.
-    Returns an authenticated SSH Transport with a verified host key
-    """
-
-    # get the ssh connection going and initialize a transport from which we can spawn channels
-    hop_config  = _setup_ssh_connection( demux ) # if the user running this has an ~/.ssh/config, load and use it; otherwise, use defaults.
-    transport   = _connect_to_upload_host( hop_config )
-    _validate_hostkey( transport )
-    _auth_transport( demux, transport ) 
-
-    return transport
-
