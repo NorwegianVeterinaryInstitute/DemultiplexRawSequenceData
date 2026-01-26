@@ -56,7 +56,7 @@ def _ensure_remote_run_directory_mounted( demux ) -> None:
         raise RuntimeError( message)
 
 
-def _ensure_remote_run_directory_ssh( demux ) -> None:
+def _ensure_remote_run_directory_ssh( demux, transport: paramiko.Transport ) -> None:
     """
     @in_use
     @needs_refactor
@@ -78,9 +78,6 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
         None
     """
 
-    transport = None
-    ssh_client = None
-
     # check if the '/nird/projects/NS9305K/SEQ-TECH/data_delivery' directory exists
     if not demux.nird_base_upload_path:
         message = f"ValueError: demux.nird_base_upload_path is empty: ({demux.nird_base_upload_path}). Refusing to continue, as any transfer will "
@@ -94,20 +91,11 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
         message += "end up in the home directory of the uploading user."
         raise ValueError( message )
 
-    try:
-        ssh_client = SSHClient( )
-        ssh_client._transport = _setup_ssh_connection( demux )
-
-        _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
-
-    finally: # we enclosed the whole thing in a try/finally so we can close the client and the transport
-        if ssh_client is not None:
-            ssh_client.close( )
-        elif transport is not None:
-            transport.close( )
+    _ensure_remote_dir_via_client( demux, transport, remote_absolute_dir_path )
 
 
-def _ensure_remote_run_directory( demux ):
+
+def _ensure_remote_run_directory( demux, transport: paramiko.Transport ):
     """
     @in_use
     Dispatch to the correct remote-directory preparation method
@@ -116,13 +104,13 @@ def _ensure_remote_run_directory( demux ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: checking if remote directrory exists started\n", color="green", attrs=["bold"] ) )
 
     if constants.NIRD_MODE_SSH == demux.nird_access_mode:
-        _ensure_remote_run_directory_ssh( demux )
+        _ensure_remote_run_directory_ssh( demux, transport )
 
     elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
         # this used to be named _ensure_remote_run_directory_ssh_2fa, but got refactored
         # down to credentials logic detected at run time. I am leaving the switch here for
         # verbocity, and to match the 3case we got for selecting a run mode.
-        _ensure_remote_run_directory_ssh( demux )
+        _ensure_remote_run_directory_ssh( demux, transport )
 
     elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         _ensure_remote_run_directory_mounted( demux )

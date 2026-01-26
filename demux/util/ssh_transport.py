@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Optional, Tuple, Mapping
 
 from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception import AuthenticationException
-from scp                    import SCPClient
 
 from demux.util.bitwarden  import _get_login_credentials
 from demux.config          import constants
@@ -81,12 +80,12 @@ def _parse_ssh_config( demux ) -> List[ paramiko.config.SSHConfig ]:
     """
 
     # check if the ssh config file exists for the current user
-    ssh_config_path = os.path.abspath( os.path.expanduser( constants.USER_SSH_CONFIG_PATH ) )
+    ssh_config_path : str = os.path.abspath( os.path.expanduser( constants.USER_SSH_CONFIG_PATH ) )
     if not os.path.isfile( ssh_config_path ):
         raise FileNotFoundError(f"User SSH client config not found: {ssh_config_path}")
 
     with open( ssh_config_path, constants.READ_ONLY_TEXT , encoding = demux.encoding ) as handle:
-        ssh_config = paramiko.config.SSHConfig( )
+        ssh_config : paramiko.config.SSHConfig = paramiko.config.SSHConfig( )
         ssh_config.parse( handle )
 
     target_lookup = ssh_config.lookup( demux.nird_upload_host )
@@ -219,7 +218,6 @@ def _load_private_key( identity_file_path: str, passphrase: Optional[ str ] ) ->
     chained to the last encountered exception.
     """
 
-    ssh_config_path: str = os.path.abspath( os.path.expanduser( constants.USER_SSH_CONFIG_PATH ) )
     expanded_path: str = os.path.abspath( os.path.expanduser( identity_file_path ) )
     last_error: Optional[ BaseException ] = None
 
