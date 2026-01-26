@@ -207,24 +207,68 @@ def _validate_hostkey( transport: Transport ):
         raise RuntimeError( message ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
 
 
+def _load_private_key( identity_file_path: str, passphrase: Optional[ str ] ) -> paramiko.PKey:
+    """
+    Load an SSH private key from disk, expanding "~" and resolving to an absolute path.
 
-def _auth_transport_ssh_keys( demux, transport: paramiko.Transport ) -> None:
-    return None
+    Attempts all supported Paramiko key formats in sequence (RSA, Ed25519, ECDSA, DSS).
+    If the key is encrypted and no passphrase is provided, a PasswordRequiredException
+    is raised during loading attempts.
+
+    On failure (missing file, unreadable key, unsupported format), raises RuntimeError
+    chained to the last encountered exception.
+    """
+
+    expanded_path: str = os.path.abspath( os.path.expanduser( identity_file_path ) )
+    last_error: Optional[ BaseException ] = None
+
+    for key_loader in ( paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey, paramiko.DSSKey ):
+        try:
+            return key_loader.from_private_key_file( expanded_path, password = passphrase )
+        except ( paramiko.SSHException, FileNotFoundError, paramiko.ssh_exception.PasswordRequiredException ) as error:
+            last_error = error
+
+    raise RuntimeError( f"Could not load private key: {expanded_path}" ) from last_error
 
 
-def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
+
+def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.config.SSHConfig  ) -> None:
+    """
+    Authenticate an existing SSH Transport using public key credentials.
+
+    Loads the private key defined for the hop, retrying with a passphrase if the key is
+    encrypted, then performs public key authentication against the remote server.
+
+    Raises ValueError when a passphrase is required but unavailable, and
+    AuthenticationException if the server rejects the key.
+    """
+
+    try:
+        private_key: paramiko.PKey = _load_private_key( identity_file_path, passphrase = None )
+    except paramiko.ssh_exception.PasswordRequiredException:
+        if not passphrase:
+            raise ValueError( f"Passphrase-protected key but no passphrase in Bitlocker. Aborting authentication for {username}@{hostname}" )
+        private_key = _load_private_key( identity_file_path, passphrase = passphrase )
+    transport.auth_publickey( username = username, key = private_key )
+    if not transport.is_authenticated( ):
+        raise paramiko.AuthenticationException( f"Public key authentication failed for {username}@{hostname}" )
+
+
+def _auth_transport_2fa( transport: paramiko.Transport, hop: paramiko.config.SSHConfig ) -> None:
     """
     Authenticate an existing SSH transport using keyboard-interactive 2FA 
     (paramiko considers this "keyboard-interactive" even if there is not a real user typing)
 
     Retrieves username, password and TOTP credentials and performs interactive
-    authentication on the provided transport. Mutates the transport in place.
+    authentication on the provided transport. Mutates the transport in place. demux
 
     Raises:
         AuthenticationException: if 2FA authentication fails or the transport
         remains unauthenticated after the interactive exchange.
     """
-    username, password, totp = _get_login_credentials( demux )
+    hostname                 = hop.get( "hostname" )
+    port                     = hop.get( "port" )
+    username, password, totp = _get_login_credentials( hostname ) 
 
     def _kbdint_handler( title, instructions, prompt_list ):
         responses = [ ]
@@ -241,11 +285,59 @@ def _auth_transport_2fa( demux, transport: paramiko.Transport ) -> None:
     transport.auth_interactive( username = username, handler = _kbdint_handler )
 
     if not transport.is_authenticated( ):
-        message = f"AuthenticationException: SSH 2FA authentication failed for {username}@{demux.hostname}:{demux.port} ."
+        message = f"AuthenticationException: SSH 2FA authentication failed for {username}@{hostname}:{port} ."
         demuxLogger.critical( message )
         # treat any raised AuthenticationException from auth_interactive() as failure
         # no other reliable signal exists that NIRD changed the TOTP token prompt
         raise AuthenticationException( message )
+
+
+def _authenticate_transport( transport: paramiko.Transport, hop_lookup: paramiko.config.SSHConfig ) -> None:
+    """
+    Authenticate an existing SSH Transport for a single hop using the credentials
+    defined in the SSH client configuration and BitLocker.
+
+    Resolves the target hostname and user, selects the authentication mechanism in
+    priority order (public key, keyboard-interactive 2FA and finally password). Applies
+    it directly to the provided Transport.
+
+    Raises ValueError for missing required lookup fields or unavailable 2FA secrets,
+    and AuthenticationException when the remote server rejects the selected method.
+
+    Returns the same Transport instance after successful authentication.
+    """
+
+    hostname          : str  = str( hop_lookup.get( "hostname" ) or "" )
+    username          : str  = str( hop_lookup.get( "user" ) or "" )
+    password          : str  = str( bitlocker.get_password( hostname ) or "" )
+    identity_file_path: str  = str( hop_lookup.get( "identityfile" ) )
+    passphrase        : str  = str( bitlocker.get_passphrase( hostname ) )
+    two_fa_enabled    : bool = bool( hop_lookup.get( "2FAEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
+    two_fa            : str  = str( bitlocker.get_2fa( hostname ) or "" )
+
+    if not hostname:
+        raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'host' )}: hostname" )
+    if not username:
+        raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: username" )
+    # if not password:
+    #     raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: password" )
+    # if not identity_file_path:
+    #     raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: identityfile" )
+    # if not identity_password:
+    #     raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: identity_password" )
+    if two_fa_enabled and not two_fa:
+        raise ValueError( f"ValueError: could not get TOTP from BitLocker for hop {hop_lookup.get( 'hostname' )}" )
+
+    if identity_file_path:
+        _auth_transport_ssh_keys( transport, hop_lookup )
+    elif two_fa_enabled:
+        _auth_transport_2fa( transport, hop_lookup )
+    else:
+        transport.auth_password( username = username, password = password )
+        if not transport.is_authenticated( ):
+            raise paramiko.AuthenticationException( f"Password authentication failed for {username}@{hostname}" )
+
+
 
 
 def _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path ) -> None:
