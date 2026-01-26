@@ -340,7 +340,7 @@ def _authenticate_transport( transport: paramiko.Transport, hop_lookup: paramiko
 
 
 
-def _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path ) -> None:
+def _ensure_remote_dir_via_client( demux, transport: paramiko.Transport, remote_absolute_dir_path: str ) -> None:
     """
     Ensure the remote run directory exists using an already-authenticated SSH client.
 
@@ -352,11 +352,13 @@ def _ensure_remote_dir_via_client( demux, ssh_client, remote_absolute_dir_path )
         due to permission, missing parent or other remote filesystem errors.
     """
 
-    stdin, stdout, stderr    = ssh_client.exec_command( f"TERM=xterm /usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}" )
+    channel = transport.open_session( )
+    stdin, stdout, stderr    = channel.exec_command( f"/usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}" )
     exit_status = stdout.channel.recv_exit_status( )
 
     if exit_status != 0:
-        stdin, stdout, stderr = ssh_client.exec_command( f"TERM=xterm /usr/bin/mkdir {shlex.quote( remote_absolute_dir_path )}" )
+        channel = transport.open_session( )
+        stdin, stdout, stderr = channel.exec_command( f"/usr/bin/mkdir -- {shlex.quote( remote_absolute_dir_path )}" )
         mkdir_status = stdout.channel.recv_exit_status( )
         if mkdir_status != 0:
             message = f"Directory creation error: Cannot create {demux.hostname}:{remote_absolute_dir_path} even after original check. "
