@@ -1,3 +1,5 @@
+import paramiko
+
 def _setup_ssh_connection( demux ) -> paramiko.Transport:
     """
     @in_use by step08_04_ensure_remote_run_directory.py
@@ -10,12 +12,20 @@ def _setup_ssh_connection( demux ) -> paramiko.Transport:
     Returns an authenticated SSH Transport with a verified host key
     """
 
+    hops_list: List[ paramiko.config.SSHConfig ] = kot._parse_ssh_config( )
 
-    hops_list: List[ paramiko.config.SSHConfig ] = _parse_ssh_config( demux )
-    # _connect_to_destination( hops_list )
+    current_transport : Optional[ paramiko.Transport ] = None
+
     for hop in hops_list:
-        _connect_to( hop )
-        _validate_hostkey( )    # this is practically written
-        _auth_transport( )      # this is practically written 
+        next_transport: paramiko.Transport = _build_transport( hop, current_transport ) # returns the next transport
 
-    return transport
+        pprint.pprint( next_transport )
+        sys.exit( 0 )
+
+        _validate_hostkey( next_transport )         # this is practically written
+        _authenticate_transport( next_transport )   # this is not written 
+        current_transport = next_transport
+
+    return current_transport # fully chained and authenticated
+
+
