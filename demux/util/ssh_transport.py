@@ -180,7 +180,7 @@ def _validate_hostkey( transport: Transport ):
 
     # Validate host key against known_hosts (RejectPolicy equivalent)
     host_keys = paramiko.HostKeys( )
-    known_hosts_path = os.path.expanduser( "~/.ssh/known_hosts" )
+    known_hosts_path = os.path.abspath( os.path.expanduser( constants.USER_KNOWN_HOSTS_PATH ) )
     if os.path.exists( known_hosts_path ):
         host_keys.load( known_hosts_path )
 
@@ -219,6 +219,7 @@ def _load_private_key( identity_file_path: str, passphrase: Optional[ str ] ) ->
     chained to the last encountered exception.
     """
 
+    ssh_config_path: str = os.path.abspath( os.path.expanduser( constants.USER_SSH_CONFIG_PATH ) )
     expanded_path: str = os.path.abspath( os.path.expanduser( identity_file_path ) )
     last_error: Optional[ BaseException ] = None
 

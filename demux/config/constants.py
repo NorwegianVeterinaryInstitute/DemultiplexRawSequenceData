@@ -43,3 +43,4 @@ READ_ONLY_TEXT          = "r"
 
 
 USER_SSH_CONFIG_PATH    = "~/.ssh/config"
+USER_SSH_CONFIG_PATH    = "~/.ssh/known_hosts"
