@@ -352,23 +352,33 @@ def _ensure_remote_dir_via_client( demux, transport: paramiko.Transport, remote_
         due to permission, missing parent or other remote filesystem errors.
     """
 
-    channel = transport.open_session( )
-    stdin, stdout, stderr    = channel.exec_command( f"/usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}" )
-    exit_status = stdout.channel.recv_exit_status( )
+    test_command: str              = f"/usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}"
+    test_channel: paramiko.Channel = transport.open_session( )
+    test_channel.exec_command( test_command )
+    test_stderr                    = test_channel.makefile_stderr( "r" ).read( )
+    test_status: int               = test_channel.recv_exit_status( )
 
-    if exit_status != 0:
-        channel = transport.open_session( )
-        stdin, stdout, stderr = channel.exec_command( f"/usr/bin/mkdir -- {shlex.quote( remote_absolute_dir_path )}" )
-        mkdir_status = stdout.channel.recv_exit_status( )
-        if mkdir_status != 0:
-            message = f"Directory creation error: Cannot create {demux.hostname}:{remote_absolute_dir_path} even after original check. "
-            message += "Consult the remote end and try to create the directory manually to see what error you get, could be "
-            message += "that parent changed permission or was moved.\n"
-            message += f"SSHException: {stderr.read( ).decode( ).strip( )}"
-            demuxLogger.critical( message )
-            raise SSHException(message)
-    else:
+    if test_status == 0:
         message = f"Directory creation error: {demux.hostname}:{remote_absolute_dir_path} already exists.\n"
         message += f"Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
         demuxLogger.critical( message )
         raise SSHException( message )
+
+    mkdir_command: str              = f"/usr/bin/mkdir -- {shlex.quote( remote_absolute_dir_path )}"
+    mkdir_channel: paramiko.Channel = transport.open_session( )
+    mkdir_channel.exec_command( mkdir_command )
+    mkdir_stderr                    = mkdir_channel.makefile_stderr( "r" ).read( )
+    mkdir_status: int               = mkdir_channel.recv_exit_status( )
+
+    channel = transport.open_session( )
+    stdin, stdout, stderr = channel.exec_command( f"/usr/bin/mkdir -- {shlex.quote( remote_absolute_dir_path )}" )
+    mkdir_status = stdout.channel.recv_exit_status( )
+
+    if mkdir_status != 0:
+        message = f"Directory creation error: Cannot create {demux.hostname}:{remote_absolute_dir_path} even after original check. "
+        message += "Consult the remote end and try to create the directory manually to see what error you get, could be "
+        message += "that parent changed permission or was moved.\n"
+        message += f"SSHException: {stderr.read( ).decode( ).strip( )}"
+        demuxLogger.critical( message )
+        raise SSHException(message)
+
