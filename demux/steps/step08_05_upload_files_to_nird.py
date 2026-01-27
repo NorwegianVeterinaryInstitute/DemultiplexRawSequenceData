@@ -1,11 +1,12 @@
 import scp
+import threading
 
 from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception import AuthenticationException
 
 
 
-def _verify_remote_hashes_against_local_files( demux, file_entry ) -> None:
+def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None:
     """
     Verify remote file integrity by computing remote MD5 and SHA-512 hashes and
     comparing them against the corresponding local checksum files.
@@ -16,6 +17,14 @@ def _verify_remote_hashes_against_local_files( demux, file_entry ) -> None:
 
     Raises RuntimeError on remote md5sum/sha512sum failure or on any hash mismatch.
     """
+   def _drain_channel( channel: paramiko.Channel, results: dict[ str, tuple[ bytes, bytes, int ] ], key: str ) -> None:
+        try:
+            stdout_bytes: bytes = channel.makefile( "rb" ).read( )
+            stderr_bytes: bytes = channel.makefile_stderr( "rb" ).read( )
+            exit_status: int    = channel.recv_exit_status( )
+            results[ key ]      = ( stdout_bytes, stderr_bytes, exit_status )
+        finally:
+            channel.close( )
 
 
     entries: dict_values    = demux.absoluteFilesToTransferList.values( )
@@ -23,38 +32,47 @@ def _verify_remote_hashes_against_local_files( demux, file_entry ) -> None:
     longest_local_path: int = max( ( len( entry[ 'tar_file_local' ] ) for entry in entries ), default = current_len )
 
     md5sum_command: str                 = f"/usr/bin/md5sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}"
-    md5sum_channel: paramiko.Channel    = demux.transport.open_session( )
-    md5sum_channel.exec_command( md5sum_command )
-    try:
-        md5sum_stderr: bytes            = md5sum_channel.makefile_stderr( "r" ).read( )
-        md5sum_stdout: str              = md5sum_channel.makefile( "r" ).read( ).decode( ).split( )[ 0 ]
-        md5sum_status: int              = md5sum_channel.recv_exit_status( )
-    finally:
-        md5sum_channel.close( )
-
     sha512sum_command: str              = f"/usr/bin/sha512sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}"
-    sha512sum_channel: paramiko.Channel = demux.transport.open_session( )
-    sha512sum_channel.exec_command( sha512sum_command )
-    try:
-        sha512sum_stderr: bytes         = sha512sum_channel.makefile_stderr( "r" ).read( )
-        sha512sum_stdout: str           = sha512sum_channel.makefile( "r" ).read( ).decode( ).split( )[ 0 ]
-        sha512sum_status: int           = sha512sum_channel.recv_exit_status( )
-    finally:
-        sha512sum_channel.close( )
 
+    md5sum_channel: paramiko.Channel    = demux.transport.open_session( )
+    sha512sum_channel: paramiko.Channel = demux.transport.open_session( )
+
+    md5sum_channel.exec_command( md5sum_command )
+    sha512sum_channel.exec_command( sha512sum_command )
+
+    results: dict[ str, tuple[ bytes, bytes, int ] ] = { }
+
+    # we can devote a core for each process, easily. Cut down on waiting time
+    md5_thread: threading.Thread    = threading.Thread( target = _drain_channel, args = ( md5sum_channel, results, "md5" ) )
+    sha512_thread: threading.Thread = threading.Thread( target = _drain_channel, args = ( sha512sum_channel, results, "sha512" ) )
+
+    md5_thread.start( )
+    sha512_thread.start( )
+    md5_thread.join( )
+    sha512_thread.join( )
+
+    md5sum_stdout_bytes: bytes
+    md5sum_stderr_bytes: bytes
+    md5sum_status: int
+    md5sum_stdout_bytes, md5sum_stderr_bytes, md5sum_status = results[ "md5" ]
+
+    sha512sum_stdout_bytes: bytes
+    sha512sum_stderr_bytes: bytes
+    sha512sum_status: int
+    sha512sum_stdout_bytes, sha512sum_stderr_bytes, sha512sum_status = results[ "sha512" ]
 
     if md5sum_status != 0:
-        message: str = f"RuntimeError: remote md5sum failed for {file_entry['tar_file_remote']}: {md5sum_stderr.decode( ).strip( )}"
+        message: str = f"RuntimeError: remote md5sum failed for {file_entry['tar_file_remote']}: {md5sum_stderr_bytes.decode( ).strip( )}"
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
     if sha512sum_status != 0:
-        message: str = f"RuntimeError: remote sha512sum failed for {file_entry['tar_file_remote']}: {sha512sum_stderr.decode( ).strip( )}"
+        message: str = f"RuntimeError: remote sha512sum failed for {file_entry['tar_file_remote']}: {sha512sum_stderr_bytes.decode( ).strip( )}"
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    md5_file_remote    : str = md5sum_stdout
-    sha512_file_remote : str = sha512sum_stdout
+    md5_file_remote    : str = md5sum_stdout_bytes.decode( ).split( )[ 0 ]
+    sha512_file_remote : str = sha512sum_stdout_bytes.decode( ).split( )[ 0 ]
 
     with open( file_entry[ "md5_file_local" ], "r" ) as handle_md5:
         md5_file_local: str = handle_md5.read( ).split( )[ 0 ]
@@ -144,8 +162,6 @@ def _upload_tar_via_scp( demux, transport: paramiko.Transport, file_entry ) -> N
         scp_client.put( file_entry[ "tar_file_local" ], file_entry[ "tar_file_remote" ] )
     finally:
         scp_client.close( )
-
-
 
 
 
