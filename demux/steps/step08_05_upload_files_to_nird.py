@@ -256,43 +256,6 @@ def _upload_and_verify_file_via_ssh( demux, tar_file ):  # worker per file, tar_
 
 
 
-def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ) -> None:  # worker per file, tar_file is in absolute path format
-    """
-    @in_use by _upload_and_verify_file_via_ssh_2fa
-    @needs_refactor
-    Upload and integrity-verify a single local tar file to the remote NIRD upload path
-    using a fresh SSH transport authenticated via 2FA.
-
-    Opens and authenticates a new SSH transport, uploads the tar file via SCP with
-    overwrite protection, verifies remote integrity by comparing remote MD5 and
-    SHA-512 hashes against local checksum files, and finally uploads the checksum
-    files themselves.
-
-    All transport, SCP, or verification failures propagate as exceptions; policy violations 
-    (for example, remote file already exists) raise RuntimeError.
-
-    Returns None on success. 
-    """
-
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA started\n", color = "green", attrs = ["bold"] ) )
-
-    transport : paramiko.Transport = demux.transport
-    file_entry: str = demux.absoluteFilesToTransferList[ tar_file ]
-
-    with SCPClient( demux.transport ) as scp_client:
-        _upload_tar_via_scp( demux, file_entry )
-        _verify_remote_hashes_against_local_files( demux, file_entry )
-        # Upload checksum files as metadata only; tar integrity is already verified against local checksums
-        # so, there is no need to checksum the checksum files. Do so only when they become legally/audit-critical
-        # artifacts.
-        scp_client.put( file_entry[ "md5_file_local" ],    file_entry[ "md5_file_remote" ] )
-        scp_client.put( file_entry[ "sha512_file_local" ], file_entry[ "sha512_file_remote" ] )
-
-
-        demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA finished\n", color = "red", attrs = ["bold"] ) )
-
-
-
 def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
     """
     Upload and verify a single local tar file to NIRD via an already-mounted sshfs path.
