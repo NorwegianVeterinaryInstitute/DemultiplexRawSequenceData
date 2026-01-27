@@ -127,9 +127,9 @@ def progress4(filename, size, sent, peername):
     """
     sys.stdout.write("(%s:%s) %s progress: %.2f%%   \r" % ( peername[ 0 ], peername[ 1 ], filename, float( sent )/float( size )*100 ) )
 
-def _upload_tar_via_scp( demux, transport: paramiko.Transport, file_entry ) -> None:
+def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     """
-    @in_use by _upload_and_verify_file_via_ssh_2fa
+    @in_use by _upload_and_verify_file_via_ssh
     Upload a single local tar file to its remote path via an existing SCP session.
 
     Asserts that the remote target does not already exist, then performs a single
