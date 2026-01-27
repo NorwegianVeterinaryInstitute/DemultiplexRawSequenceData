@@ -21,7 +21,7 @@ def _setup_ssh_connection( demux ) -> paramiko.Transport:
 
         pprint.pprint( next_transport )
         sys.exit( 0 )
-
+        next_transport.start_client( )
         _validate_hostkey( next_transport )         # this is practically written
         _authenticate_transport( next_transport )   # this is not written 
         current_transport = next_transport

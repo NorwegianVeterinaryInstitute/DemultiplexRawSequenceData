@@ -1,4 +1,11 @@
-def _verify_remote_hashes_against_local_files( demux, ssh_client, file_entry ) -> None:
+import scp
+
+from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
+from paramiko.ssh_exception import AuthenticationException
+
+
+
+def _verify_remote_hashes_against_local_files( demux, file_entry ) -> None:
     """
     Verify remote file integrity by computing remote MD5 and SHA-512 hashes and
     comparing them against the corresponding local checksum files.
@@ -11,42 +18,60 @@ def _verify_remote_hashes_against_local_files( demux, ssh_client, file_entry ) -
     """
 
 
-    entries              = demux.absoluteFilesToTransferList.values( )
-    current_len          = len( file_entry[ 'tar_file_local' ] )
-    longest_local_path   = max( ( len( entry[ 'tar_file_local' ] ) for entry in entries ), default = current_len )
+    entries: dict_values    = demux.absoluteFilesToTransferList.values( )
+    current_len: int        = len( file_entry[ 'tar_file_local' ] )
+    longest_local_path: int = max( ( len( entry[ 'tar_file_local' ] ) for entry in entries ), default = current_len )
 
-    md5sum_stdin,    md5sum_stdout,    md5sum_stderr    = ssh_client.exec_command( f"/usr/bin/md5sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}" )
-    sha512sum_stdin, sha512sum_stdout, sha512sum_stderr = ssh_client.exec_command( f"/usr/bin/sha512sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}" )
+    md5sum_command: str                 = f"/usr/bin/md5sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}"
+    md5sum_channel: paramiko.Channel    = demux.transport.open_session( )
+    md5sum_channel.exec_command( md5sum_command )
+    try:
+        md5sum_stderr: bytes            = md5sum_channel.makefile_stderr( "r" ).read( )
+        md5sum_stdout: str              = md5sum_channel.makefile( "r" ).read( ).decode( ).split( )[ 0 ]
+        md5sum_status: int              = md5sum_channel.recv_exit_status( )
+    finally:
+        md5sum_channel.close( )
 
-    if md5sum_stdout.channel.recv_exit_status( ) != 0:
-        message = f"RuntimeError: remote md5sum failed for {file_entry['tar_file_remote']}: {md5sum_stderr.read( ).decode( ).strip( )}"
+    sha512sum_command: str              = f"/usr/bin/sha512sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}"
+    sha512sum_channel: paramiko.Channel = demux.transport.open_session( )
+    sha512sum_channel.exec_command( sha512sum_command )
+    try:
+        sha512sum_stderr: bytes         = sha512sum_channel.makefile_stderr( "r" ).read( )
+        sha512sum_stdout: str           = sha512sum_channel.makefile( "r" ).read( ).decode( ).split( )[ 0 ]
+        sha512sum_status: int           = sha512sum_channel.recv_exit_status( )
+    finally:
+        sha512sum_channel.close( )
+
+
+    if md5sum_status != 0:
+        message: str = f"RuntimeError: remote md5sum failed for {file_entry['tar_file_remote']}: {md5sum_stderr.decode( ).strip( )}"
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    if sha512sum_stdout.channel.recv_exit_status( ) != 0:
-        message = f"RuntimeError: remote sha512sum failed for {file_entry['tar_file_remote']}: {sha512sum_stderr.read( ).decode( ).strip( )}"
+    if sha512sum_status != 0:
+        message: str = f"RuntimeError: remote sha512sum failed for {file_entry['tar_file_remote']}: {sha512sum_stderr.decode( ).strip( )}"
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    md5_file_remote    = md5sum_stdout.read( ).decode( ).split( )[ 0 ]
-    sha512_file_remote = sha512sum_stdout.read( ).decode( ).split( )[ 0 ]
+    md5_file_remote    : str = md5sum_stdout
+    sha512_file_remote : str = sha512sum_stdout
 
     with open( file_entry[ "md5_file_local" ], "r" ) as handle_md5:
-        md5_file_local = handle_md5.read( ).split( )[ 0 ]
+        md5_file_local: str = handle_md5.read( ).split( )[ 0 ]
     with open( file_entry[ "sha512_file_local" ], "r" ) as handle_sha512:
-        sha512_file_local = handle_sha512.read( ).split( )[ 0 ]
+        sha512_file_local: str = handle_sha512.read( ).split( )[ 0 ]
 
     if md5_file_local != md5_file_remote:
-        message  = "Error: Local md5 differs from calculated remote md5:\n"
+        message: str  = "Error: Local md5 differs from calculated remote md5:\n"
         message += f"LOCAL MD5:  {md5_file_local}  | {file_entry[ 'md5_file_local' ]}\n"
-        message += f"REMOTE MD5: {md5_file_remote} | {file_entry[ 'md5_file_remote' ]}"
+        message += f"REMOTE MD5: {md5_file_remote} | {file_entry[ 'md5_file_remote' ]}\n"
         message += "Please check both files, delete/move as appropriate and try uploading again."
         demuxLogger.critical( message )
         # raise RemoteHashMismatchError( message ) https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
         raise RuntimeError( message )
 
     if sha512_file_local != sha512_file_remote:
-        message  = "Error: Local sha512 differs from calculated remote sha512:\n"
+        message: str  = "Error: Local sha512 differs from calculated remote sha512:\n"
         message += f"LOCAL SHA512:  {sha512_file_local}  | {file_entry[ 'sha512_file_local' ]}\n"
         message += f"REMOTE SHA512: {sha512_file_remote} | {file_entry[ 'sha512_file_remote' ]}\n"
         message += "Please check both files, delete/move as appropriate and try uploading again."
@@ -57,8 +82,13 @@ def _verify_remote_hashes_against_local_files( demux, ssh_client, file_entry ) -
     demuxLogger.info( f"Done: LOCAL:{file_entry[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{demux.hostname}:{file_entry[ 'tar_file_remote' ]}" )
 
 
+def progress(filename, size, sent):
+    sys.stdout.write("%s's progress: %.2f%%   \r" % (filename, float(sent)/float(size)*100) )
 
-def _upload_tar_via_scp( demux, ssh_client, scp_client, file_entry ) -> None:
+def progress4(filename, size, sent, peername):
+    sys.stdout.write("(%s:%s) %s's progress: %.2f%%   \r" % (peername[0], peername[1], filename, float(sent)/float(size)*100) )
+
+def _upload_tar_via_scp( demux, transport: paramiko.Transport, file_entry ) -> None:
     """
     @in_use by _upload_and_verify_file_via_ssh_2fa
     Upload a single local tar file to its remote path via an existing SCP session.
@@ -73,14 +103,26 @@ def _upload_tar_via_scp( demux, ssh_client, scp_client, file_entry ) -> None:
 
     demuxLogger.info( f"Transferring: {file_entry[ 'tar_file_local' ]}" )
 
-    stdin, stdout, stderr = ssh_client.exec_command( f"/usr/bin/test -f -- {shlex.quote( file_entry[ 'tar_file_remote' ] )}" )
-    if stdout.channel.recv_exit_status( ) == 0:
+    test_command: str              = f"/usr/bin/test -f -- {shlex.quote( file_entry[ 'tar_file_remote' ] )}"
+    test_channel: paramiko.Channel = transport.open_session( )
+    test_channel.exec_command( test_command )
+    test_stderr                    = test_channel.makefile_stderr( "r" ).read( )
+    test_status: int               = test_channel.recv_exit_status( )    
+
+    if test_status == 0:
         message  = f"RuntimeError: Remote file already exists: {demux.hostname}:{file_entry[ 'tar_file_remote' ]}"
         message += "Refusing to overwrite. Delete/move remote file first and then try to upload again."
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    scp_client.put( file_entry[ "tar_file_local" ], file_entry[ "tar_file_remote" ] )
+    # scp_client = SCPClient( transport )
+    # scp_client = SCPClient( transport, progress = progress )
+    scp_client = SCPClient( transport, progress4 = progress4 )
+
+    try: 
+        scp_client.put( file_entry[ "tar_file_local" ], file_entry[ "tar_file_remote" ] )
+    finally:
+        scp_client.close( )
 
 
 
@@ -197,32 +239,19 @@ def _upload_and_verify_file_via_ssh_2fa( demux, tar_file ) -> None:  # worker pe
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA started\n", color = "green", attrs = ["bold"] ) )
 
-    transport  = None
-    ssh_client = None
+    transport : paramiko.Transport = demux.transport
+    file_entry: str = demux.absoluteFilesToTransferList[ tar_file ]
 
-    file_entry = demux.absoluteFilesToTransferList[ tar_file ]
+    with SCPClient( demux.transport ) as scp_client:
+        _upload_tar_via_scp( demux, file_entry )
+        _verify_remote_hashes_against_local_files( demux, file_entry )
+        # Upload checksum files as metadata only; tar integrity is already verified against local checksums
+        # so, there is no need to checksum the checksum files. Do so only when they become legally/audit-critical
+        # artifacts.
+        scp_client.put( file_entry[ "md5_file_local" ],    file_entry[ "md5_file_remote" ] )
+        scp_client.put( file_entry[ "sha512_file_local" ], file_entry[ "sha512_file_remote" ] )
 
-    try:
-        transport = _open_transport_and_validate_hostkey( demux )
-        _auth_transport_2fa( demux, transport )
 
-        ssh_client = SSHClient( )
-        ssh_client._transport = transport
-
-        with SCPClient( transport ) as scp_client:
-            _upload_tar_via_scp( demux, ssh_client, scp_client, file_entry )
-            _verify_remote_hashes_against_local_files( demux, ssh_client, file_entry )
-            # Upload checksum files as metadata only; tar integrity is already verified against local checksums
-            # so, there is no need to checksum the checksum files. Do so only when they become legally/audit-critical
-            # artifacts.
-            scp_client.put( file_entry[ "md5_file_local" ],    file_entry[ "md5_file_remote" ] )
-            scp_client.put( file_entry[ "sha512_file_local" ], file_entry[ "sha512_file_remote" ] )
-
-    finally:
-        if ssh_client is not None:
-            ssh_client.close( )
-        elif transport is not None:
-            transport.close( )
         demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Uploading file {tar_file} via ssh 2FA finished\n", color = "red", attrs = ["bold"] ) )
 
 

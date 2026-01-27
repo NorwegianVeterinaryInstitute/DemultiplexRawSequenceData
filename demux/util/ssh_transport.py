@@ -161,7 +161,7 @@ def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig 
 
 
 
-def _validate_hostkey( transport: Transport ):
+def _validate_hostkey( transport: Transport, *, timeout: float = 15 ):
     """
     Validate the remote server host key for an already-created SSH Transport.
 
@@ -175,7 +175,7 @@ def _validate_hostkey( transport: Transport ):
         deal with
     """
 
-    transport.start_client( timeout = 5 )
+    transport.start_client( timeout )
 
     # Validate host key against known_hosts (RejectPolicy equivalent)
     host_keys = paramiko.HostKeys( )
@@ -354,8 +354,11 @@ def _ensure_remote_dir_via_client( demux, transport: paramiko.Transport, remote_
     test_command: str              = f"/usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}"
     test_channel: paramiko.Channel = transport.open_session( )
     test_channel.exec_command( test_command )
-    test_stderr                    = test_channel.makefile_stderr( "r" ).read( )
-    test_status: int               = test_channel.recv_exit_status( )
+    try:
+        test_stderr                    = test_channel.makefile_stderr( "r" ).read( )
+        test_status: int               = test_channel.recv_exit_status( )
+    finally:
+        test_channel.close( )
 
     if test_status == 0:
         message = f"Directory creation error: {demux.hostname}:{remote_absolute_dir_path} already exists.\n"
@@ -363,15 +366,16 @@ def _ensure_remote_dir_via_client( demux, transport: paramiko.Transport, remote_
         demuxLogger.critical( message )
         raise SSHException( message )
 
+
+
     mkdir_command: str              = f"/usr/bin/mkdir -- {shlex.quote( remote_absolute_dir_path )}"
     mkdir_channel: paramiko.Channel = transport.open_session( )
     mkdir_channel.exec_command( mkdir_command )
-    mkdir_stderr                    = mkdir_channel.makefile_stderr( "r" ).read( )
-    mkdir_status: int               = mkdir_channel.recv_exit_status( )
-
-    channel = transport.open_session( )
-    stdin, stdout, stderr = channel.exec_command( f"/usr/bin/mkdir -- {shlex.quote( remote_absolute_dir_path )}" )
-    mkdir_status = stdout.channel.recv_exit_status( )
+    try:
+        mkdir_stderr                    = mkdir_channel.makefile_stderr( "r" ).read( )
+        mkdir_status: int               = mkdir_channel.recv_exit_status( )
+    finally:
+        channel.close()
 
     if mkdir_status != 0:
         message = f"Directory creation error: Cannot create {demux.hostname}:{remote_absolute_dir_path} even after original check. "
