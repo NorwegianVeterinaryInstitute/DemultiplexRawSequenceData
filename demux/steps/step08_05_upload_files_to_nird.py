@@ -83,10 +83,31 @@ def _verify_remote_hashes_against_local_files( demux, file_entry ) -> None:
 
 
 def progress(filename, size, sent):
-    sys.stdout.write("%s's progress: %.2f%%   \r" % (filename, float(sent)/float(size)*100) )
+    """
+    Progress callback for SCP transfers.
+
+    Args:
+        filename: Name of the file being transferred.
+        size: Total file size in bytes.
+        sent: Bytes sent so far.
+
+    Prints percentage completion to stdout.
+    """
+    sys.stdout.write("%s progress: %.2f%%   \r" % ( filename, float( sent )/float( size )*100 ) )
 
 def progress4(filename, size, sent, peername):
-    sys.stdout.write("(%s:%s) %s's progress: %.2f%%   \r" % (peername[0], peername[1], filename, float(sent)/float(size)*100) )
+    """
+    Extended progress callback including remote peer info.
+
+    Args:
+        filename: Name of the file being transferred.
+        size: Total file size in bytes.
+        sent: Bytes sent so far.
+        peername: (host, port) tuple of the remote endpoint.
+
+    Prints percentage completion with peer address to stdout.
+    """
+    sys.stdout.write("(%s:%s) %s progress: %.2f%%   \r" % ( peername[ 0 ], peername[ 1 ], filename, float( sent )/float( size )*100 ) )
 
 def _upload_tar_via_scp( demux, transport: paramiko.Transport, file_entry ) -> None:
     """
