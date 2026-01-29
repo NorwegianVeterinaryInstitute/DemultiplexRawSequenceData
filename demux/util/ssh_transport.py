@@ -385,3 +385,86 @@ def _ensure_remote_dir_via_client( demux, transport: paramiko.Transport, remote_
         demuxLogger.critical( message )
         raise SSHException(message)
 
+
+
+def _build_proxyjump_transport_chain( hop: paramiko.config.SSHConfig, transport: Optional[ paramiko.Transport ] = None, *, port: int = 22, timeout: float = 30.0) -> paramiko.Transport:
+    """
+    Build a new SSH Transport for a single hop described by a parsed SSHConfig
+    entry, either by opening a direct TCP connection (first hop) or by tunneling
+    through an existing Transport using a direct-tcpip channel (ProxyJump-style).
+
+    The hop is assumed to already be ordered in a resolved jump chain, so only
+    the resolved hostname field is used (no ProxyJump re-evaluation).
+
+    The returned Transport has completed the SSH client handshake but is not
+    authenticated.
+
+    Args:
+        hop: Paramiko SSHConfig entry for the next hop (must contain 'hostname').
+        transport: Existing Transport to tunnel through, or None for the first hop.
+        port: SSH port for the hop (default: 22).
+        timeout: Socket and SSH handshake timeout in seconds.
+
+    Returns:
+        An initialized but unauthenticated Paramiko Transport for the hop.
+
+    Raises:
+        socket.error: If the TCP connection fails on the hop.
+        RuntimeError: If the TCP connection fails or if opening the ProxyJump
+        channel fails for the hop.
+    """
+
+    hostname: str = hop.get( 'hostname' ) # since we already have an ordered list of hops, we do not need to do some crazy
+                                          # checking to see if ProxyJump is set and use that or not. We just select the 
+                                          # hostname.
+    if transport is None:
+        try:
+            tcp_socket: socket.socket = socket.create_connection( ( hostname, port ), timeout )
+        except OSError as error:
+            raise RuntimeError(f"TCP connect failed to {hostname}:{port}") from error
+        next_transport: paramiko.Transport = paramiko.Transport(tcp_socket)
+    else:
+        localhost = "127.0.0.1"
+        try: 
+            channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = ( localhost, 0 ) )
+        except ( paramiko.SSHException, EOFError ) as error:
+            raise RuntimeError( f"ProxyJump channel open failed to connect to {hostname}:{port}" ) from error
+        next_transport = paramiko.Transport( channel )
+
+    next_transport.start_client( timeout = timeout )
+
+    return next_transport
+
+
+
+def _setup_ssh_connection( ) -> paramiko.Transport:
+    """
+    @still_being_thought_out
+
+    Build an authenticated SSH Transport chain for the target host (and any ProxyJump hops),
+    validating each hop host key against known_hosts before authenticating and proceeding.
+
+    Returns:
+        A fully chained, authenticated `paramiko.Transport` for the final hop.
+
+    Raises:
+        RuntimeError: if no hops are produced, or if transport construction fails.
+    """
+    hops_list: List[ paramiko.config.SSHConfig ] = kot._parse_ssh_config( )
+    if len( hops_list ) == 0:
+        raise RuntimeError( "SSH config resolution produced zero hops; cannot build transport chain." )
+
+    current_transport: paramiko.Transport | None = None
+    transport_stack: Optional[ List[ paramiko.Transport ] ] = None # having a stack of the previous ntransports would be a good idea
+
+    for hop in hops_list:
+        next_transport: paramiko.Transport = _build_proxyjump_transport_chain( hop, current_transport )
+        _validate_hostkey( hop, next_transport )
+        _authenticate_transport( hop, next_transport )
+        transports.append( next_transport )
+        current_transport = next_transport
+
+    if current_transport is None:
+        raise RuntimeError("Transport chain construction failed; final transport is None.")
+
+    return current_transport
