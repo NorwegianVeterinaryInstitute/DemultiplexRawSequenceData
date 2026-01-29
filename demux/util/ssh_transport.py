@@ -176,7 +176,8 @@ def _validate_hostkey( hop: paramiko.config.SSHConfig, transport: paramiko.Trans
         deal with
     """
 
-    transport.start_client( timeout )
+    hostname = hop.get( 'hostname' )
+    port     = hop.get( 'port' )
 
     # Validate host key against known_hosts (RejectPolicy equivalent)
     host_keys = paramiko.HostKeys( )
@@ -186,12 +187,10 @@ def _validate_hostkey( hop: paramiko.config.SSHConfig, transport: paramiko.Trans
 
     remote_key = transport.get_remote_server_key( )
 
-    host_key_entry = host_keys.lookup( demux.hostname )
-    if ( host_key_entry is None ) and ( demux.port != 22 ):
-        host_key_entry = host_keys.lookup( f"[{demux.hostname}]:{demux.port}" )
+    host_key_entry = host_keys.lookup( hostname )
 
     if host_key_entry is None:
-        message = f"RuntimeError: Host key for {demux.hostname}:{demux.port} not found in {known_hosts_path}. Refusing connection."
+        message = f"RuntimeError: Host key for {hostname}:{port} not found in {known_hosts_path}. Refusing connection."
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
@@ -202,7 +201,7 @@ def _validate_hostkey( hop: paramiko.config.SSHConfig, transport: paramiko.Trans
             break
 
     if not accepted:
-        message = f"RuntimeError: Host key mismatch for {demux.hostname}:{demux.port}. Refusing connection."
+        message = f"RuntimeError: Host key mismatch for {hostname}:{port}. Refusing connection."
         demuxLogger.critical( message )
         raise RuntimeError( message ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
 
