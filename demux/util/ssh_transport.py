@@ -372,6 +372,7 @@ def _ensure_remote_dir_via_client( demux, transport: paramiko.Transport, remote_
     mkdir_channel: paramiko.Channel = transport.open_session( )
     mkdir_channel.exec_command( mkdir_command )
     try:
+        # we only need to catch stderr here
         mkdir_stderr                    = mkdir_channel.makefile_stderr( "r" ).read( )
         mkdir_status: int               = mkdir_channel.recv_exit_status( )
     finally:
