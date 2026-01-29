@@ -17,6 +17,70 @@ from demux.config          import constants
 from demux.loggers         import demuxLogger, demuxFailureLogger
 
 
+def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig ) -> None:
+    """
+    @in_use by _parse_ssh_config
+    Verify that a single SSH hop configuration complies with enforced security
+    and simplicity policy.
+
+    Validates required SSH options (host key checking, identity usage, user,
+    hostname, known-hosts handling) and rejects unsupported or ambiguous
+    configurations. Main design principle is to Keep It Simple.
+
+    Raises:
+        ValueError/Keyerror on policy violations
+
+    Returns:
+        None on success.
+    """
+
+    # Ensure StrictHostKeyChecking is set to yes.
+    strict_hostkey_checking = str( target_lookup.get( "stricthostkeychecking" ) ).strip( ).lower( )
+    if strict_hostkey_checking != "yes":
+        raise ValueError( f"StrictHostKeyChecking must be 'yes' for {target_lookup.get( 'hostname' )}" )
+
+    # Ensure VerifyHostKeyDNS is set to yes
+    verify_hostkey_dns = str( target_lookup.get( "verifyhostkeydns" ) ).strip( ).lower( )
+    if strict_hostkey_checking != "yes":
+        raise ValueError( f"VerifyHostKeyDNS must be 'yes' for {target_lookup.get( 'hostname' )}" )
+
+    # Ensure there is a Hostname key-value
+    hostname = ( target_lookup.get( "hostname" ) or "" ).strip( )
+    if not hostname:
+        raise KeyError( f"Missing HostName for host alias {target_lookup.get( 'hostname' )}" )
+
+    # Ensure we got a User key-value
+    username = ( target_lookup.get( "user" ) or "" ).strip( )
+    if not username:
+        raise ValueError( f"Missing User for host alias {target_lookup.get( 'hostname' )}" )
+
+    # Ensure we got a Port User key-value
+    # port_text = str( hop_port or target_lookup.get( "port" ) or "22" ).strip( )
+    # try:
+    #   port = int( port_text )
+    # except ValueError as error:
+    #    # from is the only mechanism that allows you to chain the cought exception while allowing
+    #    # you to add a custom message
+    #    raise ValueError( f"Invalid Port {port_text} for host alias {target_lookup.get( 'hostname )}'" ) from error
+
+
+    # Ensure we got an IdentityFile key-value and it is unique
+    identity_file = target_lookup.get( "identityfile" )
+    if isinstance( identity_file, list ):
+        if len( identity_file ) > 1:
+            raise ValueError( f"IdentityFile must be a single entry for {target_lookup.get( 'hostname' )}, got {len( identity_file )}" )
+
+    # Ensure we are serving only identities stated in ssh_config entry and that we do not spam the host with keys
+    identities_only = str( target_lookup.get( "identitiesonly" ) or "" ).strip( ).lower( ) 
+    if identities_only != "yes":
+        raise ValueError( f"IdentitiesOnly must be 'yes' for {target_lookup.get( 'hostname' )}, so we do not spam the server with keys" )
+
+    # Ensure that we keep things simple by having only one UserKnownHostsFile
+    user_known_hosts_file = target_lookup.get( "userknownhostsfile" )
+    if isinstance( user_known_hosts_file, list ) and len( user_known_hosts_file ) != 1:
+        raise ValueError( f"Multiple IdentityFile values for host alias {target_lookup.get( 'hostname' )}")
+
+
 def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias: str ) -> List[ paramiko.config.SSHConfig ]:
     """
     @in_use by ssh_transport:_parse_ssh_config
@@ -96,72 +160,8 @@ def _parse_ssh_config( demux ) -> List[ paramiko.config.SSHConfig ]:
     return _resolve_proxyjump_chain( ssh_config, target_lookup.get( "hostname" ) )
 
 
-def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig ) -> None:
-    """
-    @in_use by _parse_ssh_config
-    Verify that a single SSH hop configuration complies with enforced security
-    and simplicity policy.
 
-    Validates required SSH options (host key checking, identity usage, user,
-    hostname, known-hosts handling) and rejects unsupported or ambiguous
-    configurations. Main design principle is to Keep It Simple.
-
-    Raises:
-        ValueError/Keyerror on policy violations
-
-    Returns:
-        None on success.
-    """
-
-    # Ensure StrictHostKeyChecking is set to yes.
-    strict_hostkey_checking = str( target_lookup.get( "stricthostkeychecking" ) ).strip( ).lower( )
-    if strict_hostkey_checking != "yes":
-        raise ValueError( f"StrictHostKeyChecking must be 'yes' for {target_lookup.get( 'hostname' )}" )
-
-    # Ensure VerifyHostKeyDNS is set to yes
-    verify_hostkey_dns = str( target_lookup.get( "verifyhostkeydns" ) ).strip( ).lower( )
-    if strict_hostkey_checking != "yes":
-        raise ValueError( f"VerifyHostKeyDNS must be 'yes' for {target_lookup.get( 'hostname' )}" )
-
-    # Ensure there is a Hostname key-value
-    hostname = ( target_lookup.get( "hostname" ) or "" ).strip( )
-    if not hostname:
-        raise KeyError( f"Missing HostName for host alias {target_lookup.get( 'hostname' )}" )
-
-    # Ensure we got a User key-value
-    username = ( target_lookup.get( "user" ) or "" ).strip( )
-    if not username:
-        raise ValueError( f"Missing User for host alias {target_lookup.get( 'hostname' )}" )
-
-    # Ensure we got a Port User key-value
-    # port_text = str( hop_port or target_lookup.get( "port" ) or "22" ).strip( )
-    # try:
-    #   port = int( port_text )
-    # except ValueError as error:
-    #    # from is the only mechanism that allows you to chain the cought exception while allowing
-    #    # you to add a custom message
-    #    raise ValueError( f"Invalid Port {port_text} for host alias {target_lookup.get( 'hostname )}'" ) from error
-
-
-    # Ensure we got an IdentityFile key-value and it is unique
-    identity_file = target_lookup.get( "identityfile" )
-    if isinstance( identity_file, list ):
-        if len( identity_file ) > 1:
-            raise ValueError( f"IdentityFile must be a single entry for {target_lookup.get( 'hostname' )}, got {len( identity_file )}" )
-
-    # Ensure we are serving only identities stated in ssh_config entry and that we do not spam the host with keys
-    identities_only = str( target_lookup.get( "identitiesonly" ) or "" ).strip( ).lower( ) 
-    if identities_only != "yes":
-        raise ValueError( f"IdentitiesOnly must be 'yes' for {target_lookup.get( 'hostname' )}, so we do not spam the server with keys" )
-
-    # Ensure that we keep things simple by having only one UserKnownHostsFile
-    user_known_hosts_file = target_lookup.get( "userknownhostsfile" )
-    if isinstance( user_known_hosts_file, list ) and len( user_known_hosts_file ) != 1:
-        raise ValueError( f"Multiple IdentityFile values for host alias {target_lookup.get( 'hostname' )}")
-
-
-
-def _validate_hostkey( transport: Transport, *, timeout: float = 15 ):
+def _validate_hostkey( hop: paramiko.config.SSHConfig, transport: paramiko.Transport, *, timeout: float = 30 ):
     """
     Validate the remote server host key for an already-created SSH Transport.
 
