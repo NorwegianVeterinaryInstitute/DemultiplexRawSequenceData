@@ -455,16 +455,17 @@ def _setup_ssh_connection( ) -> paramiko.Transport:
     if len( hops_list ) == 0:
         raise RuntimeError( "SSH config resolution produced zero hops; cannot build transport chain." )
 
+    timeout: float = 30
     current_transport: paramiko.Transport | None = None
     transport_stack: Optional[ List[ paramiko.Transport ] ] = None # having a stack of the previous ntransports would be a good idea
 
     for hop in hops_list:
         next_transport: paramiko.Transport = _build_proxyjump_transport_chain( hop, current_transport )
-        _validate_hostkey( hop, next_transport )
+        transport.start_client( timeout )
+        _validate_hostkey( next_transport )
         _authenticate_transport( hop, next_transport )
         transports.append( next_transport )
         current_transport = next_transport
-
     if current_transport is None:
         raise RuntimeError("Transport chain construction failed; final transport is None.")
 
