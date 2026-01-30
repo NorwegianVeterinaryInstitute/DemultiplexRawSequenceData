@@ -1,3 +1,8 @@
+import paramiko
+
+from demux.config          import constants
+from demux.loggers         import demuxLogger, demuxFailureLogger
+
 def _auth_transport( demux, transport: paramiko.Transport ) -> None:
     """
     @in_use

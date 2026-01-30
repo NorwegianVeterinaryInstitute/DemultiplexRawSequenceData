@@ -20,11 +20,11 @@ from typing import Tuple
 
 from demux.loggers              import demuxLogger, demuxFailureLogger
 
-import demux.steps.step08_01_build_absolute_paths
-import demux.steps.step08_02_verify_local_files
-import demux.steps.step08_03_setup_ssh_connection 
-import demux.steps.step08_04_ensure_remote_run_directory 
-import demux.steps.step08_05_upload_files_to_nird 
+from demux.steps.step08_01_build_absolute_paths        import _build_absolute_paths
+from demux.steps.step08_02_verify_local_files          import _verify_local_files
+from demux.steps.step08_03_setup_ssh_connection        import _setup_ssh_connection
+from demux.steps.step08_04_ensure_remote_run_directory import _ensure_remote_run_directory
+from demux.steps.step08_05_upload_files_to_nird        import _upload_files_to_nird
 
 
 
