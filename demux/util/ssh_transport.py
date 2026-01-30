@@ -5,6 +5,7 @@ import paramiko
 import pprint
 import re
 import shlex
+import socket
 import sys
 
 from typing import Any, Dict, List, Optional, Tuple, Mapping
