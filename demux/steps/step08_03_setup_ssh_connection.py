@@ -1,31 +1,39 @@
 import paramiko
 
-def _setup_ssh_connection( demux ) -> paramiko.Transport:
+from typing import Any, Dict, List, Optional, Tuple, Mapping
+
+from demux.util.ssh_transport import _build_proxyjump_transport_chain, _validate_hostkey, _authenticate_transport
+
+def _setup_ssh_connection( ) -> paramiko.Transport:
     """
-    @in_use by step08_04_ensure_remote_run_directory.py
     @still_being_thought_out
-    Open a new SSH transport to the remote host and strictly validate its host key
-    against the local known_hosts database.
 
-    Establishes the TCP/SSH session, retrieves the server host key and rejects the
-    connection if the key is missing or does not match the known_hosts entry.
-    Returns an authenticated SSH Transport with a verified host key
+    Build an authenticated SSH Transport chain for the target host (and any ProxyJump hops),
+    validating each hop host key against known_hosts before authenticating and proceeding.
+
+    Returns:
+        A fully chained, authenticated `paramiko.Transport` for the final hop.
+
+    Raises:
+        RuntimeError: if no hops are produced, or if transport construction fails.
     """
+    hops_list: List[ paramiko.config.SSHConfig ] = _parse_ssh_config( )
+    timeout: float = 30
+    current_transport: paramiko.Transport | None = None
+    transport_stack: List[ paramiko.Transport ] = [ ]   # having a stack of the previous transports would be a good idea
+                                                        # so we can close the transports later in reverse order
+    if len( hops_list ) == 0:
+        raise RuntimeError( "SSH config resolution produced zero hops; cannot build transport chain." )
 
-    hops_list: List[ paramiko.config.SSHConfig ] = kot._parse_ssh_config( )
-
-    current_transport : Optional[ paramiko.Transport ] = None
 
     for hop in hops_list:
-        next_transport: paramiko.Transport = _build_transport( hop, current_transport ) # returns the next transport
-
-        pprint.pprint( next_transport )
-        sys.exit( 0 )
-        next_transport.start_client( )
-        _validate_hostkey( next_transport )         # this is practically written
-        _authenticate_transport( next_transport )   # this is not written 
+        next_transport: paramiko.Transport = _build_proxyjump_transport_chain( hop, current_transport )
+        transport.start_client( timeout )
+        _validate_hostkey( hop, next_transport )
+        _authenticate_transport( hop, next_transport )
+        transport_stack.append( next_transport )
         current_transport = next_transport
+    if current_transport is None:
+        raise RuntimeError( "Transport chain construction failed; final transport is None." )
 
-    return current_transport # fully chained and authenticated
-
-
+    return current_transport
