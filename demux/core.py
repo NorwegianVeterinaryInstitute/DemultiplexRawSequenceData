@@ -180,8 +180,8 @@ class demux:
     allowed_nird_copy_modes         = [ "serial", "parallel" ]
     ######################################################
     # defaults
-    # nird_upload_host                = "login.nird.sigma2.no"
-    nird_upload_host                = "rei.vetinst.no"
+    nird_upload_host                = "login.nird.sigma2.no"
+    # nird_upload_host                = "rei.vetinst.no"
     # nird_upload_host                = "laptop"
     nird_scp_port                   = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
     nird_username                   = "gmarselis" # change this to be the user running the script
