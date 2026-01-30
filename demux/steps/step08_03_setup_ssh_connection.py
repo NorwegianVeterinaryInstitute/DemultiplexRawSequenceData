@@ -2,9 +2,9 @@ import paramiko
 
 from typing import Any, Dict, List, Optional, Tuple, Mapping
 
-from demux.util.ssh_transport import _build_proxyjump_transport_chain, _validate_hostkey, _authenticate_transport
+from demux.util.ssh_transport import _build_proxyjump_transport_chain, _validate_hostkey, _authenticate_transport, _parse_ssh_config
 
-def _setup_ssh_connection( demux ) -> paramiko.Transport:
+def _setup_ssh_connection( demux, *, timeout: float = 30 ) -> paramiko.Transport:
     """
     @still_being_thought_out
 
