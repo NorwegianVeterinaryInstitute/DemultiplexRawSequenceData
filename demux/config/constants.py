@@ -36,7 +36,7 @@ SERIAL_COPYING:str          = "serial"
 PARALLEL_COPYING:str        = "parallel"
 
 BITWARDEN_CLI_PATH:str      = "/usr/local/bin/bw"
-# CURL_CLI_PATH:str          = "/usr/bin/curl" # we do not need curl, we are making the API calls using urllib of python
+# CURL_CLI_PATH:str           = "/usr/bin/curl" # we do not need curl, we are making the API calls using urllib of python
 
 READ_ONLY_BINARY:str        = "rb"
 READ_ONLY_TEXT:str          = "r"
