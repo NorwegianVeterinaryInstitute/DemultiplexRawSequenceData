@@ -28,7 +28,7 @@ def _setup_ssh_connection( demux ) -> paramiko.Transport:
 
     for hop in hops_list:
         next_transport: paramiko.Transport = _build_proxyjump_transport_chain( hop, current_transport )
-        transport.start_client( timeout )
+        next_transport.start_client( timeout )
         _validate_hostkey( hop, next_transport )
         _authenticate_transport( hop, next_transport )
         transport_stack.append( next_transport )
@@ -36,7 +36,7 @@ def _setup_ssh_connection( demux ) -> paramiko.Transport:
     if current_transport is None:
         raise RuntimeError( "Transport chain construction failed; final transport is None." )
 
+    # save the transport
+    demux.transport = current_transport
     # save the transport stack for later, so we can .reverse and walk it backwards.
     demux.transport_stack = transport_stack
-
-    return current_transport
