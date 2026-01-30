@@ -181,7 +181,7 @@ def _validate_hostkey( hop: paramiko.config.SSHConfig, transport: paramiko.Trans
 
     # Validate host key against known_hosts (RejectPolicy equivalent)
     host_keys = paramiko.HostKeys( )
-    known_hosts_path = os.path.abspath( os.path.expanduser( constants.USER_KNOWN_HOSTS_PATH ) )
+    known_hosts_path = os.path.abspath( os.path.expanduser( constants.USER_SSH_KNOWN_HOSTS_PATH ) )
     if os.path.exists( known_hosts_path ):
         host_keys.load( known_hosts_path )
 
