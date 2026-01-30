@@ -32,7 +32,6 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ) -> paramiko.Transport
         except ( paramiko.SSHException, EOFError, OSError, socket.timeout ) as error:
             raise RuntimeError( "SSH handshake failed" ) from error
 
-        is_active: bool = 
         if not next_transport.is_active( ):  # Verify transport state after handshake
             raise RuntimeError( "SSH transport inactive after handshake" )
 
