@@ -433,5 +433,8 @@ def _build_proxyjump_transport_chain( hop: paramiko.config.SSHConfig, transport:
             raise RuntimeError( f"ProxyJump channel open failed to connect to {hostname}:{port}" ) from error
         next_transport = paramiko.Transport( channel )
 
+    if next_transport is None:
+        raise RuntimeError("Transport creation failed")
+
     return next_transport
 
