@@ -27,7 +27,15 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ) -> paramiko.Transport
 
     for hop in hops_list:
         next_transport: paramiko.Transport = _build_proxyjump_transport_chain( hop, current_transport )
-        next_transport.start_client( timeout )
+        try:
+            next_transport.start_client( timeout = timeout )  # Perform SSH handshake on the new transport
+        except ( paramiko.SSHException, EOFError, OSError, socket.timeout ) as error:
+            raise RuntimeError( "SSH handshake failed" ) from error
+
+        is_active: bool = 
+        if not next_transport.is_active( ):  # Verify transport state after handshake
+            raise RuntimeError( "SSH transport inactive after handshake" )
+
         _validate_hostkey( hop, next_transport )
         _authenticate_transport( hop, next_transport )
         transport_stack.append( next_transport )
