@@ -1,3 +1,4 @@
+import os
 
 def _verify_local_files( demux ):
     """
