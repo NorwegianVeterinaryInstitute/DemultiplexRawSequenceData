@@ -291,7 +291,7 @@ def _auth_transport_2fa( transport: paramiko.Transport, hop: paramiko.config.SSH
         raise AuthenticationException( message )
 
 
-def _authenticate_transport( transport: paramiko.Transport, hop_lookup: paramiko.config.SSHConfig ) -> None:
+def _authenticate_transport( hop_lookup: paramiko.config.SSHConfig, transport: paramiko.Transport ) -> None:
     """
     Authenticate an existing SSH Transport for a single hop using the credentials
     defined in the SSH client configuration and BitLocker.
@@ -339,7 +339,7 @@ def _authenticate_transport( transport: paramiko.Transport, hop_lookup: paramiko
 
 
 
-def _ensure_remote_dir_via_client( demux, transport: paramiko.Transport, remote_absolute_dir_path: str ) -> None:
+def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> None:
     """
     Ensure the remote run directory exists using an already-authenticated SSH client.
 
@@ -352,7 +352,7 @@ def _ensure_remote_dir_via_client( demux, transport: paramiko.Transport, remote_
     """
 
     test_command: str              = f"/usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}"
-    test_channel: paramiko.Channel = transport.open_session( )
+    test_channel: paramiko.Channel = denmux.transport.open_session( )
     test_channel.exec_command( test_command )
     try:
         test_stderr                    = test_channel.makefile_stderr( "r" ).read( )
@@ -369,7 +369,7 @@ def _ensure_remote_dir_via_client( demux, transport: paramiko.Transport, remote_
 
 
     mkdir_command: str              = f"/usr/bin/mkdir -- {shlex.quote( remote_absolute_dir_path )}"
-    mkdir_channel: paramiko.Channel = transport.open_session( )
+    mkdir_channel: paramiko.Channel = demux.transport.open_session( )
     mkdir_channel.exec_command( mkdir_command )
     try:
         # we only need to catch stderr here

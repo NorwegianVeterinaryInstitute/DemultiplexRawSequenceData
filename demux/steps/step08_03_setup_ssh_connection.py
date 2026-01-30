@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Mapping
 
 from demux.util.ssh_transport import _build_proxyjump_transport_chain, _validate_hostkey, _authenticate_transport
 
-def _setup_ssh_connection( ) -> paramiko.Transport:
+def _setup_ssh_connection( demux ) -> paramiko.Transport:
     """
     @still_being_thought_out
 
@@ -35,5 +35,8 @@ def _setup_ssh_connection( ) -> paramiko.Transport:
         current_transport = next_transport
     if current_transport is None:
         raise RuntimeError( "Transport chain construction failed; final transport is None." )
+
+    # save the transport stack for later, so we can .reverse and walk it backwards.
+    demux.transport_stack = transport_stack
 
     return current_transport

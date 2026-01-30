@@ -61,7 +61,7 @@ def _ensure_remote_run_directory_mounted( demux ) -> None:
         raise RuntimeError( message)
 
 
-def _ensure_remote_run_directory_ssh( demux, transport: paramiko.Transport ) -> None:
+def _ensure_remote_run_directory_ssh( demux ) -> None:
     """
     @in_use
     @needs_refactor
@@ -96,11 +96,11 @@ def _ensure_remote_run_directory_ssh( demux, transport: paramiko.Transport ) -> 
         message += "end up in the home directory of the uploading user."
         raise ValueError( message )
 
-    _ensure_remote_dir_via_client( demux, transport, remote_absolute_dir_path )
+    _ensure_remote_dir_via_client( demux, remote_absolute_dir_path )
 
 
 
-def _ensure_remote_run_directory( demux, transport: paramiko.Transport ):
+def _ensure_remote_run_directory( demux ):
     """
     @in_use
     Dispatch to the correct remote-directory preparation method
@@ -109,13 +109,13 @@ def _ensure_remote_run_directory( demux, transport: paramiko.Transport ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: checking if remote directrory exists started\n", color="green", attrs=["bold"] ) )
 
     if constants.NIRD_MODE_SSH == demux.nird_access_mode:
-        _ensure_remote_run_directory_ssh( demux, transport )
+        _ensure_remote_run_directory_ssh( demux )
 
     elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
         # this used to be named _ensure_remote_run_directory_ssh_2fa, but got refactored
         # down to credentials logic detected at run time. I am leaving the switch here for
         # verbocity, and to match the 3case we got for selecting a run mode.
-        _ensure_remote_run_directory_ssh( demux, transport )
+        _ensure_remote_run_directory_ssh( demux )
 
     elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         _ensure_remote_run_directory_mounted( demux )

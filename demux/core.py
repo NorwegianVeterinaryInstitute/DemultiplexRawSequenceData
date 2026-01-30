@@ -2,15 +2,16 @@
 
 import argparse
 import ast
-import pdb
 import glob
+import grp
 import hashlib
 import inspect
-import grp
 import logging
 import logging.handlers
 import os
+import paramiko
 import pathlib
+import pdb
 import pprint
 import re
 import resource
@@ -23,6 +24,8 @@ import sys
 import syslog
 import tarfile
 import termcolor
+
+from typing import Any, Dict, List, Optional, Tuple, Mapping
 
 import demux.config.constants
 
@@ -192,7 +195,8 @@ class demux:
     port                            = int( )
     key_file                        = ""
     proxy_jump                      = ""
-    proxy_jump_chain                = [ ]
+    proxy_jump_chain: List          = None
+    transport_stack: List[ paramiko.Transport]  = None
     ######################################################
     bw_port                         = 8087
     bw_localhost                    = "127.0.0.1" # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. refering it by IP allows us to deterministically resolve the address

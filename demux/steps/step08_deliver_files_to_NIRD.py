@@ -11,13 +11,6 @@ import sys
 import termcolor
 import urllib.request
 
-from typing import Tuple
-
-# from paramiko                 import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
-# from paramiko.ssh_exception   import AuthenticationException
-# from scp                      import SCPClient
-# from concurrent.futures       import ThreadPoolExecutor
-
 from demux.loggers              import demuxLogger, demuxFailureLogger
 
 from demux.steps.step08_01_build_absolute_paths        import _build_absolute_paths
@@ -52,10 +45,11 @@ def deliver_files_to_NIRD( demux ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n", color="green", attrs=["bold"] ) )
 
-    _build_absolute_paths( demux )          # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
-    _verify_local_files( demux )            # verify the local files exist before attempting to transfer them
-    _setup_ssh_connection( demux )          # setup the ssh transport needed for the next two functions, along any hop chain they might need
-    _ensure_remote_run_directory( demux )   # make sure demux.nird_base_upload_path/demux.RunID exists
-    _upload_files_to_nird( demux )          # send the demux object to a dedicated method and it will decide what mode of copying and type of upload it will use
+    _build_absolute_paths( demux )                      # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
+    _verify_local_files( demux )                        # verify the local files exist before attempting to transfer them
+    demux.transport = _setup_ssh_connection( demux )    # setup the ssh transport needed for the next two functions, along any hop chain they might need
+    _ensure_remote_run_directory( demux )               # make sure demux.nird_base_upload_path/demux.RunID exists
+    _upload_files_to_nird( demux )                      # send the demux object to a dedicated method and it will decide what mode of copying and type of upload it will use
+    _close_channels_and_transport( demux )              # close off the channels we opened and any transports
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )
