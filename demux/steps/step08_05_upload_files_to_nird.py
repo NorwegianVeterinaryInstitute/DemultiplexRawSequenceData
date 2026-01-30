@@ -31,7 +31,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
 
     Raises RuntimeError on remote md5sum/sha512sum failure or on any hash mismatch.
     """
-   def _drain_channel( channel: paramiko.Channel, results: dict[ str, tuple[ bytes, bytes, int ] ], key: str ) -> None:
+    def _drain_channel( channel: paramiko.Channel, results: dict[ str, tuple[ bytes, bytes, int ] ], key: str ) -> None:
         try:
             stdout_bytes: bytes = channel.makefile( "rb" ).read( )
             stderr_bytes: bytes = channel.makefile_stderr( "rb" ).read( )
