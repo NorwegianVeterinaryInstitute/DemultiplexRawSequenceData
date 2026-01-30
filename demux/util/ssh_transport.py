@@ -389,7 +389,7 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
 
 
 
-def _build_proxyjump_transport_chain( hop: paramiko.config.SSHConfig, transport: Optional[ paramiko.Transport ] = None, *, port: int = 22, timeout: float = 30.0) -> paramiko.Transport:
+def _build_proxyjump_transport_chain( hop: paramiko.config.SSHConfig, transport: Optional[ paramiko.Transport ], *, port: int = 22, timeout: float = 30.0) -> paramiko.Transport:
     """
     Build a new SSH Transport for a single hop described by a parsed SSHConfig
     entry, either by opening a direct TCP connection (first hop) or by tunneling
