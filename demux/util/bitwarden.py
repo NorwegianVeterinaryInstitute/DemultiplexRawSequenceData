@@ -10,6 +10,38 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 
 # bitwarden methods
 
+def get_password( hostname: str ):
+    if not hostname:
+        raise ValueError( "ValueError: hostname not provided, cannot return password. Aborting." )
+
+    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/password/{hostname}", timeout = 1 ) as r:
+        password:str = json.load( r )[ "data" ][ "data" ]
+
+    if not password:
+        raise ValueError( f"ValueError: no password returned from BitWarden for host {hostname}. Aborting." )
+
+    return password
+
+# def get_totp( hostname: str ):
+#     if not hostname:
+#         raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
+#
+#     with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{hostname}",     timeout = 1 ) as r:
+#         totp:int     = json.load( r )[ "data" ][ "data" ]
+#
+#     return totp
+#
+# def get_passphrase( hostname: str ):
+#     if not hostname:
+#         raise ValueError( "ValueError: hostname not provided, cannot return passphrase for key. Aborting." )
+#
+#     with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{hostname}",     timeout = 1 ) as r:
+#         passphrase:str     = json.load( r )[ "data" ][ "data" ]
+#
+#     return totp
+
+
+
 def _get_login_credentials_via_bw_cli( demux ) -> Tuple[ str, str, str ]:
     """
     Fetch username, password, and TOTP via bw CLI.
