@@ -243,15 +243,31 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     AuthenticationException if the server rejects the key.
     """
 
-    try:
-        private_key: paramiko.PKey = _load_private_key( identity_file_path, passphrase = None )
-    except paramiko.ssh_exception.PasswordRequiredException:
-        if not passphrase:
-            raise ValueError( f"Passphrase-protected key but no passphrase in Bitlocker. Aborting authentication for {username}@{hostname}" )
-        private_key = _load_private_key( identity_file_path, passphrase = passphrase )
-    transport.auth_publickey( username = username, key = private_key )
-    if not transport.is_authenticated( ):
-        raise paramiko.AuthenticationException( f"Public key authentication failed for {username}@{hostname}" )
+    # identity_file_path: str  = str( hop.get( "identityfile" ) )
+    # passphrase        : str  = str( demux.util.bitwarden.get_passphrase( hostname ) )
+
+    username:str            = hop.get( "username" )
+
+    agent: paramiko.Agent   = paramiko.Agent()
+    for agent_key in agent.get_keys():
+        try:
+            transport.auth_publickey( username, agent_key )
+            if transport.is_authenticated( ):
+                break
+        except paramiko.AuthenticationException:
+            continue
+
+    # this is cheating, but i will accept this for now
+
+    # try:
+    #     private_key: paramiko.PKey = _load_private_key( identity_file_path, passphrase = None )
+    # except paramiko.ssh_exception.PasswordRequiredException:
+    #     if not passphrase:
+    #         raise ValueError( f"Passphrase-protected key but no passphrase in BitWarden. Aborting authentication for {username}@{hostname}" )
+    #     private_key = _load_private_key( identity_file_path, passphrase = passphrase )
+    # transport.auth_publickey( username = username, key = private_key )
+    # if not transport.is_authenticated( ):
+    #     raise paramiko.AuthenticationException( f"Public key authentication failed for {username}@{hostname}" )
 
 
 def _auth_transport_2fa( transport: paramiko.Transport, hop: paramiko.config.SSHConfig ) -> None:
@@ -295,7 +311,7 @@ def _auth_transport_2fa( transport: paramiko.Transport, hop: paramiko.config.SSH
 def _authenticate_transport( hop_lookup: paramiko.config.SSHConfig, transport: paramiko.Transport ) -> None:
     """
     Authenticate an existing SSH Transport for a single hop using the credentials
-    defined in the SSH client configuration and BitLocker.
+    defined in the SSH client configuration and BitWarden.
 
     Resolves the target hostname and user, selects the authentication mechanism in
     priority order (public key, keyboard-interactive 2FA and finally password). Applies
@@ -309,11 +325,11 @@ def _authenticate_transport( hop_lookup: paramiko.config.SSHConfig, transport: p
 
     hostname          : str  = str( hop_lookup.get( "hostname" ) or "" )
     username          : str  = str( hop_lookup.get( "user" ) or "" )
-    password          : str  = str( bitlocker.get_password( hostname ) or "" )
+    # password          : str  = str( demux.util.bitwarden.get_password( hostname ) or "" )
     identity_file_path: str  = str( hop_lookup.get( "identityfile" ) )
-    passphrase        : str  = str( bitlocker.get_passphrase( hostname ) )
-    two_fa_enabled    : bool = bool( hop_lookup.get( "2FAEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
-    two_fa            : str  = str( bitlocker.get_2fa( hostname ) or "" )
+    totp_enabled      : bool = bool( hop_lookup.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
+    # if two_fa_enabled:
+    #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )
 
     if not hostname:
         raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'host' )}: hostname" )
@@ -325,12 +341,12 @@ def _authenticate_transport( hop_lookup: paramiko.config.SSHConfig, transport: p
     #     raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: identityfile" )
     # if not identity_password:
     #     raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: identity_password" )
-    if two_fa_enabled and not two_fa:
-        raise ValueError( f"ValueError: could not get TOTP from BitLocker for hop {hop_lookup.get( 'hostname' )}" )
+    if totp_enabled and not topt:
+        raise ValueError( f"ValueError: could not get TOTP from BitWarden for hop {hop_lookup.get( 'hostname' )}" )
 
     if identity_file_path:
         _auth_transport_ssh_keys( transport, hop_lookup )
-    elif two_fa_enabled:
+    elif totp_enabled:
         _auth_transport_2fa( transport, hop_lookup )
     else:
         transport.auth_password( username = username, password = password )
