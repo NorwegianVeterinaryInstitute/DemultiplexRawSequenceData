@@ -246,7 +246,11 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     # identity_file_path: str  = str( hop.get( "identityfile" ) )
     # passphrase        : str  = str( demux.util.bitwarden.get_passphrase( hostname ) )
 
-    username:str            = hop.get( "username" )
+    username:str            = hop.get( "user" )
+    hostname:str            = hop.get( "hostname" )
+
+    if not username:
+        raise ValueError( f"ValueError: No username providged for hostname {hostname} trying to load ssh keys for transport from ssh agent. Aborting." )
 
     agent: paramiko.Agent   = paramiko.Agent()
     for agent_key in agent.get_keys():
