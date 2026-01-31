@@ -373,7 +373,7 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
     """
 
     test_command: str              = f"/usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}"
-    test_channel: paramiko.Channel = denmux.transport.open_session( )
+    test_channel: paramiko.Channel = demux.transport.open_session( )
     test_channel.exec_command( test_command )
     try:
         test_stderr                    = test_channel.makefile_stderr( "r" ).read( )
@@ -397,7 +397,7 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
         mkdir_stderr                    = mkdir_channel.makefile_stderr( "r" ).read( )
         mkdir_status: int               = mkdir_channel.recv_exit_status( )
     finally:
-        channel.close()
+        mkdir_channel.close()
 
     if mkdir_status != 0:
         message = f"Directory creation error: Cannot create {demux.hostname}:{remote_absolute_dir_path} even after original check. "
@@ -406,6 +406,9 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
         message += f"SSHException: {stderr.read( ).decode( ).strip( )}"
         demuxLogger.critical( message )
         raise SSHException(message)
+    else:
+        demuxLogger.info( termcolor.colored( f"Remote directory does not exist, created\n", color="cyan", attrs=["bold"] ) )
+
 
 
 
@@ -443,8 +446,8 @@ def _build_proxyjump_transport_chain( hop: paramiko.config.SSHConfig, transport:
         try:
             tcp_socket: socket.socket = socket.create_connection( ( hostname, port ), timeout )
         except OSError as error:
-            raise RuntimeError(f"TCP connect failed to {hostname}:{port}") from error
-        next_transport: paramiko.Transport = paramiko.Transport(tcp_socket)
+            raise RuntimeError( f"TCP connect failed to {hostname}:{port}" ) from error
+        next_transport: paramiko.Transport = paramiko.Transport( tcp_socket )
     else:
         localhost = "127.0.0.1"
         try: 
@@ -454,7 +457,7 @@ def _build_proxyjump_transport_chain( hop: paramiko.config.SSHConfig, transport:
         next_transport = paramiko.Transport( channel )
 
     if next_transport is None:
-        raise RuntimeError("Transport creation failed")
+        raise RuntimeError( "Transport creation failed" )
 
     return next_transport
 
