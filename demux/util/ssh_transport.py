@@ -400,10 +400,11 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
         mkdir_channel.close()
 
     if mkdir_status != 0:
-        message = f"Directory creation error: Cannot create {demux.hostname}:{remote_absolute_dir_path} even after original check. "
+        ip, port = demux.transport.getpeername( )
+        message = f"Directory creation error: Cannot create {ip}:{port}:{remote_absolute_dir_path} even after original check. "
         message += "Consult the remote end and try to create the directory manually to see what error you get, could be "
         message += "that parent changed permission or was moved.\n"
-        message += f"SSHException: {stderr.read( ).decode( ).strip( )}"
+        message += f"SSHException: {mkdir_stderr.decode( demux.decodeScheme ).strip( )}"
         demuxLogger.critical( message )
         raise SSHException(message)
     else:
@@ -412,7 +413,7 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
 
 
 
-def _build_proxyjump_transport_chain( hop: paramiko.config.SSHConfig, transport: Optional[ paramiko.Transport ], *, port: int = 22, timeout: float = 30.0) -> paramiko.Transport:
+def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optional[ paramiko.Transport ], *, port: int = 22, timeout: float = 30.0) -> paramiko.Transport:
     """
     Build a new SSH Transport for a single hop described by a parsed SSHConfig
     entry, either by opening a direct TCP connection (first hop) or by tunneling
@@ -445,16 +446,19 @@ def _build_proxyjump_transport_chain( hop: paramiko.config.SSHConfig, transport:
     if transport is None:
         try:
             tcp_socket: socket.socket = socket.create_connection( ( hostname, port ), timeout )
+            (ip, port): tuple[str, int] = tcp_socket.getpeername( ) # if this succeededs, then we are good to go.
         except OSError as error:
-            raise RuntimeError( f"TCP connect failed to {hostname}:{port}" ) from error
+            raise RuntimeError( f"TCP connect failed to {ip}:{port}" ) from error
         next_transport: paramiko.Transport = paramiko.Transport( tcp_socket )
     else:
-        localhost = "127.0.0.1"
         try: 
-            channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = ( localhost, 0 ) )
+            channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout )
         except ( paramiko.SSHException, EOFError ) as error:
             raise RuntimeError( f"ProxyJump channel open failed to connect to {hostname}:{port}" ) from error
-        next_transport = paramiko.Transport( channel )
+        if channel.active:
+            next_transport = paramiko.Transport( channel )
+        else:
+            raise RuntimeError( f"RuntimeError: channel not active at hop:{hostname}")
 
     if next_transport is None:
         raise RuntimeError( "Transport creation failed" )
