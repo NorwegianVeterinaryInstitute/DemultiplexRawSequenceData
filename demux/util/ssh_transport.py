@@ -118,8 +118,10 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
         else:
             resolved_hops.append( current_lookup )
 
-
-    resolved_hops.append( ssh_config.lookup( start_alias ) )
+    # add the first link as last to finish the resolved chain
+    final_lookup: paramiko.config.SSHConfig = ssh_config.lookup( start_alias )
+    if resolved_hops[ -1 ] != final_lookup :
+        resolved_hops.append( final_lookup )
 
     if not resolved_hops:
         raise ValueError( f"ValueError: no hops, not even {demux.nird_upload_host}" )
