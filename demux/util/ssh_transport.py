@@ -158,6 +158,8 @@ def _parse_ssh_config( demux ) -> List[ paramiko.config.SSHConfig ]:
 
     target_lookup = ssh_config.lookup( demux.nird_upload_host )
 
+    # demuxLogger.debug( "target lookup:" )
+    # demuxLogger.debug( pprint.pprint( target_lookup ) )
     # make sure the ssh config is up to spec with our stuff
     _verify_ssh_config_policy_for_hop( target_lookup )
 
@@ -375,16 +377,31 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
     """
 
     test_command: str              = f"/usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}"
+    test_status: int               = 0
+    ip, port                       = demux.transport.getpeername( )
+    
+    if not demux.transport.is_active( ):
+        messsage = f"TransportError: transport not active at hop {ip}"
+        demuxLogger.critical( message )
+        raise SSHException( message )
+
     test_channel: paramiko.Channel = demux.transport.open_session( )
+    if not test_channel.active:
+        messsage = f"ChannelError: Channel not active after instantiation at hop {ip}"
+        demuxLogger.critical( message )
+        raise SSHException( message )
+
     test_channel.exec_command( test_command )
     try:
-        test_stderr                    = test_channel.makefile_stderr( "r" ).read( )
-        test_status: int               = test_channel.recv_exit_status( )
+        if test_channel.exit_status_ready( ):
+            test_stderr                    = test_channel.makefile_stderr( "r" ).read( ).decode( 'utf-8' )
+            test_status: int               = test_channel.recv_exit_status( )
     finally:
         test_channel.close( )
 
-    if test_status == 0:
-        message = f"Directory creation error: {demux.hostname}:{remote_absolute_dir_path} already exists.\n"
+    if not test_status:
+        ip, port = demux.transport.getpeername( )
+        message = f"Directory creation error: {ip}:{remote_absolute_dir_path} already exists.\n"
         message += f"Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
         demuxLogger.critical( message )
         raise SSHException( message )
@@ -392,16 +409,18 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
 
 
     mkdir_command: str              = f"/usr/bin/mkdir -- {shlex.quote( remote_absolute_dir_path )}"
+    mkdir_status: int               = 0
     mkdir_channel: paramiko.Channel = demux.transport.open_session( )
     mkdir_channel.exec_command( mkdir_command )
     try:
         # we only need to catch stderr here
-        mkdir_stderr                    = mkdir_channel.makefile_stderr( "r" ).read( )
-        mkdir_status: int               = mkdir_channel.recv_exit_status( )
+        if mkdir_channel.exit_status_ready( ):
+            mkdir_stderr                    = mkdir_channel.makefile_stderr( "r" ).read( ).decode( 'utf-8' )
+            mkdir_status: int               = mkdir_channel.recv_exit_status( )
     finally:
         mkdir_channel.close()
 
-    if mkdir_status != 0:
+    if mkdir_status:
         ip, port = demux.transport.getpeername( )
         message = f"Directory creation error: Cannot create {ip}:{port}:{remote_absolute_dir_path} even after original check. "
         message += "Consult the remote end and try to create the directory manually to see what error you get, could be "
@@ -415,7 +434,7 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
 
 
 
-def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optional[ paramiko.Transport ], *, port: int = 22, timeout: float = 30.0) -> paramiko.Transport:
+def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optional[ paramiko.Transport ], *, port: int = 22, timeout: float = 30.0, keepalive: int = 30 ) -> paramiko.Transport:
     """
     Build a new SSH Transport for a single hop described by a parsed SSHConfig
     entry, either by opening a direct TCP connection (first hop) or by tunneling
@@ -442,28 +461,37 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
         channel fails for the hop.
     """
 
+    next_transport: paramiko.Transport | None = None
     hostname: str = hop.get( 'hostname' ) # since we already have an ordered list of hops, we do not need to do some crazy
                                           # checking to see if ProxyJump is set and use that or not. We just select the 
                                           # hostname.
-    if transport is None:
-        try:
-            tcp_socket: socket.socket = socket.create_connection( ( hostname, port ), timeout )
-            (ip, port): tuple[str, int] = tcp_socket.getpeername( ) # if this succeededs, then we are good to go.
-        except OSError as error:
-            raise RuntimeError( f"TCP connect failed to {ip}:{port}" ) from error
-        next_transport: paramiko.Transport = paramiko.Transport( tcp_socket )
-    else:
-        try: 
-            channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout )
-        except ( paramiko.SSHException, EOFError ) as error:
-            raise RuntimeError( f"ProxyJump channel open failed to connect to {hostname}:{port}" ) from error
-        if channel.active:
-            next_transport = paramiko.Transport( channel )
-        else:
-            raise RuntimeError( f"RuntimeError: channel not active at hop:{hostname}")
+    if transport is None:   # first hop
+        # try:
+        tcp_socket: socket.socket = socket.create_connection( ( hostname, port ), timeout = timeout )
+        # except OSError as error:
+        #     raise RuntimeError( f"TCP connect failed to {hostname}:{port}" ) from error
+        next_transport = paramiko.Transport( tcp_socket )
 
+    else:                   # second hop and onwards
+        # try: 
+        channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout )
+        # except paramiko.SSHException as ssh_error:
+        #     raise RuntimeError( f"ProxyJump rejected by SSH layer (forwarding denied or protocol error) on hop {hostname}:{port}" ) from ssh_error
+        # except EOFError as eof_error:
+        #     raise RuntimeError( f"ProxyJump failed: underlying transport closed during channel open to {hostname}:{port}" ) from eof_error
+
+        # if not channel.active:
+        #     raise RuntimeError( f"RuntimeError: channel not active at hop:{hostname}")
+        next_transport = paramiko.Transport( channel )
+    
+
+    # check if transport exists and is open
     if next_transport is None:
-        raise RuntimeError( "Transport creation failed" )
+        raise RuntimeError( f"Transport creation failed at hop {hostname}" )
+    next_transport.set_keepalive( keepalive )
+    next_transport.start_client( timeout = timeout ) # Perform SSH handshake on the new transport
+    if not next_transport.is_active( ):
+        raise RuntimeError( f"SSH transport inactive after handshake at hop {hostname}" )
 
     return next_transport
 

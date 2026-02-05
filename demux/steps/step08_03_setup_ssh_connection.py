@@ -22,7 +22,8 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     """
     hops_list: List[ paramiko.config.SSHConfig ] = _parse_ssh_config( demux )
     current_transport: paramiko.Transport | None = None
-    transport_stack: List[ paramiko.Transport ] = [ ]   # having a stack of the previous transports would be a good idea
+    next_transport: paramiko.Transport | None    = None
+    transport_stack: List[ paramiko.Transport ]  = [ ]  # having a stack of the previous transports would be a good idea
                                                         # so we can close the transports later in reverse order
     if len( hops_list ) == 0:
         raise RuntimeError( "SSH config resolution produced zero hops; cannot build transport chain." )
@@ -34,30 +35,13 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     for hop in hops_list:
         demuxLogger.debug( f"current hop:{hop.get( 'hostname' )}\n" )
         next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
-        if not hasattr( next_transport, 'open_channel'):
-            raise ValueError('next_transport is not connnected')
-        try:
-            peer_ip, port = next_transport.getpeername( )
-            pprint_peer = termcolor.colored( peer_ip, color="yellow", attrs=["bold"] )
-            demuxLogger.debug( f"current peer:{pprint_peer}\n" )
-            next_transport.start_client( timeout = timeout )  # Perform SSH handshake on the new transport
-        except socket.timeout as error:
-            raise RuntimeError("SSH handshake timeout") from error
-        except EOFError as error:
-            raise RuntimeError("SSH connection closed during handshake") from error
-        except paramiko.SSHException as error:
-            raise RuntimeError("SSH protocol or key exchange failure") from error
-        except OSError as error:
-            raise RuntimeError("Underlying socket failure during SSH handshake") from error
-
-        if not next_transport.is_active( ):  # Verify transport state after handshake
-            raise RuntimeError( "SSH transport inactive after handshake" )
-
+        # all error handling is done inside _connect_next_proxy_jump ( )
         _validate_hostkey( hop, next_transport )
         _authenticate_transport( hop, next_transport )
         transport_stack.append( next_transport )
         current_transport = next_transport
-    if current_transport is None:
+
+    if not current_transport.is_active( ):
         raise RuntimeError( "Transport chain construction failed; final transport is None." )
 
     # save the transport
