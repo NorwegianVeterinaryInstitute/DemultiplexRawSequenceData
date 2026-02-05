@@ -32,8 +32,9 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     demuxLogger.debug( f"current hop:{pprint_hops}\n" )
 
 
-    for hop in hops_list:
-        demuxLogger.debug( f"current hop:{hop.get( 'hostname' )}\n" )
+    for index, hop in enumerate( hops_list ):
+        is_last: bool = index == len( hops_list ) - 1
+        demuxLogger.debug( termcolor.colored( hop.get( "hostname" ), color="green", attrs=["bold"] ) if is_last else hop.get( "hostname" ) )
         next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
         # all error handling is done inside _connect_next_proxy_jump ( )
         _validate_hostkey( hop, next_transport )
@@ -43,6 +44,10 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
 
     if not current_transport.is_active( ):
         raise RuntimeError( "Transport chain construction failed; final transport is None." )
+
+
+    # WE DO NOT WANT THE LAST TRANSPORT. WE NEED THE FIRST TRANSPORT TO ESTABLISH A SESSION 
+
 
     # save the transport
     demux.transport = current_transport
