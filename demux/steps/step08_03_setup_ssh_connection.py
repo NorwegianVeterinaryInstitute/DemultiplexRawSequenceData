@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Mapping
 from demux.util.ssh_transport   import _connect_next_proxy_jump, _validate_hostkey, _authenticate_transport, _parse_ssh_config
 from demux.loggers              import demuxLogger, demuxFailureLogger
 
-def _setup_ssh_connection( demux, *, timeout: float = 30 ) -> paramiko.Transport:
+def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     """
     @still_being_thought_out
 
