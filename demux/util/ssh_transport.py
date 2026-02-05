@@ -118,10 +118,12 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
         else:
             resolved_hops.append( current_lookup )
 
+
+    resolved_hops.append( ssh_config.lookup( start_alias ) )
+
     if not resolved_hops:
         raise ValueError( f"ValueError: no hops, not even {demux.nird_upload_host}" )
     # delete any existing value in the array to signal to caller the array is over
-    resolved_hops[-1]["proxyjump"] = ""
 
     return resolved_hops
 
