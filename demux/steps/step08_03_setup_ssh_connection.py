@@ -37,17 +37,19 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
         is_last: bool = index == len( hops_list ) - 1
         demuxLogger.debug( termcolor.colored( hop.get( "hostname" ), color="green", attrs=["bold"] ) if is_last else hop.get( "hostname" ) )
         next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
-        # all error handling is done inside _connect_next_proxy_jump ( )
+
+        print( f"id( transport ): {id( next_transport )}" )
         _validate_hostkey( hop, next_transport )
+        print( f"id( transport ) after _validate_hostkey: {id( next_transport )}" )
         _authenticate_transport( hop, next_transport )
+        print( f"id( transport ) after _authenticate_transport: {id( next_transport )}" )
         transport_stack.append( next_transport )
         current_transport = next_transport
 
     if not current_transport.is_active( ):
         raise RuntimeError( "Transport chain construction failed; final transport is None." )
 
-    # In order to use the chain of transports, we need the first one to pump bytes into. So,
-    # we save transport_stack[0]
+    # Save transport_stack[-1]
     demux.transport = transport_stack[-1]
     # save the transport stack for later, so we can .reverse and walk it backwards.
     demux.transport_stack = transport_stack

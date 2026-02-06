@@ -261,6 +261,10 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     agent: paramiko.Agent   = paramiko.Agent()
     for agent_key in agent.get_keys():
         try:
+            print( "In _auth_transport_ssh_keys:" )
+            print( f"id(transport): {id(transport)}" )
+            print( f"transport.is_active( ): {transport.is_active( )}" )
+            print( f"transport.getpeername( ): {transport.getpeername( )}" )
             transport.auth_publickey( username, agent_key )
             if transport.is_authenticated( ):
                 break
@@ -318,7 +322,7 @@ def _auth_transport_2fa( transport: paramiko.Transport, hop: paramiko.config.SSH
         raise AuthenticationException( message )
 
 
-def _authenticate_transport( hop_lookup: paramiko.config.SSHConfig, transport: paramiko.Transport ) -> None:
+def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko.Transport ) -> None:
     """
     Authenticate an existing SSH Transport for a single hop using the credentials
     defined in the SSH client configuration and BitWarden.
@@ -333,31 +337,31 @@ def _authenticate_transport( hop_lookup: paramiko.config.SSHConfig, transport: p
     Returns the same Transport instance after successful authentication.
     """
 
-    hostname          : str  = str( hop_lookup.get( "hostname" ) or "" )
-    username          : str  = str( hop_lookup.get( "user" ) or "" )
+    hostname          : str  = str( hop.get( "hostname" ) or "" )
+    username          : str  = str( hop.get( "user" ) or "" )
     # password          : str  = str( demux.util.bitwarden.get_password( hostname ) or "" )
-    identity_file_path: str  = str( hop_lookup.get( "identityfile" ) )
-    totp_enabled      : bool = bool( hop_lookup.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
+    identity_file_path: str  = str( hop.get( "identityfile" ) )
+    totp_enabled      : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
     # if two_fa_enabled:
-    #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )
+    #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )f
 
     if not hostname:
-        raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'host' )}: hostname" )
+        raise ValueError( f"Missing lookup fields for hop {hop.get( 'host' )}: hostname" )
     if not username:
-        raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: username" )
+        raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: username" )
     # if not password:
-    #     raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: password" )
+    #     raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: password" )
     # if not identity_file_path:
-    #     raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: identityfile" )
+    #     raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: identityfile" )
     # if not identity_password:
-    #     raise ValueError( f"Missing lookup fields for hop {hop_lookup.get( 'hostname' )}: identity_password" )
+    #     raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: identity_password" )
     if totp_enabled and not topt:
-        raise ValueError( f"ValueError: could not get TOTP from BitWarden for hop {hop_lookup.get( 'hostname' )}" )
+        raise ValueError( f"ValueError: could not get TOTP from BitWarden for hop {hop.get( 'hostname' )}" )
 
     if identity_file_path:
-        _auth_transport_ssh_keys( transport, hop_lookup )
+        _auth_transport_ssh_keys( transport, hop  )
     elif totp_enabled:
-        _auth_transport_2fa( transport, hop_lookup )
+        _auth_transport_2fa( transport, hop  )
     else:
         transport.auth_password( username = username, password = password )
         if not transport.is_authenticated( ):
@@ -468,22 +472,13 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
                                           # checking to see if ProxyJump is set and use that or not. We just select the 
                                           # hostname.
     if transport is None:   # first hop
-        # try:
         tcp_socket: socket.socket = socket.create_connection( ( hostname, port ), timeout = timeout )
-        # except OSError as error:
-        #     raise RuntimeError( f"TCP connect failed to {hostname}:{port}" ) from error
         next_transport = paramiko.Transport( tcp_socket )
 
     else:                   # second hop and onwards
-        # try: 
         channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout )
-        # except paramiko.SSHException as ssh_error:
-        #     raise RuntimeError( f"ProxyJump rejected by SSH layer (forwarding denied or protocol error) on hop {hostname}:{port}" ) from ssh_error
-        # except EOFError as eof_error:
-        #     raise RuntimeError( f"ProxyJump failed: underlying transport closed during channel open to {hostname}:{port}" ) from eof_error
-
-        # if not channel.active:
-        #     raise RuntimeError( f"RuntimeError: channel not active at hop:{hostname}")
+        if not channel.active:
+            raise RuntimeError( f"RuntimeError: channel not active at hop:{hostname}")
         next_transport = paramiko.Transport( channel )
     
 
@@ -492,6 +487,7 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
         raise RuntimeError( f"Transport creation failed at hop {hostname}" )
     next_transport.set_keepalive( keepalive )
     next_transport.start_client( timeout = timeout ) # Perform SSH handshake on the new transport
+    print( f"id( transport ): {id( transport )}" )
     if not next_transport.is_active( ):
         raise RuntimeError( f"SSH transport inactive after handshake at hop {hostname}" )
 
