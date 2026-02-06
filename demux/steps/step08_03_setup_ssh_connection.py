@@ -21,8 +21,9 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
         RuntimeError: if no hops are produced, or if transport construction fails.
     """
     hops_list: List[ paramiko.config.SSHConfig ] = _parse_ssh_config( demux )
+    first_transport  : paramiko.Transport | None = None
     current_transport: paramiko.Transport | None = None
-    next_transport: paramiko.Transport | None    = None
+    next_transport   : paramiko.Transport | None = None
     transport_stack: List[ paramiko.Transport ]  = [ ]  # having a stack of the previous transports would be a good idea
                                                         # so we can close the transports later in reverse order
     if len( hops_list ) == 0:
@@ -45,11 +46,8 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     if not current_transport.is_active( ):
         raise RuntimeError( "Transport chain construction failed; final transport is None." )
 
-
-    # WE DO NOT WANT THE LAST TRANSPORT. WE NEED THE FIRST TRANSPORT TO ESTABLISH A SESSION 
-
-
-    # save the transport
-    demux.transport = current_transport
+    # In order to use the chain of transports, we need the first one to pump bytes into. So,
+    # we save transport_stack[0]
+    demux.transport = transport_stack[-1]
     # save the transport stack for later, so we can .reverse and walk it backwards.
     demux.transport_stack = transport_stack
