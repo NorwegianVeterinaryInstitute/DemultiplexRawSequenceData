@@ -43,11 +43,11 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
 
         next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
 
-        print( f"id( transport ), before_validate_hostkey:: {id( next_transport )}" )
+        demuxLogger.debug( f"id( transport ), before_validate_hostkey:: {id( next_transport )}" )
         _validate_hostkey( hop, next_transport )
-        print( f"id( transport ) after _validate_hostkey: {id( next_transport )}" )
+        demuxLogger.debug( f"id( transport ) after _validate_hostkey: {id( next_transport )}" )
         _authenticate_transport( hop, next_transport )
-        print( f"id( transport ) after _authenticate_transport: {id( next_transport )}" )
+        demuxLogger.debug( f"id( transport ) after _authenticate_transport: {id( next_transport )}" )
         transport_stack.append( next_transport )
         current_transport = next_transport
 
