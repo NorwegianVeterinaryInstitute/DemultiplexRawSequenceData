@@ -97,7 +97,7 @@ def _get_login_credentials_via_api( hostname: str ) -> Tuple[ str, str, str ]: #
 
 
 
-def _probe_bw_api_state( demux ) -> Tuple[ bool, bool ]:
+def _probe_bw_api_state( ) -> Tuple[ bool, bool ]:
     """
     Probe the Bitwarden bw-serve HTTP API.
 
@@ -143,7 +143,7 @@ def _probe_bw_api_state( demux ) -> Tuple[ bool, bool ]:
     return ( port_open, vault_unlocked )
 
 
-def _probe_bw_cli_state( demux ) -> bool:
+def _probe_bw_cli_state( ) -> bool:
     """
     Probe the Bitwarden command-line client state.
 
@@ -215,8 +215,8 @@ def _get_login_credentials( hostname: str ) -> Tuple[ str, str, str ]:
     port_open      = False
     vault_unlocked = False
 
-    port_open, vault_unlocked = _probe_bw_api_state( demux )
-    vault_unlocked            = _probe_bw_cli_state( demux )
+    port_open, vault_unlocked = _probe_bw_api_state( )
+    vault_unlocked            = _probe_bw_cli_state( )
 
     # Tri-state check: make sure if the port is not open or if the binary does not exist
     #   we return an error.
