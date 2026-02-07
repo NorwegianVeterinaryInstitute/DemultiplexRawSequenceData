@@ -116,7 +116,7 @@ def _probe_bw_api_state( ) -> Tuple[ bool, bool ]:
     vault_unlocked = False
 
     try:
-        socket.create_connection( ( demux.bw_localhost, demux.bw_port ), timeout = 1 ).close( )
+        socket.create_connection( ( constants.BW_IP, constants.BW_PORT ), timeout = 1 ).close( )
         port_open = True
     except ConnectionError as error:
         # port_open = False is already set
