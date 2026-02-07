@@ -214,17 +214,20 @@ def _get_login_credentials( hostname: str ) -> Tuple[ str, str, str ]:
         decrypts the vault once and if that fails, we will go back ot the command line client.
     """
 
-    port_open      = False
-    vault_unlocked = False
+    port_open: bool          = False
+    vault_unlocked:bool      = False
+    vault_cli_unlocked: bool = False
 
     port_open, vault_unlocked = _probe_bw_api_state( )
-    vault_unlocked            = _probe_bw_cli_state( )
+
+    if not port_open: # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/155
+        vault_cli_unlocked    = _probe_bw_cli_state( )
 
     # Tri-state check: make sure if the port is not open or if the binary does not exist
     #   we return an error.
     if port_open and vault_unlocked:
         return _get_login_credentials_via_api( hostname)
-    elif vault_unlocked:
+    elif vault_cli_unlocked:
         return _get_login_credentials_via_bw_cli( hostname )
     else:
         message = f"bw-serve.service is not running and the command line client does not exist or is locked. Contact your system administrator."
