@@ -30,12 +30,17 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
         raise RuntimeError( "SSH config resolution produced zero hops; cannot build transport chain." )
 
     pprint_hops =  termcolor.colored( pprint.pprint( hops_list ), color="cyan", attrs=["bold"] )
-    demuxLogger.debug( f"current hop:{pprint_hops}\n" )
+    demuxLogger.debug( f"Null hop:{pprint_hops}\n" )
 
 
     for index, hop in enumerate( hops_list ):
         is_last: bool = index == len( hops_list ) - 1
-        demuxLogger.debug( termcolor.colored( hop.get( "hostname" ), color="green", attrs=["bold"] ) if is_last else hop.get( "hostname" ) )
+        if is_last:
+            message = termcolor.colored( "Last hop: {hop.get( "hostname" )}", color="green", attrs=["bold"] )
+        else:
+            message = f"current hop: {hop.get( "hostname" )}"
+        demuxLogger.debug( message )
+
         next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
 
         print( f"id( transport ), before_validate_hostkey:: {id( next_transport )}" )
