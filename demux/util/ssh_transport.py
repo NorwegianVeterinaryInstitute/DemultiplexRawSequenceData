@@ -349,10 +349,10 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     Returns the same Transport instance after successful authentication.
     """
 
-    hostname          : str  = str( hop.get( "hostname" ) or "" )
-    username          : str  = str( hop.get( "user" ) or "" )
-    # password          : str  = str( demux.util.bitwarden.get_password( hostname ) or "" )
-    identity_file_path: str  = str( hop.get( "identityfile" ) )
+    hostname          : str  = hop.get( "hostname" ) or None
+    username          : str  = hop.get( "user" ) or None
+    # password          : str  = demux.util.bitwarden.get_password( hostname ) or None
+    identity_file_path: str  = hop.get( "identityfile" ) or None
     totp_enabled      : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
     # if two_fa_enabled:
     #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )f
