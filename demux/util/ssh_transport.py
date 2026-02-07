@@ -372,6 +372,8 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
 
     message = termcolor.colored( "--------------------------------\n", color="yellow")
     message += "in _auth_transport_ssh_keys:\n"
+    message += termcolor.colored( f"hostname:           {hostname}\n",           color="cyan", attrs=["bold"] )
+    message += termcolor.colored( f"username:           {username}\n",           color="cyan", attrs=["bold"] )
     message += termcolor.colored( f"identity_file_path: {identity_file_path}\n", color="cyan", attrs=["bold"] )
     message += termcolor.colored( f"totp_enabled:       {totp_enabled}\n",       color="cyan", attrs=["bold"] )
     demuxLogger.debug( message )
