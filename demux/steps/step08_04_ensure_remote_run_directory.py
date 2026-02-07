@@ -7,32 +7,6 @@ from demux.util.ssh_transport   import _ensure_remote_dir_via_client
 from demux.config               import constants
 from demux.loggers              import demuxLogger, demuxFailureLogger
 
-def _auth_transport( demux, transport: paramiko.Transport ) -> None:
-    """
-    @in_use
-    Authenticate an existing SSH transport using ssh keys or keyboard-interactive 2FA.
-
-    Selects the appropriate mode via the demux.nird_access_mode user configuration
-
-    Raises:
-        RuntimeError: when the access mode is misconfigured
-    """
-
-    if constants.NIRD_MODE_SSH       == demux.nird_access_mode:
-        _auth_transport_ssh_keys( demux, transport )
-    elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
-        _auth_transport_2fa( demux, transport )
-    elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
-        pass # nothing to authenticate here, the sysadmin has already done that part manually or via systemd
-    else:
-        message = f"RuntimeError: Unknown NIRD access mode: {demux.nird_access_mode}" # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/138
-        demuxLogger.critical( message )
-        raise RuntimeError( message )
-
-
-
-
-
 def _ensure_remote_run_directory_mounted( demux ) -> None:
     """
     @in_use
