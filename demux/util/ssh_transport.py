@@ -349,7 +349,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     Returns the same Transport instance after successful authentication.
     """
 
-    hostname          : str  = str( hop.get( "hostname" ) or None )
+    hostname          : str  = str( hop.get( "hostname" ) or "kotkotkot" )
     username          : str  = hop.get( "user" )
     # password          : str  = demux.util.bitwarden.get_password( hostname ) or None
     identity_file_path: str  = hop.get( "identityfile" )
