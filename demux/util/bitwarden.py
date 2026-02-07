@@ -158,6 +158,10 @@ def _probe_bw_cli_state( demux ) -> bool:
         Exception only on unexpected errors (e.g. bw binary present but unusable).
     """
 
+    if not os.path.isfile( constants.BITWARDEN_CLI_PATH ):
+        message = f"Bitwarden does CLI exist or is not a file: {constants.BITWARDEN_CLI_PATH}"
+        raise FileNotFoundError( message )
+
     if not os.access( constants.BITWARDEN_CLI_PATH, os.X_OK ):
         message = f"Bitwarden CLI exists but is not executable: {constants.BITWARDEN_CLI_PATH}"
         demuxLogger.critical(message)
@@ -188,10 +192,8 @@ def _probe_bw_cli_state( demux ) -> bool:
         demuxLogger.critical( message )
         raise Exception( message )
 
-
-    os.path.isfile( constants.BITWARDEN_CLI_PATH ) and 
-
     return status == "unlocked"
+
 
 
 def _get_login_credentials( hostname: str ) -> Tuple[ str, str, str ]:
