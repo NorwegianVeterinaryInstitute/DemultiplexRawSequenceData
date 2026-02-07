@@ -267,7 +267,8 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
             message += termcolor.colored( "from agent:\n", color="yellow", attrs=["bold"] ) 
             message += f"id( transport ): {id(transport)}\n"
             message += f"transport.is_active( ): {transport.is_active( )}\n"
-            message += f"transport.getpeername( ): {transport.getpeername( )}\n"
+            ip, port = transport.getpeername( )
+            message += f"transport.getpeername( ): {ip}:{port}\n"
             message += termcolor.colored( "---------------------------------", color="yellow", attrs=["bold"] )
             demuxLogger.debug( message )
             transport.auth_publickey( username, agent_key )
