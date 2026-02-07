@@ -10,11 +10,24 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 
 # bitwarden methods
 
-def get_password( hostname: str ):
+def _get_username( hostname: str ) -> str:
+    if not hostname:
+        raise ValueError( "ValueError: hostname not provided, cannot return username. Aborting." )
+
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/username/{hostname}", timeout = 1 ) as r:
+        username:str = json.load( r )[ "data" ][ "data" ]
+
+    if not username:
+        raise ValueError( f"ValueError: no username returned from BitWarden for host {hostname}. Aborting." )
+
+    return username
+
+
+def _get_password( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return password. Aborting." )
 
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/password/{hostname}", timeout = 1 ) as r:
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/password/{hostname}", timeout = 1 ) as r:
         password:str = json.load( r )[ "data" ][ "data" ]
 
     if not password:
@@ -22,59 +35,66 @@ def get_password( hostname: str ):
 
     return password
 
-# def get_totp( hostname: str ):
-#     if not hostname:
-#         raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
-#
-#     with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{hostname}",     timeout = 1 ) as r:
-#         totp:int     = json.load( r )[ "data" ][ "data" ]
-#
-#     return totp
-#
+def get_totp( hostname: str ) -> str:
+    if not hostname:
+        raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
+
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/totp/{hostname}",     timeout = 1 ) as r:
+        totp:str     = json.load( r )[ "data" ][ "data" ]
+
+    if not totp:
+        raise ValueError( f"ValueError: no TOTP token returned from BitWarden for host {hostname}. Aborting." )
+
+    return totp
+
 # def get_passphrase( hostname: str ):
 #     if not hostname:
 #         raise ValueError( "ValueError: hostname not provided, cannot return passphrase for key. Aborting." )
 #
-#     with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{hostname}",     timeout = 1 ) as r:
+#     with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/passphrase/{hostname}",     timeout = 1 ) as r:
 #         passphrase:str     = json.load( r )[ "data" ][ "data" ]
 #
-#     return totp
+#     return passphrase
 
 
 
-def _get_login_credentials_via_bw_cli( demux ) -> Tuple[ str, str, str ]:
+def _get_login_credentials_via_bw_cli( hostname: str ) -> Tuple[ str, str, str ]:
     """
     Fetch username, password, and TOTP via bw CLI.
     Returns (username, password, totp) as strings.
     """
 
     # no need to check again if constants.BITWARDEN_CLI_PATH exists, again
-    username_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "username", demux.nird_upload_host ], check = True, capture_output = True, text = True )
-    password_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "password", demux.nird_upload_host ], check = True, capture_output = True, text = True )
-    totp_process     = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "totp",     demux.nird_upload_host ], check = True, capture_output = True, text = True )
+    username_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "username", hostname ], check = True, capture_output = True, text = True )
+    password_process = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "password", hostname ], check = True, capture_output = True, text = True )
+    totp_process     = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "totp",     hostname ], check = True, capture_output = True, text = True )
 
-    username = username_process.stdout.strip( )
-    password = password_process.stdout.strip( )
-    totp     = totp_process.stdout.strip( )
+    username:str     = username_process.stdout.strip( )
+    passwordL:str    = password_process.stdout.strip( )
+    totp:str         = totp_process.stdout.strip( )
+
+    if not username:
+        raise ValueError( "ValueError: could not get username using the BitWarden CLI client. Aborting.")
+    if not password:
+        raise ValueError( "ValueError: could not get password using the BitWarden CLI client. Aborting.")
+    if not totp:
+        raise ValueError( "ValueError: could not get TOTP token using the BitWarden CLI client. Aborting.")
 
     return ( username, password, totp )
 
 
-def _get_login_credentials_via_api( demux ) -> Tuple[ str, str, str ]:
+def _get_login_credentials_via_api( hostname: str ) -> Tuple[ str, str, str ]: # 
     """
     Fetch username, password, and TOTP via bw serve (localhost HTTP API).
     Returns (username, password, totp) as strings.
     """
-    username = ""
-    password = ""
-    totp     = ""
 
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/username/{demux.nird_upload_host}", timeout = 1 ) as r:
-        username = json.load( r )[ "data" ][ "data" ]
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/password/{demux.nird_upload_host}", timeout = 1 ) as r:
-        password = json.load( r )[ "data" ][ "data" ]
-    with urllib.request.urlopen( f"{demux.bw_baseurl}/object/totp/{demux.nird_upload_host}",     timeout = 1 ) as r:
-        totp     = json.load( r )[ "data" ][ "data" ]
+    if not hostname:
+        raise ValueError( f"ValueError: hostname not provided, cannot get login credentials. Aborting.")
+
+    username: str = _get_username( hostname )
+    password: str = _get_password( hostname )
+    totp:str      = _get_totp( hostname )
 
     return ( username, password, totp )
 
@@ -110,7 +130,7 @@ def _probe_bw_api_state( demux ) -> Tuple[ bool, bool ]:
     else:
         try:
             # for more details on the API: https://bitwarden.com/help/vault-management-api/
-            with urllib.request.urlopen( f"{demux.bw_baseurl}/status", timeout = 1 ) as r:
+            with urllib.request.urlopen( f"{constants.BW_BASE_URL}/status", timeout = 1 ) as r:
                 vault_unlocked = json.load( r )[ "data"][ "template" ][ "status" ] == "unlocked" # assigns true to vault_unlocked, if unlocked.
         except Exception:
             vault_unlocked = False
@@ -174,7 +194,7 @@ def _probe_bw_cli_state( demux ) -> bool:
     return status == "unlocked"
 
 
-def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
+def _get_login_credentials( hostname: str ) -> Tuple[ str, str, str ]:
     """
     Get the logging credentials from bitwarden
         if 'bw serve' exists on port 8087 on localhost, it gets
@@ -198,9 +218,9 @@ def _get_login_credentials( demux ) -> Tuple[ str, str, str ]:
     # Tri-state check: make sure if the port is not open or if the binary does not exist
     #   we return an error.
     if port_open and vault_unlocked:
-        return _get_login_credentials_via_api( demux )
+        return _get_login_credentials_via_api( hostname)
     elif os.path.isfile( constants.BITWARDEN_CLI_PATH ) and _probe_bw_cli_state( demux ) :
-        return _get_login_credentials_via_bw_cli( demux )
+        return _get_login_credentials_via_bw_cli( hostname )
     else:
         message = f"bw-serve.service is not running and the command line client does not exist or is locked. Contact your system administrator."
         demuxLogger.critical( message)
