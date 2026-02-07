@@ -46,3 +46,4 @@ USER_SSH_CONFIG_PATH: str       = "~/.ssh/config"
 USER_SSH_KNOWN_HOSTS_PATH: str  = "~/.ssh/known_hosts"
 
 BW_BASE_URL: str            = 'http://127.0.0.1'
+BW_PORT:int                 = 8087

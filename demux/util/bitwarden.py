@@ -14,7 +14,7 @@ def _get_username( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return username. Aborting." )
 
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/username/{hostname}", timeout = 1 ) as r:
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/username/{hostname}", timeout = 1 ) as r:
         username:str = json.load( r )[ "data" ][ "data" ]
 
     if not username:
@@ -27,7 +27,7 @@ def _get_password( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return password. Aborting." )
 
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/password/{hostname}", timeout = 1 ) as r:
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}", timeout = 1 ) as r:
         password:str = json.load( r )[ "data" ][ "data" ]
 
     if not password:
@@ -39,7 +39,7 @@ def get_totp( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
 
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/totp/{hostname}",     timeout = 1 ) as r:
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/totp/{hostname}",     timeout = 1 ) as r:
         totp:str     = json.load( r )[ "data" ][ "data" ]
 
     if not totp:
@@ -89,14 +89,13 @@ def _get_login_credentials_via_api( hostname: str ) -> Tuple[ str, str, str ]: #
     Returns (username, password, totp) as strings.
     """
 
-    if not hostname:
-        raise ValueError( f"ValueError: hostname not provided, cannot get login credentials. Aborting.")
-
     username: str = _get_username( hostname )
     password: str = _get_password( hostname )
     totp:str      = _get_totp( hostname )
 
     return ( username, password, totp )
+
+
 
 def _probe_bw_api_state( demux ) -> Tuple[ bool, bool ]:
     """
@@ -119,28 +118,27 @@ def _probe_bw_api_state( demux ) -> Tuple[ bool, bool ]:
     try:
         socket.create_connection( ( demux.bw_localhost, demux.bw_port ), timeout = 1 ).close( )
         port_open = True
-    except Exception:
+    except ConnectionError as error:
         # port_open = False is already set
-        message = f"Cannot connect to the bw-serve.service socket {demux.bw_port} on {demux.bw_localhost}. Use\n"
+        message = f"Cannot connect to the bw-serve.service socket {constants.BW_PORT} on {constants.BW_BASE_URL}. Use\n"
         message += termcolor.colored( "    systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
         message += "as the seqtech user to see if it is running.\n"
-        message += "Failing back to the command line BitWarden client."
         demuxLogger.critical( message )
+        raise ConnectionError( f"ConnectionError: failure to reach a required local service endpoint. {message}" ) from error
 
-    else:
-        try:
-            # for more details on the API: https://bitwarden.com/help/vault-management-api/
-            with urllib.request.urlopen( f"{constants.BW_BASE_URL}/status", timeout = 1 ) as r:
-                vault_unlocked = json.load( r )[ "data"][ "template" ][ "status" ] == "unlocked" # assigns true to vault_unlocked, if unlocked.
-        except Exception:
-            vault_unlocked = False
-            unlock_vault_cmd = "    /usr/local/bin/unlock_vault.sh"
-            unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
-            message += "Cannot connect to the bw serve vault. Vault is locked. Use\n"
-            message += unlock_vault_cmd
-            message += "on the command line to unlock."
-            demuxLogger.critical( message )
-            raise Exception( message )
+    # no try/except block here, cuz we already established we can connect to the service
+    # for more details on the API: https://bitwarden.com/help/vault-management-api/
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/status", timeout = 1 ) as r:
+        vault_unlocked = json.load( r )[ "data"][ "template" ][ "status" ] == "unlocked" # assigns true to vault_unlocked, if unlocked.
+    
+    if not vault_unlocked:
+        unlock_vault_cmd = "    /usr/local/bin/vault_unlocked.sh"
+        unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
+        message += "Cannot connect to the bw serve vault. Vault is locked. Use\n"
+        message += unlock_vault_cmd
+        message += "on the command line to unlock."
+        demuxLogger.critical( message )
+        raise RuntimeError( message ) from error
 
     return ( port_open, vault_unlocked )
 
@@ -191,6 +189,8 @@ def _probe_bw_cli_state( demux ) -> bool:
         raise Exception( message )
 
 
+    os.path.isfile( constants.BITWARDEN_CLI_PATH ) and 
+
     return status == "unlocked"
 
 
@@ -214,12 +214,13 @@ def _get_login_credentials( hostname: str ) -> Tuple[ str, str, str ]:
     vault_unlocked = False
 
     port_open, vault_unlocked = _probe_bw_api_state( demux )
+    vault_unlocked            = _probe_bw_cli_state( demux )
 
     # Tri-state check: make sure if the port is not open or if the binary does not exist
     #   we return an error.
     if port_open and vault_unlocked:
         return _get_login_credentials_via_api( hostname)
-    elif os.path.isfile( constants.BITWARDEN_CLI_PATH ) and _probe_bw_cli_state( demux ) :
+    elif vault_unlocked:
         return _get_login_credentials_via_bw_cli( hostname )
     else:
         message = f"bw-serve.service is not running and the command line client does not exist or is locked. Contact your system administrator."
