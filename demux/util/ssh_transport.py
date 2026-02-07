@@ -250,14 +250,21 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     AuthenticationException if the server rejects the key.
     """
 
-    # identity_file_path: str  = str( hop.get( "identityfile" ) )
-    # passphrase        : str  = str( demux.util.bitwarden.get_passphrase( hostname ) )
+    username:str      = hop.get( "user" )
+    hostname:str      = hop.get( "hostname" )
+    identityfile: str = hop.get( "identityfile" )
 
-    username:str            = hop.get( "user" )
-    hostname:str            = hop.get( "hostname" )
 
     if not username:
         raise ValueError( f"ValueError: No username providged for hostname {hostname} trying to load ssh keys for transport from ssh agent. Aborting." )
+
+    st = os.stat( identityfile )
+    if not stat.S_ISREG( st.st_mode ):
+        raise ValueError( f"identityfile '{identityfile}' is not a regular file" )
+    if st.st_size == 0:
+        raise ValueError( f"identityfile '{identityfile}' is empty" )
+    if not os.access( identityfile, os.R_OK ):
+        raise ValueError( f"identityfile '{identityfile}' is not readable" )
 
     agent: paramiko.Agent   = paramiko.Agent()
     for agent_key in agent.get_keys():
