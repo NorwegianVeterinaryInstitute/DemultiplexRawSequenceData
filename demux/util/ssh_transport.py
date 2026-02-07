@@ -376,14 +376,17 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     message += termcolor.colored( f"totp_enabled:       {totp_enabled}\n",       color="cyan", attrs=["bold"] )
     demuxLogger.debug( message )
 
+    sys.exit( )
+
     if identity_file_path:
         _auth_transport_ssh_keys( transport, hop  )
     elif totp_enabled:
         _auth_transport_2fa( transport, hop  )
     else:
         transport.auth_password( username = username, password = password )
-        if not transport.is_authenticated( ):
-            raise paramiko.AuthenticationException( f"Password authentication failed for {username}@{hostname}" )
+
+    if not transport.is_authenticated( ):
+        raise paramiko.AuthenticationException( f"Password authentication failed for {username}@{hostname}" )
 
 
 
