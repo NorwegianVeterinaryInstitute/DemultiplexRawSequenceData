@@ -349,7 +349,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     Returns the same Transport instance after successful authentication.
     """
 
-    hostname          : str  = hop.get( "hostname" )
+    hostname          : str  = str( hop.get( "hostname" ) or None )
     username          : str  = hop.get( "user" )
     # password          : str  = demux.util.bitwarden.get_password( hostname ) or None
     identity_file_path: str  = hop.get( "identityfile" )
@@ -358,7 +358,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )f
 
     if hostname:
-        raise ValueError( f"Missing lookup fields for hop {hop.get( 'host' )}: hostname" )
+        raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: hostname" )
     if not username:
         raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: username" )
     # if not password:
