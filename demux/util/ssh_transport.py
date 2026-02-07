@@ -266,7 +266,7 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     if not os.access( identityfile, os.R_OK ):
         raise ValueError( f"identityfile '{identityfile}' is not readable" )
 
-    agent: paramiko.Agent   = paramiko.Agent()
+    agent: paramiko.Agent   = paramiko.Agent( ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/154
     for agent_key in agent.get_keys():
         try:
             message  = termcolor.colored( "In _auth_transport_ssh, trying key:\n", color="yellow", attrs=["bold"] ) 
@@ -290,7 +290,7 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
                 raise # raise the original OSError unchanged
 
 
-    # this is cheating, but i will accept this for now
+    # this is cheating, but i will accept this for now 
 
     # try:
     #     private_key: paramiko.PKey = _load_private_key( identityfile, passphrase = None )
