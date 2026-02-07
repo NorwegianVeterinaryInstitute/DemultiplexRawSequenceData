@@ -365,7 +365,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )
 
     message = termcolor.colored( "--------------------------------\n", color="yellow")
-    message += "in _auth_transport_ssh_keys:\n"
+    message += "in _authenticate_transport:\n"
     message += termcolor.colored( f"hostname:     {hostname}\n",       color="cyan", attrs=["bold"] )
     message += termcolor.colored( f"username:     {username}\n",       color="cyan", attrs=["bold"] )
     message += termcolor.colored( f"identityfile: {identityfile}\n",   color="cyan", attrs=["bold"] )
@@ -374,13 +374,6 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
 
 
     if identityfile:
-        st = os.stat( identityfile )
-        if not stat.S_ISREG( st.st_mode ):
-            raise ValueError( f"identityfile '{identityfile}' is not a regular file" )
-        if st.st_size == 0:
-            raise ValueError( f"identityfile '{identityfile}' is empty" )
-        if not os.access( identityfile, os.R_OK ):
-            raise ValueError( f"identityfile '{identityfile}' is not readable" )
         _auth_transport_ssh_keys( transport, hop  )
     elif totp_enabled:
         _auth_transport_2fa( transport, hop  )
