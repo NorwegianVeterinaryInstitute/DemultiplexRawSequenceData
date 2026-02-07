@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple, Mapping
 from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception import AuthenticationException
 
-from demux.util.bitwarden  import _get_login_credentials, get_password
+from demux.util.bitwarden  import _get_login_credentials, _get_password
 from demux.config          import constants
 from demux.loggers         import demuxLogger, demuxFailureLogger
 
@@ -351,20 +351,11 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
 
     hostname     : str  = hop.get( "hostname" )
     username     : str  = hop.get( "user" )
-    password     : str  = get_password( hostname ) or None # demux.util.bitwarden
+    password     : str  = _get_password( hostname ) # demux.util.bitwarden
     identityfile : str  = hop.get( "identityfile" )
     totp_enabled : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
     # if two_fa_enabled:
     #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )
-
-    if not hostname:
-        raise ValueError( f"Missing lookup fields for hop {hop.get( 'host' )}: hostname" )
-    if not username:
-        raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: username" )
-    # if not identity_password:
-    #     raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: identity_password" )
-    if totp_enabled and not topt:
-        raise ValueError( f"ValueError: could not get TOTP from BitWarden for hop {hop.get( 'hostname' )}" )
 
     message = termcolor.colored( "--------------------------------\n", color="yellow")
     message += "in _auth_transport_ssh_keys:\n"
