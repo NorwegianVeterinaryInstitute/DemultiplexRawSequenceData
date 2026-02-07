@@ -364,6 +364,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
         raise ValueError( f"ValueError: could not get TOTP from BitWarden for hop {hop.get( 'hostname' )}" )
 
     if identity_file_path:
+        demuxLogger.debug( termcolor.colored( f"Trying to use ssh auth keys/agent for auth. identity_file_path: {identity_file_path}", color="cyan", attrs=["bold"] ) )
         _auth_transport_ssh_keys( transport, hop  )
     elif totp_enabled:
         _auth_transport_2fa( transport, hop  )
