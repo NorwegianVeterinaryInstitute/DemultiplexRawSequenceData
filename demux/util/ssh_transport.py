@@ -7,6 +7,7 @@ import re
 import shlex
 import socket
 import sys
+import termcolor
 
 from typing import Any, Dict, List, Optional, Tuple, Mapping
 
@@ -261,10 +262,14 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     agent: paramiko.Agent   = paramiko.Agent()
     for agent_key in agent.get_keys():
         try:
-            print( "In _auth_transport_ssh_keys:" )
-            print( f"id(transport): {id(transport)}" )
-            print( f"transport.is_active( ): {transport.is_active( )}" )
-            print( f"transport.getpeername( ): {transport.getpeername( )}" )
+            message += termcolor.colored( "In _auth_transport_ssh, trying key:\n", color="yellow", attrs=["bold"] ) 
+            message += termcolor.colored( f"{agent_key}\n", color="yellow", attrs=["bold"] ) 
+            message += termcolor.colored( "from agent:\n", color="yellow", attrs=["bold"] ) 
+            message += f"id( transport ): {id(transport)}\n"
+            message += f"transport.is_active( ): {transport.is_active( )}\n"
+            message += f"transport.getpeername( ): {transport.getpeername( )}\n"
+            message += termcolor.colored( "---------------------------------", color="yellow", attrs=["bold"] )
+            demuxLogger.debug( message )
             transport.auth_publickey( username, agent_key )
             if transport.is_authenticated( ):
                 break
@@ -475,11 +480,13 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
         tcp_socket: socket.socket = socket.create_connection( ( hostname, port ), timeout = timeout )
         next_transport = paramiko.Transport( tcp_socket )
 
-    else:                   # second hop and onwards
+    elif transport.is_active( ):                   # second hop and onwards
         channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout )
         if not channel.active:
             raise RuntimeError( f"RuntimeError: channel not active at hop:{hostname}")
         next_transport = paramiko.Transport( channel )
+    else:
+        raise RuntimeError( "RuntimeError: in _connect_next_proxy_jump, transport was neither 'None' nor active")
     
 
     # check if transport exists and is open
@@ -487,7 +494,7 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
         raise RuntimeError( f"Transport creation failed at hop {hostname}" )
     next_transport.set_keepalive( keepalive )
     next_transport.start_client( timeout = timeout ) # Perform SSH handshake on the new transport
-    print( f"id( transport ): {id( transport )}" )
+    print( f"_connect_next_proxy_jump: id( transport ), after start_client( ): {id( transport )}" )
     if not next_transport.is_active( ):
         raise RuntimeError( f"SSH transport inactive after handshake at hop {hostname}" )
 

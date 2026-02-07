@@ -38,7 +38,7 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
         demuxLogger.debug( termcolor.colored( hop.get( "hostname" ), color="green", attrs=["bold"] ) if is_last else hop.get( "hostname" ) )
         next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
 
-        print( f"id( transport ): {id( next_transport )}" )
+        print( f"id( transport ), before_validate_hostkey:: {id( next_transport )}" )
         _validate_hostkey( hop, next_transport )
         print( f"id( transport ) after _validate_hostkey: {id( next_transport )}" )
         _authenticate_transport( hop, next_transport )
