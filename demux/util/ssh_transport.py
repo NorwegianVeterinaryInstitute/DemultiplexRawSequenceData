@@ -293,11 +293,11 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     # this is cheating, but i will accept this for now
 
     # try:
-    #     private_key: paramiko.PKey = _load_private_key( identity_file_path, passphrase = None )
+    #     private_key: paramiko.PKey = _load_private_key( identityfile, passphrase = None )
     # except paramiko.ssh_exception.PasswordRequiredException:
     #     if not passphrase:
     #         raise ValueError( f"Passphrase-protected key but no passphrase in BitWarden. Aborting authentication for {username}@{hostname}" )
-    #     private_key = _load_private_key( identity_file_path, passphrase = passphrase )
+    #     private_key = _load_private_key( identityfile, passphrase = passphrase )
     # transport.auth_publickey( username = username, key = private_key )
     # if not transport.is_authenticated( ):
     #     raise paramiko.AuthenticationException( f"Public key authentication failed for {username}@{hostname}" )
