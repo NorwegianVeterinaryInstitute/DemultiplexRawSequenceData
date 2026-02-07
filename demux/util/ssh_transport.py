@@ -279,6 +279,8 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
         except OSError as exception:
             if not transport.is_active( ):
                 raise OSError(9, "Peer closed the connection") from exception
+            else:
+                raise: # raise the original OSError unchanged
 
 
     # this is cheating, but i will accept this for now
