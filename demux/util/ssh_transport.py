@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple, Mapping
 from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception import AuthenticationException
 
-from demux.util.bitwarden  import _get_login_credentials
+from demux.util.bitwarden  import _get_login_credentials, get_password
 from demux.config          import constants
 from demux.loggers         import demuxLogger, demuxFailureLogger
 
@@ -351,7 +351,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
 
     hostname     : str  = hop.get( "hostname" )
     username     : str  = hop.get( "user" )
-    password     : str  = demux.util.bitwarden.get_password( hostname ) or None
+    password     : str  = bitwarden.get_password( hostname ) or None
     identityfile : str  = hop.get( "identityfile" )
     totp_enabled : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
     # if two_fa_enabled:
