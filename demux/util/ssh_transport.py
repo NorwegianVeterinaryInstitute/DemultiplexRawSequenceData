@@ -352,12 +352,12 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     hostname          : str  = hop.get( "hostname" ) or None
     username          : str  = hop.get( "user" ) or None
     # password          : str  = demux.util.bitwarden.get_password( hostname ) or None
-    identity_file_path: str  = hop.get( "identityfile" ) or None
+    identity_file_path: str  = hop.get( "identityfile" ) or ""
     totp_enabled      : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
     # if two_fa_enabled:
     #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )f
 
-    if not hostname:
+    if hostname:
         raise ValueError( f"Missing lookup fields for hop {hop.get( 'host' )}: hostname" )
     if not username:
         raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: username" )
@@ -376,9 +376,9 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     message += termcolor.colored( f"totp_enabled:       {totp_enabled}\n",       color="cyan", attrs=["bold"] )
     demuxLogger.debug( message )
 
-    sys.exit( )
 
     if identity_file_path:
+        sys.exit( )
         _auth_transport_ssh_keys( transport, hop  )
     elif totp_enabled:
         _auth_transport_2fa( transport, hop  )
