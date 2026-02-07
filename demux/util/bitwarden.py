@@ -2,6 +2,7 @@ import json
 import os
 import socket
 import subprocess
+import termcolor
 import urllib.request
 
 from typing import Tuple
