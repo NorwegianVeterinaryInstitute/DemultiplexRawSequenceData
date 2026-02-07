@@ -349,22 +349,18 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     Returns the same Transport instance after successful authentication.
     """
 
-    hostname          : str  = hop.get( "hostname" )
-    username          : str  = hop.get( "user" )
-    # password          : str  = demux.util.bitwarden.get_password( hostname ) or None
-    identity_file_path: str  = hop.get( "identityfile" )
-    totp_enabled      : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
+    hostname     : str  = hop.get( "hostname" )
+    username     : str  = hop.get( "user" )
+    password     : str  = demux.util.bitwarden.get_password( hostname ) or None
+    identityfile : str  = hop.get( "identityfile" )
+    totp_enabled : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
     # if two_fa_enabled:
-    #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )f
+    #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )
 
     if not hostname:
         raise ValueError( f"Missing lookup fields for hop {hop.get( 'host' )}: hostname" )
     if not username:
         raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: username" )
-    # if not password:
-    #     raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: password" )
-    # if not identity_file_path:
-    #     raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: identityfile" )
     # if not identity_password:
     #     raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: identity_password" )
     if totp_enabled and not topt:
@@ -372,19 +368,27 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
 
     message = termcolor.colored( "--------------------------------\n", color="yellow")
     message += "in _auth_transport_ssh_keys:\n"
-    message += termcolor.colored( f"hostname:           {hostname}\n",           color="cyan", attrs=["bold"] )
-    message += termcolor.colored( f"username:           {username}\n",           color="cyan", attrs=["bold"] )
-    message += termcolor.colored( f"identity_file_path: {identity_file_path}\n", color="cyan", attrs=["bold"] )
-    message += termcolor.colored( f"totp_enabled:       {totp_enabled}\n",       color="cyan", attrs=["bold"] )
+    message += termcolor.colored( f"hostname:     {hostname}\n",       color="cyan", attrs=["bold"] )
+    message += termcolor.colored( f"username:     {username}\n",       color="cyan", attrs=["bold"] )
+    message += termcolor.colored( f"identityfile: {identityfile}\n",   color="cyan", attrs=["bold"] )
+    message += termcolor.colored( f"totp_enabled: {totp_enabled}\n",   color="cyan", attrs=["bold"] )
     demuxLogger.debug( message )
 
 
-    if identity_file_path:
-        sys.exit( )
+    if identityfile:
+        st = os.stat( identityfile )
+        if not stat.S_ISREG( st.st_mode ):
+            raise ValueError( f"identityfile '{identityfile}' is not a regular file" )
+        if st.st_size == 0:
+            raise ValueError( f"identityfile '{identityfile}' is empty" )
+        if not os.access( identityfile, os.R_OK ):
+            raise ValueError( f"identityfile '{identityfile}' is not readable" )
         _auth_transport_ssh_keys( transport, hop  )
     elif totp_enabled:
         _auth_transport_2fa( transport, hop  )
     else:
+        if not password:
+            raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: password" )
         transport.auth_password( username = username, password = password )
 
     if not transport.is_authenticated( ):
