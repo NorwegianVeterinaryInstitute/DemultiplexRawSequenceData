@@ -351,7 +351,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
 
     hostname     : str  = hop.get( "hostname" )
     username     : str  = hop.get( "user" )
-    password     : str  = bitwarden.get_password( hostname ) or None
+    password     : str  = get_password( hostname ) or None # demux.util.bitwarden
     identityfile : str  = hop.get( "identityfile" )
     totp_enabled : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
     # if two_fa_enabled:
