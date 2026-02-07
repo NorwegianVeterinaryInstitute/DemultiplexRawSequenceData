@@ -36,9 +36,9 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     for index, hop in enumerate( hops_list ):
         is_last: bool = index == len( hops_list ) - 1
         if is_last:
-            message = termcolor.colored( f"Last hop: {hop.get( "hostname" )}", color="green", attrs=["bold"] )
+            message = termcolor.colored( f"Last hop: {hop.get( 'hostname' )}", color="green", attrs=["bold"] )
         else:
-            message = f"current hop: {hop.get( "hostname" )}"
+            message = f"current hop: {hop.get( 'hostname' )}"
         demuxLogger.debug( message )
 
         next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
