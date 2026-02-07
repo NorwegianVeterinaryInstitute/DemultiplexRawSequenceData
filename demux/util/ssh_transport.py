@@ -262,7 +262,7 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     agent: paramiko.Agent   = paramiko.Agent()
     for agent_key in agent.get_keys():
         try:
-            message += termcolor.colored( "In _auth_transport_ssh, trying key:\n", color="yellow", attrs=["bold"] ) 
+            message  = termcolor.colored( "In _auth_transport_ssh, trying key:\n", color="yellow", attrs=["bold"] ) 
             message += termcolor.colored( f"{agent_key}\n", color="yellow", attrs=["bold"] ) 
             message += termcolor.colored( "from agent:\n", color="yellow", attrs=["bold"] ) 
             message += f"id( transport ): {id(transport)}\n"
