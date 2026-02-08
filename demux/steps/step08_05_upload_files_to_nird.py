@@ -176,7 +176,7 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
 
     # scp_client = SCPClient( transport )
     # scp_client = SCPClient( transport, progress = progress )
-    scp_client = SCPClient( transport, progress4 = progress4 )
+    scp_client = SCPClient( demux.transport, progress4 = progress4 )
 
     try: 
         scp_client.put( file_entry[ "tar_file_local" ],    file_entry[ "tar_file_remote" ] )
