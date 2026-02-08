@@ -250,14 +250,15 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     AuthenticationException if the server rejects the key.
     """
 
-    username:str      = hop.get( "user" )
-    hostname:str      = hop.get( "hostname" )
-    identityfile: str = hop.get( "identityfile" )
-
+    username:str     = hop.get( "user" )
+    hostname:str     = hop.get( "hostname" )
+    identityfile:str = hop.get( "identityfile" )
+    passphrase: str  = _get_password( "main2" ) # demux.util.bitwarden
 
     if not username:
         raise ValueError( f"ValueError: No username providged for hostname {hostname} trying to load ssh keys for transport from ssh agent. Aborting." )
 
+    # check if the key exists, if it is empty and if it is readable
     st = os.stat( identityfile )
     if not stat.S_ISREG( st.st_mode ):
         raise ValueError( f"identityfile '{identityfile}' is not a regular file" )
@@ -266,41 +267,18 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     if not os.access( identityfile, os.R_OK ):
         raise ValueError( f"identityfile '{identityfile}' is not readable" )
 
-    agent: paramiko.Agent   = paramiko.Agent( ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/154
-    for agent_key in agent.get_keys():
-        try:
-            message  = termcolor.colored( "In _auth_transport_ssh, trying key:\n", color="yellow", attrs=["bold"] ) 
-            message += termcolor.colored( f"{agent_key}\n", color="yellow", attrs=["bold"] ) 
-            message += termcolor.colored( "from agent:\n", color="yellow", attrs=["bold"] ) 
-            message += f"id( transport ): {id(transport)}\n"
-            message += f"transport.is_active( ): {transport.is_active( )}\n"
-            ip, port = transport.getpeername( )
-            message += f"transport.getpeername( ): {ip}:{port}\n"
-            message += termcolor.colored( "---------------------------------", color="yellow", attrs=["bold"] )
-            demuxLogger.debug( message )
-            transport.auth_publickey( username, agent_key )
-            if transport.is_authenticated( ):
-                break
-        except paramiko.AuthenticationException:
-            continue
-        except OSError as exception:
-            if not transport.is_active( ):
-                raise OSError(9, "Peer closed the connection") from exception
-            else:
-                raise # raise the original OSError unchanged
+    try:
+        private_key: paramiko.PKey = _load_private_key( identityfile, passphrase = passphrase )
+    except paramiko.ssh_exception.PasswordRequiredException:
+        if not passphrase:
+            raise ValueError( f"Passphrase-protected key but no passphrase in BitWarden. Aborting authentication for {username}@{hostname}" )
+        private_key = _load_private_key( identityfile, passphrase = passphrase )
+    transport.auth_publickey( username = username, key = private_key )
+    if not transport.is_authenticated( ):
+        raise paramiko.AuthenticationException( f"Public key authentication failed for {username}@{hostname}" )
 
 
-    # this is cheating, but i will accept this for now 
 
-    # try:
-    #     private_key: paramiko.PKey = _load_private_key( identityfile, passphrase = None )
-    # except paramiko.ssh_exception.PasswordRequiredException:
-    #     if not passphrase:
-    #         raise ValueError( f"Passphrase-protected key but no passphrase in BitWarden. Aborting authentication for {username}@{hostname}" )
-    #     private_key = _load_private_key( identityfile, passphrase = passphrase )
-    # transport.auth_publickey( username = username, key = private_key )
-    # if not transport.is_authenticated( ):
-    #     raise paramiko.AuthenticationException( f"Public key authentication failed for {username}@{hostname}" )
 
 
 def _auth_transport_2fa( transport: paramiko.Transport, hop: paramiko.config.SSHConfig ) -> None:
@@ -358,7 +336,6 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
 
     hostname     : str  = hop.get( "hostname" )
     username     : str  = hop.get( "user" )
-    password     : str  = _get_password( hostname ) # demux.util.bitwarden
     identityfile : str  = hop.get( "identityfile" )
     totp_enabled : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
     if hostname == "login.nird.sigma2.no": #cheating
@@ -380,6 +357,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     elif totp_enabled:
         _auth_transport_2fa( transport, hop  )
     else:
+        password: str  = _get_password( hostname ) # demux.util.bitwarden
         if not password:
             raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: password" )
         transport.auth_password( username = username, password = password )
