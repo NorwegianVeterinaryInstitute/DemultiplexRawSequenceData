@@ -23,6 +23,8 @@ def _get_username( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return username. Aborting." )
 
+    get_username_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}"
+    demuxLogger.debug( f"BitWarden password URL: {get_username_url}")
     with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/username/{hostname}", timeout = 1 ) as r:
         username:str = json.load( r )[ "data" ][ "data" ]
 
@@ -65,7 +67,9 @@ def _get_totp( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
 
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/totp/{hostname}",     timeout = 1 ) as r:
+    get_totp_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}"
+    demuxLogger.debug( f"BitWarden password URL: {get_totp_url}")
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/totp/{hostname}", timeout = 1 ) as r:
         totp:str     = json.load( r )[ "data" ][ "data" ]
 
     if not totp:
@@ -85,7 +89,7 @@ def get_passphrase( hostname: str ):
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return passphrase for key. Aborting." )
 
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/passphrase/{hostname}",     timeout = 1 ) as r:
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/passphrase/{hostname}", timeout = 1 ) as r:
         passphrase:str     = json.load( r )[ "data" ][ "data" ]
 
     return passphrase
