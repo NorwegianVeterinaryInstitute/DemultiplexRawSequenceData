@@ -250,6 +250,30 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     AuthenticationException if the server rejects the key.
     """
 
+
+    """
+    Authentication strategy for a known SSH server with minimal authentication attempts.
+
+    The server is trusted and regularly accessed, so the goal is to minimize failed
+    authentication attempts and unnecessary key offers.
+
+    Strategy:
+    1. Resolve effective host options from SSH config (HostName, User, IdentityFile)
+       and canonicalize the target. Only one IdentityFile is permitted per host entry.
+    2. If IdentityFile is defined:
+       a. Compute the fingerprint of the on-disk key.
+       b. Iterate ssh-agent keys and select the matching key by fingerprint.
+       c. If found, present that key to the server.
+    3. If the key is not present in the agent:
+       a. Load the IdentityFile from disk using the passphrase stored in Bitwarden.
+       b. Present the loaded key to the server.
+    4. Attempt authentication exactly once.
+    5. Stop immediately on success or authentication failure.
+    6. Abort immediately on transport-level failure.
+    """
+
+
+
     username:str     = hop.get( "user" )
     hostname:str     = hop.get( "hostname" )
     identityfile:str = hop.get( "identityfile" )
