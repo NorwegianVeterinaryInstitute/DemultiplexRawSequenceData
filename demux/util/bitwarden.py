@@ -37,7 +37,7 @@ def _get_password( hostname: str ) -> str:
 
     return password
 
-def get_totp( hostname: str ) -> str:
+def _get_totp( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
 
