@@ -427,7 +427,7 @@ def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> Non
 
     if not test_status:
         ip, port = demux.transport.getpeername( )
-        message = f"Directory creation error: {ip}:{remote_absolute_dir_path} already exists.\n"
+        message = f"Error: {ip}:{remote_absolute_dir_path} already exists.\n"
         message += f"Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
         demuxLogger.critical( message )
         raise SSHException( message )
