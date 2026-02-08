@@ -158,7 +158,7 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
 
     # Find the longest string in demux.absoluteFilesToTransferList and tabulate for that
     items = demux.absoluteFilesToTransferList.values( )
-    current_len = len( demux.absoluteFilesToTransferList[file_entry][ 'tar_file_local' ] )
+    current_len = len( demux.absoluteFilesToTransferList[ 'tar_file_local' ] )
     longest_local_path = max( (len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
 
     test_command: str              = f"/usr/bin/test -f -- {shlex.quote( file_entry[ 'tar_file_remote' ] )}"
