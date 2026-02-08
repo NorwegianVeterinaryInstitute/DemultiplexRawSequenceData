@@ -13,6 +13,13 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 # bitwarden methods
 
 def _get_username( hostname: str ) -> str:
+    """
+    Return the SSH username for a given hostname via the local Bitwarden HTTP API.
+
+    Raises ValueError if hostname is empty or if no username is returned.
+    Raises urllib.error.URLError on transport or timeout failures.
+    """
+
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return username. Aborting." )
 
@@ -26,10 +33,19 @@ def _get_username( hostname: str ) -> str:
 
 
 def _get_password( hostname: str ) -> str:
+    """
+    Return the password for a given hostname via the local Bitwarden HTTP API.
+
+    Raises ValueError if hostname is empty or if no password is returned.
+    Raises urllib.error.URLError on transport or timeout failures.
+    """
+
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return password. Aborting." )
 
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}", timeout = 1 ) as r:
+    get_password_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}"
+    demuxLogger.debug( f"BitWarden password URL: {get_password_url}")
+    with urllib.request.urlopen( get_password_url, timeout = 1 ) as r:
         password:str = json.load( r )[ "data" ][ "data" ]
 
     if not password:
@@ -37,7 +53,15 @@ def _get_password( hostname: str ) -> str:
 
     return password
 
+
 def _get_totp( hostname: str ) -> str:
+    """
+    Return the current TOTP token for a given hostname via the local Bitwarden HTTP API.
+
+    Raises ValueError if hostname is empty or if no TOTP token is returned.
+    Raises urllib.error.URLError on transport or timeout failures.
+"""
+
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
 
@@ -49,14 +73,22 @@ def _get_totp( hostname: str ) -> str:
 
     return totp
 
-# def get_passphrase( hostname: str ):
-#     if not hostname:
-#         raise ValueError( "ValueError: hostname not provided, cannot return passphrase for key. Aborting." )
-#
-#     with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/passphrase/{hostname}",     timeout = 1 ) as r:
-#         passphrase:str     = json.load( r )[ "data" ][ "data" ]
-#
-#     return passphrase
+
+def get_passphrase( hostname: str ):
+    """
+    Return the private-key passphrase for a given hostname via the local Bitwarden HTTP API.
+
+    Raises ValueError if hostname is empty.
+    Raises urllib.error.URLError on transport or timeout failures.
+    """
+
+    if not hostname:
+        raise ValueError( "ValueError: hostname not provided, cannot return passphrase for key. Aborting." )
+
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/passphrase/{hostname}",     timeout = 1 ) as r:
+        passphrase:str     = json.load( r )[ "data" ][ "data" ]
+
+    return passphrase
 
 
 
