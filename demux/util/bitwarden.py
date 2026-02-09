@@ -23,9 +23,8 @@ def _get_username( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return username. Aborting." )
 
-    get_username_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}"
-    demuxLogger.debug( f"BitWarden password URL: {get_username_url}")
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/username/{hostname}", timeout = 1 ) as r:
+    get_username_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/username/{hostname}"
+    with urllib.request.urlopen( get_username_url, timeout = 1 ) as r:
         username:str = json.load( r )[ "data" ][ "data" ]
 
     if not username:
@@ -46,7 +45,6 @@ def _get_password( hostname: str ) -> str:
         raise ValueError( "ValueError: hostname not provided, cannot return password. Aborting." )
 
     get_password_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}"
-    demuxLogger.debug( f"BitWarden password URL: {get_password_url}")
     with urllib.request.urlopen( get_password_url, timeout = 1 ) as r:
         password:str = json.load( r )[ "data" ][ "data" ]
 
@@ -67,9 +65,8 @@ def _get_totp( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
 
-    get_totp_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}"
-    demuxLogger.debug( f"BitWarden password URL: {get_totp_url}")
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/totp/{hostname}", timeout = 1 ) as r:
+    get_totp_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/totp/{hostname}"
+    with urllib.request.urlopen( get_totp_url, timeout = 1 ) as r:
         totp:str     = json.load( r )[ "data" ][ "data" ]
 
     if not totp:
@@ -89,7 +86,8 @@ def get_passphrase( hostname: str ):
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return passphrase for key. Aborting." )
 
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}/object/passphrase/{hostname}", timeout = 1 ) as r:
+    get_passphrase_url = f"{constants.BW_BASE_URL}/object/passphrase/{hostname}"
+    with urllib.request.urlopen( get_passphrase_url, timeout = 1 ) as r:
         passphrase:str     = json.load( r )[ "data" ][ "data" ]
 
     return passphrase
@@ -135,7 +133,7 @@ def _get_login_credentials_via_api( hostname: str ) -> Tuple[ str, str, str ]: #
 
 
 
-def _probe_bw_api_state( ) -> Tuple[ bool, bool ]:
+def _probe_bw_api_state( ) -> Tuple[ bool, bool ]: List( bool, bool )
     """
     Probe the Bitwarden bw-serve HTTP API.
 
@@ -159,7 +157,7 @@ def _probe_bw_api_state( ) -> Tuple[ bool, bool ]:
     except ConnectionError as error:
         # port_open = False is already set
         message = f"Cannot connect to the bw-serve.service socket {constants.BW_PORT} on {constants.BW_BASE_URL}. Use\n"
-        message += termcolor.colored( "    systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
+        message += termcolor.colored( "    /usr/bin/systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
         message += "as the seqtech user to see if it is running.\n"
         demuxLogger.critical( message )
         raise ConnectionError( f"ConnectionError: failure to reach a required local service endpoint. {message}" ) from error
@@ -215,7 +213,7 @@ def _probe_bw_cli_state( ) -> bool:
         raise ValueError( message ) from error
 
     if status == "unauthenticated":
-        unauthenticated_vault_cmd = termcolor.colored( "    /usr/local/bin/bw login\n", color="cyan", attrs=["bold"] )
+        unauthenticated_vault_cmd = termcolor.colored( f"    {constants.BITWARDEN_CLI_PATH} login\n", color="cyan", attrs=["bold"] )
         message = f"{constants.BITWARDEN_CLI_PATH} reports that the vault user is not authenticated. Use\n"
         message += unauthenticated_vault_cmd
         message += "on the command line to authenticate.\n"
@@ -223,7 +221,7 @@ def _probe_bw_cli_state( ) -> bool:
         raise PermissionError( message )
 
     if status == "locked":
-        unlock_vault_cmd = termcolor.colored( "    /usr/local/bin/bw unlock\n", color="cyan", attrs=["bold"] )
+        unlock_vault_cmd = termcolor.colored( f"    {constants.BITWARDEN_CLI_PATH} unlock\n", color="cyan", attrs=["bold"] )
         message = f"{constants.BITWARDEN_CLI_PATH} reports that the vault is locked. Use\n"
         message += unlock_vault_cmd
         message += "on the command line to unlock.\n"
