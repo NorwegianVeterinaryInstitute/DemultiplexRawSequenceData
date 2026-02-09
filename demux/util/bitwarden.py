@@ -132,7 +132,7 @@ def _get_login_credentials_via_api( hostname: str ) -> Tuple[ str, str, str ]: #
     return ( username, password, totp )
 
 
-def _is_bw_port_open( None ) -> bool:
+def _is_bw_port_open( ) -> bool:
     """
     Verify that the local Bitwarden HTTP service endpoint is reachable.
 
@@ -140,6 +140,8 @@ def _is_bw_port_open( None ) -> bool:
     Returns True on success. On failure, logs a critical error with
     user-level systemd diagnostics and raises ConnectionError.
     """
+    port_open: bool = False
+
     try:
         socket.create_connection( ( constants.BW_IP, constants.BW_PORT ), timeout = 1 ).close( )
         port_open = True
@@ -151,8 +153,10 @@ def _is_bw_port_open( None ) -> bool:
         demuxLogger.critical( message )
         raise ConnectionError( f"ConnectionError: failure to reach a required local service endpoint. {message}" ) from error
 
+    return port_open
 
-def _is_bw_port_unlocked( None ) -> bool:
+
+def _is_bw_port_unlocked( ) -> bool:
     """
     Verify that the Bitwarden vault served by the local HTTP API is unlocked.
 
@@ -160,6 +164,7 @@ def _is_bw_port_unlocked( None ) -> bool:
     Returns True if unlocked. If locked, logs a critical error with
     unlock instructions and raises RuntimeError.
     """
+    vault_unlocked: bool = False
 
     # no try/except block here, cuz we assume we can connect to the service
     # for more details on the API: https://bitwarden.com/help/vault-management-api/
@@ -175,8 +180,10 @@ def _is_bw_port_unlocked( None ) -> bool:
         demuxLogger.critical( message )
         raise RuntimeError( message ) from error
 
+    return vault_unlocked
 
-def _probe_bw_api_state( None ) -> Tuple[ bool, bool ]:
+
+def _probe_bw_api_state( ) -> Tuple[ bool, bool ]:
     """
     Probe the Bitwarden bw-serve HTTP API.
 
