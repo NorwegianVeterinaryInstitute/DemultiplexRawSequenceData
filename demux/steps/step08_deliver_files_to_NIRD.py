@@ -18,6 +18,7 @@ from demux.steps.step08_02_verify_local_files          import _verify_local_file
 from demux.steps.step08_03_setup_ssh_connection        import _setup_ssh_connection
 from demux.steps.step08_04_ensure_remote_run_directory import _ensure_remote_run_directory
 from demux.steps.step08_05_upload_files_to_nird        import _upload_files_to_nird
+from demux.steps.step08_06_tear_down_transport         import _tear_down_transport
 
 
 
