@@ -198,8 +198,8 @@ def _probe_bw_api_state( ) -> Tuple[ bool, bool ]:
         Exception only on unexpected internal errors (not for normal "service down"
         or "vault locked" states).
     """
-    port_open      = _is_bw_port_open( )
-    vault_unlocked = _is_bw_port_unlocked( )
+    port_open     : bool = _is_bw_port_open( )
+    vault_unlocked: bool = _is_bw_port_unlocked( )
 
     return ( port_open, vault_unlocked )
 
