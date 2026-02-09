@@ -436,15 +436,6 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     # if two_fa_enabled:
     #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )
 
-    message = termcolor.colored( "--------------------------------\n", color="yellow")
-    message += "in _authenticate_transport:\n"
-    message += termcolor.colored( f"hostname:     {hostname}\n",       color="cyan", attrs=["bold"] )
-    message += termcolor.colored( f"username:     {username}\n",       color="cyan", attrs=["bold"] )
-    message += termcolor.colored( f"identityfile: {identityfile}\n",   color="cyan", attrs=["bold"] )
-    message += termcolor.colored( f"totp_enabled: {totp_enabled}\n",   color="cyan", attrs=["bold"] )
-    demuxLogger.debug( message )
-
-
     if identityfile:
         _auth_transport_ssh_keys( transport, hop  )
     elif totp_enabled:
