@@ -3,7 +3,7 @@ import paramiko
 import psutil
 import termcolor
 
-from demux.util.ssh_transport   import _ensure_remote_dir_via_client
+from demux.util.ssh_transport   import _ensure_remote_dir_via_sftp
 from demux.config               import constants
 from demux.loggers              import demuxLogger, demuxFailureLogger
 
@@ -75,7 +75,7 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
         message += "end up in the home directory of the uploading user."
         raise ValueError( message )
 
-    _ensure_remote_dir_via_client( demux, remote_absolute_dir_path )
+    _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path )
 
 
 

@@ -452,71 +452,67 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
 
 
 
-def _ensure_remote_dir_via_client( demux, remote_absolute_dir_path: str ) -> None:
+def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
     """
-    Ensure the remote run directory exists using an already-authenticated SSH client.
+    Ensure the remote run directory exists using an already-authenticated SFTP session.
 
     Checks for the existence of the target directory on the remote host and creates it
     if missing. Aborts if the directory already exists or if creation fails.
 
     Raises:
-        SSHException: if the directory already exists or if remote creation fails
-        due to permission, missing parent or other remote filesystem errors.
+        SSHException: if the directory already exists, if the transport is inactive,
+        or if remote creation fails due to permission, missing parent, or other
+        remote filesystem errors.
     """
 
-    test_command: str      = f"/usr/bin/test -d -- {shlex.quote( remote_absolute_dir_path )}"
-    directory_exists: bool = False
-    ip, port               = demux.transport.getpeername( )
-    
+    ip, port = demux.transport.getpeername( )
+
+    if not os.path.isabs( remote_absolute_dir_path )
+        message = f"Remote directory is not in absolute path: {remote_absolute_dir_path}"
+        raise RuntimeError( message )
+
     if not demux.transport.is_active( ):
-        messsage = f"TransportError: transport not active at hop {ip}"
+        message = f"TransportError: transport not active at hop {ip}"
         demuxLogger.critical( message )
         raise SSHException( message )
 
-    test_channel: paramiko.Channel = demux.transport.open_session( )
-    if not test_channel.active:
-        messsage = f"ChannelError: Channel not active after instantiation at hop {ip}"
-        demuxLogger.critical( message )
-        raise SSHException( message )
-
-    test_channel.exec_command( test_command )
     try:
-        if test_channel.exit_status_ready( ):
-            test_stderr            = test_channel.makefile_stderr( "r" ).read( ).decode( 'utf-8' )
-            directory_exists: bool = test_channel.recv_exit_status() == 0
-    finally:
-        test_channel.close( )
-
-    if directory_exists:
-        ip, port = demux.transport.getpeername( )
-        message = f"{ip}:{remote_absolute_dir_path} already exists.\n"
-        message += f"Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
+        sftp_client: paramiko.SFTPClient = paramiko.SFTPClient.from_transport( demux.transport )
+    except Exception as error:
+        message = f"SFTPError: failed to create SFTP session at hop {ip}:{port}"
         demuxLogger.critical( message )
-        raise SSHException( message )
+        raise SSHException( message ) from error
 
-    mkdir_command: str              = f"/usr/bin/mkdir -- {shlex.quote( remote_absolute_dir_path )}"
-    mkdir_status: bool              = False
-    mkdir_channel: paramiko.Channel = demux.transport.open_session( )
-    mkdir_channel.exec_command( mkdir_command )
     try:
-        # we only need to catch stderr here
-        if mkdir_channel.exit_status_ready( ):
-            mkdir_stderr       = mkdir_channel.makefile_stderr( "r" ).read( ).decode( 'utf-8' )
-            mkdir_status: bool = mkdir_channel.recv_exit_status( ) == 0
+        try:
+            attributes = sftp_client.stat( remote_absolute_dir_path )
+        except FileNotFoundError:
+            attributes = None
+        except OSError as error:
+            message = f"SFTPError: stat failed for {ip}:{port}:{remote_absolute_dir_path}: {error}"
+            demuxLogger.critical( message )
+            raise SSHException( message ) from error
+
+        if attributes is not None:
+            message = f"{ip}:{remote_absolute_dir_path} already exists.\n"
+            message += "Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
+            demuxLogger.critical( message )
+            raise SSHException( message )
+
+        try:
+            sftp_client.mkdir( remote_absolute_dir_path )
+        except OSError as error:
+            message = f"Directory creation error: cannot create {ip}:{port}:{remote_absolute_dir_path}. "
+            message += f"SFTPError: {error}"
+            demuxLogger.critical( message )
+            raise SSHException( message ) from error
+
+        demuxLogger.info( termcolor.colored( "Remote directory does not exist, created\n", color="cyan", attrs=["bold"] ) )
     finally:
-        mkdir_channel.close()
-
-    if mkdir_status:
-        ip, port = demux.transport.getpeername( )
-        message = f"Directory creation error: Cannot create {ip}:{port}:{remote_absolute_dir_path} even after original check. "
-        message += "Consult the remote end and try to create the directory manually to see what error you get, could be "
-        message += "that parent changed permission or was moved.\n"
-        message += f"SSHException: {mkdir_stderr.decode( demux.decodeScheme ).strip( )}"
-        demuxLogger.critical( message )
-        raise SSHException(message)
-    else:
-        demuxLogger.info( termcolor.colored( f"Remote directory does not exist, created\n", color="cyan", attrs=["bold"] ) )
-
+        try:
+            sftp_client.close( )
+        except Exception:
+            pass
 
 
 
