@@ -143,7 +143,6 @@ def progress4(filename, size, sent, peername):
 
 def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     """
-    @in_use by _upload_and_verify_file_via_ssh
     Upload a single local tar file to its remote path via an existing SCP session.
 
     Asserts that the remote target does not already exist, then performs a single
@@ -151,28 +150,37 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
 
     Returns None on success.
 
-    Raises RuntimeError if remote file exists.
+    Raises RuntimeError if remote file exists or if the files passed are not in absolute format
     """
+ 
+    for key in ( "tar_file_remote", "md5_file_remote", "sha512_file_remote" ):
+        if not os.path.isabs( file_entry[ key ] ):
+            raise RuntimeError( f"Remote path is not absolute: {file_entry[ key ]}" )
 
     tar_file: str = file_entry[ 'tar_file_local' ]
-    demuxLogger.info( f"Transferring: {tar_file}" )
+    demuxLogger.info( f"Transferring: {tar_file}" ) # mention which local tar file we are uploading
 
     # Find the longest string in demux.absoluteFilesToTransferList and tabulate for that
     items = demux.absoluteFilesToTransferList.values( )
     current_len = len( demux.absoluteFilesToTransferList[tar_file][ 'tar_file_local' ] )
     longest_local_path = max( (len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
 
-    test_command: str              = f"/usr/bin/test -f -- {shlex.quote( file_entry[ 'tar_file_remote' ] )}"
-    test_channel: paramiko.Channel = demux.transport.open_session( )
-    test_channel.exec_command( test_command )
-    test_stderr                    = test_channel.makefile_stderr( "r" ).read( )
-    test_status: int               = test_channel.recv_exit_status( )    
-
-    if test_status == 0:
-        message  = f"RuntimeError: Remote file already exists: {demux.hostname}:{file_entry[ 'tar_file_remote' ]}"
-        message += "Refusing to overwrite. Delete/move remote file first and then try to upload again."
-        demuxLogger.critical( message )
-        raise RuntimeError( message )
+    try:
+        sftp_client: paramiko.SFTPClient = paramiko.SFTPClient.from_transport( demux.transport )
+        try:
+            sftp_client.stat( file_entry[ "tar_file_remote" ] )
+        except FileNotFoundError:
+            pass
+        else:
+            message = f"RuntimeError: Remote file already exists: {demux.hostname}:{file_entry[ 'tar_file_remote' ]}"
+            message += "Refusing to overwrite. Delete/move remote file first and then try to upload again."
+            demuxLogger.critical( message )
+            raise RuntimeError( message)
+    finally:
+        try:
+            sftp_client.close( )
+        except Exception:
+            pass
 
     # scp_client = SCPClient( transport )
     # scp_client = SCPClient( transport, progress = progress )
@@ -181,7 +189,11 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     try: 
         scp_client.put( file_entry[ "tar_file_local" ],    file_entry[ "tar_file_remote" ] )
         scp_client.put( file_entry[ "md5_file_local" ],    file_entry[ "md5_file_remote" ] )
-        scp_client.put( file_entry[ "sha512_file_local" ], file_entry[ "sha512_file_local" ] )
+        scp_client.put( file_entry[ "sha512_file_local" ], file_entry[ "sha512_file_remote" ] )
+    except scp.SCPException as error:
+        if "Disk quota exceeded" in str( error ) or "No space left on device" in str( error ):
+            raise RuntimeError( f"Remote disk quota exceeded on {demux.hostname}" ) from error
+        raise
     finally:
         scp_client.close( )
 
