@@ -175,7 +175,7 @@ class demux:
                                     # "ssh" uses only keys
                                     # "ssh_2fa" uses username, password, TOTP, from bitwarden
                                     # "mounted" uses sshfs but only with keys
-    allowed_nird_access_modes       = [ "ssh", "ssh2fa" "mounted" ]
+    allowed_nird_access_modes       = [ "ssh", "ssh2fa", "mounted" ]
     nird_copy_mode                  = "parallel"
     allowed_nird_copy_modes         = [ "serial", "parallel" ]
     ######################################################
