@@ -239,6 +239,87 @@ def _load_private_key( identity_file_path: str, passphrase: Optional[ str ] ) ->
 
 
 
+def _auth_via_agent( transport: paramiko.Transport, username: str, identityfile_pub: str ) -> bool:
+    """
+    Authenticate an active Paramiko Transport using a specific ssh-agent key.
+
+    The function computes the SHA256 fingerprint of the public key, searches the
+    local ssh-agent for a matching key and attempts public-key authentication with
+    that agent-held key only.
+
+    Raises paramiko.AuthenticationException if the key is not present in the agent,
+    if the server rejects the key or if authentication completes without success.
+    Propagates OSError on transport-level failures.
+    """
+
+    public_key_line: str  = open( identityfile_pub, "rt", encoding="utf-8" ).read( ).strip( )
+    parts: list[str] = public_key_line.split( )
+    if len( parts ) < 2:
+        raise ValueError( f"Malformed public key file: '{identityfile_pub}'" )
+    public_key_b64: str = parts[ 1 ]
+    expected_blob: bytes  = base64.b64decode( public_key_b64 )
+    expected_fp: str      = base64.b64encode( hashlib.sha256( expected_blob ).digest( ) ).decode( "utf-8" )
+    agent: paramiko.Agent = paramiko.Agent( ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/154
+
+    # iterate through keys in memory, stop on match
+    for agent_key in agent.get_keys( ):
+        agent_fp: str = base64.b64encode( hashlib.sha256( agent_key.asbytes( ) ).digest( ) ).decode( "utf-8" )
+
+        # filter only the key we have
+        if agent_fp != expected_fp: continue;
+
+        try:
+            transport.auth_publickey( username, agent_key )
+        except paramiko.AuthenticationException as error:
+            raise paramiko.AuthenticationException("ssh-agent key matched by fingerprint but authentication was rejected by the server.") from error
+        except OSError as exception:
+            if not transport.is_active( ):
+                raise OSError( 9, "Peer closed the connection" ) from exception
+            raise # raise the original error, in case something comes up we have not anticipated
+
+        if not transport.is_authenticated( ):
+            raise paramiko.AuthenticationException( "public key authentication attempt returned without success." )
+        return True
+
+    return False # requested key not present in ssh-agent
+
+
+
+def _validate_ssh_key_auth_inputs( hop: paramiko.config.SSHConfig ) -> tuple[str, str, str]:
+    """
+    Validate SSH key authentication inputs resolved from SSHConfig.
+
+    Ensures user, hostname and IdentityFile are present and that IdentityFile is an
+    absolute, readable, non-symlink regular file suitable for key loading.
+
+    Returns (username, hostname, identityfile); 
+
+    Raises ValueError on validation failure.
+    """
+
+    username: str     = hop.get( "user" )
+    hostname: str     = hop.get( "hostname" )
+    identityfile: str = hop.get( "identityfile" )
+
+    if not username:
+        raise ValueError( f"ValueError: No username provided for hostname {hostname}. Aborting." )
+
+    if not os.path.isabs( identityfile ):
+        raise ValueError( f"ValueError: identityfile must be an absolute path: '{identityfile}'" )
+    if os.path.islink( identityfile ):
+        raise ValueError( f"ValueError: identityfile must not be a symlink: '{identityfile}'" )
+
+    stat_result: os.stat_result = os.stat( identityfile )
+    if not stat.S_ISREG( stat_result.st_mode ):
+        raise ValueError( f"ValueError: identityfile is not a regular file: '{identityfile}'" )
+    if stat_result.st_size == 0:
+        raise ValueError( f"ValueError: identityfile is empty: '{identityfile}'" )
+    if not os.access( identityfile, os.R_OK ):
+        raise ValueError( f"ValueError: identityfile is not readable: '{identityfile}'" )
+
+    return username, hostname, identityfile
+
+
 def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.config.SSHConfig  ) -> None:
     """
     Authenticate an existing SSH Transport using public key credentials.
@@ -248,10 +329,7 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
 
     Raises ValueError when a passphrase is required but unavailable, and
     AuthenticationException if the server rejects the key.
-    """
-
-
-    """
+    ---------------------------------------------------------------------------------------------------
     Authentication strategy for a known SSH server with minimal authentication attempts.
 
     The server is trusted and regularly accessed, so the goal is to minimize failed
@@ -272,35 +350,23 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
     6. Abort immediately on transport-level failure.
     """
 
+    username: str                    = ""
+    hostname: str                    = ""
+    identityfile: str                = ""
+    username, hostname, identityfile = _validate_ssh_key_auth_inputs( hop )                       # validation for all three happens in method
+    passphrase: str                  = _get_password( "main2" )                                   # demux.util.bitwarden
+    private_key: paramiko.PKey       = _load_private_key( identityfile, passphrase = passphrase ) # load the private key, no transport auth
+    identityfile_pub: str            = f"{identityfile}.pub"
 
 
-    username:str     = hop.get( "user" )
-    hostname:str     = hop.get( "hostname" )
-    identityfile:str = hop.get( "identityfile" )
-    passphrase: str  = _get_password( "main2" ) # demux.util.bitwarden
+    authenticated_via_agent: bool    = _auth_via_agent( transport, username, identityfile_pub )   # try to auth via in memory key
+    if authenticated_via_agent:
+        return
 
-    if not username:
-        raise ValueError( f"ValueError: No username providged for hostname {hostname} trying to load ssh keys for transport from ssh agent. Aborting." )
-
-    # check if the key exists, if it is empty and if it is readable
-    st = os.stat( identityfile )
-    if not stat.S_ISREG( st.st_mode ):
-        raise ValueError( f"identityfile '{identityfile}' is not a regular file" )
-    if st.st_size == 0:
-        raise ValueError( f"identityfile '{identityfile}' is empty" )
-    if not os.access( identityfile, os.R_OK ):
-        raise ValueError( f"identityfile '{identityfile}' is not readable" )
-
-    try:
-        private_key: paramiko.PKey = _load_private_key( identityfile, passphrase = passphrase )
-    except paramiko.ssh_exception.PasswordRequiredException:
-        if not passphrase:
-            raise ValueError( f"Passphrase-protected key but no passphrase in BitWarden. Aborting authentication for {username}@{hostname}" )
-        private_key = _load_private_key( identityfile, passphrase = passphrase )
-    transport.auth_publickey( username = username, key = private_key )
+    _auth_via_private_key( transport, username, private_key )                                     # try to auth via key on disk
+    
     if not transport.is_authenticated( ):
-        raise paramiko.AuthenticationException( f"Public key authentication failed for {username}@{hostname}" )
-
+        raise paramiko.AuthenticationException( f"Authentication attempt using {identityfile} returned without success." )
 
 
 
