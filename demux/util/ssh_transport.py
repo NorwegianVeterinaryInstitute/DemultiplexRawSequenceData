@@ -569,7 +569,6 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
         raise RuntimeError( f"Transport creation failed at hop {hostname}" )
     next_transport.set_keepalive( keepalive )
     next_transport.start_client( timeout = timeout ) # Perform SSH handshake on the new transport
-    print( f"_connect_next_proxy_jump: id( transport ), after start_client( ): {id( transport )}" )
     if not next_transport.is_active( ):
         raise RuntimeError( f"SSH transport inactive after handshake at hop {hostname}" )
 
