@@ -229,7 +229,7 @@ def _load_private_key( identity_file_path: str, passphrase: Optional[ str ] ) ->
     expanded_path: str = os.path.abspath( os.path.expanduser( identity_file_path ) )
     last_error: Optional[ BaseException ] = None
 
-    for key_loader in ( paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey, paramiko.DSSKey ):
+    for key_loader in ( paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey ):
         try:
             return key_loader.from_private_key_file( expanded_path, password = passphrase )
         except ( paramiko.SSHException, FileNotFoundError, paramiko.ssh_exception.PasswordRequiredException ) as error:
