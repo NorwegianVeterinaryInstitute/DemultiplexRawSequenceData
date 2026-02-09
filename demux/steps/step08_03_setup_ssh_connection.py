@@ -29,7 +29,8 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     if len( hops_list ) == 0:
         raise RuntimeError( "SSH config resolution produced zero hops; cannot build transport chain." )
 
-    pprint_hops =  termcolor.colored( pprint.pprint( hops_list ), color="cyan", attrs=["bold"] )
+    hops_list_string = pprint.pformat( hops_list )
+    pprint_hops =  termcolor.colored( hops_list_string, color="cyan", attrs=["bold"] )
     demuxLogger.debug( f"Null hop:{pprint_hops}\n" )
 
 
