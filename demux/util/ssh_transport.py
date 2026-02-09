@@ -451,7 +451,6 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
 
 
 
-
 def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
     """
     Ensure the remote run directory exists using an already-authenticated SFTP session.
@@ -484,20 +483,23 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
         raise SSHException( message ) from error
 
     try:
+        attributes: paramiko.SFTPAttributes | None = None
         try:
             attributes = sftp_client.stat( remote_absolute_dir_path )
         except FileNotFoundError:
-            attributes = None
+            pass
         except OSError as error:
             message = f"SFTPError: stat failed for {ip}:{port}:{remote_absolute_dir_path}: {error}"
             demuxLogger.critical( message )
             raise SSHException( message ) from error
 
-        if stat.S_ISDIR( attributes.st_mode ):
-            message = f"{ip}:{remote_absolute_dir_path} already exists.\n"
-            message += "Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
-            demuxLogger.critical( message )
-            raise SSHException( message )
+        if attributes is not None:
+            if stat.S_ISDIR( attributes.st_mode ):
+                message = f"{ip}:{remote_absolute_dir_path} already exists.\n"
+                message += "Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
+                demuxLogger.critical( message )
+                raise SSHException( message )
+            raise SSHException( f"{ip}:{remote_absolute_dir_path} exists but is not a directory." )
 
         try:
             sftp_client.mkdir( remote_absolute_dir_path )
