@@ -43,7 +43,7 @@ def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig 
 
     # Ensure VerifyHostKeyDNS is set to yes
     verify_hostkey_dns = str( target_lookup.get( "verifyhostkeydns" ) ).strip( ).lower( )
-    if strict_hostkey_checking != "yes":
+    if verify_hostkey_dns != "yes":
         raise ValueError( f"VerifyHostKeyDNS must be 'yes' for {target_lookup.get( 'hostname' )}" )
 
     # Ensure there is a Hostname key-value
