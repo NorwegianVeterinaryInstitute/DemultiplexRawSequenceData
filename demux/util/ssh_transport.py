@@ -299,7 +299,7 @@ def _validate_ssh_key_auth_inputs( hop: paramiko.config.SSHConfig ) -> tuple[str
 
     username: str     = hop.get( "user" )
     hostname: str     = hop.get( "hostname" )
-    identityfile: str = hop.get( "identityfile" )
+    identityfile: str = os.path.abspath( os.path.expanduser( hop.get( "identityfile" )[0] ) )
 
     if not username:
         raise ValueError( f"ValueError: No username provided for hostname {hostname}. Aborting." )
