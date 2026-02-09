@@ -132,8 +132,51 @@ def _get_login_credentials_via_api( hostname: str ) -> Tuple[ str, str, str ]: #
     return ( username, password, totp )
 
 
+def _is_bw_port_open( None ) -> bool:
+    """
+    Verify that the local Bitwarden HTTP service endpoint is reachable.
 
-def _probe_bw_api_state( ) -> Tuple[ bool, bool ]: List( bool, bool )
+    Attempts a TCP connection to (constants.BW_IP, constants.BW_PORT).
+    Returns True on success. On failure, logs a critical error with
+    user-level systemd diagnostics and raises ConnectionError.
+    """
+    try:
+        socket.create_connection( ( constants.BW_IP, constants.BW_PORT ), timeout = 1 ).close( )
+        port_open = True
+    except ConnectionError as error:
+        # port_open = False is already set
+        message = f"Cannot connect to the bw-serve.service socket {constants.BW_PORT} on {constants.BW_BASE_URL}. Use\n"
+        message += termcolor.colored( "    /usr/bin/systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
+        message += "as the seqtech user to see if it is running.\n"
+        demuxLogger.critical( message )
+        raise ConnectionError( f"ConnectionError: failure to reach a required local service endpoint. {message}" ) from error
+
+
+def _is_bw_port_unlocked( None ) -> bool:
+    """
+    Verify that the Bitwarden vault served by the local HTTP API is unlocked.
+
+    Queries the /status endpoint and checks the reported vault state.
+    Returns True if unlocked. If locked, logs a critical error with
+    unlock instructions and raises RuntimeError.
+    """
+
+    # no try/except block here, cuz we assume we can connect to the service
+    # for more details on the API: https://bitwarden.com/help/vault-management-api/
+    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/status", timeout = 1 ) as r:
+        vault_unlocked = json.load( r )[ "data"][ "template" ][ "status" ] == "unlocked" # assigns true to vault_unlocked, if unlocked.
+    
+    if not vault_unlocked:
+        unlock_vault_cmd = "    /usr/local/bin/vault_unlocked.sh"
+        unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
+        message += "Cannot connect to the bw serve vault. Vault is locked. Use\n"
+        message += unlock_vault_cmd
+        message += "on the command line to unlock."
+        demuxLogger.critical( message )
+        raise RuntimeError( message ) from error
+
+
+def _probe_bw_api_state( None ) -> Tuple[ bool, bool ]:
     """
     Probe the Bitwarden bw-serve HTTP API.
 
@@ -148,33 +191,8 @@ def _probe_bw_api_state( ) -> Tuple[ bool, bool ]: List( bool, bool )
         Exception only on unexpected internal errors (not for normal "service down"
         or "vault locked" states).
     """
-    port_open      = False
-    vault_unlocked = False
-
-    try:
-        socket.create_connection( ( constants.BW_IP, constants.BW_PORT ), timeout = 1 ).close( )
-        port_open = True
-    except ConnectionError as error:
-        # port_open = False is already set
-        message = f"Cannot connect to the bw-serve.service socket {constants.BW_PORT} on {constants.BW_BASE_URL}. Use\n"
-        message += termcolor.colored( "    /usr/bin/systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
-        message += "as the seqtech user to see if it is running.\n"
-        demuxLogger.critical( message )
-        raise ConnectionError( f"ConnectionError: failure to reach a required local service endpoint. {message}" ) from error
-
-    # no try/except block here, cuz we already established we can connect to the service
-    # for more details on the API: https://bitwarden.com/help/vault-management-api/
-    with urllib.request.urlopen( f"{constants.BW_BASE_URL}:{constants.BW_PORT}/status", timeout = 1 ) as r:
-        vault_unlocked = json.load( r )[ "data"][ "template" ][ "status" ] == "unlocked" # assigns true to vault_unlocked, if unlocked.
-    
-    if not vault_unlocked:
-        unlock_vault_cmd = "    /usr/local/bin/vault_unlocked.sh"
-        unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
-        message += "Cannot connect to the bw serve vault. Vault is locked. Use\n"
-        message += unlock_vault_cmd
-        message += "on the command line to unlock."
-        demuxLogger.critical( message )
-        raise RuntimeError( message ) from error
+    port_open      = _is_bw_port_open( )
+    vault_unlocked = _is_bw_port_unlocked( )
 
     return ( port_open, vault_unlocked )
 
