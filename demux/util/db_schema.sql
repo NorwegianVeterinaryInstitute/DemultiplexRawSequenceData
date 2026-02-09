@@ -1,3 +1,12 @@
+# more things to expand the schema on: date of upload, nird/irida, time for each file to be uploaded to nird,
+# time for each pair to be uploaded to irida adn finish processing (maybe seperate)
+-- runs: run_id (PK), started_at, ended_at, operator, host, software_versions (demux, guppy/dorado, barcoder), config_hash, input_paths, output_root, status, exit_code, error_summary
+-- samples/barcodes: run_id (FK), barcode_id, sample_id, kit, assigned_reads, assigned_bases, unassigned_reads, yield_metrics, files_manifest_hash
+-- artifacts+provenance: run_id (FK), file_path, file_type, size_bytes, mtime_ns, checksum_sha512, remote_uri, upload_status, upload_attempts, tool_stdout/stderr_hash, log_path
+-- phases: run_id (FK), phase_name (PK-part), started_at_ns, ended_at_ns, duration_ns, status, exit_code, stdout_path, stderr_path, log_path, commandline_hash
+-- prepared_files: run_id (FK), phase_name (FK), path, kind (input/output/temp), size_bytes, mtime_ns, checksum_sha512, role (eg "multiqc_report", "raw_fastq"), remote_uri
+
+
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE runs (
