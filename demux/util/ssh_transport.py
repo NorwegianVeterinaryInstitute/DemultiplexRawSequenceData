@@ -430,7 +430,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     hostname     : str  = hop.get( "hostname" )
     username     : str  = hop.get( "user" )
     identityfile : str  = hop.get( "identityfile" )
-    totp_enabled : bool = bool( hop.get( "TOTPEnabled", "no" ).lower( ) == "yes" ) # the "no" here is a safe dict.get(key, default)
+    totp_enabled : bool = not bool( identityfile )
     if hostname == "login.nird.sigma2.no": #cheating
         totp_enabled = True
     # if two_fa_enabled:
