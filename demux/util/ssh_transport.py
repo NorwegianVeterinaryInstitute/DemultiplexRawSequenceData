@@ -467,7 +467,7 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
 
     ip, port = demux.transport.getpeername( )
 
-    if not os.path.isabs( remote_absolute_dir_path )
+    if not os.path.isabs( remote_absolute_dir_path ):
         message = f"Remote directory is not in absolute path: {remote_absolute_dir_path}"
         raise RuntimeError( message )
 
@@ -493,7 +493,7 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
             demuxLogger.critical( message )
             raise SSHException( message ) from error
 
-        if attributes is not None:
+        if stat.S_ISDIR( attributes.st_mode ):
             message = f"{ip}:{remote_absolute_dir_path} already exists.\n"
             message += "Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
             demuxLogger.critical( message )
