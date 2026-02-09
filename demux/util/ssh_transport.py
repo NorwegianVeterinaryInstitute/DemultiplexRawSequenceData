@@ -1,10 +1,12 @@
 # all ssh transport related stuff
 
+import base64
 import os
 import paramiko
 import pprint
 import re
 import shlex
+import stat
 import socket
 import sys
 import termcolor
