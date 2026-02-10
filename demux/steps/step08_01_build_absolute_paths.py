@@ -2,12 +2,12 @@ import os
 
 from demux.config import constants
 
-def _select_nird_base_upload_path( demux ):
+def _select_nird_base_upload_path( demux ) -> str:
     """
     @in_use
     Select which base upload path to use depending on access mode (sshfs vs SSH). Central place to extend path-selection rules; if path logic needs augmentation, add it here.
     """
-    upload_path = ""
+    upload_path:str = ""
     if constants.NIRD_MODE_MOUNTED   == demux.nird_access_mode:
         upload_path = demux.nird_base_upload_path_local
     elif constants.NIRD_MODE_SSH     == demux.nird_access_mode:

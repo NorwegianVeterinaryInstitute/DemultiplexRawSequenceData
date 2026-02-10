@@ -79,7 +79,7 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
 
 
 
-def _ensure_remote_run_directory( demux ):
+def _ensure_remote_run_directory( demux ) -> None:
     """
     @in_use
     Dispatch to the correct remote-directory preparation method
