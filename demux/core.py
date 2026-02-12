@@ -198,6 +198,8 @@ class demux:
     proxy_jump                      = ""
     proxy_jump_chain: List          = None
     transport_stack: List[ paramiko.Transport]  = None
+    # max_workers: int              = len( demux.tarFilesToTransferList ) # this would be possible if the firewall did not choke.
+    max_workers: int                = 5     # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
     ######################################################
     bw_port                         = 8087
     bw_localhost                    = "127.0.0.1" # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. refering it by IP allows us to deterministically resolve the address

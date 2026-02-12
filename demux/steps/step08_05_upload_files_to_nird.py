@@ -320,11 +320,9 @@ def _upload_files_to_nird( demux ) -> None:
     elif constants.PARALLEL_COPYING == demux.nird_copy_mode:
         demuxLogger.info( "Parallel copying enabled." )
 
-        # max_workers: int = len( demux.tarFilesToTransferList )
-        max_workers: int = 5
         future_to_tar: dict[ Any, Any ] = { }
 
-        with ThreadPoolExecutor( max_workers = max_workers ) as pool:
+        with ThreadPoolExecutor( max_workers = demux.max_workers ) as pool:
             for tar_file in demux.tarFilesToTransferList:
                 future: Any = pool.submit( upload_func, demux, tar_file )
                 future_to_tar[ future ] = tar_file
