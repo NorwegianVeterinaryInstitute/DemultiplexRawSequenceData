@@ -197,7 +197,7 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     finally:
         scp_client.close( )
 
-    demuxLogger.info( f"Done: LOCAL:{entry[tar_file]['tar_file_local']:<{longest_local_path}} REMOTE:{demux.hostname}:{entry[tar_file]['tar_file_remote']}" )
+    demuxLogger.info( f"Done: LOCAL:{tar_file:<{longest_local_path}} REMOTE:{demux.hostname}:{tar_file}" )
 
 
 
