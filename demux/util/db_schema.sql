@@ -6,7 +6,15 @@
 -- phases: run_id (FK), phase_name (PK-part), started_at_ns, ended_at_ns, duration_ns, status, exit_code, stdout_path, stderr_path, log_path, commandline_hash
 -- prepared_files: run_id (FK), phase_name (FK), path, kind (input/output/temp), size_bytes, mtime_ns, checksum_sha512, role (eg "multiqc_report", "raw_fastq"), remote_uri
 
-metadata: what machine sequenced this run, by serial id
+--- metadata: what machine sequenced this run, by serial id
+
+-- About that database you were talking about - I would have liked to have the unique sample lims id in it. The Sample_ID in the sample sheet isn't unique. 
+-- So if I were to query the database from the shiny app for example, i would prefer to query by the unique lims id
+-- If so, thats an additional column in the sample sheet.
+-- we can have a view of the sample + date as primary key
+-- Of course, even though unique for the sample it could be on several sequencing runs. So maybe one sample table where limsid is the primary key and separate tables for the demultiplexing runs.
+-- The sequencing run also has one of those unique limsids by the way. Although there you also have the run id
+ 
 
 
 PRAGMA foreign_keys = ON;
