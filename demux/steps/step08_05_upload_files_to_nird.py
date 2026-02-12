@@ -314,28 +314,37 @@ def _upload_files_to_nird( demux ) -> None:
     # serial / parallel copying switching
     if constants.SERIAL_COPYING == demux.nird_copy_mode:
         demuxLogger.info( "Serial copying enabled." )
-        if len( demux.tarFilesToTransferList ) == 0:
-            message = f"Length of demux.tarFilesToTransferList is zero while serial copying." # ensure that we get notified there is something wrong
-            demuxLogger.critical( message )
-            raise RuntimeError( message )
         for tar_file in demux.tarFilesToTransferList:
             upload_func( demux, tar_file )
 
     elif constants.PARALLEL_COPYING == demux.nird_copy_mode:
         demuxLogger.info( "Parallel copying enabled." )
-        if len( demux.tarFilesToTransferList ) == 0:
-            message = f"Length of demux.tarFilesToTransferList is zero while parallel copying." # ensure that we get notified there is something wrong
-            demuxLogger.critical( message )
-            raise RuntimeError( message )
-        with ThreadPoolExecutor( max_workers = len( demux.tarFilesToTransferList ) ) as pool:
-            futures = [
-                pool.submit( upload_func, demux, tar_file )
-                for tar_file in demux.tarFilesToTransferList
-            ]
-            for future in futures:
+
+        max_workers: int = len( demux.tarFilesToTransferList )
+        future_to_tar: dict[ Any, Any ] = { }
+
+        with ThreadPoolExecutor( max_workers = max_workers ) as pool:
+            for tar_file in demux.tarFilesToTransferList:
+                future: Any = pool.submit( upload_func, demux, tar_file )
+                future_to_tar[ future ] = tar_file
+
+            done, not_done = wait( list( future_to_tar.keys( ) ), return_when = ALL_COMPLETED )
+            errors: list[ BaseException ] = [ ]
+
+            for future in done:
+                tar_file: Any = future_to_tar[ future ]
                 try:
                     future.result( )
-                except RuntimeError as error:
-                    message = f"Upload failed: {error}"
-                    demuxLogger.critical( message )
-                    raise RuntimeError( message )
+                except EOFError as exception:
+                    demuxLogger.critical( f"Upload failed (EOFError): {tar_file} {exception!r}" )
+                    errors.append( exception )
+                except BaseException as exception:
+                    demuxLogger.critical( f"Upload failed: {tar_file} {exception!r}" )
+                    errors.append( exception )
+
+        if errors:
+            raise RuntimeError( f"{len(errors)} upload(s) failed; first={errors[0]!r}" )
+    else:
+        message: str = f"Unknown NIRD copy mode: {demux.nird_copy_mode}"
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
