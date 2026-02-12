@@ -8,7 +8,7 @@ import shutil
 import sys
 import threading
 
-from concurrent.futures   import ThreadPoolExecutor
+from concurrent.futures   import ThreadPoolExecutor, wait, ALL_COMPLETED
 from collections.abc      import ValuesView
 from scp                  import SCPClient
 
