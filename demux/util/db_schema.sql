@@ -6,6 +6,8 @@
 -- phases: run_id (FK), phase_name (PK-part), started_at_ns, ended_at_ns, duration_ns, status, exit_code, stdout_path, stderr_path, log_path, commandline_hash
 -- prepared_files: run_id (FK), phase_name (FK), path, kind (input/output/temp), size_bytes, mtime_ns, checksum_sha512, role (eg "multiqc_report", "raw_fastq"), remote_uri
 
+metadata: what machine sequenced this run, by serial id
+
 
 PRAGMA foreign_keys = ON;
 
