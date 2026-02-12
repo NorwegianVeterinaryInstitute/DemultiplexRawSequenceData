@@ -51,6 +51,6 @@ def deliver_files_to_NIRD( demux ):
     _setup_ssh_connection( demux )                      # setup the ssh transport needed for the next two functions, along any hop chain they might need
     _ensure_remote_run_directory( demux )               # make sure demux.nird_base_upload_path/demux.RunID exists
     _upload_files_to_nird( demux )                      # send the demux object to a dedicated method and it will decide what mode of copying and type of upload it will use
-    _close_channels_and_transport( demux )              # close off the channels we opened and any transports
+    _tear_down_transport( demux )                       # tear down the transport, in reverse opening order
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )
