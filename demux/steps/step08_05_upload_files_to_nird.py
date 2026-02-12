@@ -327,7 +327,7 @@ def _upload_files_to_nird( demux ) -> None:
                 future: Any = pool.submit( upload_func, demux, tar_file )
                 future_to_tar[ future ] = tar_file
 
-            done, not_done = wait( list( future_to_tar.keys( ) ), return_when = ALL_COMPLETED )
+            done, not_done = wait( list( future_to_tar.keys( ) ), return_when = ALL_COMPLETED ) # we are blocking till all files are uploaded
             errors: list[ BaseException ] = [ ]
 
             for future in done:
