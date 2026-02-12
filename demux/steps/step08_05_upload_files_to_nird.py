@@ -281,12 +281,24 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
 
 
 
-def _upload_files_to_nird( demux ):
+def _upload_files_to_nird( demux ) -> None:
     """
-    @in_use
-    @needs_better_docstring
-    Select the appropriate upload function based on NIRD access mode and execute all file transfers in either serial or parallel form.
+    Dispatch tar uploads to NIRD using the access mode defined on `demux`
+    (SSH, SSH+2FA, or mounted sshfs) and execute transfers either serially
+    or via a ThreadPoolExecutor.
+
+    Serial mode executes uploads inline and fails immediately on error.
+    Parallel mode submits one future per tar, blocks until ALL_COMPLETE,
+    collects per-tar exceptions (including EOFError from transport drops),
+    and raises a single RuntimeError after synchronization if any upload failed.
+
     """
+
+    if len( demux.tarFilesToTransferList ) == 0:
+        message = f"Length of demux.tarFilesToTransferList is zero while copying." # check if we got passed garbage
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
+
     # choose upload implementation
     if constants.NIRD_MODE_SSH       == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_ssh
