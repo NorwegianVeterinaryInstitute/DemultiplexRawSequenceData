@@ -23,7 +23,7 @@ def _tear_down_transport( demux ) -> None:
         except Exception as error:
             wrapped = RuntimeError( f"Transport close failed at stack index {index}: {transport!r}" )
             wrapped.__cause__ = error   # Python language builtin (PEP 3134).
-            failures.append( wrapped )
+            transport_closing_failures.append( wrapped )
 
-    if failures:
-        raise ExceptionGroup( "Transport teardown failures", failures )
+    if transport_closing_failures:
+        raise ExceptionGroup( "Transport teardown failures", transport_closing_failures )
