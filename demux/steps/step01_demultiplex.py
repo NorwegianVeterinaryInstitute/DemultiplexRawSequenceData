@@ -47,18 +47,13 @@ def bcl2fastq( demux ):
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (65535, hard))
 
-    # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
-    availableCpus = os.cpu_count()
-    cpuMultiplier = 2
-    availableCpus = availableCpus * cpuMultiplier
-
     argv = [ demux.bcl2fastq_bin,
          "--loading-threads",
-         f"{availableCpus}",
+         f"{demux.running_threads}",
          "--processing-threads",
-         f"{availableCpus}",
+         f"{demux.running_threads}",
          "--writing-threads",
-         f"{availableCpus}",
+         f"{demux.running_threads}",
          "--no-lane-splitting",
          "--runfolder-dir",
         f"{demux.rawDataRunIDdir}",

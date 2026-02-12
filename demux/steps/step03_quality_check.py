@@ -22,7 +22,7 @@ def fastqc( demux ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: fastQC started ==", color="yellow" ) )
 
     command             = demux.fastqc_bin
-    argv                = [ command, '-t', str(demux.threadsToUse), *demux.newProjectFileList ]  # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
+    argv                = [ command, '-t', str(demux.running_threads), *demux.newProjectFileList ]  # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
 
     arguments = " ".join( argv[1:] )
     text = "Command to execute:"

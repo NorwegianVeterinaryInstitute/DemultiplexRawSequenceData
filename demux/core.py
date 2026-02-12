@@ -208,7 +208,9 @@ class demux:
     vigasp_copy_mode                = "serial"
     allowed_vigasp_copy_modes       = [ "serial", "parallel" ]
     ######################################################
-    threadsToUse                    = 12                        # the amount of threads FastQC and other programs can utilize
+    availableCpus:int               = os.cpu_count() # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
+    cpuMultiplier: int              = 2
+    running_threads:int             = availableCpus * cpuMultiplier  # the amount of threads bcl2fastq, fasqcq and multiqc to use
     ######################################################
     with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize totalTasks to it
         tree = ast.parse( f.read( ) )
