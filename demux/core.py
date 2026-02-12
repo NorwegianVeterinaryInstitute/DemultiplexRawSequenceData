@@ -186,7 +186,8 @@ class demux:
     nird_scp_port                   = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
     nird_username                   = "gmarselis" # change this to be the user running the script
     # nird_base_upload_path_ssh       = "/nird/projects/NS9305K/SEQ-TECH/data_delivery" # directory location before datapeak
-    nird_base_upload_path_ssh       = "/nird/datapeak/NS9305K/gmarselis/demux_transfer_test"
+    # nird_base_upload_path_ssh       = "/nird/datapeak/NS9305K/gmarselis/demux_transfer_test"
+    nird_base_upload_path_ssh       = "/nird/datalake/NS9305K/test_demultiplex"
     nird_base_upload_path_local     = "/data/tmp/nird"
     nird_base_upload_path           = ""
     nird_key_filename               = "/home/gmarselis/.ssh/id_ed25519.3jane"
@@ -327,6 +328,13 @@ class demux:
 
         demux.transfer_to_vigas     = all( entry[ 'transfer_to_vigas' ] for entry in demux.project_samples_metadata[ project ].values( ) ) # all( ) logical ANDs the values
         demux.transfer_to_nird      = all( entry[ 'transfer_to_nird' ]  for entry in demux.project_samples_metadata[ project ].values( ) )
+
+        # locations: set[str] = { entry[ "nird_location" ] for entry in demux.project_samples_metadata[ project ].values( )}
+        # if len( locations ) != 1:
+        #     raise ValueError( f"NIRD_Location mismatch for Sample_Project '{project}': {sorted( locations )}" )
+        # nird_upload_location: str = next( iter( locations ) )
+        # demux.absoluteFilesToTransferList[tar_file]["nird_upload_location"] = nird_upload_location
+
 
         # if we are debugging, print out the list of projects.
         if demux.verbosity == 3:
