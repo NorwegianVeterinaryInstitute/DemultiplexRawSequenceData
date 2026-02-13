@@ -115,7 +115,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
     demuxLogger.info( f"Done: LOCAL:{file_entry[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{demux.hostname}:{file_entry[ 'tar_file_remote' ]}" )
 
 
-def progress(filename, size, sent):
+def progress(filename, size, sent) -> None:
     """
     Progress callback for SCP transfers.
 
@@ -128,7 +128,33 @@ def progress(filename, size, sent):
     """
     sys.stdout.write("%s progress: %.2f%%   \r" % ( filename, float( sent )/float( size )*100 ) )
 
-def progress4(filename, size, sent, peername):
+
+def _resolve_hostname(ip_address: str) -> str:
+    """
+    Resolve an IP address to a hostname once and cache the result
+    for the lifetime of the process.
+
+    Args:
+        ip_address: IPv4 or IPv6 address string.
+
+    Returns:
+        Hostname from reverse DNS, or the original IP if lookup fails.
+    """
+    if not hasattr( _resolve_hostname, "cache" ):
+        _resolve_hostname.cache: dict[ str, str ] = { }
+
+    cache: dict[ str, str ] = _resolve_hostname.cache
+
+    if ip_address not in cache:
+        try:
+            hostname, _, _  = socket.gethostbyaddr( ip_address )
+        except socket.herror:
+            hostname        = ip_address
+        cache[ ip_address ] = hostname
+
+    return cache[ip_address]
+
+def progress4(filename, size, sent, peername) -> None:
     """
     Extended progress callback including remote peer info.
 
@@ -140,12 +166,7 @@ def progress4(filename, size, sent, peername):
 
     Prints percentage completion with peer address to stdout.
     """
-    hostname: str = ""
-
-    try: # to resolve the hostaname even if only jump proxy
-        hostname, _, _ = socket.gethostbyaddr( peername[ 0 ] )
-    except socket.herror:
-        hostname = peername[ 0 ]
+    hostname: str =  resolve_hostname( peername[ 0 ] )
     sys.stdout.write("(%s:%s) %s progress: %.2f%%   \r" % ( hostname, peername[ 1 ], filename, float( sent )/float( size )*100 ) )
 
 def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
