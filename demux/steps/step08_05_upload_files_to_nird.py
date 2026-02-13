@@ -5,6 +5,7 @@ import os
 import paramiko
 import shlex
 import shutil
+import socket
 import sys
 import threading
 
@@ -139,7 +140,13 @@ def progress4(filename, size, sent, peername):
 
     Prints percentage completion with peer address to stdout.
     """
-    sys.stdout.write("(%s:%s) %s progress: %.2f%%   \r" % ( peername[ 0 ], peername[ 1 ], filename, float( sent )/float( size )*100 ) )
+    hostname: str = ""
+
+    try: # to resolve the hostaname even if only jump proxy
+        hostname, _, _ = socket.gethostbyaddr( peername[ 0 ] )
+    except socket.herror:
+        hostname = peername[ 0 ]
+    sys.stdout.write("(%s:%s) %s progress: %.2f%%   \r" % ( hostname, peername[ 1 ], filename, float( sent )/float( size )*100 ) )
 
 def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     """
