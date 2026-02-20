@@ -6,9 +6,9 @@
 
 # Purpose
 
-Add deterministic per-Sample_Project delivery to NIRD with strict SSH validation and transfer verification.
+Add deterministic per-Sample_Project tar file delivery to NIRD with strict SSH validation and transfer verification.
 
-This branch does not modify demultiplexing or QC mechanics. It modifies packaging metadata (tar filenames) and introduces structured upload logic.
+This branch does not modify demultiplexing or QC mechanics. It modifies packaging metadata (tar upload location) and introduces structured upload logic.
 
 ---
 
@@ -22,6 +22,8 @@ The metadata for the generated tar now carries:
 * `upload_to_nird` flag
 
 Upload routing is no longer global. It is resolved per Sample_Project and stored on tar metadata (future: SQL database)
+
+QC data is no longer uploaded?
 
 ---
 
@@ -39,7 +41,7 @@ Upload destination is derived during packaging and becomes immutable for that ta
 
 All upload logic reads destination from tar metadata (SampleSheet.csv) only.
 
-No global path assumptions.
+No implicit path resolution: The upload root is taken exclusively from the SampleSheet, and the final destination is deterministically constructed as SampleSheet-defined root + RunID; no environment or fallback defaults participate.
 
 Future expansion: upload path taken from shinylims app by @magnulei via API call
 
@@ -62,8 +64,12 @@ No implicit SSH behavior.
 ## 5. Strict Host Key Enforcement
 
 * Unknown host keys rejected
-* Mismatched keys abort
-* No auto-add policy
+* Mismatched keys abort immediately
+* No AutoAddPolicy or silent trust-on-first-use
+
+This environment is known infrastructure. Host keys are expected to be stable. Any change indicates reinstallation key rotation, or compromise and must be investigated and resolved by the sysadmin before transfers resume.
+
+New host keys are never learned automatically; they must be verified and added manually to the known_hosts store.
 
 ---
 
@@ -86,7 +92,7 @@ No credentials are written to disk, but BitWarden service leaves an open vector.
 
 ### Bitwarden Service Requirements
 
-Uploads depend on a user-scoped Bitwarden HTTP API service. License will be gotten from the IT department via a service account user to minimize the attack vector on passwords. Service account will be assigned to the person heading the sequencing. Due to the fact that the account logging in to NIRD has 2FA and that 2FA is per-person, a 'second person as backup' was not under design configuration and not under current consideration (we would have to deal with user managment)
+Uploads depend on a user-scoped Bitwarden HTTP API service. License will be aquired from the IT department via a service account user to minimize the attack vector on passwords. Service account will be assigned to the person heading the sequencing. Due to the fact that the account logging in to NIRD has 2FA and that 2FA is per-person, a 'second person as backup' was not under design configuration and not under current consideration (we would have to deal with user managment)
 
 #### 1. Bitwarden CLI Initialization (one-time setup)
 
@@ -96,7 +102,9 @@ The uploading user must initialize Bitwarden via:
 /usr/local/bin/bw login
 ```
 
-Follow the CLI instructions to complete login and device registration.
+Follow the CLI instructions to complete login and device registration. 
+
+Note: the BitWarden password cannot be the same as the domain password of the user
 
 ---
 
@@ -107,6 +115,21 @@ The provided `bw-serve.service` must be installed in the user systemd directory:
 ```
 ~/.config/systemd/user/bw-serve.service
 ```
+
+> [Unit]
+> Description=Bitwarden CLI serve (loopback only)
+> Documentation=[https://bitwarden.com/blog/bringing-restful-api-to-the-bitwarden-cli/](https://bitwarden.com/blog/bringing-restful-api-to-the-bitwarden-cli/) [https://bitwarden.com/help/vault-management-api/](https://bitwarden.com/help/vault-management-api/)
+>
+> [Service]
+> ExecStart=/usr/local/bin/bw serve --hostname 127.0.0.1 --port 8087
+> ExecStartPost=/usr/bin/sh -c 'if [ "$(cut -d. -f1 /proc/uptime)" -lt 120 ]; then printf "Vault locked due to reboot. Run /usr/local/bin/vault_unlock.sh\n" | /usr/bin/mailx -s "Bitwarden vault locked due to seqtech reboot" [gmarselis@3jane.vetinst.no](mailto:gmarselis@3jane.vetinst.no); fi'
+> Restart=no
+> StartLimitAction=none
+>
+> [Install]
+> WantedBy=default.target
+
+
 
 Then enable and start it:
 
@@ -130,7 +153,7 @@ Before uploads can proceed, the vault must be unlocked manually:
 /usr/local/bin/vault_unlock.sh
 ```
 
-The user will be prompted to enter their Bitwarden master password.
+The user will be prompted to enter their Bitwarden master password. As mentioned the Bitwarden password should not be the same as the VI password.
 
 The vault remains unlocked in memory for the active session.
 
@@ -193,7 +216,7 @@ Demultiplex and QC remain unaffected.
 # Compatibility
 
 * Backward compatible with existing run processing, up to `251110_M09180_0048_000000000-M7V7K`: previous runs will need their sample sheet regenerated from shinylims
-* Does not alter tar structure.
+* Does not alter existing tar structure.
 * Only affects delivery stage.
 
 ---
