@@ -125,6 +125,14 @@ The provided `bw-serve.service` must be installed in the user systemd directory:
 > ExecStartPost=/usr/bin/sh -c 'if [ "$(cut -d. -f1 /proc/uptime)" -lt 120 ]; then printf "Vault locked due to reboot. Run /usr/local/bin/vault_unlock.sh\n" | /usr/bin/mailx -s "Bitwarden vault locked due to seqtech reboot" [gmarselis@3jane.vetinst.no](mailto:gmarselis@3jane.vetinst.no); fi'
 > Restart=no
 > StartLimitAction=none
+> PrivateTmp=yes
+> NoNewPrivileges=yes
+> ProtectSystem=strict
+> ProtectHome=read-only
+> ReadWritePaths="/data/.config/Bitwarden CLI"
+> RestrictAddressFamilies=AF_INET AF_UNIX
+
+
 >
 > [Install]
 > WantedBy=default.target
