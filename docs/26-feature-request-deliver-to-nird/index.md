@@ -116,28 +116,24 @@ The provided `bw-serve.service` must be installed in the user systemd directory:
 ~/.config/systemd/user/bw-serve.service
 ```
 
-> [Unit]
-> Description=Bitwarden CLI serve (loopback only)
-> Documentation=[https://bitwarden.com/blog/bringing-restful-api-to-the-bitwarden-cli/](https://bitwarden.com/blog/bringing-restful-api-to-the-bitwarden-cli/) [https://bitwarden.com/help/vault-management-api/](https://bitwarden.com/help/vault-management-api/)
->
-> [Service]
-> ExecStart=/usr/local/bin/bw serve --hostname 127.0.0.1 --port 8087
-> ExecStartPost=/usr/bin/sh -c 'if [ "$(cut -d. -f1 /proc/uptime)" -lt 120 ]; then printf "Vault locked due to reboot. Run /usr/local/bin/vault_unlock.sh\n" | /usr/bin/mailx -s "Bitwarden vault locked due to seqtech reboot" [gmarselis@3jane.vetinst.no](mailto:gmarselis@3jane.vetinst.no); fi'
-> Restart=no
-> StartLimitAction=none
-> PrivateTmp=yes
-> NoNewPrivileges=yes
-> ProtectSystem=strict
-> ProtectHome=read-only
-> ReadWritePaths="/data/.config/Bitwarden CLI"
-> RestrictAddressFamilies=AF_INET AF_UNIX
+    [Unit]
+    Description=Bitwarden CLI serve (loopback only)
+    Documentation=[https://bitwarden.com/blog/bringing-restful-api-to-the-bitwarden-cli/](https://bitwarden.com/blog/bringing-restful-api-to-the-bitwarden-cli/) [https://bitwarden.com/help/vault-management-api/](https://bitwarden.com/help/vault-management-api/)
+    
+    [Service]
+    ExecStart=/usr/local/bin/bw serve --hostname 127.0.0.1 --port 8087
+    ExecStartPost=/usr/bin/sh -c 'if [ "$(cut -d. -f1 /proc/uptime)" -lt 120 ]; then printf "Vault locked due to reboot. Run /usr/local/bin/vault_unlock.sh\n" | /usr/bin/mailx -s "Bitwarden vault locked due to seqtech reboot" george.marselis@vetinst.no; fi'
+    Restart=no
+    StartLimitAction=none
+    PrivateTmp=yes
+    NoNewPrivileges=yes
+    ProtectSystem=strict
+    ProtectHome=read-only
+    ReadWritePaths="/data/.config/Bitwarden CLI"
+    RestrictAddressFamilies=AF_INET AF_UNIX
 
-
->
-> [Install]
-> WantedBy=default.target
-
-
+    [Install]
+    WantedBy=default.target
 
 Then enable and start it:
 
