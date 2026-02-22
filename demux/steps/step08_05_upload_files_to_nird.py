@@ -166,7 +166,7 @@ def progress4(filename, size, sent, peername) -> None:
 
     Prints percentage completion with peer address to stdout.
     """
-    hostname: str =  resolve_hostname( peername[ 0 ] )
+    hostname: str =  _resolve_hostname( peername[ 0 ] )
     sys.stdout.write("(%s:%s) %s progress: %.2f%%   \r" % ( hostname, peername[ 1 ], filename, float( sent )/float( size )*100 ) )
 
 def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
