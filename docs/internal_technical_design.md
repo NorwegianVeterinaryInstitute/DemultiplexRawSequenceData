@@ -235,11 +235,40 @@ It is intended to become stable infrastructure that requires minimal maintenance
 
 ## 13. State Machine Diagram
 
-https://mermaid.live/edit#pako:eNplk9tuozAQQH_F8uMql5YkJeVhJQSki0qaG6mqLquVAw6xCjZrTNU0yr-vzS1EeQE8nDm2x54TDFmEoQFzgQS2CYo5SvufWkAB-P3jD-j3fwLX9hw1Vu8yYLsba_HqrIEBBEkxl8_wI6CKaX81iZKhDOCExGSXYMALmt9wy7Uz89ynX76E96ygEQgRjUgkVwTWBXXtyn3BOvKU5DmhMdigNEvw5oCxGIT5J2Ac_F37psVUWOCB-BK3js2zu5QOlHCMoiPIOAtxnuPollxtzbX54rsvas6QUcFZMtyhSG0IZCwh4fE2yXbm2zfJE5oVIgeL57pGZVgBM3PjryxJ7MJE26Nc_Cuha8T1HPsKwZwzXqlqgQLnW893S9lMUvKjMnWIVlUDHU-TrLBX03Nt01cbnReJIK2qC7WuBunIWkFZYt98UqqVNUyxQPJMUa27wlpfHh5wiobSWFUV7BFJKm-lqgrrudX9k9c2VsdfKS_ExVcDnfU12YqzFvOl55SbLbKEyQNtDuDCtK6a6Kja9G6flLeqG-hcniYMezDmJIKG4AXuQdlEKVJDeFIJARSyCjiAhvyMEP8IYEDPMidD9J2xtEnjrIgP0NijJJejIosuPdwimEaYW7KrBDQmpQEaJ_gFDU17HEwfdH08no7uRvfao96DR2iMp4PxSJ9oE-1Bu9cmU_3cg9_lnHeDqT45_wdDoDzc
+```mermaid
+stateDiagram-v2
+  [*] --> IDLE
+  IDLE --> DISCOVER : timer tick
 
-https://mermaid.ai/play?utm_source=mermaid_live_editor&utm_medium=share#pako:eNplk9tuozAQQH_F8uMql5YkJeVhJQSki0qaG6mqLquVAw6xCjZrTNU0yr-vzS1EeQE8nDm2x54TDFmEoQFzgQS2CYo5SvufWkAB-P3jD-j3fwLX9hw1Vu8yYLsba_HqrIEBBEkxl8_wI6CKaX81iZKhDOCExGSXYMALmt9wy7Uz89ynX76E96ygEQgRjUgkVwTWBXXtyn3BOvKU5DmhMdigNEvw5oCxGIT5J2Ac_F37psVUWOCB-BK3js2zu5QOlHCMoiPIOAtxnuPollxtzbX54rsvas6QUcFZMtyhSG0IZCwh4fE2yXbm2zfJE5oVIgeL57pGZVgBM3PjryxJ7MJE26Nc_Cuha8T1HPsKwZwzXqlqgQLnW893S9lMUvKjMnWIVlUDHU-TrLBX03Nt01cbnReJIK2qC7WuBunIWkFZYt98UqqVNUyxQPJMUa27wlpfHh5wiobSWFUV7BFJKm-lqgrrudX9k9c2VsdfKS_ExVcDnfU12YqzFvOl55SbLbKEyQNtDuDCtK6a6Kja9G6flLeqG-hcniYMezDmJIKG4AXuQdlEKVJDeFIJARSyCjiAhvyMEP8IYEDPMidD9J2xtEnjrIgP0NijJJejIosuPdwimEaYW7KrBDQmpQEaJ_gFDU17HEwfdH08no7uRvfao96DR2iMp4PxSJ9oE-1Bu9cmU_3cg9_lnHeDqT45_wdDoDzc
+  DISCOVER --> IDLE : no eligible runs
+  DISCOVER --> PREFLIGHT : found candidate RunID
 
-https://mermaid.ai/d/bb332642-4655-4d82-9a48-d93805226df5
+  PREFLIGHT --> IDLE : missing SampleSheet.csv or _RTAComplete.txt
+  PREFLIGHT --> SKIP : already processed
+  PREFLIGHT --> QUARANTINE : control/bad run policy
+  PREFLIGHT --> DEMUX : inputs OK
 
+  DEMUX --> FASTQC : bcl2fastq OK
+  DEMUX --> FAILED : bcl2fastq error
+
+  FASTQC --> MULTIQC : FastQC OK
+  FASTQC --> FAILED : FastQC error
+
+  MULTIQC --> VALIDATE : MultiQC OK
+  MULTIQC --> FAILED : MultiQC error
+
+  VALIDATE --> STAGE : QC/metadata OK
+  VALIDATE --> FAILED : schema/QC policy fail
+
+  STAGE --> DELIVER : staging OK
+  STAGE --> FAILED : staging error
+
+  DELIVER --> COMPLETE : upload OK
+  DELIVER --> FAILED : upload error
+
+  COMPLETE --> IDLE
+  SKIP --> IDLE
+  QUARANTINE --> IDLE
+```
 
 ## 14. Invariants
