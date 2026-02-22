@@ -68,7 +68,7 @@ def tar_file_quality_check( demux ):
             text = "Now extracting tarfile:"
             demuxLogger.debug( f"{text:{demux.spacing3}}" + tarFile )
             tarFileHandle = tarfile.open( name = tarFile, mode = "r:" )     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
-            tarFileHandle.extractall( path = forTransferRunIdDirTestName  )
+            tarFileHandle.extractall( path = forTransferRunIdDirTestName, filter = 'data' )
             tarFileHandle.close( )
         except Exception as err:
             text = f"{forTransferRunIdDirTestName}/{tarFile} cannot be created: { str( err ) }\nExiting!"
