@@ -1,13 +1,17 @@
 # nvi-demux
 
 nvi-demux is an operational demultiplexing and quality-control pipeline for Illumina MiSeq and NextSeq runs, developed for the [Norwegian Veterinary Institute](https://vetinst.no).
-It converts BCL to FASTQ, runs FastQC and MultiQC and prepares structured output for upload to VIGASP (analysis) or NIRD (archiving).
+It converts the data stored in /data/rawdata/<RunID> from BCL to FASTQ, runs FastQC and MultiQC and prepares structured output for upload to VIGASP (analysis) or NIRD (archiving). It runs under the seqtech user, but that is not a hard requirement.
 
-# Usage
+## Execution flow
+
+systemd user timer -> demultiplex (bcl2fastq) -> FastQC -> MultiQC -> staging in /data/for_transfer/ -> upload to VIGASP or NIRD
+
+## Usage
 
 The script runs every 20 minutes, on the dot, via a systemd user timer.
 
-## Run manually
+### Run manually
 
 Should you need to run it manually, log into seqtech as the seqtech user and run
 
@@ -21,3 +25,5 @@ Example:
 ```bash
 /usr/local/bin/demultiplex.py 190912_M06578_0001_000000000-CNNTP
 ```
+
+See ```docs/``` for architecture, deployment, and QC metrics
