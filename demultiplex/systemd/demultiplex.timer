@@ -1,9 +1,0 @@
-[Unit]
-Description=Run Demultiplex Script Periodically
-
-[Timer]
-OnCalendar=*-*-* 00:00:00  # Adjust schedule as needed
-Persistent=true
-
-[Install]
-WantedBy=timers.target
