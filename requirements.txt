@@ -8,3 +8,6 @@ multiqc==1.33
 
 # IdentitiesOnly yes
 # StrictHostKeyChecking yes
+
+# download and unpack multiqc in /opt/FastQC
+# ln -s /opt/FastQC/fastqc /usr/local/bin
