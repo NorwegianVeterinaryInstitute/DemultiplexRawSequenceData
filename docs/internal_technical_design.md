@@ -271,4 +271,11 @@ stateDiagram-v2
   QUARANTINE --> IDLE
 ```
 
-## 14. Invariants
+## 14. Correct behavior
+
+* A RunID is processed at most once unless explicitly cleaned.
+* Raw data under /data/rawdata/<RunID> is never modified.
+* Output directories are deterministic per RunID.
+* A failed run never produces partial deliverables.
+* Delivery never occurs without successful QC + validation.
+* Every run produces a log entry.
