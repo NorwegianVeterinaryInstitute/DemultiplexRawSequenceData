@@ -26,4 +26,4 @@ Example:
 /usr/local/bin/demultiplex.py 190912_M06578_0001_000000000-CNNTP
 ```
 
-See ```docs/``` for architecture, deployment, and QC metrics
+See ```docs/``` for architecture, deployment and QC metrics
