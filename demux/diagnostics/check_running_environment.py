@@ -22,7 +22,7 @@ def check_running_environment( demux ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Check the validity of the current running environment ==\n", color="green", attrs=["bold"] ) )
 
     # ensure Java[tm] exists
-    if not shutil.which( "java"):
+    if not shutil.which( "java" ):
         text = "Java executable not detected! Exiting." 
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )

@@ -27,7 +27,7 @@ def bcl2fastq( demux ):
          argument with no options
 
         blc2fastq accepts just *fine* absolute paths when run from the command-line
-        example: /data/bin/bcl2fastq --no-lane-splitting --runfolder-dir /data/rawdata/220314_M06578_0091_000000000-DFM6K --output-dir /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex
+        example: /usr/local/bin/bin/bcl2fastq --no-lane-splitting --runfolder-dir /data/rawdata/220314_M06578_0091_000000000-DFM6K --output-dir /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex
 
     CAREFUL: if you run blc2fastq with only --runfolder-dir {demux.RawDataRunIDdir} , bcl2fastq will create all the files within the {demux.RawDataRunIDdir} rawdata directory
 
@@ -47,18 +47,14 @@ def bcl2fastq( demux ):
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (65535, hard))
 
-    # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
-    availableCpus = os.cpu_count()
-    cpuMultiplier = 2
-    availableCpus = availableCpus * cpuMultiplier
-
-    argv = [ demux.bcl2fastq_bin,
+    command: str = demux.bcl2fastq_bin
+    argv = [ command,
          "--loading-threads",
-         f"{availableCpus}",
+         f"{demux.running_threads}",
          "--processing-threads",
-         f"{availableCpus}",
+         f"{demux.running_threads}",
          "--writing-threads",
-         f"{availableCpus}",
+         f"{demux.running_threads}",
          "--no-lane-splitting",
          "--runfolder-dir",
         f"{demux.rawDataRunIDdir}",

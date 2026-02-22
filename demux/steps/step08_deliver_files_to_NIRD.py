@@ -1,6 +1,28 @@
+import hashlib
+import json
+import os
+import paramiko
+import psutil
+import shlex
+import shutil
+import socket
+import subprocess
+import sys
 import termcolor
+import urllib.request
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers              import demuxLogger, demuxFailureLogger
+
+from demux.steps.step08_01_build_absolute_paths        import _build_absolute_paths
+from demux.steps.step08_02_verify_local_files          import _verify_local_files
+from demux.steps.step08_03_setup_ssh_connection        import _setup_ssh_connection
+from demux.steps.step08_04_ensure_remote_run_directory import _ensure_remote_run_directory
+from demux.steps.step08_05_upload_files_to_nird        import _upload_files_to_nird
+from demux.steps.step08_06_tear_down_transport         import _tear_down_transport
+
+
+
+
 
 ########################################################################
 # deliver_files_to_NIRD
@@ -8,10 +30,27 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 
 def deliver_files_to_NIRD( demux ):
     """
+    @in_use
     Make connection to NIRD and upload the data
+    # the idea is to to 
+    # 1. check status of local tar files in demux.tarFilesToTransferList
+    # 2. check if the remore the remote directory exists
+    # 3.    create if not
+    # 4. take each of the files in demux.tarFilesToTransferList and upload them
+    #   4.1 in parallel
+    # 5. check the remote sha512 and see if it matches local.
+    # 6. report upload exit status
+
     """
+
     demux.n = demux.n + 1
-    demuxLogger.info( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n")
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD started\n", color="green", attrs=["bold"] ) )
 
+    _build_absolute_paths( demux )                      # creates the demux absoluteFilesToTransferList dictonary with the absolute paths of all files involved
+    _verify_local_files( demux )                        # verify the local files exist before attempting to transfer them
+    _setup_ssh_connection( demux )                      # setup the ssh transport needed for the next two functions, along any hop chain they might need
+    _ensure_remote_run_directory( demux )               # make sure demux.nird_base_upload_path/demux.RunID exists
+    _upload_files_to_nird( demux )                      # send the demux object to a dedicated method and it will decide what mode of copying and type of upload it will use
+    _tear_down_transport( demux )                       # tear down the transport, in reverse opening order
 
-    demuxLogger.info( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n")
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )

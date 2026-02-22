@@ -14,7 +14,7 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 
 def fastqc( demux ):
     """
-    fastQC: Run /data/bin/fastqc (which is a symlink to the real qc)
+    fastQC: Run /usr/local/bin/fastqc
     """
 
     demux.n            = demux.n + 1
@@ -22,7 +22,7 @@ def fastqc( demux ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: fastQC started ==", color="yellow" ) )
 
     command             = demux.fastqc_bin
-    argv                = [ command, '-t', str(demux.threadsToUse), *demux.newProjectFileList ]  # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
+    argv                = [ command, '-t', str(demux.running_threads), *demux.newProjectFileList ]  # the * operator on a list/array "splats" (flattens) the values in the array, breaking them down to individual arguemtns
 
     arguments = " ".join( argv[1:] )
     text = "Command to execute:"
@@ -209,7 +209,7 @@ def prepare_multiqc( demux ):
 
 def multiqc( demux ):
     """
-    Run /data/bin/multiqc against the project list.
+    Run /usr/local/bin/multiqc against the project list.
 
     Result are zip files in the individual project directories
     """ 

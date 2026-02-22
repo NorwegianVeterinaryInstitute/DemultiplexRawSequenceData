@@ -135,7 +135,7 @@ def setup_file_log_handling( demux ):
 
     demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
 
-    # setup logging for /data/bin/demultiplex/demux.RunID/demultiplex_log/00_script.log
+    # setup logging for demux.RunID/demultiplex_log/00_script.log
     try:
         demuxScriptLogHandler   = logging.FileHandler( demux.demultiplexScriptLogFilePath, mode = 'w', encoding = demux.decodeScheme )
     except Exception as err:
@@ -148,7 +148,7 @@ def setup_file_log_handling( demux ):
                     f"demux.demultiplexRunIDdir:\t\t\t\t{demux.demultiplexRunIDdir}\n",
                     f"demux.demultiplexLogDirName:\t\t\t\t{demux.demultiplexLogDirName}\n",
                     f"demux.demultiplexDir:\t\t\t\t\t{demux.demultiplexDir}\n",
-                    f"RunID + demux.config.constants.DEMULTIPLEX_DIR_SUFFIX:\t\t\t\t{demux.RunID} + {demux.config.constants.DEMULTIPLEX_DIR_SUFFIX}\n",
+                    f"RunID + demux.config.constants.DEMULTIPLEX_DIR_SUFFIX:\t\t\t\t{demux.RunID} + {constants.DEMULTIPLEX_DIR_SUFFIX}\n",
                     "Exiting.",
         ]
         demuxFailureLogger.critical( text  )
