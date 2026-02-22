@@ -4,3 +4,6 @@ psutil==7.2.1
 sample_sheet==0.13.0
 scp==0.15.0
 termcolor==3.3.0
+
+# IdentitiesOnly yes
+# StrictHostKeyChecking yes
