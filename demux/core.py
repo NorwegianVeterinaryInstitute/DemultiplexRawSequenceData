@@ -25,7 +25,8 @@ import syslog
 import tarfile
 import termcolor
 
-from typing import Any, Dict, List, Optional, Tuple, Mapping
+from typing  import Any, Dict, List, Optional, Tuple, Mapping
+from pathlib import Path
 
 import demux.config.constants
 
@@ -63,11 +64,14 @@ class demux:
     verbosity  = 2
     state      = "demultiplexRunIDdir"  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
 
-    rawDataDir                      = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.RAW_DATA_DIR_NAME     )
-    demultiplexDir                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.DEMULTIPLEX_DIR_NAME  )
-    forTransferDir                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.FOR_TRANSFER_DIR_NAME )
-    sampleSheetDirPath              = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.SAMPLESHEET_DIR_NAME  )
-    logDirPath                      = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.LOG_DIR_NAME          )
+    rawDataDir:str                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.RAW_DATA_DIR_NAME     )
+    demultiplexDir:str              = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.DEMULTIPLEX_DIR_NAME  )
+    forTransferDir:str              = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.FOR_TRANSFER_DIR_NAME )
+    sampleSheetDirPath:str          = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.SAMPLESHEET_DIR_NAME  )
+    logDirPath:str                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.LOG_DIR_NAME          )
+    exec_path: str                  = Path( sys.argv[ 0 ] ).resolve( ) # full path to executable
+    exec_dir:str                    = exec_path.parent                 # e.g. "/usr/local/bin" or ~/.local/bin
+    exec_name:str                   = exec_path.name                   # e.g. "demultiplex"
     ######################################################
     # commonEgid = 'sambagroup' # i don't know where i was going with this...
     ######################################################
@@ -89,7 +93,6 @@ class demux:
     fastqc_bin                      = f"{executableProgramsPath}/bin/fastqc"
     mutliqc_bin                     = f"{executableProgramsPath}/bin/multiqc"
     python3_bin                     = f"/usr/bin/python3.11" # Switching over to python3.11 for speed gains
-    scriptFilePath                  = __file__
     ######################################################
     rtaCompleteFile                 = 'RTAComplete.txt'
     sampleSheetFileName             = 'SampleSheet.csv'

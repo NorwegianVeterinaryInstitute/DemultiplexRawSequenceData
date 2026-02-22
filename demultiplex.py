@@ -74,8 +74,8 @@ demultiplex.py:
 
     Module can run on its own, without needing to include in a library as such:
 
-    /data/bin/demultiplex.py   200306_M06578_0015_000000000-CWLBG
-    path to script           | RunID directory from /data/rawdata
+    /usr/local/bin/demultiplex.py   200306_M06578_0015_000000000-CWLBG
+    path to script                | RunID directory from /data/rawdata
 
 INPUTS:
     - RunID directory from /data/rawdata

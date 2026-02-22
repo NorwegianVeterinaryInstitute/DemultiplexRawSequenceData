@@ -135,7 +135,7 @@ def setup_file_log_handling( demux ):
 
     demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
 
-    # setup logging for /data/bin/demultiplex/demux.RunID/demultiplex_log/00_script.log
+    # setup logging for demux.RunID/demultiplex_log/00_script.log
     try:
         demuxScriptLogHandler   = logging.FileHandler( demux.demultiplexScriptLogFilePath, mode = 'w', encoding = demux.decodeScheme )
     except Exception as err:

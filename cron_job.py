@@ -17,7 +17,7 @@ import demultiplex
 #   the directory contents of /data/rawdata and /data/demultiplex
 #
 # OUTPUT:
-#   Log file in /data/bin/cron_out.log, append mode, file does not get overwritten with each run
+#   Log file in /data/log/demultiplex.log, append mode, file does not get overwritten with each run
 #           "2021-09-09 10:00:01 - 24 in rawdata and 24 in demultiplex : all the runs have been demultiplexed"  
 #       or
 #           Need to work on this: $COMMAND_TO_RUN completed
@@ -38,11 +38,11 @@ import demultiplex
 #           the script starts a new run by
 #               creating the dir path to be demultiplexed
 #               checks if /data/rawdata/$NEWRUN/SampleSheet.csv exists
-#           executes /bin/python3 /data/bin/current_demultiplex_script.py
+#           runs the main function in demux.exec_dir/demultiplex_script.py
 #               with the new dir name as argument, example
-#                   /bin/python3 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK_copy   
-#           script waits for the output of /data/bin/current_demultiplex_script.py and appends it to
-#               /data/bin/cron_out.log
+#                   /usr/local/bin/demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK_copy   
+#           script waits for the output of /usr/local/bin/current_demultiplex_script.py and appends it to
+#               /data/log/demultiplex.log
 
 
 RunList = []
@@ -100,13 +100,13 @@ if NewRunID:
     if demultiplex.demux.rtaCompleteFile in os.listdir( os.path.join( demultiplex.demux.rawDataDir, NewRunID ) ) and demultiplex.demux.sampleSheetFileName in os.listdir( os.path.join( demultiplex.demux.rawDataDir, NewRunID ) ):
 
         # if demultiplex.demux.debug: 
-            # print( f"{demultiplex.demux.python3_bin} {demultiplex.demux.scriptFilePath} {NewRunID}")
+            # print( f"{demultiplex.demux.python3_bin} {demultiplex.demux.exec_path} {NewRunID}")
 
-        if not os.path.exists( demultiplex.demux.scriptFilePath ):
-            print( f"{demultiplex.demux.scriptFilePath} does not exist!" )
+        if not os.path.exists( demultiplex.demux.exec_path ):
+            print( f"{demultiplex.demux.exec_path} does not exist!" )
             exit( )
 
-        # EXAMPLE: /bin/python3.11 /data/bin/current_demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
+        # EXAMPLE: /usr/local/bin/demultiplex_script.py 210903_NB552450_0002_AH3VYYBGXK 
         demultiplex.main( NewRunID )
 
         print( 'completed\n' )
@@ -127,7 +127,3 @@ if NewRunID:
 #
 # if __name__ == "__main__":
 #     run_cron_job()
-
-# to run this from cron, you change the command line to this
-# so python can find the demultiplexing script
-# PYTHONPATH=/data/bin /usr/bin/python3.11 /data/bin/cron_job.py

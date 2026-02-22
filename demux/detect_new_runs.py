@@ -53,11 +53,7 @@ def existsNewRun( ):
         # essential condition to process is that RTAComplete.txt and SampleSheet.csv
         if demux.rtaCompleteFile in os.listdir( os.path.join( demux.rawDataDir, NewRunID ) ) and demux.sampleSheetFileName in os.listdir( os.path.join( demux.rawDataDir, NewRunID ) ):
 
-            if not os.path.exists( demux.scriptFilePath ):
-                demuxLogger.info( f"{demux.scriptFilePath} does not exist!" )
-                exit( )
-
-            # EXAMPLE: /bin/python3.11 /data/bin/demultiplex.py 210903_NB552450_0002_AH3VYYBGXK 
+            # EXAMPLE: /usr/local/bin/demultiplex.py 210903_NB552450_0002_AH3VYYBGXK 
             demultiplex_script.main( NewRunID )
 
             demuxLogger.info( 'completed\n' )

@@ -27,7 +27,7 @@ def bcl2fastq( demux ):
          argument with no options
 
         blc2fastq accepts just *fine* absolute paths when run from the command-line
-        example: /data/bin/bcl2fastq --no-lane-splitting --runfolder-dir /data/rawdata/220314_M06578_0091_000000000-DFM6K --output-dir /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex
+        example: /usr/local/bin/bin/bcl2fastq --no-lane-splitting --runfolder-dir /data/rawdata/220314_M06578_0091_000000000-DFM6K --output-dir /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex
 
     CAREFUL: if you run blc2fastq with only --runfolder-dir {demux.RawDataRunIDdir} , bcl2fastq will create all the files within the {demux.RawDataRunIDdir} rawdata directory
 
