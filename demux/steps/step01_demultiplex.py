@@ -47,7 +47,8 @@ def bcl2fastq( demux ):
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (65535, hard))
 
-    argv = [ demux.bcl2fastq_bin,
+    command: str = demux.bcl2fastq_bin
+    argv = [ command,
          "--loading-threads",
          f"{demux.running_threads}",
          "--processing-threads",
