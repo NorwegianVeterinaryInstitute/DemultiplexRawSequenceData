@@ -5,7 +5,7 @@ It converts BCL to FASTQ, runs FastQC and MultiQC and prepares structured output
 
 # Usage
 
-The script runs every 20 minutes, on the dot.
+The script runs every 20 minutes, on the dot, via a systemd user timer.
 
 ## Run manually
 
