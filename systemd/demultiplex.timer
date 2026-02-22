@@ -1,0 +1,11 @@
+# ~/.config/systemd/user/demultiplex.timer
+
+[Unit]
+Description=Run demultiplex every 20 minutes (minute 0, minute 20, minute 40)
+
+[Timer]
+OnCalendar=*:0/20
+Persistent=true
+
+[Install]
+WantedBy=timers.target

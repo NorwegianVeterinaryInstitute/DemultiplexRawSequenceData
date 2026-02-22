@@ -1,0 +1,23 @@
+# ~/.config/systemd/user/demultiplex.service
+
+[Unit]
+Description=Run the demultiplex script
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/demultiplex
+
+# systemctl --user daemon-reload                    # load the new service and timer
+# systemctl --user enable --now demultiplex.timer   # enable the timer
+# loginctl enable-linger $USER                      # to run this service, even when the user is not logged in a session
+
+# Cron limitations vs systemd:
+# * No dependency ordering
+# * Weak environment control
+# * No native resource isolation (cgroups)
+# * Logging via syslog, not structured journal
+# * No built-in service state tracking
+# For simple periodic execution, cron is sufficient but we have moved
+# from "poll every N minutes" to "stateful orchestrator with preconditions
+# and side effects" (vault state, multi-stage transfers, idempotency, per-run
+# logging, concurrency, notifications).
