@@ -464,7 +464,7 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
         remote filesystem errors.
     """
 
-    ip, port = demux.transport.getpeername( )
+    ip, port = demux.transport.getpeername( )[:2]  # make sure that if we are running a dual stack, we only grab the first two parameters
 
     if not os.path.isabs( remote_absolute_dir_path ):
         message = f"Remote directory is not in absolute path: {remote_absolute_dir_path}"
@@ -554,7 +554,7 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
         next_transport = paramiko.Transport( tcp_socket )
 
     elif transport.is_active( ):                   # second hop and onwards
-        channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout )
+        channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout ) # src_addr here is a tupple, so the assignment is correct
         if not channel.active:
             raise RuntimeError( f"RuntimeError: channel not active at hop:{hostname}")
         next_transport = paramiko.Transport( channel )
