@@ -11,27 +11,7 @@
 # Licenced under the GNU Public License 3.0 of newer
 #
 
-import argparse
-import ast
-import fcntl
-import glob
-import grp
-import hashlib
 import logging
-import logging.handlers
-import os
-import pathlib
-import pdb
-import re
-import resource
-import shutil
-import socket
-import stat
-import string
-import subprocess
-import sys
-import syslog
-import tarfile
 import termcolor
 
 from inspect            import currentframe, getframeinfo
