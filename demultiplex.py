@@ -44,6 +44,9 @@ from demux.core                                                 import demux    
 from demux.util.buffering_smtp_handler                          import BufferingSMTPHandler
 from demux.util.checksum                                        import calc_file_hash
 from demux.util.change_permissions                              import change_permissions
+from demux.util.arguments                                       import parse_arguments
+from demux.util.logging                                         import setup_logging
+from demux.util.lock                                            import setup_lock
 
 from demux.detect_new_runs                                      import detect_new_runs
 
@@ -64,6 +67,9 @@ from demux.steps.step05_control_projects_qc                     import control_p
 from demux.steps.step06_tar_file_quality_check                  import tar_file_quality_check
 from demux.steps.step07_deliver_files_to_VIGASP                 import deliver_files_to_VIGASP
 from demux.steps.step08_deliver_files_to_NIRD                   import deliver_files_to_NIRD
+#
+# ... add here as needed ...
+#
 from demux.steps.step99_finalize                                import finalize
 
 from demux.loggers import demuxLogger, demuxFailureLogger
@@ -184,7 +190,7 @@ WHAT DOES THIS SCRIPT DO
     - Hashes via md5/sha512 all the files that are supposed to be delivered
     - Packages output results into two files .tar and _QC.tar, ready to be archived.
     - [Future feature] Upload files to VIGASP
-    - [Future feature] Archive files to NIRD
+    - Archive files to NIRD
 
 
 PREREQUISITES
@@ -194,7 +200,7 @@ PREREQUISITES
     - hashing is done by the internal Python3 hashlib library (do not need any external or OS level packages)
         - hashing can be memory intensive as the entire file is read to memory
         - should be ok, unless we start sequencing large genomes
-    - dnf install python3-termcolor python3-xtermcolor
+    - see requirements.txt
 
 
 LIMITATIONS
@@ -267,33 +273,7 @@ def main( RunID ):
 
 if __name__ == '__main__':
 
-    syslog = logging.handlers.SysLogHandler( address = '/dev/log' )
-    logging.basicConfig(
-        level=logging.WARNING,
-        handlers=[
-            logging.handlers.SysLogHandler(address='/dev/log'),
-            logging.StreamHandler()
-        ]
-    )
-    
-    lock_fd = open( os.path.join( os.environ[ 'XDG_RUNTIME_DIR' ], 'demux', 'demux.lock' ), 'w' )
-    try:
-        fcntl.flock( lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB )
-    except BlockingIOError:
-        logging.warning( "Demux already running, exiting." )
-        sys.exit( 0 )  # another instance is running, exit cleanly
-
-    logging.shutdown( ) # shut down basic logging, main logging will take charge in main( )
-
-    parser = argparse.ArgumentParser()
-
-    if sys.hexversion < 51056112: # Require Python 3.11 or newer
-        sys.exit( "Python 3.11 or newer is required to run this program." )
-
-    # FIXMEFIXME add named arguments
-    if len(sys.argv) == 1:
-        sys.exit( "No RunID argument present. Exiting." )
-
-    RunID                   = sys.argv[1]
-
-    main( RunID )
+    setup_logging( )            # set up basic logging for now, will move all log setup there
+    setup_lock( )               # make sure we only run one instance at a time
+    logging.shutdown( )         # shut down basic logging, main logging will take charge in main( )
+    main( parse_arguments( ).RunID )
