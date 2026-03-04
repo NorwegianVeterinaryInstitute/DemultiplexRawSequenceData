@@ -267,11 +267,23 @@ def main( RunID ):
 
 if __name__ == '__main__':
 
+    syslog = logging.handlers.SysLogHandler( address = '/dev/log' )
+    logging.basicConfig(
+        level=logging.WARNING,
+        handlers=[
+            logging.handlers.SysLogHandler(address='/dev/log'),
+            logging.StreamHandler()
+        ]
+    )
+    
     lock_fd = open( os.path.join( os.environ[ 'XDG_RUNTIME_DIR' ], 'demux', 'demux.lock' ), 'w' )
     try:
         fcntl.flock( lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB )
     except BlockingIOError:
+        logging.warning( "Demux already running, exiting." )
         sys.exit( 0 )  # another instance is running, exit cleanly
+
+    logging.shutdown( ) # shut down basic logging, main logging will take charge in main( )
 
     parser = argparse.ArgumentParser()
 

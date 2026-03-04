@@ -6,6 +6,7 @@ import queue
 import ssl
 import time
 import typing
+import urllib3
 import urllib.error
 import urllib.parse
 import urllib.request
