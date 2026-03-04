@@ -13,14 +13,15 @@
 
 import argparse
 import ast
-import pdb
+import fcntl
 import glob
-import hashlib
 import grp
+import hashlib
 import logging
 import logging.handlers
 import os
 import pathlib
+import pdb
 import re
 import resource
 import shutil
@@ -265,6 +266,12 @@ def main( RunID ):
 ########################################################################
 
 if __name__ == '__main__':
+
+    lock_fd = open( os.path.join( os.environ[ 'XDG_RUNTIME_DIR' ], 'demux', 'demux.lock' ), 'w' )
+    try:
+        fcntl.flock( lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB )
+    except BlockingIOError:
+        sys.exit( 0 )  # another instance is running, exit cleanly
 
     parser = argparse.ArgumentParser()
 
