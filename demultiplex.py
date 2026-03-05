@@ -249,8 +249,7 @@ def deduplicate_runids( RunIDs: list ) -> list:
             duplicates.add( runid )
         seen.add( runid )
     if duplicates:
-        demuxLogger.warning(termcolor.colored( f"Duplicate RunIDs detected and removed: {', '.join( duplicates )}", color="yellow", attrs=["bold"] ) )
-    demuxLogger.info(termcolor.colored( f"{len( RunIDs )} runs queued for processing: {', '.join( RunIDs )}", color="light_cyan" ) )
+        demuxLogger.warning( termcolor.colored( f"Duplicate RunIDs detected and removed for {', '.join( duplicates )}", color="yellow", attrs=["bold"] ) )
 
     return list( dict.fromkeys( RunIDs ) )
 
@@ -267,6 +266,10 @@ def main( RunIDs: list) -> None:
 
     setup_event_and_log_handling( )                                                                       # setup the event and log handing, which we will use everywhere, sans file logging 
     RunIDs = deduplicate_runids( RunIDs )                                                                 # send the Runs for deduplication
+
+    if len( RunIDs ) > 1:
+        demuxLogger.info(termcolor.colored( f"{len( RunIDs )} runs queued for processing: {', '.join( RunIDs )}", color="light_cyan" ) )
+
     queue = deque( RunIDs )                                                                               # setup a queue to allow for multiple runs
     while queue:
         process_run( queue.popleft( ) )                                                                   # process the run(s)
