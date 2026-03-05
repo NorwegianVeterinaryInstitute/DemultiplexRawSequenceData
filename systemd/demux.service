@@ -5,7 +5,7 @@ Description=Run the demultiplex script
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/demultiplex
+ExecStart=/usr/local/bin/demultiplex.py
 RuntimeDirectory=demux
 RuntimeDirectoryPreserve=yes
 

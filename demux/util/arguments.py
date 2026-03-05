@@ -36,7 +36,7 @@ def _add_runid_argument( parser: argparse.ArgumentParser ) -> None:
     """
     Add the RunID positional argument to the argument parser.
     """
-    parser.add_argument('RunID', type = parse_runid, nargs='+', help = 'Illumina RunID, e.g. `230415_M01234_1234_000000000-ABCDE`. Optionally prefixed with its absolute directory path.' )
+    parser.add_argument('RunID', type = parse_runid, nargs='*', help = 'Illumina RunID, e.g. `230415_M01234_1234_000000000-ABCDE`. Optionally prefixed with its absolute directory path.' )
 
 
 

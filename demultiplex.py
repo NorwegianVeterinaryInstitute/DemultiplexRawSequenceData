@@ -12,6 +12,7 @@
 #
 
 import logging
+import sys
 import termcolor
 
 from inspect            import currentframe, getframeinfo
@@ -21,6 +22,7 @@ from collections        import deque
 
 from demux.loggers                                              import setup_event_and_log_handling, setup_file_log_handling
 from demux.core                                                 import demux             # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
+from demux.detect_new_runs                                      import RawDataDirectory, DemultiplexDirectory, detect_new_runs
 
 from demux.util.buffering_smtp_handler                          import BufferingSMTPHandler
 from demux.util.checksum                                        import calc_file_hash
@@ -265,10 +267,18 @@ def main( RunIDs: list) -> None:
     """
 
     setup_event_and_log_handling( )                                                                       # setup the event and log handing, which we will use everywhere, sans file logging 
+    if not RunIDs:
+        rawdata      = RawDataDirectory(demux.rawDataDir)
+        demultiplex  = DemultiplexDirectory(demux.demultiplexDir)
+        RunIDs       = detect_new_runs(rawdata, demultiplex)
+        if not RunIDs:
+            demuxLogger.info("No new runs to process.")
+            sys.exit(0)
+
     RunIDs = deduplicate_runids( RunIDs )                                                                 # send the Runs for deduplication
 
     if len( RunIDs ) > 1:
-        demuxLogger.info(termcolor.colored( f"{len( RunIDs )} runs queued for processing: {', '.join( RunIDs )}", color="light_cyan" ) )
+        demuxLogger.info( termcolor.colored( f"{len( RunIDs )} runs queued for processing: {', '.join( RunIDs )}", color="light_cyan" ) )
 
     queue = deque( RunIDs )                                                                               # setup a queue to allow for multiple runs
     while queue:
