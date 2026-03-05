@@ -84,6 +84,17 @@ def detect_new_runs( rawdata: RawDataDirectory, demultiplex: DemultiplexDirector
     Returns a list of RunIDs that are in rawdata but not yet in demultiplex,
     filtered to only those that are ready for demultiplexing.
     """
+    rawdata_set     = set( rawdata.runs )
+    demultiplex_set = set( demultiplex.runs )
+
+    in_rawdata_only     = rawdata_set - demultiplex_set
+    in_demultiplex_only = demultiplex_set - rawdata_set
+
+    if in_rawdata_only:
+        demuxLogger.warning( termcolor.colored( f"Runs in rawdata but not yet demultiplexed: {in_rawdata_only}", color="magenta", attrs=["reverse"] ) )
+    if in_demultiplex_only:
+        demuxLogger.warning( termcolor.colored( f"Runs in demultiplex but deleted from rawdata: {in_demultiplex_only}", color="magenta", attrs=["reverse"] ) )
+
     new_runs   = [ runid for runid in rawdata.runs if runid not in demultiplex.runs]
     ready_runs = [ runid for runid in new_runs if rawdata.is_ready( runid ) ]
 
