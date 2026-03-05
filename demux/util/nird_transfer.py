@@ -1,1 +1,0 @@
-# all the nird transfer stuff

@@ -5,7 +5,9 @@ Description=Run the demultiplex script
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/demultiplex
+ExecStart=/usr/local/bin/demultiplex.py
+RuntimeDirectory=demux
+RuntimeDirectoryPreserve=yes
 
 # systemctl --user daemon-reload                    # load the new service and timer
 # systemctl --user enable --now demultiplex.timer   # enable the timer

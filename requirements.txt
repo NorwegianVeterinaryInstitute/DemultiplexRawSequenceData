@@ -1,10 +1,10 @@
-paramiko==4.0.0
-peewee==4.0.0
-psutil==7.2.1
-sample_sheet==0.13.0
-scp==0.15.0
-termcolor==3.3.0
-multiqc==1.33
+paramiko
+peewee
+psutil
+sample_sheet
+scp
+termcolor
+multiqc
 
 # IdentitiesOnly yes
 # StrictHostKeyChecking yes

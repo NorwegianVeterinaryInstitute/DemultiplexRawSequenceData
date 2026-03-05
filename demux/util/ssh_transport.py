@@ -323,7 +323,7 @@ def _validate_ssh_key_auth_inputs( hop: paramiko.config.SSHConfig ) -> tuple[str
     return username, hostname, identityfile
 
 
-def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.config.SSHConfig  ) -> None:
+def _auth_transport_ssh_keys( hop: paramiko.config.SSHConfig, transport: paramiko.Transport  ) -> None:
     """
     Authenticate an existing SSH Transport using public key credentials.
 
@@ -374,7 +374,7 @@ def _auth_transport_ssh_keys( transport: paramiko.Transport, hop: paramiko.confi
 
 
 
-def _auth_transport_2fa( transport: paramiko.Transport, hop: paramiko.config.SSHConfig ) -> None:
+def _auth_transport_2fa( hop: paramiko.config.SSHConfig, transport: paramiko.Transport ) -> None:
     """
     Authenticate an existing SSH transport using keyboard-interactive 2FA 
     (paramiko considers this "keyboard-interactive" even if there is not a real user typing)
@@ -437,9 +437,9 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )
 
     if identityfile:
-        _auth_transport_ssh_keys( transport, hop  )
+        _auth_transport_ssh_keys( hop, transport )
     elif totp_enabled:
-        _auth_transport_2fa( transport, hop  )
+        _auth_transport_2fa( hop, transport )
     else:
         password: str  = _get_password( hostname ) # demux.util.bitwarden
         if not password:
@@ -464,7 +464,7 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
         remote filesystem errors.
     """
 
-    ip, port = demux.transport.getpeername( )
+    ip, port = demux.transport.getpeername( )[:2]  # make sure that if we are running a dual stack, we only grab the first two parameters
 
     if not os.path.isabs( remote_absolute_dir_path ):
         message = f"Remote directory is not in absolute path: {remote_absolute_dir_path}"
@@ -554,7 +554,7 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
         next_transport = paramiko.Transport( tcp_socket )
 
     elif transport.is_active( ):                   # second hop and onwards
-        channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout )
+        channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout ) # src_addr here is a tupple, so the assignment is correct
         if not channel.active:
             raise RuntimeError( f"RuntimeError: channel not active at hop:{hostname}")
         next_transport = paramiko.Transport( channel )
