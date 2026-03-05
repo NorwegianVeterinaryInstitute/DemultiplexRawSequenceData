@@ -250,6 +250,8 @@ def deduplicate_runids( RunIDs: list ) -> list:
         seen.add( runid )
     if duplicates:
         demuxLogger.warning(termcolor.colored( f"Duplicate RunIDs detected and removed: {', '.join( duplicates )}", color="yellow", attrs=["bold"] ) )
+    demuxLogger.info(termcolor.colored( f"{len( RunIDs )} runs queued for processing: {', '.join( RunIDs )}", color="light_cyan" ) )
+
     return list( dict.fromkeys( RunIDs ) )
 
 
