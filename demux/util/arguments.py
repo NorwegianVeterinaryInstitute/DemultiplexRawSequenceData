@@ -22,6 +22,11 @@ def parse_runid( value:str ) -> str:
     Returns the bare RunID string.
     """
     RunID = os.path.basename( value.strip( '/' ) )
+    
+    if any( character in RunID for character in '/,.' ):
+        demuxLogger.info( "Warning: RunID contained trailing punctuation or slashes, cleaned automatically." )
+        RunID = RunID.rstrip( '/,.' )  # Be forgiving any ',' '/' or '.' during copy-paste
+
     if not constants.RUNID_PATTERN.match( RunID ):
         raise argparse.ArgumentTypeError( f"'{RunID}' does not look like a valid Illumina RunID. Aborting." )
     return RunID
@@ -31,7 +36,7 @@ def _add_runid_argument( parser: argparse.ArgumentParser ) -> None:
     """
     Add the RunID positional argument to the argument parser.
     """
-    parser.add_argument('RunID', type = parse_runid, help = 'Illumina RunID, optionally prefixed with an absolute directory path.' )
+    parser.add_argument('RunID', type = parse_runid, nargs='+', help = 'Illumina RunID, e.g. `230415_M01234_1234_000000000-ABCDE`. Optionally prefixed with its absolute directory path.' )
 
 
 
@@ -41,8 +46,15 @@ def parse_arguments( ) -> argparse.Namespace:
     Returns the bare RunID string.
     """
 
-    parser = argparse.ArgumentParser( )
+    parser = argparse.ArgumentParser(
+        prog = 'demultiplex.py',
+        description = 'Demultiplex Illumina MiSeq and NextSeq runs, perform QC and deliver results to NIRD and VIGASP/Galaxy.',
+        epilog = 'Example: %(prog)s 230415_M01234_1234_000000000-ABCDE' #  the s is the format type specifier meaning string. it is mandatory for lazy evaluation
+
+    )
+    mandator = parser.add_argument_group( "  Mandatory arguments:" )
     _add_runid_argument( parser )
+    optional = parser.add_argument_group( "  Optional arguments:" )
     #
     # ... drop in as needed
     #

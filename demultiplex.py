@@ -15,6 +15,7 @@ import logging
 import termcolor
 
 from inspect            import currentframe, getframeinfo
+from collections        import deque
 
 # Breaking down the script into more digestible chunks
 
@@ -184,30 +185,20 @@ PREREQUISITES
 
 
 LIMITATIONS
-    - Can demultipex one directory at a time only
     - No sanity checking to see if a demultiplexed directory is correctly demux'ed
     - Relies only on output directory name and does not verify contents
 
 """
 
 
-
-########################################################################
-# MAIN
-########################################################################
-
-def main( RunID ):
+def process_run(RunID: str) -> None:
     """
-    Main function for the demultiplex script.
-    All actions are coordinated through here
+    Process a single Illumina run end to end.
     """
-    setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
 
-    if RunID != RunID.rstrip('/,.'):
-        demuxLogger.info( "Warning: RunID contained trailing punctuation or slashes, cleaned automatically." )
-    RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
+    demuxLogger.info( termcolor.colored( f"Now processing: {RunID}", color="light_cyan" ) )
 
-    # # RunID = detect_new_runs( demux )                                                                  # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/122
+
     setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
     # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
     create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIDdir}
@@ -245,6 +236,38 @@ def main( RunID ):
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
     logging.shutdown( )
 
+
+def deduplicate_runids( RunIDs: list ) -> list:
+    """
+    Remove duplicate RunIDs from the list, preserving order.
+    Logs a warning if duplicates are found.
+    """
+    seen       = set( )
+    duplicates = set( )
+    for runid in RunIDs:
+        if runid in seen:
+            duplicates.add( runid )
+        seen.add( runid )
+    if duplicates:
+        demuxLogger.warning(termcolor.colored( f"Duplicate RunIDs detected and removed: {', '.join( duplicates )}", color="yellow", attrs=["bold"] ) )
+    return list( dict.fromkeys( RunIDs ) )
+
+
+########################################################################
+# MAIN
+########################################################################
+
+def main( RunIDs: list) -> None:
+    """
+    Main function for the demultiplex script.
+    All actions are coordinated through here
+    """
+
+    setup_event_and_log_handling( )                                                                       # setup the event and log handing, which we will use everywhere, sans file logging 
+    RunIDs = deduplicate_runids( RunIDs )                                                                 # send the Runs for deduplication
+    queue = deque( RunIDs )                                                                               # setup a queue to allow for multiple runs
+    while queue:
+        process_run( queue.popleft( ) )                                                                   # process the run(s)
 
 
 ########################################################################
