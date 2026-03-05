@@ -11,38 +11,25 @@
 # Licenced under the GNU Public License 3.0 of newer
 #
 
-import argparse
-import ast
-import pdb
-import glob
-import hashlib
-import grp
 import logging
-import logging.handlers
-import os
-import pathlib
-import re
-import resource
-import shutil
-import socket
-import stat
-import string
-import subprocess
 import sys
-import syslog
-import tarfile
 import termcolor
 
 from inspect            import currentframe, getframeinfo
+from collections        import deque
 
 # Breaking down the script into more digestible chunks
 
 from demux.loggers                                              import setup_event_and_log_handling, setup_file_log_handling
 from demux.core                                                 import demux             # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
+from demux.detect_new_runs                                      import RawDataDirectory, DemultiplexDirectory, detect_new_runs
 
 from demux.util.buffering_smtp_handler                          import BufferingSMTPHandler
 from demux.util.checksum                                        import calc_file_hash
 from demux.util.change_permissions                              import change_permissions
+from demux.util.arguments                                       import parse_arguments
+from demux.util.logging                                         import setup_logging
+from demux.util.lock                                            import setup_lock
 
 from demux.detect_new_runs                                      import detect_new_runs
 
@@ -63,6 +50,9 @@ from demux.steps.step05_control_projects_qc                     import control_p
 from demux.steps.step06_tar_file_quality_check                  import tar_file_quality_check
 from demux.steps.step07_deliver_files_to_VIGASP                 import deliver_files_to_VIGASP
 from demux.steps.step08_deliver_files_to_NIRD                   import deliver_files_to_NIRD
+#
+# ... add here as needed ...
+#
 from demux.steps.step99_finalize                                import finalize
 
 from demux.loggers import demuxLogger, demuxFailureLogger
@@ -183,7 +173,7 @@ WHAT DOES THIS SCRIPT DO
     - Hashes via md5/sha512 all the files that are supposed to be delivered
     - Packages output results into two files .tar and _QC.tar, ready to be archived.
     - [Future feature] Upload files to VIGASP
-    - [Future feature] Archive files to NIRD
+    - Archive files to NIRD
 
 
 PREREQUISITES
@@ -193,34 +183,24 @@ PREREQUISITES
     - hashing is done by the internal Python3 hashlib library (do not need any external or OS level packages)
         - hashing can be memory intensive as the entire file is read to memory
         - should be ok, unless we start sequencing large genomes
-    - dnf install python3-termcolor python3-xtermcolor
+    - see requirements.txt
 
 
 LIMITATIONS
-    - Can demultipex one directory at a time only
     - No sanity checking to see if a demultiplexed directory is correctly demux'ed
     - Relies only on output directory name and does not verify contents
 
 """
 
 
-
-########################################################################
-# MAIN
-########################################################################
-
-def main( RunID ):
+def process_run(RunID: str) -> None:
     """
-    Main function for the demultiplex script.
-    All actions are coordinated through here
+    Process a single Illumina run end to end.
     """
-    setup_event_and_log_handling( )                                                                     # setup the event and log handing, which we will use everywhere, sans file logging 
 
-    if RunID != RunID.rstrip('/,.'):
-        demuxLogger.info( "Warning: RunID contained trailing punctuation or slashes, cleaned automatically." )
-    RunID = RunID.rstrip('/,.')                                                                         # Be forgiving any ',' '/' or '.' during copy-paste
+    demuxLogger.info( termcolor.colored( f"Now processing: {RunID}", color="light_cyan" ) )
 
-    # # RunID = detect_new_runs( demux )                                                                  # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/122
+
     setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
     # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
     create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIDdir}
@@ -259,6 +239,51 @@ def main( RunID ):
     logging.shutdown( )
 
 
+def deduplicate_runids( RunIDs: list ) -> list:
+    """
+    Remove duplicate RunIDs from the list, preserving order.
+    Logs a warning if duplicates are found.
+    """
+    seen       = set( )
+    duplicates = set( )
+    for runid in RunIDs:
+        if runid in seen:
+            duplicates.add( runid )
+        seen.add( runid )
+    if duplicates:
+        demuxLogger.warning( termcolor.colored( f"Duplicate RunIDs detected and removed for {', '.join( duplicates )}", color="yellow", attrs=["bold"] ) )
+
+    return list( dict.fromkeys( RunIDs ) )
+
+
+########################################################################
+# MAIN
+########################################################################
+
+def main( RunIDs: list) -> None:
+    """
+    Main function for the demultiplex script.
+    All actions are coordinated through here
+    """
+
+    setup_event_and_log_handling( )                                                                       # setup the event and log handing, which we will use everywhere, sans file logging 
+    if not RunIDs:
+        rawdata      = RawDataDirectory(demux.rawDataDir)
+        demultiplex  = DemultiplexDirectory(demux.demultiplexDir)
+        RunIDs       = detect_new_runs(rawdata, demultiplex)
+        if not RunIDs:
+            demuxLogger.info("No new runs to process.")
+            sys.exit(0)
+
+    RunIDs = deduplicate_runids( RunIDs )                                                                 # send the Runs for deduplication
+
+    if len( RunIDs ) > 1:
+        demuxLogger.info( termcolor.colored( f"{len( RunIDs )} runs queued for processing: {', '.join( RunIDs )}", color="light_cyan" ) )
+
+    queue = deque( RunIDs )                                                                               # setup a queue to allow for multiple runs
+    while queue:
+        process_run( queue.popleft( ) )                                                                   # process the run(s)
+
 
 ########################################################################
 # MAIN
@@ -266,15 +291,7 @@ def main( RunID ):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-
-    if sys.hexversion < 51056112: # Require Python 3.11 or newer
-        sys.exit( "Python 3.11 or newer is required to run this program." )
-
-    # FIXMEFIXME add named arguments
-    if len(sys.argv) == 1:
-        sys.exit( "No RunID argument present. Exiting." )
-
-    RunID                   = sys.argv[1]
-
-    main( RunID )
+    setup_logging( )            # set up basic logging for now, will move all log setup there
+    setup_lock( )               # make sure we only run one instance at a time
+    logging.shutdown( )         # shut down basic logging, main logging will take charge in main( )
+    main( parse_arguments( ).RunID )

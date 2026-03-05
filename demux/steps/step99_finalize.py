@@ -19,7 +19,7 @@ def finalize( demux ):
         file = os.path.join( demux.demultiplexRunIDdir, demux.demultiplexCompleteFile )
         pathlib.Path( file ).touch( mode=644, exist_ok=False)
     except Exception as e:  
-        demuxLogger.critical( f"{file} already exists. Please delete it before running {__file__}.\n")
+        demuxLogger.critical( f"{file} already exists. Please delete it before running {demux.RunID}.\n")
         sys.exit( )
 
     demuxLogger.debug( f"demux.demultiplexCompleteFile {file} created.")

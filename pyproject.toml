@@ -1,0 +1,15 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nvi-demux"
+version = "1.5"
+description = "A workflow automation script: demultiplex the library sequence, run quality checks, deliver to processing and archiving to NIRD"
+readme = "README.md"
+authors = [{ name = "George Marselis", email = "george.marselis@vetinst.no" }]
+
+[project.scripts]
+nvi-demux = "demux.__main__:main"

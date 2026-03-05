@@ -6,6 +6,8 @@ use by
 from demux.config import constants as constants
 '''
 
+import re
+
 # directory names
 DATA_ROOT_DIR:str           = "/data"
 RAW_DATA_DIR_NAME:str       = "rawdata"
@@ -48,3 +50,8 @@ USER_SSH_KNOWN_HOSTS_PATH: str  = "~/.ssh/known_hosts"
 BW_IP                       = '127.0.0.1'
 BW_BASE_URL: str            = f'http://{BW_IP}'
 BW_PORT:int                 = 8087
+
+RUNID_PATTERN               = re.compile(r'^\d{6}_[A-Z0-9]+_\d{4}_\d{9}-[A-Z0-9]{5}$') # make sure that the RunID we get passed follows a pattern
+
+MISEQ_TAGS                  = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
+NEXTSEQ_TAGS                = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
