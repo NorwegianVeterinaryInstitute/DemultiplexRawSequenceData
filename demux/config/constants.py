@@ -55,3 +55,12 @@ RUNID_PATTERN               = re.compile(r'^\d{6}_[A-Z0-9]+_\d{4}_\d{9}-[A-Z0-9]
 
 MISEQ_TAGS                  = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
 NEXTSEQ_TAGS                = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
+
+IRIDA_BASE_URL
+IRIDA_CLIENT_ID
+IRIDA_CLIENT_SECRET
+IRIDA_USERNAME
+IRIDA_PASSWORD
+IRIDA_TIMEOUT_MULTIPLIER  # optional, default 10
+IRIDA_MAX_IN_FLIGHT       # optional, default 4
+IRIDA_RATE_LIMIT_DELAY    # optional, default 0.5s

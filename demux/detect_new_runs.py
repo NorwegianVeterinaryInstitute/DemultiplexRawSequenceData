@@ -11,10 +11,9 @@ import termcolor
 
 import demux.core
 
-from demux.config import constants
+from demux.config  import constants
 
-demuxLogger = logging.getLogger('demux')
-
+from demux.loggers import demuxLogger, demuxFailureLogger
 
 class RawDataDirectory:
     """
