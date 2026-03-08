@@ -268,7 +268,8 @@ class IridaHttpClient:
         raise NotImplementedError
 
 
-def _child_upload_worker(auth: IridaAuthConfig, tls: IridaTlsConfig, request_timeout_seconds: float, job: UploadJob, reporter: Reporter, result_queue: multiprocessing.Queue | None) -> None:
+# def _child_upload_worker(auth: IridaAuthConfig, tls: IridaTlsConfig, request_timeout_seconds: float, job: UploadJob, reporter: Reporter, result_queue: multiprocessing.Queue | None) -> None:
+def _child_upload_worker(auth: IridaAuthConfig, tls: IridaTlsConfig, request_timeout_seconds: float, job: UploadJob, reporter: Reporter, result_queue: multiprocessing.Queue ) -> None:
     """
     Child process entrypoint: upload exactly one UploadJob.
 
