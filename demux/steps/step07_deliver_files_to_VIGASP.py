@@ -337,7 +337,8 @@ class IridaUploadSupervisor:
         """
         raise NotImplementedError
 
-    def _spawn_child(self, job: UploadJob, reporter: Reporter, result_queue: multiprocessing.Queue | None) -> multiprocessing.Process:
+    # def _spawn_child(self, job: UploadJob, reporter: Reporter, result_queue: multiprocessing.Queue | None) -> multiprocessing.Process:
+    def _spawn_child(self, job: UploadJob, reporter: Reporter, result_queue: multiprocessing.Queue ) -> multiprocessing.Process:
         """
         Spawn one child process for one job.
 
