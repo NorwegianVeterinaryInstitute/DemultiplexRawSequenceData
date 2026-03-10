@@ -283,7 +283,7 @@ class demux:
 
         for sample in sample_sheet.samples:
             if sample is None or sample.Transfer_VIGAS is None or sample.Transfer_NIRD is None or sample.NIRD_Location is None:
-                message = "Current Sample sheet does not contain needed fields required for file transfer. Aborting."
+                message = "Current samplesheet does not contain needed fields required for file transfer. Aborting."
                 raise ValueError( message )
             project_samples_metadata[ sample.Sample_Project ][ sample.Sample_ID ] = {
                 'transfer_to_vigas': sample.Transfer_VIGAS.lower( ) == "yes",
