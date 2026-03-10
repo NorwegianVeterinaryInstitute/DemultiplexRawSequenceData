@@ -282,7 +282,7 @@ class demux:
         project_samples_metadata = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
 
         for sample in sample_sheet.samples:
-            if sample is None or if sample.Transfer_VIGAS is None or sample.Transfer_NIRD is None or sample.NIRD_Location is None:
+            if sample is None or sample.Transfer_VIGAS is None or sample.Transfer_NIRD is None or sample.NIRD_Location is None:
                 message( "ValueError: Current Sample sheet does not contain needed fields required for file transfer. Abording." )
                 raise ValueError( message )
             project_samples_metadata[ sample.Sample_Project ][ sample.Sample_ID ] = {

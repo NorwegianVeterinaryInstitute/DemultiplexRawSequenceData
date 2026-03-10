@@ -36,7 +36,7 @@ def _add_runid_argument( parser: argparse.ArgumentParser ) -> None:
     """
     Add the RunID positional argument to the argument parser.
     """
-    parser.add_argument('RunID', type = parse_runid, nargs='*', help = 'Illumina RunID, e.g. `230415_M01234_1234_000000000-ABCDE`. Optionally prefixed with its absolute directory path.' )
+    parser.add_argument( 'RunID', type = parse_runid, nargs='*', help = 'Illumina RunID, e.g. `230415_M01234_1234_000000000-ABCDE`. Optionally prefixed with its absolute directory path.' )
 
 
 
@@ -52,9 +52,9 @@ def parse_arguments( ) -> argparse.Namespace:
         epilog = 'Example: %(prog)s 230415_M01234_1234_000000000-ABCDE' #  the s is the format type specifier meaning string. it is mandatory for lazy evaluation
 
     )
-    mandator = parser.add_argument_group( "  Mandatory arguments:" )
+    mandatory = parser.add_argument_group( "  Mandatory arguments:" )
     _add_runid_argument( parser )
-    optional = parser.add_argument_group( "  Optional arguments:" )
+    optional  = parser.add_argument_group( "  Optional arguments:" )
     #
     # ... drop in as needed
     #
