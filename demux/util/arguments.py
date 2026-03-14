@@ -196,6 +196,45 @@ class _VerboseHelpFormatter(argparse.RawDescriptionHelpFormatter):
         return help_text
 
 
+def _preprocess_argv() -> None:
+    """
+    Preprocess sys.argv before the parser sees it.
+
+    If the first non-flag argument looks like an Illumina RunID or a path
+    containing one, insert 'run' before it so argparse sees a valid subcommand
+    invocation. This enables the shorthand:
+
+        demultiplex.py <RunID>              -> demultiplex.py run <RunID>
+        demultiplex.py /path/to/<RunID>     -> demultiplex.py run /path/to/<RunID>
+        demultiplex.py /path/to/<RunID>/    -> demultiplex.py run /path/to/<RunID>/
+
+    Does nothing if:
+        - sys.argv has no arguments (scan mode, handled downstream)
+        - the first argument starts with '-' (it is a flag, not a RunID)
+        - the first argument is already a known subcommand
+    """
+    known_subcommands = {
+        'run', 'validate', 'clean', 'delete', 'rename-run', 'rename-sample',
+        'export-rawdata', 'archive', 'tag', 'list', 'status', 'statistics',
+        'stats', 'notify', 'approve', 'reject', 'daemon',
+    }
+
+    if len(sys.argv) < 2:
+        return                                                          # no arguments: scan mode
+
+    first = sys.argv[1]
+
+    if first.startswith('-'):
+        return                                                          # first arg is a flag, not a RunID
+
+    if first in known_subcommands:
+        return                                                          # already a valid subcommand
+
+    candidate = os.path.basename(first.strip('/,.'))
+    if constants.RUNID_PATTERN.match(candidate):
+        sys.argv.insert(1, 'run')                                       # rewrite argv in place before argparse sees it
+
+
 def parse_runid(value: str) -> str:
     """
     Parse a RunID from a string, stripping leading and trailing slashes,
@@ -475,8 +514,10 @@ def parse_arguments() -> argparse.Namespace:
         demultiplex.py <RunID>          Alias for: demultiplex.py run <RunID>
         demultiplex.py run <RunID>      Explicit form.
     """
+    _preprocess_argv()                                                  # rewrite argv before parser sees it
+
     parser = argparse.ArgumentParser(
-        prog=os.path.basename(sys.argv[0]),  # respects binary rename e.g. nvi-demux
+        prog=os.path.basename(sys.argv[0]),                             # respects binary rename e.g. nvi-demux
         description='Demultiplex Illumina MiSeq and NextSeq runs, perform QC and deliver results to NIRD and VIGASP/Galaxy.',
         epilog='Example: %(prog)s run 230415_M01234_1234_000000000-ABCDE',
         formatter_class=_VerboseHelpFormatter
@@ -486,16 +527,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('-V', '--version', action='version', version=f'%(prog)s {constants.VERSION}')
     parser.add_argument('--config',        type=str, metavar='PATH', default=None, help='Path to an alternate config file.')
 
-    # hidden shorthand positional - matches bare RunID without a subcommand
-    parser.add_argument(
-        'RunID_shorthand',
-        nargs='?',
-        default=None,
-        help=argparse.SUPPRESS  # hidden from --help output
-    )
-
     subparsers = parser.add_subparsers(dest='subcommand', metavar='subcommand')
-    subparsers.required = False  # no subcommand = scan mode
+    subparsers.required = False                                         # no subcommand = scan mode
 
     # run
     run_parser = subparsers.add_parser(
@@ -718,16 +751,7 @@ def parse_arguments() -> argparse.Namespace:
     if args.subcommand == 'stats':
         args.subcommand = 'statistics'
 
-    # handle bare RunID shorthand: demultiplex.py <RunID> -> demultiplex.py run <RunID>
-    if args.subcommand is None and args.RunID_shorthand is not None:
-        candidate = os.path.basename(args.RunID_shorthand.strip('/,.'))
-        if constants.RUNID_PATTERN.match(candidate):
-            args.subcommand = 'run'
-            args.RunID      = [args.RunID_shorthand]
-        else:
-            parser.error(f"'{args.RunID_shorthand}' is not a valid subcommand or Illumina RunID.")
-
-    # no subcommand and no RunID shorthand: enter scan mode
+    # no subcommand: enter scan mode
     if args.subcommand is None:
         args.subcommand = 'scan'
 
