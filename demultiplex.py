@@ -294,4 +294,6 @@ if __name__ == '__main__':
     setup_logging( )            # set up basic logging for now, will move all log setup there
     setup_lock( )               # make sure we only run one instance at a time
     logging.shutdown( )         # shut down basic logging, main logging will take charge in main( )
-    main( parse_arguments( ).RunID )
+    args   = parse_arguments( )
+    RunIDs = getattr( args, 'RunID', [] ) or []
+    main( RunIDs )
