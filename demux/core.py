@@ -251,7 +251,7 @@ class demux:
             if any( var in project for var in [ demux.testProject ] ):                 # skip the test project, 'FOO-blahblah-BAR'
                 continue
             elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
-                controlProjectsFoundList.append( project )
+                demux.controlProjectsFoundList.append( project )
                 continue
             elif project not in newProjectNameList:
                 newProjectNameList.append( f"{demux.runIDShort}.{project}" )  #  since we are here, we might construct the new name list.
@@ -268,7 +268,7 @@ class demux:
             if any( var in project for var in [ demux.testProject ] ):                 # skip the test project, 'FOO-blahblah-BAR'
                 continue
             elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
-                controlProjectsFoundList.append( project )
+                demux.controlProjectsFoundList.append( project )
                 continue
             elif project not in tarFilesToTransferList:
                 tarFilesToTransferList.append(  os.path.join( demux.forTransferDir, demux.RunID, project + demux.tarSuffix) )
