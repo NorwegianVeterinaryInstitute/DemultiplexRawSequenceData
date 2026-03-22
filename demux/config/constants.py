@@ -66,4 +66,3 @@ IRIDA_PASSWORD:str           = ""
 IRIDA_TIMEOUT_MULTIPLIER:int = 10  # optional, default 10
 IRIDA_MAX_IN_FLIGHT:int      = 4   # optional, default 4
 IRIDA_RATE_LIMIT_DELAY:float = 0.5 # optional, default 0.5s
->>>>>>> 2ef34ce (setting up constants)
