@@ -95,7 +95,7 @@ class demux:
     python3_bin                     = f"/usr/bin/python3.11" # Switching over to python3.11 for speed gains
     ######################################################
     rtaCompleteFile                 = 'RTAComplete.txt'
-    sampleSheetFileName             = 'SampleSheet.csv'
+    sampleSheetFileName:str         = 'SampleSheet.csv'  # or 'SampleSheet-with-path-names.csv': https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/195
     testProject                     = 'FOO-blahblah-BAR'
     Sample_Project                  = 'Sample_Project'
     demultiplexCompleteFile         = 'DemultiplexComplete.txt'
@@ -320,7 +320,13 @@ class demux:
         # use print for now till we figure out what is going on with the logging
         print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
 
-        sample_sheet                    = SampleSheet( demux.sampleSheetFilePath )
+        # Prefer SampleSheet-with-path-names over SampleSheet.csv when present.
+        # Fallback removed in issue #195 once upload daemon sources paths from ShinyLIMS.
+        # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/195
+        _samplesheet_with_paths         = os.path.join( os.path.dirname( demux.sampleSheetFilePath ), "SampleSheet-with-path-names.csv" )
+        _samplesheet_path               = _samplesheet_with_paths if os.path.isfile( _samplesheet_with_paths ) else demux.sampleSheetFilePath
+        sample_sheet                    = SampleSheet( _samplesheet_path )
+        # sample_sheet                  = SampleSheet( demux.sampleSheetFilePath )
         demux.projectList               = demux._get_unique_sample_projects( sample_sheet )    # get the project list
         demux.newProjectNameList        = demux._create_renamed_demux_project_list( demux.projectList ) # translate the project list to absolute names
         demux.tarFilesToTransferList    = demux._create_tar_files_to_transfer_list( demux.newProjectNameList ) # does not create the absolute path.
