@@ -275,7 +275,7 @@ class demux:
 
         return tarFilesToTransferList
 
-    def _build_project_sample_metadata( sample_sheet: SampleSheet) -> dict[str, dict[str, dict]]:
+    def _build_project_sample_metadata( sample_sheet: SampleSheet) -> defaultdict[ str, dict[ str, dict[ str, bool | int | str ] ] ]:
         """
         Build a nested mapping from Sample_Project to Sample_ID and all transfer-related metadata fields.
         """
