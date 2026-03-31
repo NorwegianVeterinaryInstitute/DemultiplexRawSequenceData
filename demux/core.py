@@ -279,17 +279,38 @@ class demux:
         """
         Build a nested mapping from Sample_Project to Sample_ID and all transfer-related metadata fields.
         """
-        project_samples_metadata = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
+        # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
+        project_samples_metadata: defaultdict[ str, dict[ str, dict[ str, bool | int | str ] ] ] = defaultdict( dict )
 
         for sample in sample_sheet.samples:
-            if sample is None or sample.Transfer_VIGAS is None or sample.Transfer_NIRD is None or sample.NIRD_Location is None:
-                message = "Current samplesheet does not contain needed fields required for file transfer. Aborting."
-                raise ValueError( message )
+
+            for field, value in {
+                'Transfer_VIGAS': sample.Transfer_VIGAS,
+                'Transfer_NIRD':  sample.Transfer_NIRD,
+                'NIRD_Location':  sample.NIRD_Location,
+                'VIGASP_ID':      sample.VIGASP_ID,
+            }.items():
+                if value is None:
+                    raise ValueError( f"{field} is None for sample '{sample.Sample_ID}'. Aborting." )
+
+            try:
+                vigasp_id = int( sample.VIGASP_ID )
+            except ValueError:
+                raise ValueError( f"VIGASP_ID '{sample.VIGASP_ID}' for sample '{sample.Sample_ID}' is not a valid integer. Aborting." )
+
+            # bool() and str() will not raise; they accept anything. So no guard needed there.
+            transfer_vigas = bool( sample.Transfer_VIGAS.lower() == "yes" )
+            transfer_nird  = bool( sample.Transfer_NIRD.lower()  == "yes" )
+            if not os.path.isabs( sample.NIRD_Location ):
+                raise ValueError( f"NIRD_Location '{sample.NIRD_Location}' for sample '{sample.Sample_ID}' is not an absolute path. Aborting." )
+            nird_location  = str(  sample.NIRD_Location )
+
+
             project_samples_metadata[ sample.Sample_Project ][ sample.Sample_ID ] = {
-                'transfer_to_vigas': sample.Transfer_VIGAS.lower( ) == "yes",
-                'vigas_project_id': int( sample.VIGASP_ID ),
-                'transfer_to_nird': sample.Transfer_NIRD.lower( ) == "yes",
-                'nird_location': sample.NIRD_Location,
+                'transfer_to_vigas': transfer_vigas,
+                'vigas_project_id': vigasp_id,
+                'transfer_to_nird': transfer_nird,
+                'nird_location': nird_location,
             }
 
         return project_samples_metadata
