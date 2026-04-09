@@ -27,6 +27,7 @@ Subcommands and their arguments:
             --skip-vigasp       Skip delivery to VIGASP.
             --skip-nird         Skip delivery to NIRD.
             --skip-checksum     Skip hash calculation steps.
+            --skip-qc-tarball   Skip creating the QC tarball.
 
         Run control:
             --force             Bypass existing directory guard. Operator use only.
@@ -295,6 +296,7 @@ def _add_run_arguments(parser: argparse.ArgumentParser) -> None:
     skip.add_argument("--skip-vigasp",    action="store_true", help="Skip delivery to VIGASP.")
     skip.add_argument("--skip-nird",      action="store_true", help="Skip delivery to NIRD.")
     skip.add_argument("--skip-checksum",  action="store_true", help="Skip hash calculation steps.")
+    skip.add_argument("--skip-qatarball", action="store_true", help="Skip hash calculation steps.")
 
     control = parser.add_argument_group("  Run control")
     control.add_argument("--force",   action="store_true", help="Bypass existing directory guard. Operator use only.")
