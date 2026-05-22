@@ -213,10 +213,26 @@ class demux:
     vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
     vigasp_copy_mode                = "serial"
     allowed_vigasp_copy_modes       = [ "serial", "parallel" ]
+    irida_token:str                 = ""
+    irida_base_url:str              = "http://irida.vigasp.vetinst.no:8080/irida-23.01.3"
+    irida_client_id:str             = ""
+    irida_client_secret:str         = ""
+    irida_username:str              = ""
+    irida_password:str              = ""
+    irida_samples:list              = [ ]
+    irida_verified_projects:dict    = { }
+    irida_tmp_dir:str               = ""
+    irida_decompressed_map:dict     = { }
+    irida_local_hashes:dict         = { }
+    irida_sequencing_run_id:int     = 0
+    irida_uploaded_samples:list     = [ ]
+    irida_verification_passed:bool  = False
+    irida_run_completed:bool        = False
     ######################################################
     availableCpus:int               = os.cpu_count() # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
     cpuMultiplier: int              = 2
     running_threads:int             = availableCpus * cpuMultiplier  # the amount of threads bcl2fastq, fasqcq and multiqc to use
+
     ######################################################
     with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize totalTasks to it
         tree = ast.parse( f.read( ) )
