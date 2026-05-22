@@ -58,11 +58,6 @@ NEXTSEQ_TAGS                = ['NB552450']          # array of serial numbers fo
 
 VERSION                     = '1.6.1'
 
-IRIDA_BASE_URL:str           = ""
-IRIDA_CLIENT_ID:str          = ""
-IRIDA_CLIENT_SECRET:str      = ""
-IRIDA_USERNAME:str           = ""
-IRIDA_PASSWORD:str           = ""
-IRIDA_TIMEOUT_MULTIPLIER:int = 10  # optional, default 10
-IRIDA_MAX_IN_FLIGHT:int      = 4   # optional, default 4
-IRIDA_RATE_LIMIT_DELAY:float = 0.5 # optional, default 0.5s
+IRIDA_TIMEOUT_MULTIPLIER:int = 10
+IRIDA_MAX_IN_FLIGHT:int      = 4
+IRIDA_RATE_LIMIT_DELAY:float = 0.5

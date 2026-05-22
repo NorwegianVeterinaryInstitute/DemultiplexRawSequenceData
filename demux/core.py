@@ -213,7 +213,8 @@ class demux:
     vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
     vigasp_copy_mode                = "serial"
     allowed_vigasp_copy_modes       = [ "serial", "parallel" ]
-    irida_token:str                 = ""
+    irida_oauth_token:str           = ""
+    irida_bw_item_uuid:str          = "fab1520e-3188-47d3-b1d0-b42400d6ade0"
     irida_base_url:str              = "http://irida.vigasp.vetinst.no:8080/irida-23.01.3"
     irida_client_id:str             = ""
     irida_client_secret:str         = ""
