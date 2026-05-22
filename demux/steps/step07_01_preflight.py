@@ -153,7 +153,6 @@ def _fetch_irida_credentials( demux ) -> None:
         raise ValueError( "IRIDA client_secret is empty after Bitwarden lookup." )
 
 
-
 ########################################################################
 # _preflight
 ########################################################################
