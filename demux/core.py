@@ -208,14 +208,17 @@ class demux:
     bw_localhost                    = "127.0.0.1" # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. refering it by IP allows us to deterministically resolve the address
     bw_baseurl                      = f"http://{bw_localhost}:{bw_port}"
     ######################################################
-    upload_vigas_enabled            = True                  # determine if the feature of uploading to vigas is enabled
-    transfer_to_vigas               = bool( )               # determine if trasfers should happen to nird
-    vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
+    upload_vigas_enabled:bool:      = True         # determine if the feature of uploading to vigas is enabled
+    upload_to_vigasp :bool          = bool( )      # determine if trasfers should happen to vigasp
+    vigasp_api_key                  = ""           # we need to see how we can limit the damage including this api key can have
     vigasp_copy_mode                = "serial"
     allowed_vigasp_copy_modes       = [ "serial", "parallel" ]
     irida_oauth_token:str           = ""
     irida_bw_item_uuid:str          = "fab1520e-3188-47d3-b1d0-b42400d6ade0"
     irida_base_url:str              = "http://irida.vigasp.vetinst.no:8080/irida-23.01.3"
+    irida_bw_item_endpoint:str      = f"/object/item/{irida_bw_item_uuid}"
+    irida_oauth_token_endpoint:str  = "/api/oauth/token"
+    irida_oauth_token_url:str       = f"{irida_base_url}{irida_oauth_token_endpoint}"
     irida_client_id:str             = ""
     irida_client_secret:str         = ""
     irida_username:str              = ""
