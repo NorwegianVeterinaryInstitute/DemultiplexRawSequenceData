@@ -202,7 +202,7 @@ class demux:
     proxy_jump_chain: List           = None
     transport_stack: List[ paramiko.Transport]  = None
     # max_workers: int               = len( demux.tarFilesToTransferList ) # this would be possible if the firewall did not choke.
-    max_workers: int                 = 5     # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
+    max_workers: int                 = 5            # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
     ######################################################
     bw_port                          = 8087
     bw_localhost                     = "127.0.0.1"  # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. Refering it by IP allows us to deterministically resolve the address
@@ -226,6 +226,8 @@ class demux:
     irida_projects_endpoint:str      = "api/projects"
     irida_samples_endpoint:str       = "api/samples"
     irida_sequencingrun_endpoint:str = "api/sequencingrun"
+    irida_layout_type:str            = "PAIRED_END" # only paired-end supported; single-end (RNA) is a future extension
+    irida_sequencer_type:str         = "directory"  # IRIDA categorization never implemented; always "directory"
     # pre-built URLs for endpoints without a dynamic ID
     irida_bw_item_url:str            = f"{bw_baseurl}/{irida_bw_item_endpoint}/{irida_bw_item_uuid}"
     irida_oauth_token_url:str        = f"{irida_base_url}/{irida_oauth_token_endpoint}"
