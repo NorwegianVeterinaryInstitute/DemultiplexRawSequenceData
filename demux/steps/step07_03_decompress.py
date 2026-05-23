@@ -62,7 +62,7 @@ def _decompress( demux ) -> None:
 
         for gz_path, fastq_path in ( ( r1_gz, r1_fastq_path ), ( r2_gz, r2_fastq_path ) ):
             demuxLogger.debug( f"IRIDA decompress: gunzip {gz_path} -> {fastq_path}" )
-            with gzip.open( gz_path, constants.FILE_READ_BINARY ) as f_in:
+            with gzip.open( gz_path, constants.READ_ONLY_BINARY ) as f_in:
                 with open( fastq_path, constants.FILE_WRITE_BINARY ) as f_out:
                     shutil.copyfileobj( f_in, f_out )
             if not os.path.isfile( fastq_path ):
