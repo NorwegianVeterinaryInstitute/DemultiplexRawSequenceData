@@ -46,6 +46,7 @@ READ_ONLY_TEXT:str          = "r"
 FILE_WRITE_BINARY:str       = "wb"
 HASH_CHUNK_SIZE:int         = 65536  # 64 KiB
 
+CRLF:bytes                  = b'\r\n'
 
 USER_SSH_CONFIG_PATH: str       = "~/.ssh/config"
 USER_SSH_KNOWN_HOSTS_PATH: str  = "~/.ssh/known_hosts"

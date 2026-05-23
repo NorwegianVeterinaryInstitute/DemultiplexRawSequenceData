@@ -214,7 +214,8 @@ class demux:
     vigasp_api_key                   = ""           # we need to see how we can limit the damage including this api key can have
     vigasp_copy_mode                 = "serial"
     allowed_vigasp_copy_modes        = [ "serial", "parallel" ]
-    irida_timeout:int                = 30
+    irida_timeout:int                = 300          # default timeout for IRIDA API metadata calls
+    irida_upload_timeout:int         = 300          # 5 minutes; uploading large files to IRIDA on NREC mechanical drives
     irida_oauth_token:str            = ""
     irida_tmp_dir_name:str           = "tmp_irida_upload"
     irida_bw_item_uuid:str           = "fab1520e-3188-47d3-b1d0-b42400d6ade0"
@@ -226,8 +227,8 @@ class demux:
     irida_projects_endpoint:str      = "api/projects"
     irida_samples_endpoint:str       = "api/samples"
     irida_sequencingrun_endpoint:str = "api/sequencingrun"
-    irida_layout_type:str            = "PAIRED_END" # only paired-end supported; single-end (RNA) is a future extension
-    irida_sequencer_type:str         = "directory"  # IRIDA categorization never implemented; always "directory"
+    irida_layout_type:str            = "PAIRED_END" # only paired-end supported; single-end (RNA) will be a future extension, if ever needed
+    irida_sequencer_type:str         = "directory"  # IRIDA categorization never really implemented; always "directory"
     # pre-built URLs for endpoints without a dynamic ID
     irida_bw_item_url:str            = f"{bw_baseurl}/{irida_bw_item_endpoint}/{irida_bw_item_uuid}"
     irida_oauth_token_url:str        = f"{irida_base_url}/{irida_oauth_token_endpoint}"
