@@ -64,178 +64,186 @@ class demux:
     verbosity  = 2
     state      = "demultiplexRunIDdir"  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
 
-    rawDataDir:str                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.RAW_DATA_DIR_NAME     )
-    demultiplexDir:str              = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.DEMULTIPLEX_DIR_NAME  )
-    forTransferDir:str              = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.FOR_TRANSFER_DIR_NAME )
-    sampleSheetDirPath:str          = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.SAMPLESHEET_DIR_NAME  )
-    logDirPath:str                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.LOG_DIR_NAME          )
-    exec_path: str                  = Path( sys.argv[ 0 ] ).resolve( ) # full path to executable
-    exec_dir:str                    = exec_path.parent                 # e.g. "/usr/local/bin" or ~/.local/bin
-    exec_name:str                   = exec_path.name                   # e.g. "demultiplex"
+    rawDataDir:str                   = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.RAW_DATA_DIR_NAME     )
+    demultiplexDir:str               = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.DEMULTIPLEX_DIR_NAME  )
+    forTransferDir:str               = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.FOR_TRANSFER_DIR_NAME )
+    sampleSheetDirPath:str           = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.SAMPLESHEET_DIR_NAME  )
+    logDirPath:str                   = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.LOG_DIR_NAME          )
+    exec_path: str                   = Path( sys.argv[ 0 ] ).resolve( ) # full path to executable
+    exec_dir:str                     = exec_path.parent                 # e.g. "/usr/local/bin" or ~/.local/bin
+    exec_name:str                    = exec_path.name                   # e.g. "demultiplex"
     ######################################################
     # commonEgid = 'sambagroup' # i don't know where i was going with this...
     ######################################################
-    multiqc_data                    = 'multiqc_data'
-    md5Suffix                       = demux.config.constants.MD5_SUFFIX
-    md5Length                       = demux.config.constants.MD5_LENGTH     # 128 bits
+    multiqc_data                     = 'multiqc_data'
+    md5Suffix                        = demux.config.constants.MD5_SUFFIX
+    md5Length                        = demux.config.constants.MD5_LENGTH     # 128 bits
     # qcSuffix                        = '_QC'
-    sha512Suffix                    = demux.config.constants.SHA512_SUFFIX
-    sha512Length                    = demux.config.constants.SHA512_LENGTH  # 512 bits
-    tarSuffix                       = demux.config.constants.TAR_SUFFIX
-    zipSuffix                       = demux.config.constants.ZIP_SUFFIX
-    compressedFastqSuffix           = demux.config.constants.COMPRESSED_FASTQ_SUFFIX
-    temp                            = 'temp'
-    htmlSuffix                      = '.html'
-    logSuffix                       = '.log'
+    sha512Suffix                     = demux.config.constants.SHA512_SUFFIX
+    sha512Length                     = demux.config.constants.SHA512_LENGTH  # 512 bits
+    tarSuffix                        = demux.config.constants.TAR_SUFFIX
+    zipSuffix                        = demux.config.constants.ZIP_SUFFIX
+    compressedFastqSuffix            = demux.config.constants.COMPRESSED_FASTQ_SUFFIX
+    temp                             = 'temp'
+    htmlSuffix                       = '.html'
+    logSuffix                        = '.log'
     ######################################################
-    executableProgramsPath          = f"/usr/local"
-    bcl2fastq_bin                   = f"{executableProgramsPath}/bin/bcl2fastq"
-    fastqc_bin                      = f"{executableProgramsPath}/bin/fastqc"
-    mutliqc_bin                     = f"{executableProgramsPath}/bin/multiqc"
-    python3_bin                     = f"/usr/bin/python3.11" # Switching over to python3.11 for speed gains
+    executableProgramsPath           = f"/usr/local"
+    bcl2fastq_bin                    = f"{executableProgramsPath}/bin/bcl2fastq"
+    fastqc_bin                       = f"{executableProgramsPath}/bin/fastqc"
+    mutliqc_bin                      = f"{executableProgramsPath}/bin/multiqc"
+    python3_bin                      = f"/usr/bin/python3.11" # Switching over to python3.11 for speed gains
     ######################################################
-    rtaCompleteFile                 = 'RTAComplete.txt'
-    sampleSheetFileName:str         = 'SampleSheet.csv'  # or 'SampleSheet-with-path-names.csv': https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/195
-    testProject                     = 'FOO-blahblah-BAR'
-    Sample_Project                  = 'Sample_Project'
-    demultiplexCompleteFile         = 'DemultiplexComplete.txt'
-    vannControlNegativReport        = 'Negativ'
-    forTransferRunIdDirTestName     = 'test_tar'
-    md5File                         = 'md5sum.txt'
-    miSeq                           = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
-    nextSeq                         = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
-    encoding = decodeScheme         = "utf-8"
-    footarfile                      = f"foo{demux.config.constants.TAR_SUFFIX}"      # class variable shared by all instances
-    barzipfile                      = f"zip{demux.config.constants.ZIP_SUFFIX}"
-    totalTasks                      = 0
-    tabSpace                        = 8
-    spacing1                        = 40
-    spacing2                        = spacing1 + tabSpace
-    spacing3                        = spacing2 + tabSpace
-    spacing4                        = spacing3 + tabSpace
-    spacing5                        = spacing4 + tabSpace
-    spacing6                        = spacing5 + tabSpace
-    spacing6                        = spacing6 + tabSpace
+    rtaCompleteFile                  = 'RTAComplete.txt'
+    sampleSheetFileName:str          = 'SampleSheet.csv'  # or 'SampleSheet-with-path-names.csv': https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/195
+    testProject                      = 'FOO-blahblah-BAR'
+    Sample_Project                   = 'Sample_Project'
+    demultiplexCompleteFile          = 'DemultiplexComplete.txt'
+    vannControlNegativReport         = 'Negativ'
+    forTransferRunIdDirTestName      = 'test_tar'
+    md5File                          = 'md5sum.txt'
+    miSeq                            = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
+    nextSeq                          = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
+    encoding = decodeScheme          = "utf-8"
+    footarfile                       = f"foo{demux.config.constants.TAR_SUFFIX}"      # class variable shared by all instances
+    barzipfile                       = f"zip{demux.config.constants.ZIP_SUFFIX}"
+    totalTasks                       = 0
+    tabSpace                         = 8
+    spacing1                         = 40
+    spacing2                         = spacing1 + tabSpace
+    spacing3                         = spacing2 + tabSpace
+    spacing4                         = spacing3 + tabSpace
+    spacing5                         = spacing4 + tabSpace
+    spacing6                         = spacing5 + tabSpace
+    spacing6                         = spacing6 + tabSpace
 
     ######################################################
     # All following are supposed to be filled in at run time
-    RunID                           = ""
-    runIDShort                      = ""                                                            # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/126
-    rawDataRunIDdir                 = ""
-    demultiplexRunIDdir             = ""
-    demultiplexLogDirPath           = ""
-    demultiplexScriptLogFilePath    = ""
-    demuxQCDirectoryName            = ""
-    demuxQCDirectoryFullPath        = ""
-    forTransferRunIDdir             = ""
-    forTransferQCtarFile            = ""
-    multiqc_run_dir                 = ""
-    sampleSheetFilePath             = os.path.join( sampleSheetDirPath, sampleSheetFileName )
-    sampleSheetArchiveFilePath      = ""                                                            # demux/envsetup/setup_environment.py
-    project_samples_metadata        = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
+    RunID                            = ""
+    runIDShort                       = ""                                             # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/126
+    rawDataRunIDdir                  = ""
+    demultiplexRunIDdir              = ""
+    demultiplexLogDirPath            = ""
+    demultiplexScriptLogFilePath     = ""
+    demuxQCDirectoryName             = ""
+    demuxQCDirectoryFullPath         = ""
+    forTransferRunIDdir              = ""
+    forTransferQCtarFile             = ""
+    multiqc_run_dir                  = ""
+    sampleSheetFilePath              = os.path.join( sampleSheetDirPath, sampleSheetFileName )
+    sampleSheetArchiveFilePath       = ""                                                            # demux/envsetup/setup_environment.py
+    project_samples_metadata         = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
     ######################################################
-    projectList                     = [ ]
-    newProjectNameList              = [ ]
-    newProjectFileList              = [ ]
-    controlProjectsFoundList        = [ ]
-    tarFilesToTransferList          = [ ]
-    globalDictionary                = dict( )
+    projectList                      = [ ]
+    newProjectNameList               = [ ]
+    newProjectFileList               = [ ]
+    controlProjectsFoundList         = [ ]
+    tarFilesToTransferList           = [ ]
+    globalDictionary                 = dict( )
     ######################################################
-    controlProjects                 = [ "Negativ" ]
+    controlProjects                  = [ "Negativ" ]
     ######################################################
-    forTransferRunIdDir             = ""
-    forTransferQCtarFile            = ""
-    absoluteFilesToTransferList     = { }
+    forTransferRunIdDir              = ""
+    forTransferQCtarFile             = ""
+    absoluteFilesToTransferList      = { }
     ######################################################
-    demuxCumulativeLogFileName      = 'demultiplex.log'
-    demultiplexLogDirName           = 'demultiplex_log'
-    scriptRunLogFileName            = '00_script.log'
-    bcl2FastqLogFileName            = '01_demultiplex.log'
-    fastqcLogFileName               = '02_fastqcLogFile.log'
-    multiqcLogFileName              = '03_multiqcLogFile.log'
-    loggingLevel                    = logging.DEBUG
+    demuxCumulativeLogFileName       = 'demultiplex.log'
+    demultiplexLogDirName            = 'demultiplex_log'
+    scriptRunLogFileName             = '00_script.log'
+    bcl2FastqLogFileName             = '01_demultiplex.log'
+    fastqcLogFileName                = '02_fastqcLogFile.log'
+    multiqcLogFileName               = '03_multiqcLogFile.log'
+    loggingLevel                     = logging.DEBUG
     ######################################################
-    demuxCumulativeLogFilePath      = ""
-    bcl2FastqLogFile                = ""
-    fastQCLogFilePath               = ""
-    logFilePath                     = ""
-    multiQCLogFilePath              = ""
-    scriptRunLogFile                = ""
+    demuxCumulativeLogFilePath       = ""
+    bcl2FastqLogFile                 = ""
+    fastQCLogFilePath                = ""
+    logFilePath                      = ""
+    multiQCLogFilePath               = ""
+    scriptRunLogFile                 = ""
     ######################################################
-    # mailhost                        = 'seqtech00.vetinst.no'
-    mailhost                        = 'localhost'
-    fromAddress                     = f"demultiplex@{ socket.getfqdn( ) }"
-    toAddress                       = 'gmarselis@localhost'
-    subjectFailure                  = 'Demultiplexing has failed'
-    subjectSuccess                  = 'Demultiplexing has finished successfuly'
+    # mailhost                         = 'seqtech00.vetinst.no'
+    mailhost                         = 'localhost'
+    fromAddress                      = f"demultiplex@{ socket.getfqdn( ) }"
+    toAddress                        = 'gmarselis@localhost'
+    subjectFailure                   = 'Demultiplexing has failed'
+    subjectSuccess                   = 'Demultiplexing has finished successfuly'
     ######################################################
-    httpsHandlerHost                = 'veterinaerinstituttet307.workplace.com'
-    httpsHandlerUrl                 = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
+    httpsHandlerHost                 = 'veterinaerinstituttet307.workplace.com'
+    httpsHandlerUrl                  = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
     ######################################################
-    upload_nird_enabled             = True                  # determine if the feature of uploading to nird is enabled
-    transfer_to_nird                = bool( )               # determine from sample sheet if we have any uploads
-    nird_access_mode                = "ssh2fa"
+    upload_nird_enabled              = True                  # determine if the feature of uploading to nird is enabled
+    transfer_to_nird                 = bool( )               # determine from sample sheet if we have any uploads
+    nird_access_mode                 = "ssh2fa"
                                     # "ssh" uses only keys
                                     # "ssh_2fa" uses username, password, TOTP, from bitwarden
                                     # "mounted" uses sshfs but only with keys
-    allowed_nird_access_modes       = [ "ssh", "ssh2fa", "mounted" ]
-    nird_copy_mode                  = "parallel"
-    allowed_nird_copy_modes         = [ "serial", "parallel" ]
+    allowed_nird_access_modes        = [ "ssh", "ssh2fa", "mounted" ]
+    nird_copy_mode                   = "parallel"
+    allowed_nird_copy_modes          = [ "serial", "parallel" ]
     ######################################################
     # defaults
-    nird_upload_host                = "login.nird.sigma2.no"
-    # nird_upload_host                = "rei.vetinst.no"
-    # nird_upload_host                = "laptop"
-    nird_scp_port                   = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
-    nird_username                   = "gmarselis" # change this to be the user running the script
-    # nird_base_upload_path_ssh       = "/nird/projects/NS9305K/SEQ-TECH/data_delivery" # directory location before datapeak
-    # nird_base_upload_path_ssh       = "/nird/datapeak/NS9305K/gmarselis/demux_transfer_test"
-    nird_base_upload_path_ssh       = "/nird/datalake/NS9305K/test_demultiplex"
-    nird_base_upload_path_local     = "/data/tmp/nird"
-    nird_base_upload_path           = ""
-    nird_key_filename               = "/home/gmarselis/.ssh/id_ed25519.3jane"
-    hostname                        = ""
-    username                        = ""
-    port                            = int( )
-    key_file                        = ""
-    proxy_jump                      = ""
-    proxy_jump_chain: List          = None
+    nird_upload_host                 = "login.nird.sigma2.no"
+    # nird_upload_host                 = "rei.vetinst.no"
+    # nird_upload_host                 = "laptop"
+    nird_scp_port                    = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
+    nird_username                    = "gmarselis" # change this to be the user running the script
+    # nird_base_upload_path_ssh        = "/nird/projects/NS9305K/SEQ-TECH/data_delivery" # directory location before datapeak
+    # nird_base_upload_path_ssh        = "/nird/datapeak/NS9305K/gmarselis/demux_transfer_test"
+    nird_base_upload_path_ssh        = "/nird/datalake/NS9305K/test_demultiplex"
+    nird_base_upload_path_local      = "/data/tmp/nird"
+    nird_base_upload_path            = ""
+    nird_key_filename                = "/home/gmarselis/.ssh/id_ed25519.3jane"
+    hostname                         = ""
+    username                         = ""
+    port                             = int( )
+    key_file                         = ""
+    proxy_jump                       = ""
+    proxy_jump_chain: List           = None
     transport_stack: List[ paramiko.Transport]  = None
-    # max_workers: int              = len( demux.tarFilesToTransferList ) # this would be possible if the firewall did not choke.
-    max_workers: int                = 5     # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
+    # max_workers: int               = len( demux.tarFilesToTransferList ) # this would be possible if the firewall did not choke.
+    max_workers: int                 = 5     # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
     ######################################################
-    bw_port                         = 8087
-    bw_localhost                    = "127.0.0.1" # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. refering it by IP allows us to deterministically resolve the address
-    bw_baseurl                      = f"http://{bw_localhost}:{bw_port}"
+    bw_port                          = 8087
+    bw_localhost                     = "127.0.0.1" # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. refering it by IP allows us to deterministically resolve the address
+    bw_baseurl                       = f"http://{bw_localhost}:{bw_port}"
     ######################################################
-    upload_vigas_enabled:bool:      = True         # determine if the feature of uploading to vigas is enabled
-    upload_to_vigasp :bool          = bool( )      # determine if trasfers should happen to vigasp
-    vigasp_api_key                  = ""           # we need to see how we can limit the damage including this api key can have
-    vigasp_copy_mode                = "serial"
-    allowed_vigasp_copy_modes       = [ "serial", "parallel" ]
-    irida_oauth_token:str           = ""
-    irida_bw_item_uuid:str          = "fab1520e-3188-47d3-b1d0-b42400d6ade0"
-    irida_base_url:str              = "http://irida.vigasp.vetinst.no:8080/irida-23.01.3"
-    irida_bw_item_endpoint:str      = f"/object/item/{irida_bw_item_uuid}"
-    irida_oauth_token_endpoint:str  = "/api/oauth/token"
-    irida_oauth_token_url:str       = f"{irida_base_url}{irida_oauth_token_endpoint}"
-    irida_client_id:str             = ""
-    irida_client_secret:str         = ""
-    irida_username:str              = ""
-    irida_password:str              = ""
-    irida_samples:list              = [ ]
-    irida_verified_projects:dict    = { }
-    irida_tmp_dir:str               = ""
-    irida_decompressed_map:dict     = { }
-    irida_local_hashes:dict         = { }
-    irida_sequencing_run_id:int     = 0
-    irida_uploaded_samples:list     = [ ]
-    irida_verification_passed:bool  = False
-    irida_run_completed:bool        = False
+    upload_vigas_enabled:bool:       = True         # determine if the feature of uploading to vigas is enabled
+    upload_to_vigasp :bool           = bool( )      # determine if trasfers should happen to vigasp
+    vigasp_api_key                   = ""           # we need to see how we can limit the damage including this api key can have
+    vigasp_copy_mode                 = "serial"
+    allowed_vigasp_copy_modes        = [ "serial", "parallel" ]
+    irida_timeout:int                = 30
+    irida_oauth_token:str            = ""
+    irida_bw_item_uuid:str           = "fab1520e-3188-47d3-b1d0-b42400d6ade0"
+    irida_base_url:str               = "http://irida.vigasp.vetinst.no:8080/irida-23.01.3"
+    # Bitwarden endpoint for IRIDA credentials
+    # IRIDA API endpoints - no leading slashes; URLs are built as f"{irida_base_url}/{endpoint}/{id}"
+    irida_bw_item_endpoint:str       = "object/item"
+    irida_oauth_token_endpoint:str   = "api/oauth/token"
+    irida_projects_endpoint:str      = "api/projects"
+    irida_samples_endpoint:str       = "api/samples"
+    irida_sequencingrun_endpoint:str = "api/sequencingrun"
+    # pre-built URLs for endpoints without a dynamic ID
+    irida_bw_item_url:str            = f"{bw_baseurl}/{irida_bw_item_endpoint}/{irida_bw_item_uuid}"
+    irida_oauth_token_url:str        = f"{irida_base_url}/{irida_oauth_token_endpoint}"
+    irida_client_id:str              = ""
+    irida_client_secret:str          = ""
+    irida_username:str               = ""
+    irida_password:str               = ""
+    irida_samples:list               = [ ]
+    irida_verified_projects:dict     = { }
+    irida_tmp_dir:str                = ""
+    irida_decompressed_map:dict      = { }
+    irida_local_hashes:dict          = { }
+    irida_sequencing_run_id:int      = 0
+    irida_uploaded_samples:list      = [ ]
+    irida_verification_passed:bool   = False
+    irida_run_completed:bool         = False
     ######################################################
-    availableCpus:int               = os.cpu_count() # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
-    cpuMultiplier: int              = 2
-    running_threads:int             = availableCpus * cpuMultiplier  # the amount of threads bcl2fastq, fasqcq and multiqc to use
+    availableCpus:int                = os.cpu_count() # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
+    cpuMultiplier: int               = 2
+    running_threads:int              = availableCpus * cpuMultiplier  # the amount of threads bcl2fastq, fasqcq and multiqc to use
 
     ######################################################
     with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize totalTasks to it
