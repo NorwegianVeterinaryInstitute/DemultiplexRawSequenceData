@@ -216,6 +216,7 @@ class demux:
     allowed_vigasp_copy_modes        = [ "serial", "parallel" ]
     irida_timeout:int                = 30
     irida_oauth_token:str            = ""
+    irida_tmp_dir_name:str           = "tmp_irida_upload"
     irida_bw_item_uuid:str           = "fab1520e-3188-47d3-b1d0-b42400d6ade0"
     irida_base_url:str               = "http://irida.vigasp.vetinst.no:8080/irida-23.01.3"
     # Bitwarden endpoint for IRIDA credentials
@@ -234,7 +235,7 @@ class demux:
     irida_password:str               = ""
     irida_samples:list               = [ ]
     irida_verified_projects:dict     = { }
-    irida_tmp_dir:str                = ""
+    irida_tmp_dir:str                = ""            # store for cleanup (step07_07) to know what to delete
     irida_decompressed_map:dict      = { }
     irida_local_hashes:dict          = { }
     irida_sequencing_run_id:int      = 0

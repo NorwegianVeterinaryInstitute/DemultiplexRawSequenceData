@@ -22,6 +22,7 @@ CSV_SUFFIX:str              = ".csv"
 QC_SUFFIX:str               = "_qc"
 DEMULTIPLEX_DIR_SUFFIX:str  = "_demultiplex"
 ZIP_SUFFIX:str              = '.zip'
+GZ_SUFFIX:str 				= ".gz"
 COMPRESSED_FASTQ_SUFFIX:str = '.fastq.gz' 
 TAR_SUFFIX:str              = '.tar'
 
@@ -42,6 +43,8 @@ BITWARDEN_CLI_PATH:str      = "/usr/local/bin/bw"
 
 READ_ONLY_BINARY:str        = "rb"
 READ_ONLY_TEXT:str          = "r"
+FILE_READ_BINARY:str        = "rb"
+FILE_WRITE_BINARY:str       = "wb"
 
 
 USER_SSH_CONFIG_PATH: str       = "~/.ssh/config"
