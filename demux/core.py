@@ -205,8 +205,9 @@ class demux:
     max_workers: int                 = 5     # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
     ######################################################
     bw_port                          = 8087
-    bw_localhost                     = "127.0.0.1" # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. refering it by IP allows us to deterministically resolve the address
+    bw_localhost                     = "127.0.0.1"  # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. Refering it by IP allows us to deterministically resolve the address
     bw_baseurl                       = f"http://{bw_localhost}:{bw_port}"
+    bw_timeout:int                   = 5            # bw serve is local; 5 seconds is generous
     ######################################################
     upload_vigas_enabled:bool:       = True         # determine if the feature of uploading to vigas is enabled
     upload_to_vigasp :bool           = bool( )      # determine if trasfers should happen to vigasp

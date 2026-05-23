@@ -22,6 +22,9 @@ def _get_vigasp_samples( demux ) -> list:
         for sample_id, sample_info in samples.items():
             if not sample_info[ 'upload_to_vigasp' ]:
                 continue
+            # sample_name  = Sample_ID from samplesheet
+            # project_id   = IRIDA project ID from VIGASP_ID column
+            # project_name = Sample_Project from samplesheet
             vigasp_samples.append( { 'sample_name': sample_id, 'project_id': int( sample_info[ 'vigas_project_id' ] ), 'project_name': project_name } )
 
     if not vigasp_samples:
@@ -94,9 +97,10 @@ def _acquire_oauth_token( demux ) -> None:
         demux.irida_oauth_token - OAuth2 bearer token string.
     """
     token_response:dict = { }
+    # OAuth2 password grant are field names per RFC 6749, not our constants. No need to turn them into such.
     token_params:bytes  = urllib.parse.urlencode( { 'grant_type': 'password', 'client_id': demux.irida_client_id, 'client_secret': demux.irida_client_secret, 'username': demux.irida_username, 'password': demux.irida_password } ).encode( 'utf-8' )
-    token_request       = urllib.request.Request( demux.irida_oauth_token_url, data = token_params, method = 'POST' )
-    with urllib.request.urlopen( token_request, timeout = 30 ) as response:
+    token_request       = urllib.request.Request( demux.irida_oauth_token_url, data = token_params, method = constants.HTTP_POST )
+    with urllib.request.urlopen( token_request, timeout = demux.irida_timeout ) as response:
         token_response = json.load( response )
 
     demux.irida_oauth_token = token_response[ 'access_token' ]
@@ -131,8 +135,8 @@ def _fetch_irida_credentials( demux ) -> None:
         raise ValueError( "demux.irida_bw_item_uuid is not set. Cannot fetch IRIDA credentials from Bitwarden." )
 
     bw_item:dict      = { }
-    bw_item_url:str   = f"{demux.bw_baseurl}{demux.irida_bw_item_endpoint}"
-    with urllib.request.urlopen( bw_item_url, timeout = 5 ) as response:
+    bw_item_url:str   = f"{demux.bw_baseurl}/{demux.irida_bw_item_endpoint}"
+    with urllib.request.urlopen( bw_item_url, timeout = demux.bw_timeout ) as response:
         bw_item       = json.load( response )
 
     login_data:dict   = bw_item[ "data" ][ "login" ]
