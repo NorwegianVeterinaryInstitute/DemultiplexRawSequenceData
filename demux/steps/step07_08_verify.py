@@ -26,6 +26,11 @@ def _verify( demux ) -> None:
 
     No files are downloaded. This is a metadata comparison only.
 
+    Parallelization:
+    Verification is intentionally serial. Each iteration is a single GET + JSON field comparison.
+    The bottleneck for IRIDA is the network round-trip on NREC, not local computation.
+    Parallelizing would hammer a server that already chokes under load (single JVM monolith, mechanical drives).
+
     For each sample in demux.irida_uploaded_samples:
         1. GET /api/samples/{id}/sequenceFiles to list files.
         2. Read the uploadSha256 field from each file resource.
