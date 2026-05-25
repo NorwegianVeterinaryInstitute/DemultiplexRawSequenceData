@@ -104,7 +104,7 @@ def _find_or_create_sample( demux, project_id: int, sample_name: str ) -> int:
 
     # ---- try to find existing sample by listing project samples -------
 
-    list_url:str = f"{demux.irida_base_url}/{demux.irida_projects_endpoint}/{project_id}/samples"
+    list_url:str = f"{demux.irida_base_url}/{demux.irida_projects_endpoint}/{project_id}/{demux.irida_project_samples_subpath}"
 
     request = urllib.request.Request( list_url, method = constants.HTTP_GET )
     request.add_header( constants.HTTP_HEADER_AUTHORIZATION, f'{constants.HTTP_BEARER_PREFIX} {demux.irida_oauth_token}' )
@@ -122,7 +122,7 @@ def _find_or_create_sample( demux, project_id: int, sample_name: str ) -> int:
 
     # ---- sample not found; create it ----------------------------------
 
-    create_url:str = f"{demux.irida_base_url}/{demux.irida_projects_endpoint}/{project_id}/samples"
+    create_url:str = f"{demux.irida_base_url}/{demux.irida_projects_endpoint}/{project_id}/{demux.irida_project_samples_subpath}"
 
     # sampleName is an IRIDA API field name; not our constant
     payload:bytes = json.dumps( { 'sampleName': sample_name } ).encode( constants.UTF8 )
@@ -171,7 +171,7 @@ def _upload_pair( demux, sample_id: int, r1_path: str, r2_path: str ) -> dict:
     """
 
     # /sequenceFiles/pairs is a sub-resource of /api/samples/{id}; not a separate endpoint
-    url:str = f"{demux.irida_base_url}/{demux.irida_samples_endpoint}/{sample_id}/sequenceFiles/pairs"
+    url:str = f"{demux.irida_base_url}/{demux.irida_samples_endpoint}/{sample_id}/{demux.irida_sequence_files_pairs_subpath}"
 
     r1_basename:str = os.path.basename( r1_path )
     r2_basename:str = os.path.basename( r2_path )
