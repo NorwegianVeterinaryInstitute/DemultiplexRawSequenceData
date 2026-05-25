@@ -63,4 +63,4 @@ def _create_run( demux ) -> None:
         raise ValueError( f"IRIDA create_run: expected numeric run ID, got '{run_id}'" )
     demux.irida_sequencing_run_id = int( run_id )
 
-    demuxLogger.info( f"IRIDA create_run: sequencing run {demux.irida_sequencing_run_id} created (sequencerType=directory, layoutType=PAIRED_END, uploadStatus=UPLOADING)" )
+    demuxLogger.info( f"IRIDA create_run: sequencing run {demux.irida_sequencing_run_id} created (sequencerType={demux.irida_sequencer_type}, layoutType={demux.irida_layout_type}, uploadStatus={demux.irida_upload_status_uploading})" )

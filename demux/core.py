@@ -234,6 +234,9 @@ class demux:
     irida_sequence_files_pairs_subpath:str     = f"{irida_sequence_files_subpath}/pairs"
     irida_layout_type:str                      = "PAIRED_END" # only paired-end supported; single-end (RNA) will be a future extension, if ever needed
     irida_sequencer_type:str                   = "directory"  # IRIDA categorization never really implemented; always "directory"
+    irida_upload_status_uploading:str          = "UPLOADING"
+    irida_upload_status_complete:str           = "COMPLETE"
+    irida_upload_status_error:str              = "ERROR"
     # pre-built URLs for endpoints without a dynamic ID
     irida_bw_item_url:str                      = f"{bw_baseurl}/{irida_bw_item_endpoint}/{irida_bw_item_uuid}"
     irida_oauth_token_url:str                  = f"{irida_base_url}/{irida_oauth_token_endpoint}"

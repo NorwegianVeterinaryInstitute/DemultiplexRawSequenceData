@@ -128,7 +128,7 @@ def _verify( demux ) -> None:
         demux.irida_verification_passed = False
         mismatch_report:str = '\n'.join( mismatches )
         demuxLogger.critical( f"IRIDA verify: sha256 mismatches detected:\n{mismatch_report}" )
-        raise RuntimeError( f"IRIDA verify: {len( mismatches )} hash mismatch(es) detected. Do NOT PATCH sequencing run to COMPLETE.\n{mismatch_report}" )
+        raise RuntimeError( f"IRIDA verify: {len( mismatches )} hash mismatch(es) detected. Do NOT PATCH sequencing run to {demux.irida_upload_status_complete}.\n{mismatch_report}" )
 
     demux.irida_verification_passed = True
     demuxLogger.info( f"IRIDA verify: all {total} sample(s) verified" )
