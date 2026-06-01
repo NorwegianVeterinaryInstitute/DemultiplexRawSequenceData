@@ -8,3 +8,5 @@ kot
 foo
 bar
 .vscode
+tests/*fasta
+tests/*gz
