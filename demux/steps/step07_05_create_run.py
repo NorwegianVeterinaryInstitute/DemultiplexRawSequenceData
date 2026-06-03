@@ -32,7 +32,7 @@ def _create_run( demux ) -> None:
     url:str = f"{demux.irida_base_url}/{demux.irida_sequencingrun_endpoint}"
 
     # layoutType and sequencerType are IRIDA API field names, see demux/core.py
-    payload:bytes = json.dumps( { 'layoutType': demux.irida_layout_type, 'sequencerType': demux.irida_sequencer_type } ).encode( constants.UTF8 )
+    payload:bytes = json.dumps( { 'layoutType': demux.irida_layout_type, 'sequencerType': demux.irida_sequencer_type } ).encode( demux.encoding )
 
     request = urllib.request.Request( url, data = payload, method = constants.HTTP_POST )
     request.add_header( constants.HTTP_HEADER_AUTHORIZATION, f'{constants.HTTP_BEARER_PREFIX} {demux.irida_oauth_token}' )

@@ -231,7 +231,7 @@ class demux:
     irida_sequencingrun_endpoint:str           = "api/sequencingrun"
     irida_project_samples_subpath:str          = "samples"
     irida_sequence_files_subpath:str           = "sequenceFiles"
-    irida_sequence_files_pairs_subpath:str     = f"{irida_sequence_files_subpath}/pairs"
+    irida_sequence_files_pairs_subpath:str     = "pairs"
     irida_layout_type:str                      = "PAIRED_END" # only paired-end supported; single-end (RNA) will be a future extension, if ever needed
     irida_sequencer_type:str                   = "directory"  # IRIDA categorization never really implemented; always "directory"
     irida_upload_status_uploading:str          = "UPLOADING"

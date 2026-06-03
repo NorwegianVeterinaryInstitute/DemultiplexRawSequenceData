@@ -43,7 +43,7 @@ BITWARDEN_CLI_PATH:str      = "/usr/local/bin/bw"
 
 READ_ONLY_BINARY:str        = "rb"
 READ_ONLY_TEXT:str          = "r"
-FILE_WRITE_BINARY:str       = "wb"
+WRITE_ONLY_BINARY:str       = "wb"
 HASH_CHUNK_SIZE:int         = 65536  # 64 KiB
 
 CRLF:bytes                  = b'\r\n'

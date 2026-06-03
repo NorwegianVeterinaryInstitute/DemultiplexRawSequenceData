@@ -41,7 +41,7 @@ def _complete( demux ) -> None:
     url:str = f"{demux.irida_base_url}/{demux.irida_sequencingrun_endpoint}/{demux.irida_sequencing_run_id}"
 
     # uploadStatus is an IRIDA API field name; not our constant
-    payload:bytes = json.dumps( { 'uploadStatus': demux.irida_upload_status_complete } ).encode( constants.UTF8 )
+    payload:bytes = json.dumps( { 'uploadStatus': demux.irida_upload_status_complete } ).encode( demux.encoding )
 
     request = urllib.request.Request( url, data = payload, method = constants.HTTP_PATCH )
     request.add_header( constants.HTTP_HEADER_AUTHORIZATION, f'{constants.HTTP_BEARER_PREFIX} {demux.irida_oauth_token}' )

@@ -135,8 +135,7 @@ def _fetch_irida_credentials( demux ) -> None:
         raise ValueError( "demux.irida_bw_item_uuid is not set. Cannot fetch IRIDA credentials from Bitwarden." )
 
     bw_item:dict      = { }
-    bw_item_url:str   = f"{demux.bw_baseurl}/{demux.irida_bw_item_endpoint}"
-    with urllib.request.urlopen( bw_item_url, timeout = demux.bw_timeout ) as response:
+    with urllib.request.urlopen( demux.irida_bw_item_url, timeout = demux.bw_timeout ) as response:
         bw_item       = json.load( response )
 
     login_data:dict   = bw_item[ "data" ][ "login" ]
@@ -162,7 +161,7 @@ def _fetch_irida_credentials( demux ) -> None:
 ########################################################################
 
 def _preflight( demux ) -> None:
-"""
+    """
     IRIDA upload preflight checks.
 
     1. Fetch IRIDA credentials from Bitwarden (bw serve HTTP API, UUID-based lookup).
