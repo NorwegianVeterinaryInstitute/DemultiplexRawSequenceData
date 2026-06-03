@@ -37,6 +37,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import time
 import urllib.request
 
 from collections import defaultdict
@@ -60,6 +61,11 @@ TEST_RUN_ID:str            = "999999_ZZTEST_0000_000000000-ZZZZZ"
 TEST_RUN_ID_SHORT:str      = "999999_ZZTEST"
 TEST_R1_FILENAME:str       = "2024_EQA13.Strain0020_R1_001.fastq.gz"
 TEST_R2_FILENAME:str       = "2024_EQA13.Strain0020_R2_001.fastq.gz"
+
+# seconds to wait before deleting test data from IRIDA
+# IRIDA's async GzipFileProcessor/FastQC chain needs time to finish
+# processing the uploaded file; deleting too fast causes StaleStateException (PR 1506)
+TEST_CLEANUP_DELAY_SECONDS:int = 90
 
 # paths to the test .fastq.gz files shipped with the repo
 TESTS_DIR:str              = os.path.dirname( os.path.abspath( __file__ ) )
@@ -180,6 +186,18 @@ def _assert_results() -> bool:
 # cleanup
 ########################################################################
 
+def _wait_for_irida_processing() -> None:
+    """
+    Wait for IRIDA's async GzipFileProcessor/FastQC chain to finish
+    processing the uploaded files before deleting test data.
+
+    Without this delay, deleting the sample while IRIDA is still
+    processing causes Hibernate StaleStateException (PR 1506).
+    """
+    print( f"  waiting {TEST_CLEANUP_DELAY_SECONDS}s for IRIDA async processing to finish..." )
+    time.sleep( TEST_CLEANUP_DELAY_SECONDS )
+
+
 def _cleanup_irida() -> None:
     """
     Remove test data from IRIDA: delete uploaded samples from the test
@@ -241,6 +259,8 @@ def _cleanup_local( tmp_base: str ) -> None:
 
 def main() -> int:
 
+    test_start_time:float = time.time()
+
     print( "=" * 72 )
     print( "test_step07: IRIDA upload state machine integration test" )
     print( "=" * 72 )
@@ -272,8 +292,11 @@ def main() -> int:
         print( f"\nEXECUTION FAILED: {type( error ).__name__}: {error}" )
         print( )
         print( "IRIDA cleanup after failure:" )
+        _wait_for_irida_processing()
         _cleanup_irida()
         _cleanup_local( tmp_base )
+        elapsed:float = time.time() - test_start_time
+        print( f"\n  total time: {elapsed:.1f}s" )
         return 1
 
     # ---- assert -------------------------------------------------------
@@ -285,10 +308,13 @@ def main() -> int:
 
     print( )
     print( "IRIDA cleanup:" )
+    _wait_for_irida_processing()
     _cleanup_irida()
     _cleanup_local( tmp_base )
 
     # ---- report -------------------------------------------------------
+
+    elapsed:float = time.time() - test_start_time
 
     print( )
     if passed:
@@ -297,10 +323,11 @@ def main() -> int:
         print( f"  sequencing_run_id:  {demux.irida_sequencing_run_id}" )
         print( f"  uploaded_samples:   {demux.irida_uploaded_samples}" )
         print( f"  local_hashes:       {demux.irida_local_hashes}" )
+        print( f"  total time:         {elapsed:.1f}s" )
         print( "=" * 72 )
         return 0
     else:
-        print( "FAILED: see assertions above" )
+        print( f"FAILED: see assertions above (total time: {elapsed:.1f}s)" )
         return 1
 
 
