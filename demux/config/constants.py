@@ -57,13 +57,13 @@ BW_PORT:int                     = 8087
 
 RUNID_PATTERN                   = re.compile(r'^\d{6}_[A-Z0-9]+_\d{4}_\d{9}-[A-Z0-9]{5}$') # make sure that the RunID we get passed follows a pattern
 
-MISEQ_TAGS                      = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
-NEXTSEQ_TAGS                    = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
+MISEQ_TAGS                      = ['M06578', 'M09180']  # array of serial numbers for miseq. Add serial when we buy or retire a machine, so we canvalidate the run is from our machines.
+NEXTSEQ_TAGS                    = ['NB552450']          # array of serial numbers for nextseq. Add serial when we buy or retire a machine, so we canvalidate the run is from our machines.
 
 VERSION                         = '1.6.1'
 
 IRIDA_TIMEOUT_MULTIPLIER:int    = 10
-IRIDA_MAX_IN_FLIGHT:int         = 4
+IRIDA_MAX_IN_FLIGHT:int         = 4                     # max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair); 4 workers -> 4 POSTs -> 8 files in flight
 IRIDA_RATE_LIMIT_DELAY:float    = 0.5
 
 
