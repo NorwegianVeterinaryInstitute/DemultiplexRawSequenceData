@@ -65,6 +65,7 @@ TEST_R2_FILENAME:str       = "2024_EQA13.Strain0020_R2_001.fastq.gz"
 # seconds to wait before deleting test data from IRIDA
 # IRIDA's async GzipFileProcessor/FastQC chain needs time to finish
 # processing the uploaded file; deleting too fast causes StaleStateException (PR 1506)
+# and FileProcessorTimeoutException (60s internal timeout)
 TEST_CLEANUP_DELAY_SECONDS:int = 90
 
 # paths to the test .fastq.gz files shipped with the repo
@@ -192,10 +193,13 @@ def _wait_for_irida_processing() -> None:
     processing the uploaded files before deleting test data.
 
     Without this delay, deleting the sample while IRIDA is still
-    processing causes Hibernate StaleStateException (PR 1506).
+    processing causes Hibernate StaleStateException (PR 1506)
+    and FileProcessorTimeoutException (60s internal timeout).
     """
-    print( f"  waiting {TEST_CLEANUP_DELAY_SECONDS}s for IRIDA async processing to finish..." )
-    time.sleep( TEST_CLEANUP_DELAY_SECONDS )
+    for remaining in range( TEST_CLEANUP_DELAY_SECONDS, 0, -1 ):
+        print( f"\r  waiting {remaining}s for IRIDA async processing to finish...  ", end = '', flush = True )
+        time.sleep( 1 )
+    print( "\r  IRIDA async processing wait complete.                              " )
 
 
 def _cleanup_irida() -> None:
