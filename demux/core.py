@@ -219,6 +219,7 @@ class demux:
     irida_verify_max_poll_attempts:int         = 10           # how many times to poll for uploadSha256 before giving up
     irida_verify_poll_interval_seconds:int     = 5            # seconds between polls
     irida_max_in_flight:int                    = 2            # max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair), so N workers -> N*2 files in flight
+    irida_upload_batch_stagger_seconds:int     = 0            # seconds to wait between upload batches; 0 = no stagger; tune if IRIDA async processing queue falls behind
     irida_oauth_token:str                      = ""
     irida_tmp_dir_name:str                     = "tmp_irida_upload"
     irida_bw_item_uuid:str                     = "fab1520e-3188-47d3-b1d0-b42400d6ade0"

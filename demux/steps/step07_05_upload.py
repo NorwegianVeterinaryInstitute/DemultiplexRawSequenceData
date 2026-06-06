@@ -2,6 +2,7 @@ import concurrent.futures
 import json
 import os
 import requests
+import time
 
 from demux.config  import constants
 from demux.loggers import demuxLogger, demuxFailureLogger
@@ -20,7 +21,6 @@ def _sanitize_sample_name( sample_name: str ) -> str:
     :example: "2024_EQA13.Strain0020" -> "2024_EQA13_Strain0020"
     """
     return sample_name.translate( str.maketrans( constants.IRIDA_FORBIDDEN_SAMPLE_NAME_CHARS, '_' * len( constants.IRIDA_FORBIDDEN_SAMPLE_NAME_CHARS ) ) )
-
 
 
 ########################################################################
@@ -62,11 +62,15 @@ def _upload_one( demux, current: int, total: int, sample: dict ) -> dict:
 
 def _upload( demux ) -> None:
     """
-    Upload FASTQ pairs to IRIDA with bounded concurrency.
+    Upload FASTQ pairs to IRIDA with bounded concurrency and optional batch stagger.
 
     For each sample in demux.irida_samples:
         1. Check and create the sample in the target project via POST /api/projects/{id}/samples.
         2. Upload the paired-end .fastq.gz files via POST /api/samples/{id}/pairs.
+
+    Samples are submitted in batches of irida_max_in_flight. After each batch completes,
+    irida_upload_batch_stagger_seconds is observed before the next batch is submitted,
+    giving IRIDA's async GzipFileProcessor/FastQC chain time to drain.
 
     :param demux: demux object with irida_samples, irida_base_url, irida_oauth_token,
                   irida_projects_endpoint, irida_samples_endpoint set.
@@ -82,13 +86,23 @@ def _upload( demux ) -> None:
     total:int = len( demux.irida_samples )
 
     # demux.irida_max_in_flight: max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair), so N workers -> N*2 files in flight
-    futures: list = []
+    futures:list = []
     with concurrent.futures.ThreadPoolExecutor( max_workers = demux.irida_max_in_flight ) as pool:
         for current, sample in enumerate( demux.irida_samples, 1 ):
             futures.append( pool.submit( _upload_one, demux, current, total, sample ) )
 
-        for future in concurrent.futures.as_completed( futures ):
-            # re-raises worker exceptions immediately
+            # stagger: after every irida_max_in_flight submissions, wait for the current batch
+            # to finish before submitting the next one, giving IRIDA's async processing queue time to drain
+            if len( futures ) % demux.irida_max_in_flight == 0:
+                for future in concurrent.futures.as_completed( futures[ -demux.irida_max_in_flight: ] ):
+                    demux.irida_uploaded_samples.append( future.result() )
+                if demux.irida_upload_batch_stagger_seconds > 0:
+                    demuxLogger.debug( f"IRIDA upload: staggering {demux.irida_upload_batch_stagger_seconds}s before next batch" )
+                    time.sleep( demux.irida_upload_batch_stagger_seconds )
+
+        # collect any remaining futures (last partial batch)
+        submitted:int = len( demux.irida_uploaded_samples )
+        for future in concurrent.futures.as_completed( futures[ submitted: ] ):
             demux.irida_uploaded_samples.append( future.result() )
 
     demuxLogger.info( f"IRIDA upload: {len( demux.irida_uploaded_samples )}/{total} sample(s) uploaded" )
