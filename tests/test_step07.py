@@ -21,7 +21,7 @@
 #   - test .fastq.gz files exist in tests/
 #
 # Usage:
-#   /usr/bin/python3.11 tests/test_step07.py
+#   /usr/bin/python3.11 tests/test_step07.py (from within the nvi-demux directory)
 #
 # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/27
 #
@@ -138,6 +138,7 @@ def _setup() -> str:
     demux.irida_uploaded_samples     = [ ]
     demux.irida_verification_passed  = False
     demux.irida_run_completed        = False
+    demux.irida_stage_times          = { }
 
     return tmp_base
 
@@ -279,6 +280,8 @@ def main() -> int:
     print( "=" * 72 )
     print( f"  IRIDA project:  {TEST_IRIDA_PROJECT_ID} (ZZTEST_API_DO_NOT_USE)" )
     print( f"  sample count:   {TEST_SAMPLE_COUNT}" )
+    print( f"  max_in_flight:  {demux.irida_max_in_flight} workers ({demux.irida_max_in_flight * 2} files in flight)" )
+    print( f"  batch stagger:  {demux.irida_upload_batch_stagger_seconds}s" )
     print( f"  R1 source:      {TEST_R1}" )
     print( f"  R2 source:      {TEST_R2}" )
     print( )
@@ -334,6 +337,9 @@ def main() -> int:
         print( "=" * 72 )
         print( "PASSED" )
         print( f"  sequencing_run_id:  {demux.irida_sequencing_run_id}" )
+        print( f"  max_in_flight:      {demux.irida_max_in_flight}" )
+        print( f"  batch stagger:      {demux.irida_upload_batch_stagger_seconds}s" )
+        print( f"  stage times:        {demux.irida_stage_times}" )
         print( f"  uploaded_samples:   {demux.irida_uploaded_samples}" )
         print( f"  local_hashes:       {demux.irida_local_hashes}" )
         print( f"  total time:         {elapsed:.1f}s" )
