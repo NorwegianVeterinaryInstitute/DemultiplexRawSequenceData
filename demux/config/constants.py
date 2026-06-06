@@ -62,9 +62,13 @@ NEXTSEQ_TAGS                    = ['NB552450']          # array of serial number
 
 VERSION                         = '1.6.1'
 
-IRIDA_TIMEOUT_MULTIPLIER:int    = 10
-IRIDA_MAX_IN_FLIGHT:int         = 4                     # max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair); 4 workers -> 4 POSTs -> 8 files in flight
-IRIDA_RATE_LIMIT_DELAY:float    = 0.5
+IRIDA_TIMEOUT_MULTIPLIER:int          = 10
+IRIDA_RATE_LIMIT_DELAY:float          = 0.5
+
+# IRIDA sample name validation regex is ^[^\.]*$ but the error message lists more forbidden characters:
+# ? ( ) [ ] / = + < > : ; " ' , * ^ | & .
+IRIDA_FORBIDDEN_SAMPLE_NAME_CHARS:str = '.?()[]/ =+<>:;"\',*^|&'
+
 
 
 HTTP_GET:str                    = "GET"

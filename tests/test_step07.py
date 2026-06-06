@@ -55,12 +55,13 @@ from demux.steps.step07_deliver_files_to_VIGASP import deliver_files_to_VIGASP
 
 # IRIDA test project - DO NOT use production projects
 TEST_IRIDA_PROJECT_ID:int  = 154                       # ZZTEST_API_DO_NOT_USE
-TEST_SAMPLE_NAME:str       = "2024_EQA13.Strain0020"   # must be a substring of the .fastq.gz filenames
+TEST_SAMPLE_NAME:str       = "2024_EQA13.Strain0020"   # base name for synthetic samples
 TEST_PROJECT_NAME:str      = "ZZTEST_PROJECT"
 TEST_RUN_ID:str            = "999999_ZZTEST_0000_000000000-ZZZZZ"
 TEST_RUN_ID_SHORT:str      = "999999_ZZTEST"
 TEST_R1_FILENAME:str       = "2024_EQA13.Strain0020_R1_001.fastq.gz"
 TEST_R2_FILENAME:str       = "2024_EQA13.Strain0020_R2_001.fastq.gz"
+TEST_SAMPLE_COUNT:int      = 20
 
 # seconds to wait before deleting test data from IRIDA
 # IRIDA's async GzipFileProcessor/FastQC chain needs time to finish
@@ -84,6 +85,9 @@ def _setup() -> str:
     produce, copy test .fastq.gz files into it, and configure the demux
     singleton.
 
+    Creates TEST_SAMPLE_COUNT synthetic samples, each with their own
+    R1/R2 file copies named after the synthetic sample name.
+
     :returns: path to the temporary base directory (for cleanup).
     """
 
@@ -98,9 +102,21 @@ def _setup() -> str:
     project_dir:str = os.path.join( tmp_base, f"{TEST_RUN_ID_SHORT}.{TEST_PROJECT_NAME}" )
     os.makedirs( project_dir, mode = stat.S_IRWXU )  # rwx------ (owner only)
 
-    # copy test files into the project directory
-    shutil.copy2( TEST_R1, project_dir )
-    shutil.copy2( TEST_R2, project_dir )
+    # build project_samples_metadata pointing at test project 154
+    demux.project_samples_metadata = defaultdict( dict )
+
+    for i in range( 1, TEST_SAMPLE_COUNT + 1 ):
+        synthetic_name:str    = f"2024_EQA13_Strain0020_T{i:02d}"
+        r1_filename:str       = f"{synthetic_name}_R1_001.fastq.gz"
+        r2_filename:str       = f"{synthetic_name}_R2_001.fastq.gz"
+
+        shutil.copy2( TEST_R1, os.path.join( project_dir, r1_filename ) )
+        shutil.copy2( TEST_R2, os.path.join( project_dir, r2_filename ) )
+
+        demux.project_samples_metadata[ TEST_PROJECT_NAME ][ synthetic_name ] = {
+            'upload_to_vigasp': True,
+            'vigas_project_id': TEST_IRIDA_PROJECT_ID,
+        }
 
     # configure demux singleton
     demux.RunID                    = TEST_RUN_ID
@@ -108,16 +124,6 @@ def _setup() -> str:
     demux.demultiplexRunIDdir      = tmp_base
     demux.n                        = 0
     demux.totalTasks               = 9
-
-    # build project_samples_metadata pointing at test project 154
-    demux.project_samples_metadata = defaultdict( dict )
-    demux.project_samples_metadata[ TEST_PROJECT_NAME ][ TEST_SAMPLE_NAME ] = {
-        'upload_to_vigasp': True,
-        'vigas_project_id': TEST_IRIDA_PROJECT_ID,
-        # mentioned here for completion sake
-        # 'transfer_to_nird': False,
-        # 'nird_location':    '/nird/projects/NS9305K/SEQ-TECH/data_delivery'
-    }
 
     # Reset IRIDA state in case the singleton was touched by a previous run in the same process.
     # Does not happen now (script runs once and exits) but matters if we move to pytest later,
@@ -160,16 +166,19 @@ def _assert_results() -> bool:
         print( "ASSERT FAILED: irida_sequencing_run_id is still 0" )
         passed = False
 
-    if len( demux.irida_uploaded_samples ) != 1:
-        print( f"ASSERT FAILED: expected 1 uploaded sample, got {len( demux.irida_uploaded_samples )}" )
+    if len( demux.irida_uploaded_samples ) != TEST_SAMPLE_COUNT:
+        print( f"ASSERT FAILED: expected {TEST_SAMPLE_COUNT} uploaded samples, got {len( demux.irida_uploaded_samples )}" )
         passed = False
     else:
-        uploaded:dict = demux.irida_uploaded_samples[ 0 ]
-        if uploaded[ 'sample_name' ] != TEST_SAMPLE_NAME:
-            print( f"ASSERT FAILED: expected sample_name '{TEST_SAMPLE_NAME}', got '{uploaded[ 'sample_name' ]}'" )
+        expected_names:set = { f"2024_EQA13_Strain0020_T{i:02d}" for i in range( 1, TEST_SAMPLE_COUNT + 1 ) }
+        uploaded_names:set = { s[ 'sample_name' ] for s in demux.irida_uploaded_samples }
+        missing:set        = expected_names - uploaded_names
+        if missing:
+            print( f"ASSERT FAILED: missing uploaded samples: {sorted( missing )}" )
             passed = False
-        if uploaded[ 'project_id' ] != TEST_IRIDA_PROJECT_ID:
-            print( f"ASSERT FAILED: expected project_id {TEST_IRIDA_PROJECT_ID}, got {uploaded[ 'project_id' ]}" )
+        wrong_project:list = [ s for s in demux.irida_uploaded_samples if s[ 'project_id' ] != TEST_IRIDA_PROJECT_ID ]
+        if wrong_project:
+            print( f"ASSERT FAILED: samples with wrong project_id: {wrong_project}" )
             passed = False
 
     if not demux.irida_oauth_token:
@@ -269,9 +278,9 @@ def main() -> int:
     print( "test_step07: IRIDA upload state machine integration test" )
     print( "=" * 72 )
     print( f"  IRIDA project:  {TEST_IRIDA_PROJECT_ID} (ZZTEST_API_DO_NOT_USE)" )
-    print( f"  sample name:    {TEST_SAMPLE_NAME}" )
-    print( f"  R1:             {TEST_R1}" )
-    print( f"  R2:             {TEST_R2}" )
+    print( f"  sample count:   {TEST_SAMPLE_COUNT}" )
+    print( f"  R1 source:      {TEST_R1}" )
+    print( f"  R2 source:      {TEST_R2}" )
     print( )
 
     # ---- setup --------------------------------------------------------

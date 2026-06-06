@@ -1,3 +1,4 @@
+import concurrent.futures
 import json
 import os
 import requests
@@ -7,14 +8,8 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 
 
 ########################################################################
-# IRIDA sample name validation
+# _sanitize_sample_name
 ########################################################################
-
-# IRIDA sample name validation regex is ^[^\.]*$ but the error message lists more forbidden characters:
-# ? ( ) [ ] / = + < > : ; " ' , * ^ | & .
-# Confirmed from IRIDA source: MethodArgumentNotValidException on RESTProjectSamplesController.addSampleToProject
-IRIDA_FORBIDDEN_SAMPLE_NAME_CHARS:str = '.?()[]/ =+<>:;"\',*^|&'
-
 
 def _sanitize_sample_name( sample_name: str ) -> str:
     """
@@ -22,11 +17,9 @@ def _sanitize_sample_name( sample_name: str ) -> str:
 
     :param sample_name: original sample name (may contain dots, etc).
     :returns: sanitized sample name safe for IRIDA API.
+    :example: "2024_EQA13.Strain0020" -> "2024_EQA13_Strain0020"
     """
-    sanitized:str = sample_name
-    for char in IRIDA_FORBIDDEN_SAMPLE_NAME_CHARS:
-        sanitized = sanitized.replace( char, '_' )
-    return sanitized
+    return sample_name.translate( str.maketrans( constants.IRIDA_FORBIDDEN_SAMPLE_NAME_CHARS, '_' * len( constants.IRIDA_FORBIDDEN_SAMPLE_NAME_CHARS ) ) )
 
 
 
@@ -34,16 +27,46 @@ def _sanitize_sample_name( sample_name: str ) -> str:
 # _upload
 ########################################################################
 
+
+def _upload_one( demux, current: int, total: int, sample: dict ) -> dict:
+    """
+    Upload one sample: check and create sample in IRIDA, then POST the pair.
+
+    Called from ThreadPoolExecutor workers. Each call operates on a
+    distinct sample name so there is no race on _check_and_create_sample.
+
+    :param demux: demux singleton (read-only during upload).
+    :param current: 1-based position for log messages.
+    :param total: total sample count for log messages.
+    :param sample: dict with sample_name, project_id, r1, r2.
+    :returns: uploaded sample record dict.
+    :raises RuntimeError: propagated from _check_and_create_sample or _upload_pair.
+    """
+    # keys populated by _get_vigasp_samples() and _resolve_fastq_paths() in step07_01_preflight
+    sample_name:str = sample[ 'sample_name' ]
+    project_id:int  = sample[ 'project_id' ]
+    r1_path:str     = sample[ 'r1' ]
+    r2_path:str     = sample[ 'r2' ]
+
+    demuxLogger.info( f"IRIDA upload: [{current}/{total}] {sample_name} -> project {project_id}" )
+
+    sample_id:int = _check_and_create_sample( demux, project_id, sample_name )
+    _upload_pair( demux, sample_id, r1_path, r2_path )
+
+    # sample_name = Sample_ID from samplesheet
+    # sample_id   = IRIDA sample ID (returned by _check_and_create_sample)
+    # project_id  = IRIDA project ID from VIGASP_ID column
+    demuxLogger.info( f"IRIDA upload: [{current}/{total}] {sample_name} (sample_id={sample_id}) uploaded" )
+    return { 'sample_name': sample_name, 'sample_id': sample_id, 'project_id': project_id }
+
+
 def _upload( demux ) -> None:
     """
-    Upload FASTQ pairs to IRIDA, one sample at a time.
+    Upload FASTQ pairs to IRIDA with bounded concurrency.
 
     For each sample in demux.irida_samples:
-        1. Create the sample in the target project via POST /api/projects/{id}/samples
-           (if sample does not already exist).
-        2. Upload the paired-end .fastq.gz files via POST /api/samples/{id}/sequenceFiles/pairs.
-
-    One sample at a time. Expand to parallel after testing.
+        1. Check and create the sample in the target project via POST /api/projects/{id}/samples.
+        2. Upload the paired-end .fastq.gz files via POST /api/samples/{id}/pairs.
 
     :param demux: demux object with irida_samples, irida_base_url, irida_oauth_token,
                   irida_projects_endpoint, irida_samples_endpoint set.
@@ -58,39 +81,26 @@ def _upload( demux ) -> None:
 
     total:int = len( demux.irida_samples )
 
-    # enumerate from 1 so log messages show [1/N] instead of [0/N]
-    for current, sample in enumerate( demux.irida_samples, 1 ):
-        # keys populated by _get_vigasp_samples() and _resolve_fastq_paths() in step07_01_preflight
-        sample_name:str = sample[ 'sample_name' ]
-        project_id:int  = sample[ 'project_id' ]
-        r1_path:str     = sample[ 'r1' ]
-        r2_path:str     = sample[ 'r2' ]
+    # demux.irida_max_in_flight: max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair), so N workers -> N*2 files in flight
+    futures: list = []
+    with concurrent.futures.ThreadPoolExecutor( max_workers = demux.irida_max_in_flight ) as pool:
+        for current, sample in enumerate( demux.irida_samples, 1 ):
+            futures.append( pool.submit( _upload_one, demux, current, total, sample ) )
 
-        demuxLogger.info( f"IRIDA upload: [{current}/{total}] {sample_name} -> project {project_id}" )
-
-        # ---- 1. find or create sample in project ----------------------
-        sample_id:int = _find_or_create_sample( demux, project_id, sample_name )
-
-        # ---- 2. POST paired-end files ---------------------------------
-        _upload_pair( demux, sample_id, r1_path, r2_path )
-
-        # sample_name = Sample_ID from samplesheet
-        # sample_id   = IRIDA sample ID (returned by _find_or_create_sample)
-        # project_id  = IRIDA project ID from VIGASP_ID column
-        demux.irida_uploaded_samples.append( { 'sample_name': sample_name, 'sample_id': sample_id, 'project_id': project_id } )
-        demuxLogger.info( f"IRIDA upload: [{current}/{total}] {sample_name} (sample_id={sample_id}) uploaded" )
+        for future in concurrent.futures.as_completed( futures ):
+            # re-raises worker exceptions immediately
+            demux.irida_uploaded_samples.append( future.result() )
 
     demuxLogger.info( f"IRIDA upload: {len( demux.irida_uploaded_samples )}/{total} sample(s) uploaded" )
 
 
-def _find_or_create_sample( demux, project_id: int, sample_name: str ) -> int:
+def _check_and_create_sample( demux, project_id: int, sample_name: str ) -> int:
     """
-    Find sample by name in project. If it does not exist, create it.
+    Check if sample exists in project. If it does not exist, create it.
 
     Sample names are sanitized before IRIDA API calls because IRIDA
     rejects names containing dots and other special characters.
-    Confirmed from IRIDA source: MethodArgumentNotValidException,
-    validation regex ^[^\.]*$
+    Confirmed from IRIDA source: MethodArgumentNotValidException: validation regex is '^[^\.]*$'
 
     Sample uniqueness within a project is application-level only.
     There is no DB constraint on sample name. UniqueConstraint is on
@@ -98,7 +108,7 @@ def _find_or_create_sample( demux, project_id: int, sample_name: str ) -> int:
 
     :param demux: demux object with irida_base_url, irida_oauth_token, irida_projects_endpoint set.
     :param project_id: IRIDA project ID.
-    :param sample_name: sample name to find or create.
+    :param sample_name: sample name to check and create.
     :returns: IRIDA sample ID.
     :raises RuntimeError: if sample creation fails.
     """
@@ -114,7 +124,7 @@ def _find_or_create_sample( demux, project_id: int, sample_name: str ) -> int:
         constants.HTTP_HEADER_ACCEPT: constants.HTTP_CONTENT_TYPE_JSON,
     }
 
-    # ---- try to find existing sample by listing project samples -------
+    # ---- check if sample already exists in project --------------------
 
     list_url:str = f"{demux.irida_base_url}/{demux.irida_projects_endpoint}/{project_id}/{demux.irida_project_samples_subpath}"
 
@@ -128,7 +138,7 @@ def _find_or_create_sample( demux, project_id: int, sample_name: str ) -> int:
     resources:list = body.get( 'resource', { } ).get( 'resources', [ ] )
     for sample_resource in resources:
         if sample_resource.get( 'sampleName' ) == irida_sample_name:
-            demuxLogger.debug( f"IRIDA upload: found existing sample '{irida_sample_name}' with id {sample_resource[ 'identifier' ]}" )
+            demuxLogger.debug( f"IRIDA upload: sample '{irida_sample_name}' already exists with id {sample_resource[ 'identifier' ]}" )
             return int( sample_resource[ 'identifier' ] )
 
     # ---- sample not found; create it ----------------------------------
@@ -168,7 +178,6 @@ def _find_or_create_sample( demux, project_id: int, sample_name: str ) -> int:
 
     demuxLogger.info( f"IRIDA upload: created sample '{irida_sample_name}' with id {sample_id}" )
     return int( sample_id )
-
 
 
 def _upload_pair( demux, sample_id: int, r1_path: str, r2_path: str ) -> dict:
