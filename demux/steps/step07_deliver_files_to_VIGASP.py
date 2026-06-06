@@ -20,14 +20,14 @@
 ########################################################################
 import termcolor
 from demux.loggers import demuxLogger, demuxFailureLogger
+
 from demux.steps.step07_01_preflight       import _preflight
 from demux.steps.step07_02_check_projects  import _check_projects
-from demux.steps.step07_04_hash            import _hash
-from demux.steps.step07_05_create_run      import _create_run
-from demux.steps.step07_06_upload          import _upload
-from demux.steps.step07_08_verify          import _verify
-from demux.steps.step07_09_complete        import _complete
-
+from demux.steps.step07_03_hash            import _hash
+from demux.steps.step07_04_create_run      import _create_run
+from demux.steps.step07_05_upload          import _upload
+from demux.steps.step07_06_verify          import _verify
+from demux.steps.step07_07_complete        import _complete
 
 ########################################################################
 # deliver_files_to_VIGASP
