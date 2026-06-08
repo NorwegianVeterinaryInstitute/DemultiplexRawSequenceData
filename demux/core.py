@@ -404,8 +404,8 @@ class demux:
                 'transfer_to_nird': first_sample[ 'transfer_to_nird' ]
             }
 
-        demux.transfer_to_vigas     = all( entry[ 'transfer_to_vigas' ] for entry in demux.project_samples_metadata[ project ].values( ) ) # all( ) logical ANDs the values
-        demux.transfer_to_nird      = all( entry[ 'transfer_to_nird' ]  for entry in demux.project_samples_metadata[ project ].values( ) )
+        demux.transfer_to_vigas     = any( entry[ 'transfer_to_vigas' ] for samples in demux.project_samples_metadata.values( ) for entry in samples.values( ) ) # any( ) logical ORs the values: upload if at least one sample is marked for VIGASP
+        demux.transfer_to_nird      = any( entry[ 'transfer_to_nird' ]  for samples in demux.project_samples_metadata.values( ) for entry in samples.values( ) ) # any( ) logical ORs the values: upload if at least one sample is marked for NIRD
 
         # locations: set[str] = { entry[ "nird_location" ] for entry in demux.project_samples_metadata[ project ].values( )}
         # if len( locations ) != 1:
