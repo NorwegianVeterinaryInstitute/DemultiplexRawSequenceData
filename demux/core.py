@@ -350,7 +350,7 @@ class demux:
 
 
             project_samples_metadata[ sample.Sample_Project ][ sample.Sample_ID ] = {
-                'transfer_to_vigas': transfer_vigas,
+                'upload_to_vigasp': transfer_vigas,
                 'vigas_project_id': vigasp_id,
                 'transfer_to_nird': transfer_nird,
                 'nird_location': nird_location,
@@ -401,7 +401,7 @@ class demux:
         ##########################################################################################
         for project in demux.project_samples_metadata:
             for sample_id in demux.project_samples_metadata[ project ]:
-                demux.project_samples_metadata[ project ][ sample_id ][ 'transfer_to_vigas' ] = True
+                demux.project_samples_metadata[ project ][ sample_id ][ 'upload_to_vigasp' ] = True
                 demux.project_samples_metadata[ project ][ sample_id ][ 'vigas_project_id' ]  = 154
 
 
@@ -412,7 +412,7 @@ class demux:
                 'transfer_to_nird': first_sample[ 'transfer_to_nird' ]
             }
 
-        demux.transfer_to_vigas     = any( entry[ 'transfer_to_vigas' ] for samples in demux.project_samples_metadata.values( ) for entry in samples.values( ) ) # any( ) logical ORs the values: upload if at least one sample is marked for VIGASP
+        demux.upload_to_vigasp      = any( entry[ 'upload_to_vigasp' ] for samples in demux.project_samples_metadata.values( ) for entry in samples.values( ) ) # any( ) logical ORs the values: upload if at least one sample is marked for VIGASP
         demux.transfer_to_nird      = any( entry[ 'transfer_to_nird' ]  for samples in demux.project_samples_metadata.values( ) for entry in samples.values( ) ) # any( ) logical ORs the values: upload if at least one sample is marked for NIRD
 
         # locations: set[str] = { entry[ "nird_location" ] for entry in demux.project_samples_metadata[ project ].values( )}
