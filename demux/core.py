@@ -396,6 +396,14 @@ class demux:
         demux.tarFilesToTransferList    = demux._create_tar_files_to_transfer_list( demux.newProjectNameList ) # does not create the absolute path.
         demux.project_samples_metadata  = demux._build_project_sample_metadata( sample_sheet ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
 
+        ##########################################################################################
+        # TODO: temporary - replace with real VIGASP_ID from samplesheet once wiring is complete
+        ##########################################################################################
+        for project in demux.project_samples_metadata:
+            for sample_id in demux.project_samples_metadata[ project ]:
+                demux.project_samples_metadata[ project ][ sample_id ][ 'transfer_to_vigas' ] = True
+                demux.project_samples_metadata[ project ][ sample_id ][ 'vigas_project_id' ]  = 154
+
 
         for project, tar_file in zip( demux.projectList, demux.tarFilesToTransferList ):
             # take the project-level value directly from the first sample in that project
