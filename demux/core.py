@@ -214,12 +214,12 @@ class demux:
     vigasp_api_key:str                         = ""           # we need to see how we can limit the damage including this api key can have
     vigasp_copy_mode:str                       = "serial"
     allowed_vigasp_copy_modes:list             = [ "serial", "parallel" ]
-    irida_timeout:int                          = 30           # default timeout for IRIDA API metadata calls
+    irida_timeout:int                          = 60           # default timeout for IRIDA API metadata calls
     irida_upload_timeout:int                   = 300          # 5 minutes; uploading large files to IRIDA on NREC mechanical drives
     irida_verify_max_poll_attempts:int         = 10           # how many times to poll for uploadSha256 before giving up
     irida_verify_poll_interval_seconds:int     = 5            # seconds between polls
     irida_max_in_flight:int                    = 2            # max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair), so N workers -> N*2 files in flight # 2 is the safe default for current VIGASP NREC VM 
-    irida_upload_batch_stagger_seconds:int     = 10           # seconds to wait between upload batches; 0 = no stagger; tune if IRIDA async processing queue falls behind # lowest verify time, consistent pass rate
+    irida_upload_batch_stagger_seconds:int     = 30           # seconds to wait between upload batches; 0 = no stagger; tune if IRIDA async processing queue falls behind # lowest verify time, consistent pass rate
     irida_stage_times:dict                     = { 'preflight': 0.0, 'check_projects': 0.0, 'hash': 0.0, 'create_run': 0.0, 'upload': 0.0, 'verify': 0.0, 'complete': 0.0 } # per-stage wall times in seconds populated by deliver_files_to_VIGASP
     irida_oauth_token:str                      = ""
     irida_tmp_dir_name:str                     = "tmp_irida_upload"
