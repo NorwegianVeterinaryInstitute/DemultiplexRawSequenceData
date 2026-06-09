@@ -24,6 +24,7 @@ import threading
 
 from concurrent.futures   import ThreadPoolExecutor, wait, ALL_COMPLETED
 from collections.abc      import ValuesView
+from typing               import Any
 from scp                  import SCPClient
 
 from demux.util.bitwarden import _get_login_credentials
@@ -54,8 +55,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
         finally:
             channel.close( )
 
-
-    entries: dict_values    = demux.absoluteFilesToTransferList.values( )
+    entries: ValuesView     = demux.absoluteFilesToTransferList.values( )
     current_len: int        = len( file_entry[ 'tar_file_local' ] )
     longest_local_path: int = max( ( len( entry[ 'tar_file_local' ] ) for entry in entries ), default = current_len )
 
@@ -163,7 +163,7 @@ def _resolve_hostname(ip_address: str) -> str:
             hostname        = ip_address
         cache[ ip_address ] = hostname
 
-    return cache[ip_address]
+    return cache[ ip_address ]
 
 
 def progress4(filename, size, sent, peername) -> None:
