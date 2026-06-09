@@ -6,8 +6,8 @@
 # Integration test harness for the NIRD SSH transport and upload (step08).
 #
 # Copies test .fastq.gz files with .tar extension to bypass suffix checks,
-# computes md5 + sha512, runs deliver_files_to_NIRD(), verifies remote
-# hashes match local, then cleans up.
+# computes md5 + sha512, runs the step08 sub-steps directly so cleanup
+# can reuse the existing authenticated transport before teardown.
 #
 # This is an integration test. No mocking - tests against real NIRD SSH,
 # real Bitwarden, real SSH config.
@@ -38,9 +38,12 @@ import time
 
 sys.path.insert( 0, os.path.join( os.path.dirname( __file__ ), '..' ) )
 from demux.core import demux
-from demux.steps.step08_deliver_files_to_NIRD  import deliver_files_to_NIRD
-from demux.steps.step08_03_setup_ssh_connection import _setup_ssh_connection
-from demux.steps.step08_06_tear_down_transport  import _tear_down_transport
+from demux.steps.step08_01_build_absolute_paths        import _build_absolute_paths
+from demux.steps.step08_02_verify_local_files          import _verify_local_files
+from demux.steps.step08_03_setup_ssh_connection        import _setup_ssh_connection
+from demux.steps.step08_04_ensure_remote_run_directory import _ensure_remote_run_directory
+from demux.steps.step08_05_upload_files_to_nird        import _upload_files_to_nird
+from demux.steps.step08_06_tear_down_transport         import _tear_down_transport
 
 ########################################################################
 # test configuration
@@ -95,7 +98,6 @@ def _setup() -> str:
 
         demux.tarFilesToTransferList.append( tar_path )
 
-    # configure demux singleton
     demux.RunID               = TEST_RUN_ID
     demux.runIDShort          = TEST_RUN_ID_SHORT
     demux.forTransferDir      = tmp_base
@@ -115,27 +117,12 @@ def _setup() -> str:
 # cleanup
 ########################################################################
 
-def _cleanup_local( tmp_base:str ) -> None:
-    if tmp_base and os.path.isdir( tmp_base ):
-        shutil.rmtree( tmp_base )
-        print( f"  cleaned up local temp directory: {tmp_base}" )
-
-
-def _cleanup_remote() -> None:
+def _cleanup_remote_via_existing_transport() -> None:
     """
-    Open a fresh SSH connection and delete all remote test files and directory.
-    Only called on successful test run. Best-effort: prints warnings on failure.
+    Delete remote test files and directory using the existing authenticated
+    transport - called before _tear_down_transport so no re-auth is needed.
+    Best-effort: prints warnings on failure.
     """
-
-    demux.transport       = None
-    demux.transport_stack = [ ]
-
-    try:
-        _setup_ssh_connection( demux )
-    except Exception as error:
-        print( f"  WARNING: remote cleanup SSH connection failed: {error}" )
-        return
-
     remote_dir:str = os.path.join( demux.nird_base_upload_path_ssh, TEST_RUN_ID )
 
     try:
@@ -155,11 +142,12 @@ def _cleanup_remote() -> None:
         sftp.close()
     except Exception as error:
         print( f"  WARNING: remote cleanup failed: {error}" )
-    finally:
-        try:
-            _tear_down_transport( demux )
-        except Exception:
-            pass
+
+
+def _cleanup_local( tmp_base:str ) -> None:
+    if tmp_base and os.path.isdir( tmp_base ):
+        shutil.rmtree( tmp_base )
+        print( f"  cleaned up local temp directory: {tmp_base}" )
 
 
 ########################################################################
@@ -190,23 +178,29 @@ def main() -> int:
         return 1
 
     print( )
-    print( "running deliver_files_to_NIRD()..." )
-    print( )
 
     passed:bool = False
     try:
-        deliver_files_to_NIRD( demux )
+        _build_absolute_paths( demux )
+        _verify_local_files( demux )
+        _setup_ssh_connection( demux )
+        _ensure_remote_run_directory( demux )
+        _upload_files_to_nird( demux )
         passed = True
     except Exception as error:
         print( f"\nEXECUTION FAILED: {type( error ).__name__}: {error}" )
-
-    print( )
-    print( "cleanup:" )
-    if passed:
-        _cleanup_remote()
-    else:
-        print( "  remote cleanup skipped: upload failed - verify remote state manually before deleting" )
-    _cleanup_local( tmp_base )
+    finally:
+        print( )
+        print( "cleanup:" )
+        if passed:
+            _cleanup_remote_via_existing_transport()
+        else:
+            print( "  remote cleanup skipped: upload failed - verify remote state manually before deleting" )
+        try:
+            _tear_down_transport( demux )
+        except Exception:
+            pass
+        _cleanup_local( tmp_base )
 
     elapsed:float = time.time() - test_start_time
 
