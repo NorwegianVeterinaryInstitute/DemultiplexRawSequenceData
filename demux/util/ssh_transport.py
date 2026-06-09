@@ -366,7 +366,7 @@ def _auth_transport_ssh_keys( hop: paramiko.config.SSHConfig, transport: paramik
     if authenticated_via_agent:
         return
 
-    _auth_via_private_key( transport, username, private_key )                                     # try to auth via key on disk
+    #_auth_via_private_key( transport, username, private_key )                                     # try to auth via key on disk
     
     if not transport.is_authenticated( ):
         raise paramiko.AuthenticationException( f"Authentication attempt using {identityfile} returned without success." )
