@@ -1,4 +1,17 @@
 #
+# step08_05_upload_files_to_nird.py
+#
+# Upload tar files and their checksums to NIRD via SCP over an
+# authenticated SSH transport, or via a locally mounted sshfs path.
+# Verifies remote file integrity by comparing remote MD5 and SHA-512
+# hashes against local checksum files after each upload.
+#
+# https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/27
+#
+# Copyright: The Norwegian Veterinary Institute
+# Licenced under the GNU Public License 3.0 or newer
+#
+########################################################################
 
 import hashlib
 import os
@@ -11,6 +24,7 @@ import threading
 
 from concurrent.futures   import ThreadPoolExecutor, wait, ALL_COMPLETED
 from collections.abc      import ValuesView
+from typing               import Any
 from scp                  import SCPClient
 
 from demux.util.bitwarden import _get_login_credentials
@@ -41,8 +55,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
         finally:
             channel.close( )
 
-
-    entries: dict_values    = demux.absoluteFilesToTransferList.values( )
+    entries: ValuesView     = demux.absoluteFilesToTransferList.values( )
     current_len: int        = len( file_entry[ 'tar_file_local' ] )
     longest_local_path: int = max( ( len( entry[ 'tar_file_local' ] ) for entry in entries ), default = current_len )
 
@@ -100,7 +113,6 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
         message += f"REMOTE MD5: {md5_file_remote} | {file_entry[ 'md5_file_remote' ]}\n"
         message += "Please check both files, delete/move as appropriate and try uploading again."
         demuxLogger.critical( message )
-        # raise RemoteHashMismatchError( message ) https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
         raise RuntimeError( message )
 
     if sha512_file_local != sha512_file_remote:
@@ -109,7 +121,6 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
         message += f"REMOTE SHA512: {sha512_file_remote} | {file_entry[ 'sha512_file_remote' ]}\n"
         message += "Please check both files, delete/move as appropriate and try uploading again."
         demuxLogger.critical( message )
-        # raise RemoteHashMismatchError( message ) https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
         raise RuntimeError( message )
 
     demuxLogger.info( f"Done: LOCAL:{file_entry[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{demux.hostname}:{file_entry[ 'tar_file_remote' ]}" )
@@ -152,7 +163,8 @@ def _resolve_hostname(ip_address: str) -> str:
             hostname        = ip_address
         cache[ ip_address ] = hostname
 
-    return cache[ip_address]
+    return cache[ ip_address ]
+
 
 def progress4(filename, size, sent, peername) -> None:
     """
@@ -166,8 +178,9 @@ def progress4(filename, size, sent, peername) -> None:
 
     Prints percentage completion with peer address to stdout.
     """
-    hostname: str =  _resolve_hostname( peername[ 0 ] )
+    hostname: str = _resolve_hostname( peername[ 0 ] )
     sys.stdout.write("(%s:%s) %s progress: %.2f%%   \r" % ( hostname, peername[ 1 ], filename, float( sent )/float( size )*100 ) )
+
 
 def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     """
@@ -178,44 +191,42 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
 
     Returns None on success.
 
-    Raises RuntimeError if remote file exists or if the files passed are not in absolute format
+    Raises RuntimeError if remote file exists or if the files passed are not in absolute format.
     """
- 
+
     for key in ( "tar_file_remote", "md5_file_remote", "sha512_file_remote" ):
         if not os.path.isabs( file_entry[ key ] ):
             raise RuntimeError( f"Remote path is not absolute: {file_entry[ key ]}" )
 
-    tar_file: str = file_entry[ 'tar_file_local' ]
-    demuxLogger.info( f"Transferring: {tar_file}" ) # mention which local tar file we are uploading
+    tar_file_local: str  = file_entry[ 'tar_file_local' ]
+    tar_file_remote: str = file_entry[ 'tar_file_remote' ]
+    demuxLogger.info( f"Transferring: {tar_file_local}" )
 
-    # Find the longest string in demux.absoluteFilesToTransferList and tabulate for that
-    items = demux.absoluteFilesToTransferList.values( )
-    current_len = len( demux.absoluteFilesToTransferList[tar_file][ 'tar_file_local' ] )
-    longest_local_path = max( (len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
+    items              = demux.absoluteFilesToTransferList.values( )
+    current_len        = len( tar_file_local )
+    longest_local_path = max( ( len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
 
     try:
         sftp_client: paramiko.SFTPClient = paramiko.SFTPClient.from_transport( demux.transport )
         try:
-            sftp_client.stat( file_entry[ "tar_file_remote" ] )
+            sftp_client.stat( tar_file_remote )
         except FileNotFoundError:
             pass
         else:
-            message = f"RuntimeError: Remote file already exists: {demux.hostname}:{file_entry[ 'tar_file_remote' ]}"
+            message = f"RuntimeError: Remote file already exists: {demux.hostname}:{tar_file_remote}"
             message += "Refusing to overwrite. Delete/move remote file first and then try to upload again."
             demuxLogger.critical( message )
-            raise RuntimeError( message)
+            raise RuntimeError( message )
     finally:
         try:
             sftp_client.close( )
         except Exception:
             pass
 
-    # scp_client = SCPClient( transport )
-    # scp_client = SCPClient( transport, progress = progress )
     scp_client = SCPClient( demux.transport, progress4 = progress4 )
 
-    try: 
-        scp_client.put( file_entry[ "tar_file_local" ],    file_entry[ "tar_file_remote" ] )
+    try:
+        scp_client.put( file_entry[ "tar_file_local" ],    tar_file_remote )
         scp_client.put( file_entry[ "md5_file_local" ],    file_entry[ "md5_file_remote" ] )
         scp_client.put( file_entry[ "sha512_file_local" ], file_entry[ "sha512_file_remote" ] )
     except scp.SCPException as error:
@@ -225,9 +236,7 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     finally:
         scp_client.close( )
 
-    demuxLogger.info( f"Done: LOCAL:{tar_file:<{longest_local_path}} REMOTE:{demux.hostname}:{tar_file}" )
-
-
+    demuxLogger.info( f"Done: LOCAL:{tar_file_local:<{longest_local_path}} REMOTE:{demux.hostname}:{tar_file_remote}" )
 
 
 def _upload_and_verify_file_via_ssh( demux, tar_file: str ) -> None:
@@ -244,9 +253,7 @@ def _upload_and_verify_file_via_ssh( demux, tar_file: str ) -> None:
     tar_file_entry = demux.absoluteFilesToTransferList[ tar_file ]
 
     _upload_tar_via_scp( demux, tar_file_entry )
-    _verify_remote_hashes_against_local_files( demux, tar_file_entry  )
-
-
+    _verify_remote_hashes_against_local_files( demux, tar_file_entry )
 
 
 def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
@@ -254,49 +261,45 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
     Upload and verify a single local tar file to NIRD via an already-mounted sshfs path.
     """
     file_info          = demux.absoluteFilesToTransferList[ tar_file ]
-    # Find the longest string in demux.absoluteFilesToTransferList and tabulate for that
-    items = demux.absoluteFilesToTransferList.values( )
-    current_len = len( demux.absoluteFilesToTransferList[tar_file][ 'tar_file_local' ] )
-    longest_local_path = max( (len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
+    items              = demux.absoluteFilesToTransferList.values( )
+    current_len        = len( demux.absoluteFilesToTransferList[ tar_file ][ 'tar_file_local' ] )
+    longest_local_path = max( ( len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
 
     if os.path.exists( file_info[ 'tar_file_remote' ] ):
         message = f"RuntimeError: Remote file already exists: {file_info[ 'tar_file_remote' ]}"
-        message += "Refusing to overwrite. Delete/move remote file first and then try to upload again." 
+        message += "Refusing to overwrite. Delete/move remote file first and then try to upload again."
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
     try:
-        shutil.copy2( file_info[ 'tar_file_local' ], file_info[ 'tar_file_remote' ] )  # requires import shutil
+        shutil.copy2( file_info[ 'tar_file_local' ], file_info[ 'tar_file_remote' ] )
 
-
-        # read and calculate all hashfiles
-        with open( file_info[ 'md5_file_local' ],  READ_ONLY_TEXT   ) as md5_handle_local:
+        with open( file_info[ 'md5_file_local' ],    constants.READ_ONLY_TEXT   ) as md5_handle_local:
             md5_file_local     = md5_handle_local.read( ).split( )[ 0 ]
-        with open(file_info[ 'sha512_file_local' ], READ_ONLY_TEXT    ) as sha512_handle_local:
-            sha512_file_local  = sha512_handle_local.read().split( )[ 0 ]
-        with open( file_info[ 'tar_file_remote' ], READ_ONLY_BINARY ) as md5_handle_remote:
-            md5_file_remote    = hashlib.file_digest( md5_handle_remote, hashlib.md5 ).hexdigest( )
-        with open( file_info[ 'tar_file_remote' ], READ_ONLY_BINARY ) as sha512_handle_remote:
+        with open( file_info[ 'sha512_file_local' ], constants.READ_ONLY_TEXT   ) as sha512_handle_local:
+            sha512_file_local  = sha512_handle_local.read( ).split( )[ 0 ]
+        with open( file_info[ 'tar_file_remote' ],   constants.READ_ONLY_BINARY ) as md5_handle_remote:
+            md5_file_remote    = hashlib.file_digest( md5_handle_remote,    hashlib.md5    ).hexdigest( )
+        with open( file_info[ 'tar_file_remote' ],   constants.READ_ONLY_BINARY ) as sha512_handle_remote:
             sha512_file_remote = hashlib.file_digest( sha512_handle_remote, hashlib.sha512 ).hexdigest( )
 
         if md5_file_local != md5_file_remote:
-            message = ( f"Error: Local md5 differs from calculated remote md5:\n"                                               +
-                        f"LOCAL MD5:  {md5_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_local' ]}\n"  +
-                        f"REMOTE MD5: {md5_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'md5_file_remote' ]}"   +
-                        f"Please check both files, delete/move as appropriate and try uploading again."
-                    )
-            demuxLogger.critical( message )
-            raise RuntimeError( message )
-        if sha512_file_local != sha512_file_remote:
-            message = ( f"Error: Local sha512 differs from calculated remote sha512:"                                                   +
-                        f"LOCAL SHA512:  {sha512_file_local}  | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_local' ]}"   +
-                        f"REMOTE SHA512: {sha512_file_remote} | {demux.absoluteFilesToTransferList[tar_file][ 'sha512_file_remote' ]}"  + 
-                        f"Please check both files, delete/move as appropriate and try uploading again."
-                    )
+            message = ( f"Error: Local md5 differs from calculated remote md5:\n"
+                        f"LOCAL MD5:  {md5_file_local}  | {file_info[ 'md5_file_local' ]}\n"
+                        f"REMOTE MD5: {md5_file_remote} | {file_info[ 'md5_file_remote' ]}\n"
+                        f"Please check both files, delete/move as appropriate and try uploading again." )
             demuxLogger.critical( message )
             raise RuntimeError( message )
 
-        shutil.copy2( file_info[ 'md5_file_local' ], file_info[ 'md5_file_remote' ] )
+        if sha512_file_local != sha512_file_remote:
+            message = ( f"Error: Local sha512 differs from calculated remote sha512:\n"
+                        f"LOCAL SHA512:  {sha512_file_local}  | {file_info[ 'sha512_file_local' ]}\n"
+                        f"REMOTE SHA512: {sha512_file_remote} | {file_info[ 'sha512_file_remote' ]}\n"
+                        f"Please check both files, delete/move as appropriate and try uploading again." )
+            demuxLogger.critical( message )
+            raise RuntimeError( message )
+
+        shutil.copy2( file_info[ 'md5_file_local' ],    file_info[ 'md5_file_remote' ] )
         shutil.copy2( file_info[ 'sha512_file_local' ], file_info[ 'sha512_file_remote' ] )
 
         demuxLogger.info( f"Done: LOCAL:{file_info[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{file_info[ 'tar_file_remote' ]}" )
@@ -305,8 +308,6 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
         message = f"RuntimeError: local sshfs upload failed for {file_info[ 'tar_file_remote' ]}: {error}"
         demuxLogger.critical( message )
         raise RuntimeError( message )
-
-
 
 
 def _upload_files_to_nird( demux ) -> None:
@@ -319,15 +320,13 @@ def _upload_files_to_nird( demux ) -> None:
     Parallel mode submits one future per tar, blocks until ALL_COMPLETE,
     collects per-tar exceptions (including EOFError from transport drops),
     and raises a single RuntimeError after synchronization if any upload failed.
-
     """
 
     if len( demux.tarFilesToTransferList ) == 0:
-        message = f"Length of demux.tarFilesToTransferList is zero while copying." # check if we got passed garbage
+        message = f"Length of demux.tarFilesToTransferList is zero while copying."
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    # choose upload implementation
     if constants.NIRD_MODE_SSH       == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_ssh
     elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
@@ -339,7 +338,6 @@ def _upload_files_to_nird( demux ) -> None:
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    # serial / parallel copying switching
     if constants.SERIAL_COPYING == demux.nird_copy_mode:
         demuxLogger.info( "Serial copying enabled." )
         for tar_file in demux.tarFilesToTransferList:
@@ -355,7 +353,7 @@ def _upload_files_to_nird( demux ) -> None:
                 future: Any = pool.submit( upload_func, demux, tar_file )
                 future_to_tar[ future ] = tar_file
 
-            done, not_done = wait( list( future_to_tar.keys( ) ), return_when = ALL_COMPLETED ) # we are blocking till all files are uploaded
+            done, not_done = wait( list( future_to_tar.keys( ) ), return_when = ALL_COMPLETED )
             errors: list[ BaseException ] = [ ]
 
             for future in done:

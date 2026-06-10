@@ -175,108 +175,144 @@ def _parse_ssh_config( demux ) -> List[ paramiko.config.SSHConfig ]:
 
 def _validate_hostkey( hop: paramiko.config.SSHConfig, transport: paramiko.Transport, *, timeout: float = 30 ):
     """
-    Validate the remote server host key for an already-created SSH Transport.
+    @in_use by step08_03_setup_ssh_connection.py:_setup_ssh_connection
+    Validate the remote host key for a single SSH hop against the user's known_hosts file.
 
-    Performs strict known_hosts verification (RejectPolicy semantics) without opening
-    or authenticating the transport.
-    Looks up host keys by hostname and by [host]:port for non-22 ports.
+    Reads the known_hosts file associated with the hop's UserKnownHostsFile entry,
+    loads all host keys and compares the transport's remote host key against them.
+    Raises an SSHException if the key is not found or does not match.
 
-    Raise:
-        RuntimeError if the host key is missing or does not exactly match; no
-        accepting any non-known ssh keys, that is the job of the infra team to
-        deal with
+    Args:
+        hop: Paramiko SSHConfig entry for the hop (must contain 'hostname' and optionally
+             'userknownhostsfile').
+        transport: Active Paramiko Transport whose server key will be validated.
+        timeout: Currently unused; reserved for future socket-level timeout enforcement.
+
+    Raises:
+        FileNotFoundError: If no known_hosts file is found for the hop.
+        SSHException: If the remote host key does not match any entry in known_hosts.
     """
 
-    hostname = hop.get( 'hostname' )
-    port     = hop.get( 'port' )
+    hostname: str = hop.get( "hostname" )
 
-    # Validate host key against known_hosts (RejectPolicy equivalent)
-    host_keys = paramiko.HostKeys( )
-    known_hosts_path = os.path.abspath( os.path.expanduser( constants.USER_SSH_KNOWN_HOSTS_PATH ) )
-    if os.path.exists( known_hosts_path ):
-        host_keys.load( known_hosts_path )
+    known_hosts_paths: list[ str ] = [ ]
+    user_known_hosts = hop.get( "userknownhostsfile" )
 
-    remote_key = transport.get_remote_server_key( )
+    if isinstance( user_known_hosts, list ):
+        known_hosts_paths = [ os.path.expanduser( p ) for p in user_known_hosts ]
+    elif isinstance( user_known_hosts, str ):
+        known_hosts_paths = [ os.path.expanduser( user_known_hosts ) ]
+    else:
+        known_hosts_paths = [ os.path.expanduser( "~/.ssh/known_hosts" ) ]
 
-    host_key_entry = host_keys.lookup( hostname )
+    existing_paths: list[ str ] = [ p for p in known_hosts_paths if os.path.isfile( p ) ]
+    if not existing_paths:
+        raise FileNotFoundError( f"No known_hosts file found for hop {hostname}: tried {known_hosts_paths}" )
 
-    if host_key_entry is None:
-        message = f"RuntimeError: Host key for {hostname}:{port} not found in {known_hosts_path}. Refusing connection."
-        demuxLogger.critical( message )
-        raise RuntimeError( message )
+    remote_key: paramiko.PKey = transport.get_remote_server_key( )
 
-    accepted = False
-    for key_type, known_key in host_key_entry.items( ):
-        if ( key_type == remote_key.get_name( ) ) and ( known_key == remote_key ):
-            accepted = True
-            break
+    host_keys: paramiko.HostKeys = paramiko.HostKeys( )
+    for path in existing_paths:
+        host_keys.load( path )
 
-    if not accepted:
-        message = f"RuntimeError: Host key mismatch for {hostname}:{port}. Refusing connection."
-        demuxLogger.critical( message )
-        raise RuntimeError( message ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/150
+    known_for_host: paramiko.HostKeys.SubDict = host_keys.lookup( hostname )
+    if not known_for_host:
+        raise paramiko.SSHException( f"No host key found for {hostname} in {existing_paths}" )
+
+    key_type: str        = remote_key.get_name( )
+    expected_key         = known_for_host.get( key_type )
+    if expected_key is None:
+        raise paramiko.SSHException( f"No {key_type} key for {hostname} in known_hosts; found types: {list( known_for_host.keys( ) )}" )
+    if expected_key != remote_key:
+        raise paramiko.SSHException( f"Host key mismatch for {hostname}: known_hosts has {expected_key.get_base64( )[:20]}..., got {remote_key.get_base64( )[:20]}..." )
+
+    demuxLogger.debug( f"Host key verified for {hostname}" )
 
 
-def _load_private_key( identity_file_path: str, passphrase: Optional[ str ] ) -> paramiko.PKey:
+
+def _load_private_key( identityfile: str, *, passphrase: str = "" ) -> paramiko.PKey:
     """
-    Load an SSH private key from disk, expanding "~" and resolving to an absolute path.
+    Load a private key from disk, trying all supported key types in order.
 
-    Attempts all supported Paramiko key formats in sequence (RSA, Ed25519, ECDSA, DSS).
-    If the key is encrypted and no passphrase is provided, a PasswordRequiredException
-    is raised during loading attempts.
+    Attempts Ed25519 first (most common for modern NVI keys), then RSA, ECDSA,
+    and DSS. Returns the first key that loads successfully.
 
-    On failure (missing file, unreadable key, unsupported format), raises RuntimeError
-    chained to the last encountered exception.
+    Args:
+        identityfile: Absolute path to the private key file.
+        passphrase:   Optional passphrase for encrypted keys.
+
+    Returns:
+        A loaded paramiko.PKey instance.
+
+    Raises:
+        paramiko.SSHException: If no supported key type matches the file.
+        paramiko.PasswordRequiredException: If the key is encrypted and no passphrase is given.
     """
 
-    expanded_path: str = os.path.abspath( os.path.expanduser( identity_file_path ) )
-    last_error: Optional[ BaseException ] = None
+    pkey_password: bytes | None = passphrase.encode( ) if passphrase else None
 
-    for key_loader in ( paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey ):
+    for key_class in ( paramiko.Ed25519Key, paramiko.RSAKey, paramiko.ECDSAKey, paramiko.DSSKey ):
         try:
-            return key_loader.from_private_key_file( expanded_path, password = passphrase )
-        except ( paramiko.SSHException, FileNotFoundError, paramiko.ssh_exception.PasswordRequiredException ) as error:
-            last_error = error
+            return key_class.from_private_key_file( identityfile, password = pkey_password )
+        except paramiko.SSHException:
+            continue
+        except Exception:
+            continue
 
-    raise RuntimeError( f"Could not load private key: {expanded_path}" ) from last_error
+    raise paramiko.SSHException( f"Could not load private key from {identityfile}: no supported key type matched." )
 
 
 
 def _auth_via_agent( transport: paramiko.Transport, username: str, identityfile_pub: str ) -> bool:
     """
-    Authenticate an active Paramiko Transport using a specific ssh-agent key.
+    Attempt public key authentication using a key already loaded in the SSH agent.
 
-    The function computes the SHA256 fingerprint of the public key, searches the
-    local ssh-agent for a matching key and attempts public-key authentication with
-    that agent-held key only.
+    Computes the SHA-256 fingerprint of the on-disk public key file and matches it
+    against keys available in the running SSH agent. If a matching key is found,
+    presents it to the remote server via the transport.
 
-    Raises paramiko.AuthenticationException if the key is not present in the agent,
-    if the server rejects the key or if authentication completes without success.
-    Propagates OSError on transport-level failures.
+    Args:
+        transport:        An active, unauthenticated Paramiko Transport.
+        username:         The SSH username to authenticate as.
+        identityfile_pub: Absolute path to the public key file (.pub) corresponding
+                          to the desired identity.
+
+    Returns:
+        True if authentication succeeded via the agent key.
+        False if the matching key was not found in the agent (caller should fall back
+        to disk key).
+
+    Raises:
+        FileNotFoundError: If identityfile_pub does not exist.
+        paramiko.AuthenticationException: If the agent key was found but rejected by
+                                          the server.
+        OSError: On transport-level errors during authentication.
     """
 
-    public_key_line: str  = open( identityfile_pub, "rt", encoding="utf-8" ).read( ).strip( )
-    parts: list[str] = public_key_line.split( )
-    if len( parts ) < 2:
-        raise ValueError( f"Malformed public key file: '{identityfile_pub}'" )
-    public_key_b64: str = parts[ 1 ]
-    expected_blob: bytes  = base64.b64decode( public_key_b64 )
-    expected_fp: str      = base64.b64encode( hashlib.sha256( expected_blob ).digest( ) ).decode( "utf-8" )
-    agent: paramiko.Agent = paramiko.Agent( ) # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/154
+    if not os.path.isfile( identityfile_pub ):
+        raise FileNotFoundError( f"Public key file not found: {identityfile_pub}" )
 
-    # iterate through keys in memory, stop on match
-    for agent_key in agent.get_keys( ):
-        agent_fp: str = base64.b64encode( hashlib.sha256( agent_key.asbytes( ) ).digest( ) ).decode( "utf-8" )
+    with open( identityfile_pub, constants.READ_ONLY_TEXT ) as fh:
+        pub_line: str        = fh.read( ).split( )
+        pub_b64: str         = pub_line[ 1 ] if len( pub_line ) >= 2 else ""
+    pub_bytes: bytes         = base64.b64decode( pub_b64 )
+    disk_fingerprint: str    = hashlib.sha256( pub_bytes ).digest( ).hex( )
 
-        # filter only the key we have
-        if agent_fp != expected_fp: continue;
+    agent: paramiko.Agent    = paramiko.Agent( )
+    agent_keys               = agent.get_keys( )
 
+    for agent_key in agent_keys:
+        agent_fingerprint: str = hashlib.sha256( agent_key.asbytes( ) ).digest( ).hex( )
+        if agent_fingerprint != disk_fingerprint:
+            continue
+
+        # matching key found in agent - attempt authentication
         try:
             transport.auth_publickey( username, agent_key )
-        except paramiko.AuthenticationException as error:
-            raise paramiko.AuthenticationException("ssh-agent key matched by fingerprint but authentication was rejected by the server.") from error
+        except paramiko.AuthenticationException:
+            raise
         except OSError as exception:
-            if not transport.is_active( ):
+            if getattr( exception, "errno", None ) == 9:
                 raise OSError( 9, "Peer closed the connection" ) from exception
             raise # raise the original error, in case something comes up we have not anticipated
 
@@ -323,6 +359,36 @@ def _validate_ssh_key_auth_inputs( hop: paramiko.config.SSHConfig ) -> tuple[str
     return username, hostname, identityfile
 
 
+def _auth_via_private_key( transport: paramiko.Transport, username: str, private_key: paramiko.PKey ) -> None:
+    """
+    Authenticate an existing SSH transport using a private key loaded from disk.
+
+    Called as fallback when the matching key is not present in the SSH agent.
+    Presents the pre-loaded key directly to the server via the transport.
+
+    Args:
+        transport:   An active, unauthenticated Paramiko Transport.
+        username:    The SSH username to authenticate as.
+        private_key: A loaded paramiko.PKey instance (from _load_private_key).
+
+    Raises:
+        paramiko.AuthenticationException: If the server rejects the key.
+        OSError: On transport-level errors during authentication.
+    """
+
+    try:
+        transport.auth_publickey( username, private_key )
+    except paramiko.AuthenticationException:
+        raise
+    except OSError as exception:
+        if getattr( exception, "errno", None ) == 9:
+            raise OSError( 9, "Peer closed the connection" ) from exception
+        raise
+
+    if not transport.is_authenticated( ):
+        raise paramiko.AuthenticationException( f"Private key authentication returned without success for {username}." )
+
+
 def _auth_transport_ssh_keys( hop: paramiko.config.SSHConfig, transport: paramiko.Transport  ) -> None:
     """
     Authenticate an existing SSH Transport using public key credentials.
@@ -367,7 +433,7 @@ def _auth_transport_ssh_keys( hop: paramiko.config.SSHConfig, transport: paramik
         return
 
     _auth_via_private_key( transport, username, private_key )                                     # try to auth via key on disk
-    
+
     if not transport.is_authenticated( ):
         raise paramiko.AuthenticationException( f"Authentication attempt using {identityfile} returned without success." )
 
@@ -571,4 +637,3 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
         raise RuntimeError( f"SSH transport inactive after handshake at hop {hostname}" )
 
     return next_transport
-

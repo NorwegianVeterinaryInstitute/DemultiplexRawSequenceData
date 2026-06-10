@@ -22,6 +22,7 @@ CSV_SUFFIX:str              = ".csv"
 QC_SUFFIX:str               = "_qc"
 DEMULTIPLEX_DIR_SUFFIX:str  = "_demultiplex"
 ZIP_SUFFIX:str              = '.zip'
+GZ_SUFFIX:str               = ".gz"
 COMPRESSED_FASTQ_SUFFIX:str = '.fastq.gz' 
 TAR_SUFFIX:str              = '.tar'
 
@@ -42,18 +43,42 @@ BITWARDEN_CLI_PATH:str      = "/usr/local/bin/bw"
 
 READ_ONLY_BINARY:str        = "rb"
 READ_ONLY_TEXT:str          = "r"
+WRITE_ONLY_BINARY:str       = "wb"
+HASH_CHUNK_SIZE:int         = 65536  # 64 KiB
 
+CRLF:bytes                  = b'\r\n'
 
 USER_SSH_CONFIG_PATH: str       = "~/.ssh/config"
 USER_SSH_KNOWN_HOSTS_PATH: str  = "~/.ssh/known_hosts"
 
-BW_IP                       = '127.0.0.1'
-BW_BASE_URL: str            = f'http://{BW_IP}'
-BW_PORT:int                 = 8087
+BW_IP                           = '127.0.0.1'
+BW_BASE_URL: str                = f'http://{BW_IP}'
+BW_PORT:int                     = 8087
 
-RUNID_PATTERN               = re.compile(r'^\d{6}_[A-Z0-9]+_\d{4}_\d{9}-[A-Z0-9]{5}$') # make sure that the RunID we get passed follows a pattern
+RUNID_PATTERN                   = re.compile(r'^\d{6}_[A-Z0-9]+_\d{4}_\d{9}-[A-Z0-9]{5}$') # make sure that the RunID we get passed follows a pattern
 
-MISEQ_TAGS                  = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
-NEXTSEQ_TAGS                = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
+MISEQ_TAGS                      = ['M06578', 'M09180']  # array of serial numbers for miseq. Add serial when we buy or retire a machine, so we canvalidate the run is from our machines.
+NEXTSEQ_TAGS                    = ['NB552450']          # array of serial numbers for nextseq. Add serial when we buy or retire a machine, so we canvalidate the run is from our machines.
 
-VERSION                     = '1.6.1'
+VERSION                         = '1.6.1'
+
+IRIDA_TIMEOUT_MULTIPLIER:int          = 10
+IRIDA_RATE_LIMIT_DELAY:float          = 0.5
+
+# IRIDA sample name validation regex is ^[^\.]*$ but the error message lists more forbidden characters:
+# ? ( ) [ ] / = + < > : ; " ' , * ^ | & .
+IRIDA_FORBIDDEN_SAMPLE_NAME_CHARS:str = '.?()[]/ =+<>:;"\',*^|&'
+
+
+
+HTTP_GET:str                    = "GET"
+HTTP_POST:str                   = "POST"
+HTTP_PATCH:str                  = "PATCH"
+HTTP_DELETE:str                 = "DELETE"
+
+HTTP_HEADER_AUTHORIZATION:str   = "Authorization"
+HTTP_HEADER_ACCEPT:str          = "Accept"
+HTTP_HEADER_CONTENT_TYPE:str    = "Content-Type"
+HTTP_CONTENT_TYPE_JSON:str      = "application/json"
+HTTP_CONTENT_TYPE_GZIP:str      = "application/gzip"
+HTTP_BEARER_PREFIX:str          = "Bearer"
