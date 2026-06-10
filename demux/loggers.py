@@ -20,8 +20,9 @@ demuxFailureLogger = None
 
 def set_loggers( main_logger, failure_logger ):
     global demuxLogger, demuxFailureLogger
-    demuxLogger = main_logger
-    demuxFailureLogger = failure_logger
+    demuxLogger           = main_logger
+    demuxFailureLogger    = failure_logger
+    demuxLogger.propagate = False
 
 
 ########################################################################
