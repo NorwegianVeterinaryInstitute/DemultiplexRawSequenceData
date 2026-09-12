@@ -397,12 +397,15 @@ class demux:
         demux.project_samples_metadata  = demux._build_project_sample_metadata( sample_sheet ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
 
         ##########################################################################################
-        # TODO: temporary - replace with real VIGASP_ID from samplesheet once wiring is complete
+        # Development-only override, disabled 2026-09-12 for the 2.0 production rollout: forced every sample to
+        # upload_to_vigasp=True and vigas_project_id=154 (IRIDA project ZZTEST_API_DO_NOT_USE, see tests/test_step07.py)
+        # so live runs landed in the test project. Real values now come from Transfer_VIGAS and VIGASP_ID in the SampleSheet
+        # via _build_project_sample_metadata(). Closes the VIGASP half of #205.
         ##########################################################################################
-        for project in demux.project_samples_metadata:
-            for sample_id in demux.project_samples_metadata[ project ]:
-                demux.project_samples_metadata[ project ][ sample_id ][ 'upload_to_vigasp' ] = True
-                demux.project_samples_metadata[ project ][ sample_id ][ 'vigas_project_id' ]  = 154
+        # for project in demux.project_samples_metadata:
+            # for sample_id in demux.project_samples_metadata[ project ]:
+                # demux.project_samples_metadata[ project ][ sample_id ][ 'upload_to_vigasp' ] = True
+                # demux.project_samples_metadata[ project ][ sample_id ][ 'vigas_project_id' ]  = 154
 
 
         for project, tar_file in zip( demux.projectList, demux.tarFilesToTransferList ):
