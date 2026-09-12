@@ -37,6 +37,10 @@ def _build_absolute_paths( demux ) -> None:
         if tar_file == demux.forTransferQCtarFile:
             continue    # skip the QC tar: its NIRD destination is undecided, see #205.
         
+        if not demux.absoluteFilesToTransferList[ tar_file ][ 'transfer_to_nird' ]:
+            demux.absoluteFilesToTransferList.pop( tar_file )
+            continue    # SampleSheet says Transfer_NIRD=No for this project; drop it from the NIRD set
+
         # so here is a weird one that took me two days to debug: if both paths are in absolute format,
         # the last absolute path is returned and everything else is thrown away...
         # demux.tarFilesToTransferList is already in absolute format, so this threw me the fuck off,
