@@ -407,23 +407,19 @@ class demux:
                 # demux.project_samples_metadata[ project ][ sample_id ][ 'upload_to_vigasp' ] = True
                 # demux.project_samples_metadata[ project ][ sample_id ][ 'vigas_project_id' ]  = 154
 
-
         for project, tar_file in zip( demux.projectList, demux.tarFilesToTransferList ):
-            # take the project-level value directly from the first sample in that project
+            # take the project-level values directly from the first sample in that project
             first_sample = next( iter( demux.project_samples_metadata[ project ].values( ) ) )
+            locations: set[ str ] = { entry[ 'nird_location' ] for entry in demux.project_samples_metadata[ project ].values( ) }
+            if len( locations ) != 1:
+                raise ValueError( f"NIRD_Location mismatch for Sample_Project '{project}': {sorted( locations )}. Aborting." )
             demux.absoluteFilesToTransferList[ tar_file ]  = {
-                'transfer_to_nird': first_sample[ 'transfer_to_nird' ]
+                'transfer_to_nird':     first_sample[ 'transfer_to_nird' ],
+                'nird_upload_location': next( iter( locations ) )
             }
 
         demux.upload_to_vigasp      = any( entry[ 'upload_to_vigasp' ] for samples in demux.project_samples_metadata.values( ) for entry in samples.values( ) ) # any( ) logical ORs the values: upload if at least one sample is marked for VIGASP
         demux.transfer_to_nird      = any( entry[ 'transfer_to_nird' ]  for samples in demux.project_samples_metadata.values( ) for entry in samples.values( ) ) # any( ) logical ORs the values: upload if at least one sample is marked for NIRD
-
-        # locations: set[str] = { entry[ "nird_location" ] for entry in demux.project_samples_metadata[ project ].values( )}
-        # if len( locations ) != 1:
-        #     raise ValueError( f"NIRD_Location mismatch for Sample_Project '{project}': {sorted( locations )}" )
-        # nird_upload_location: str = next( iter( locations ) )
-        # demux.absoluteFilesToTransferList[tar_file]["nird_upload_location"] = nird_upload_location
-
 
         # if we are debugging, print out the list of projects.
         if demux.verbosity == 3:
