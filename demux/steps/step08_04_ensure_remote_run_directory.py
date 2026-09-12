@@ -62,21 +62,23 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
         None
     """
 
-    # check if the '/nird/projects/NS9305K/SEQ-TECH/data_delivery' directory exists
-    if not demux.nird_base_upload_path:
-        message = f"ValueError: demux.nird_base_upload_path is empty: ({demux.nird_base_upload_path}). Refusing to continue, as any transfer will "
-        message += "end up in the home directory of the uploading user."
-        raise ValueError( message )
-    
-    # make sure the remote directory we will use is in absolute path
-    remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID )
-    if not os.path.isabs( remote_absolute_dir_path ):
-        message = f"ValueError: {remote_absolute_dir_path} is not an absolute path. Refusing to continue, as any transfer will "
+    # collect the distinct per-project NIRD locations from the transfer list
+    remote_base_list: set[ str ] = { entry[ 'nird_upload_location' ] for entry in demux.absoluteFilesToTransferList.values( ) }
+
+    if not remote_base_list:
+        message = f"ValueError: no NIRD upload locations found in demux.absoluteFilesToTransferList. Refusing to continue, as any transfer will "
         message += "end up in the home directory of the uploading user."
         raise ValueError( message )
 
-    _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path )
+    for remote_base in sorted( remote_base_list ):
+        # make sure the remote directory we will use is in absolute path
+        remote_absolute_dir_path = os.path.join( remote_base, demux.RunID )
+        if not os.path.isabs( remote_absolute_dir_path ):
+            message = f"ValueError: {remote_absolute_dir_path} is not an absolute path. Refusing to continue, as any transfer will "
+            message += "end up in the home directory of the uploading user."
+            raise ValueError( message )
 
+        _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path )
 
 
 def _ensure_remote_run_directory( demux ) -> None:
