@@ -391,9 +391,10 @@ class demux:
         _samplesheet_path               = _samplesheet_with_paths if os.path.isfile( _samplesheet_with_paths ) else demux.sampleSheetFilePath
         sample_sheet                    = SampleSheet( _samplesheet_path )
         # sample_sheet                  = SampleSheet( demux.sampleSheetFilePath )
-        demux.projectList               = demux._get_unique_sample_projects( sample_sheet )    # get the project list
-        demux.newProjectNameList        = demux._create_renamed_demux_project_list( demux.projectList ) # translate the project list to absolute names
-        demux.tarFilesToTransferList    = demux._create_tar_files_to_transfer_list( demux.newProjectNameList ) # does not create the absolute path.
+        demux.projectList               = demux._get_unique_sample_projects( sample_sheet )                     # get the project list
+        demux.newProjectNameList        = demux._create_renamed_demux_project_list( demux.projectList )         # translate the project list to absolute names
+        demux.tarFilesToTransferList    = demux._create_tar_files_to_transfer_list( demux.newProjectNameList )  # does not create the absolute path.
+        demux.tarFilesToTransferList.append( demux.forTransferQCtarFile )                                       # QC tar joins the transfer list here
         demux.project_samples_metadata  = demux._build_project_sample_metadata( sample_sheet ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
 
         ##########################################################################################

@@ -30,7 +30,6 @@ def setup_environment( RunID ):
     demux.sampleSheetFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.sampleSheetFileName )
     demux.rtaCompleteFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.rtaCompleteFile )
 
-    demux.parse_sample_sheet(  )    # get the list of projects in this current run
 
 ######################################################
     demux.demultiplexRunIDdir           = os.path.join( demux.demultiplexDir,       demux.RunID + constants.DEMULTIPLEX_DIR_SUFFIX ) 
@@ -42,6 +41,8 @@ def setup_environment( RunID ):
     demux.forTransferRunIdDir           = os.path.join( demux.forTransferDir,       demux.RunID )
     demux.forTransferQCtarFile          = os.path.join( demux.forTransferRunIdDir,  demux.RunID + constants.QC_SUFFIX + demux.tarSuffix )
 ######################################################
+
+    demux.parse_sample_sheet(  )    # get the list of projects in this current run
 
     # set up
     demux.demuxRunLogFilePath           = os.path.join( demux.logDirPath,            demux.RunID + demux.logSuffix )
@@ -90,8 +91,6 @@ def setup_environment( RunID ):
 
 
     # add the QC file to the list of tar files, even if duplicate
-    demux.tarFilesToTransferList.append( demux.forTransferQCtarFile )
-    # maintain the order added this way, so our little stateLetter trick will work
     demux.globalDictionary[ 'RunID'                        ] = demux.RunID
     demux.globalDictionary[ 'runIDShort'                   ] = demux.runIDShort
     demux.globalDictionary[ 'rawDataRunIDdir'              ] = demux.rawDataRunIDdir
