@@ -29,7 +29,7 @@ import os
 import re
 import subprocess
 import sys
-
+ub
 RAWDATA_DIR: str = "/data/rawdata"
 SAMPLE_SHEET: str = "SampleSheet.csv"
 FAKE_PREFIX: str = "999999_M09180_9999_"
@@ -111,6 +111,7 @@ def main() -> int:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Clone a real run into an incrementing fake test run.")
     parser.add_argument("source", help=f"source RunID under {RAWDATA_DIR}")
     args: argparse.Namespace = parser.parse_args()
+    args.source = args.source.rstrip("/")
 
     source_dir: str = os.path.join(RAWDATA_DIR, args.source)
     if not os.path.isdir(source_dir):
