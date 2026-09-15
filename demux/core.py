@@ -223,7 +223,7 @@ class demux:
     irida_stage_times:dict                     = { 'preflight': 0.0, 'check_projects': 0.0, 'hash': 0.0, 'create_run': 0.0, 'upload': 0.0, 'verify': 0.0, 'complete': 0.0 } # per-stage wall times in seconds populated by deliver_files_to_VIGASP
     irida_oauth_token:str                      = ""
     irida_tmp_dir_name:str                     = "tmp_irida_upload"
-    irida_bw_item_uuid:str                     = "fab1520e-3188-47d3-b1d0-b42400d6ade0"
+    irida_bw_item_uuid:str                     = "a615e24b-c323-48c1-92aa-b474009567e7"
     irida_base_url:str                         = "http://irida.vigasp.vetinst.no:8080/irida-23.01.3"
     # Bitwarden endpoint for IRIDA credentials
     # IRIDA API endpoints - no leading slashes; URLs are built as f"{irida_base_url}/{endpoint}/{id}"
