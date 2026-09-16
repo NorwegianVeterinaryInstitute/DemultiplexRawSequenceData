@@ -216,8 +216,8 @@ class demux:
     allowed_vigasp_copy_modes:list             = [ "serial", "parallel" ]
     irida_timeout:int                          = 60           # default timeout for IRIDA API metadata calls
     irida_list_timeout:int                     = 180          # timeout for project sample list calls; large projects under load exceed 60s
-    irida_list_retries:int                     = 3            # attempts for the sample list call before giving up
-    irida_list_retry_backoff:int               = 30           # seconds; doubled after each failed attempt
+    irida_list_retries:int                     = 6            # attempts for the sample list call before giving up
+    irida_list_retry_backoff:int               = 120          # seconds; doubled after each failed attempt
     irida_upload_timeout:int                   = 300          # 5 minutes; uploading large files to IRIDA on NREC mechanical drives
     irida_verify_max_poll_attempts:int         = 10           # how many times to poll for uploadSha256 before giving up
     irida_verify_poll_interval_seconds:int     = 5            # seconds between polls
