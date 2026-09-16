@@ -144,9 +144,20 @@ def _check_and_create_sample( demux, project_id: int, sample_name: str ) -> int:
 
     demuxLogger.debug( f"IRIDA upload: GET {list_url}" )
 
-    response = requests.get( list_url, headers = headers, timeout = demux.irida_timeout )
-    response.raise_for_status()
-    body:dict = response.json()
+    body:dict   = { }
+    attempt:int = 1
+    for attempt in range( 1, demux.irida_list_retries + 1 ):
+        try:
+            response = requests.get( list_url, headers = headers, timeout = demux.irida_list_timeout )
+            response.raise_for_status()
+            body = response.json()
+            break
+        except requests.exceptions.ReadTimeout as error:
+            if attempt == demux.irida_list_retries:
+                raise
+            wait:int = demux.irida_list_retry_backoff * ( 2 ** ( attempt - 1 ) )
+            demuxLogger.warning( f"IRIDA upload: sample list for project {project_id} timed out (attempt {attempt}/{demux.irida_list_retries}), retrying in {wait}s" )
+            time.sleep( wait )
 
     # IRIDA HATEOAS response field names; not our constants
     resources:list = body.get( 'resource', { } ).get( 'resources', [ ] )
