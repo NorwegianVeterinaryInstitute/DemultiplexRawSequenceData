@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple, Mapping
 from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
 from paramiko.ssh_exception import AuthenticationException
 
-from demux.util.bitwarden  import _get_login_credentials, _get_password
+from demux.util.bitwarden  import _get_login_credentials, _get_password, get_passphrase
 from demux.config          import constants
 from demux.loggers         import demuxLogger, demuxFailureLogger
 
@@ -234,8 +234,7 @@ def _load_private_key( identityfile: str, *, passphrase: str = "" ) -> paramiko.
     """
     Load a private key from disk, trying all supported key types in order.
 
-    Attempts Ed25519 first (most common for modern NVI keys), then RSA, ECDSA,
-    and DSS. Returns the first key that loads successfully.
+    Attempts Ed25519 first (most common for modern NVI keys), then RSA and ECDSA.
 
     Args:
         identityfile: Absolute path to the private key file.
@@ -245,21 +244,24 @@ def _load_private_key( identityfile: str, *, passphrase: str = "" ) -> paramiko.
         A loaded paramiko.PKey instance.
 
     Raises:
-        paramiko.SSHException: If no supported key type matches the file.
         paramiko.PasswordRequiredException: If the key is encrypted and no passphrase is given.
+                                            Propagated so the caller can fetch the passphrase.
+        paramiko.SSHException:              If no supported key type matches the file.
     """
 
     pkey_password: bytes | None = passphrase.encode( ) if passphrase else None
+    last_error: Exception | None = None
 
-    for key_class in ( paramiko.Ed25519Key, paramiko.RSAKey, paramiko.ECDSAKey, paramiko.DSSKey ):
+    for key_class in ( paramiko.Ed25519Key, paramiko.RSAKey, paramiko.ECDSAKey ):
         try:
             return key_class.from_private_key_file( identityfile, password = pkey_password )
-        except paramiko.SSHException:
-            continue
-        except Exception:
+        except paramiko.ssh_exception.PasswordRequiredException:
+            raise                                                                                 # encrypted key, caller decides
+        except paramiko.SSHException as error:
+            last_error = error
             continue
 
-    raise paramiko.SSHException( f"Could not load private key from {identityfile}: no supported key type matched." )
+    raise paramiko.SSHException( f"Could not load private key from {identityfile}: no supported key type matched." ) from last_error
 
 
 
@@ -393,50 +395,34 @@ def _auth_transport_ssh_keys( hop: paramiko.config.SSHConfig, transport: paramik
     """
     Authenticate an existing SSH Transport using public key credentials.
 
-    Loads the private key defined for the hop, retrying with a passphrase if the key is
-    encrypted, then performs public key authentication against the remote server.
+    Strategy, minimal authentication attempts against a known server:
+    1. Validate user, hostname and IdentityFile from the hop.
+    2. Try the ssh-agent first: match the on-disk public key by fingerprint and present it.
+    3. Only if the agent does not hold the key, load the IdentityFile from disk.
+       The passphrase is fetched from Bitwarden only if the key turns out to be encrypted,
+       keyed by hostname (see bitwarden.get_passphrase), never hardcoded.
+    4. Attempt authentication exactly once; stop on success or failure.
 
-    Raises ValueError when a passphrase is required but unavailable, and
-    AuthenticationException if the server rejects the key.
-    ---------------------------------------------------------------------------------------------------
-    Authentication strategy for a known SSH server with minimal authentication attempts.
-
-    The server is trusted and regularly accessed, so the goal is to minimize failed
-    authentication attempts and unnecessary key offers.
-
-    Strategy:
-    1. Resolve effective host options from SSH config (HostName, User, IdentityFile)
-       and canonicalize the target. Only one IdentityFile is permitted per host entry.
-    2. If IdentityFile is defined:
-       a. Compute the fingerprint of the on-disk key.
-       b. Iterate ssh-agent keys and select the matching key by fingerprint.
-       c. If found, present that key to the server.
-    3. If the key is not present in the agent:
-       a. Load the IdentityFile from disk using the passphrase stored in Bitwarden.
-       b. Present the loaded key to the server.
-    4. Attempt authentication exactly once.
-    5. Stop immediately on success or authentication failure.
-    6. Abort immediately on transport-level failure.
+    Raises ValueError on bad inputs, PasswordRequiredException if the key is encrypted and
+    no passphrase is available in Bitwarden, AuthenticationException if the server rejects the key.
     """
 
-    username: str                    = ""
-    hostname: str                    = ""
-    identityfile: str                = ""
     username, hostname, identityfile = _validate_ssh_key_auth_inputs( hop )                       # validation for all three happens in method
-    passphrase: str                  = _get_password( "main2" )                                   # demux.util.bitwarden
-    private_key: paramiko.PKey       = _load_private_key( identityfile, passphrase = passphrase ) # load the private key, no transport auth
     identityfile_pub: str            = f"{identityfile}.pub"
 
-
-    authenticated_via_agent: bool    = _auth_via_agent( transport, username, identityfile_pub )   # try to auth via in memory key
-    if authenticated_via_agent:
+    if _auth_via_agent( transport, username, identityfile_pub ):                                  # key already in memory, nothing to load
         return
 
-    _auth_via_private_key( transport, username, private_key )                                     # try to auth via key on disk
+    try:
+        private_key: paramiko.PKey = _load_private_key( identityfile )                            # unencrypted key on disk
+    except paramiko.ssh_exception.PasswordRequiredException:
+        passphrase: str            = get_passphrase( hostname )                                   # demux.util.bitwarden, keyed by hostname
+        private_key                = _load_private_key( identityfile, passphrase = passphrase )
+
+    _auth_via_private_key( transport, username, private_key )
 
     if not transport.is_authenticated( ):
         raise paramiko.AuthenticationException( f"Authentication attempt using {identityfile} returned without success." )
-
 
 
 
@@ -478,42 +464,59 @@ def _auth_transport_2fa( hop: paramiko.config.SSHConfig, transport: paramiko.Tra
         raise AuthenticationException( message )
 
 
-def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko.Transport ) -> None:
+def _select_auth_method( hop: paramiko.config.SSHConfig, *, is_target: bool, nird_access_mode: str ) -> str:
     """
-    Authenticate an existing SSH Transport for a single hop using the credentials
-    defined in the SSH client configuration and BitWarden.
+    Decide the authentication method for one hop. Declared, not guessed:
 
-    Resolves the target hostname and user, selects the authentication mechanism in
-    priority order (public key, keyboard-interactive 2FA and finally password). Applies
-    it directly to the provided Transport.
+    - the target host uses whatever demux.nird_access_mode says: ssh2fa -> keyboard-interactive 2FA,
+      ssh -> public key
+    - intermediate hops use public key if the ssh config declares an IdentityFile, otherwise password
 
-    Raises ValueError for missing required lookup fields or unavailable 2FA secrets,
+    Returns one of constants.SSH_AUTH_KEY, constants.SSH_AUTH_2FA, constants.SSH_AUTH_PASSWORD.
+    Raises ValueError on an unknown nird_access_mode or a target hop with no usable method.
+    """
+
+    identityfile = hop.get( "identityfile" )
+
+    if is_target:
+        if nird_access_mode == constants.NIRD_MODE_SSH_2FA:
+            return constants.SSH_AUTH_2FA
+        if nird_access_mode == constants.NIRD_MODE_SSH:
+            if not identityfile:
+                raise ValueError( f"nird_access_mode is {nird_access_mode} but no IdentityFile is declared for {hop.get( 'hostname' )}" )
+            return constants.SSH_AUTH_KEY
+        raise ValueError( f"Unknown nird_access_mode for ssh transport: {nird_access_mode}" )
+
+    return constants.SSH_AUTH_KEY if identityfile else constants.SSH_AUTH_PASSWORD
+
+
+
+def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko.Transport, *, auth_method: str ) -> None:
+    """
+    Authenticate an existing SSH Transport for a single hop using the method selected by
+    _select_auth_method and the credentials in the SSH client configuration and BitWarden.
+
+    Raises ValueError for missing required lookup fields or an unknown auth_method,
     and AuthenticationException when the remote server rejects the selected method.
-
-    Returns the same Transport instance after successful authentication.
     """
 
-    hostname     : str  = hop.get( "hostname" )
-    username     : str  = hop.get( "user" )
-    identityfile : str  = hop.get( "identityfile" )
-    totp_enabled : bool = not bool( identityfile )
-    if hostname == "login.nird.sigma2.no": #cheating
-        totp_enabled = True
-    # if two_fa_enabled:
-    #     topt:int          : int  = int( bitwarden.get_topt( hostname ) or None )
+    hostname: str = hop.get( "hostname" )
+    username: str = hop.get( "user" )
 
-    if identityfile:
+    if auth_method == constants.SSH_AUTH_KEY:
         _auth_transport_ssh_keys( hop, transport )
-    elif totp_enabled:
+    elif auth_method == constants.SSH_AUTH_2FA:
         _auth_transport_2fa( hop, transport )
-    else:
-        password: str  = _get_password( hostname ) # demux.util.bitwarden
+    elif auth_method == constants.SSH_AUTH_PASSWORD:
+        password: str = _get_password( hostname )                                                 # demux.util.bitwarden
         if not password:
-            raise ValueError( f"Missing lookup fields for hop {hop.get( 'hostname' )}: password" )
+            raise ValueError( f"Missing lookup fields for hop {hostname}: password" )
         transport.auth_password( username = username, password = password )
+    else:
+        raise ValueError( f"Unknown ssh auth method {auth_method} for {hostname}" )
 
     if not transport.is_authenticated( ):
-        raise paramiko.AuthenticationException( f"Password authentication failed for {username}@{hostname}" )
+        raise paramiko.AuthenticationException( f"{auth_method} authentication failed for {username}@{hostname}" )
 
 
 

@@ -4,7 +4,7 @@ import termcolor
 
 from typing import Any, Dict, List, Optional, Tuple, Mapping
 
-from demux.util.ssh_transport   import _connect_next_proxy_jump, _validate_hostkey, _authenticate_transport, _parse_ssh_config
+from demux.util.ssh_transport   import _connect_next_proxy_jump, _validate_hostkey, _authenticate_transport, _parse_ssh_config, _select_auth_method
 from demux.loggers              import demuxLogger, demuxFailureLogger
 
 def _setup_ssh_connection( demux, *, timeout: float = 30 ):
@@ -43,7 +43,9 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
         next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
 
         _validate_hostkey( hop, next_transport )
-        _authenticate_transport( hop, next_transport )
+        auth_method: str = _select_auth_method( hop, is_target = is_last, nird_access_mode = demux.nird_access_mode )
+        demuxLogger.debug( f"auth method for {hop.get( 'hostname' )}: {auth_method}" )
+        _authenticate_transport( hop, next_transport, auth_method = auth_method )
         transport_stack.append( next_transport )
         current_transport = next_transport
 
@@ -54,3 +56,4 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     demux.transport = transport_stack[-1]
     # save the transport stack for later, so we can .reverse and walk it backwards.
     demux.transport_stack = transport_stack
+
