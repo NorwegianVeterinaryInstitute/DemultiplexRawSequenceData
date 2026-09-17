@@ -29,7 +29,7 @@ import os
 import re
 import subprocess
 import sys
-ub
+
 RAWDATA_DIR: str = "/data/rawdata"
 SAMPLE_SHEET: str = "SampleSheet.csv"
 FAKE_PREFIX: str = "999999_M09180_9999_"
