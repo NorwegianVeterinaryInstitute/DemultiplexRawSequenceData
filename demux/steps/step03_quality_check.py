@@ -31,18 +31,19 @@ def fastqc( demux ):
     try:
         # EXAMPLE: /usr/local/bin/fastqc -t 4 {demux.demultiplexRunIDdir}/{project}/*fastq.gz > demultiplexRunIDdir/demultiplex_log/04_fastqc.log
         result = subprocess.run( argv, capture_output = True, cwd = demux.demultiplexRunIDdir, check = True, encoding = demux.decodeScheme )
-    except ChildProcessError as err: 
-            text = [ "Caught exception!",
-                     f"Command: {err.cmd}", # interpolated strings
-                     f"Return code: {err.returncode}"
-                     f"Process output: {err.output}",
-                     f"Exiting."
-                ]
-            text = '\n'.join( text )
-            demuxFailureLogger.critical( f"{ text }" )
-            demuxLogger.critical( f"{ text }" )
-            logging.shutdown( )
-            sys.exit( )
+    except subprocess.CalledProcessError as err:                                                     # check = True raises CalledProcessError, not ChildProcessError
+        text = [ "Caught exception!",
+                 f"Command: {' '.join( err.cmd )}",
+                 f"Return code: {err.returncode}",
+                 f"Process stdout: {err.stdout}",
+                 f"Process stderr: {err.stderr}",
+                 "Exiting."
+            ]
+        text = '\n'.join( text )
+        demuxFailureLogger.critical( f"{ text }" )
+        demuxLogger.critical( f"{ text }" )
+        logging.shutdown( )
+        sys.exit( 1 )
 
     # log FastQC output
     fastQCLogFileHandle = ""
@@ -231,18 +232,19 @@ def multiqc( demux ):
         # EXAMPLE: /usr/local/bin/multiqc {demux.demultiplexRunIDdir} -o {demux.demultiplexRunIDdir} 2> {demux.demultiplexRunIDdir}/demultiplex_log/05_multiqc.log
         # WARNING: MULTIQC IS SINGLE-THREADED . No way to parallelize it. And we are using multiqc on a single directory, so, this step is a bottleneck: no way to parallelize it
         result = subprocess.run( argv, capture_output = True, cwd = demux.demultiplexRunIDdir, check = True, encoding = demux.decodeScheme )
-    except ChildProcessError as err: 
-        text = [    f"Caught exception!",
-                    f"Command:\t{err.cmd}", # interpolated strings
-                    f"Return code:\t{err.returncode}"
-                    f"Process output: {err.output}",
-                    f"Exiting."
+    except subprocess.CalledProcessError as err:                                                     # check = True raises CalledProcessError, not ChildProcessError
+        text = [    "Caught exception!",
+                    f"Command: {' '.join( err.cmd )}",
+                    f"Return code: {err.returncode}",
+                    f"Process stdout: {err.stdout}",
+                    f"Process stderr: {err.stderr}",
+                    "Exiting."
                 ]
         text = '\n'.join( text )
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     # log multiqc output
     demux.multiQCLogFilePath  = os.path.join( demux.demultiplexLogDirPath, demux.multiqcLogFileName ) ############# FIXME FIXME FIXME FIXME take out
@@ -295,4 +297,3 @@ def quality_check( demux ):
     multiqc( demux )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Quality Check finished ==\n", color="red", attrs=["bold"] ) )
-
