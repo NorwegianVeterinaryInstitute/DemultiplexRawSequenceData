@@ -3,6 +3,7 @@ import os
 import socket
 import subprocess
 import termcolor
+import urllib.error
 import urllib.request
 
 from typing import Tuple
@@ -24,8 +25,11 @@ def _get_username( hostname: str ) -> str:
         raise ValueError( "ValueError: hostname not provided, cannot return username. Aborting." )
 
     get_username_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/username/{hostname}"
-    with urllib.request.urlopen( get_username_url, timeout = 1 ) as r:
-        username:str = json.load( r )[ "data" ][ "data" ]
+    try:
+        with urllib.request.urlopen( get_username_url, timeout = 1 ) as r:
+            username:str = json.load( r )[ "data" ][ "data" ]
+    except urllib.error.HTTPError as error:
+        raise ValueError( f"ValueError: BitWarden returned HTTP {error.code} looking up username for '{hostname}'. Item missing or ambiguous. Aborting." ) from error
 
     if not username:
         raise ValueError( f"ValueError: no username returned from BitWarden for host {hostname}. Aborting." )
@@ -45,8 +49,11 @@ def _get_password( hostname: str ) -> str:
         raise ValueError( "ValueError: hostname not provided, cannot return password. Aborting." )
 
     get_password_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}"
-    with urllib.request.urlopen( get_password_url, timeout = 1 ) as r:
-        password:str = json.load( r )[ "data" ][ "data" ]
+    try:
+        with urllib.request.urlopen( get_password_url, timeout = 1 ) as r:
+            password:str = json.load( r )[ "data" ][ "data" ]
+    except urllib.error.HTTPError as error:
+        raise ValueError( f"ValueError: BitWarden returned HTTP {error.code} looking up password for '{hostname}'. Item missing or ambiguous. Aborting." ) from error
 
     if not password:
         raise ValueError( f"ValueError: no password returned from BitWarden for host {hostname}. Aborting." )
@@ -66,8 +73,11 @@ def _get_totp( hostname: str ) -> str:
         raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
 
     get_totp_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/totp/{hostname}"
-    with urllib.request.urlopen( get_totp_url, timeout = 1 ) as r:
-        totp:str     = json.load( r )[ "data" ][ "data" ]
+    try:
+        with urllib.request.urlopen( get_totp_url, timeout = 1 ) as r:
+            totp:str     = json.load( r )[ "data" ][ "data" ]
+    except urllib.error.HTTPError as error:
+        raise ValueError( f"ValueError: BitWarden returned HTTP {error.code} looking up TOTP token for '{hostname}'. Item missing or ambiguous. Aborting." ) from error
 
     if not totp:
         raise ValueError( f"ValueError: no TOTP token returned from BitWarden for host {hostname}. Aborting." )
@@ -75,22 +85,22 @@ def _get_totp( hostname: str ) -> str:
     return totp
 
 
-def get_passphrase( hostname: str ):
+def get_passphrase( hostname: str ) -> str:
     """
     Return the private-key passphrase for a given hostname via the local Bitwarden HTTP API.
 
-    Raises ValueError if hostname is empty.
+    Convention: the passphrase is the password field of the Bitwarden item named
+    f"{hostname}{constants.BW_PASSPHRASE_ITEM_SUFFIX}", e.g. "login.nird.sigma2.no ssh passphrase".
+    bw serve has no passphrase endpoint, so this is a plain password lookup on that item.
+
+    Raises ValueError if hostname is empty or no passphrase is returned.
     Raises urllib.error.URLError on transport or timeout failures.
     """
 
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return passphrase for key. Aborting." )
 
-    get_passphrase_url = f"{constants.BW_BASE_URL}/object/passphrase/{hostname}"
-    with urllib.request.urlopen( get_passphrase_url, timeout = 1 ) as r:
-        passphrase:str     = json.load( r )[ "data" ][ "data" ]
-
-    return passphrase
+    return _get_password( f"{hostname}{constants.BW_PASSPHRASE_ITEM_SUFFIX}" )
 
 
 

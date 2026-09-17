@@ -54,6 +54,11 @@ USER_SSH_KNOWN_HOSTS_PATH: str  = "~/.ssh/known_hosts"
 BW_IP                           = '127.0.0.1'
 BW_BASE_URL: str                = f'http://{BW_IP}'
 BW_PORT:int                     = 8087
+BW_PASSPHRASE_ITEM_SUFFIX: str  = " ssh passphrase"       # Bitwarden item name: "<hostname> ssh passphrase", password field holds the key passphrase
+
+SSH_AUTH_KEY: str               = "key"
+SSH_AUTH_2FA: str               = "2fa"
+SSH_AUTH_PASSWORD: str          = "password"
 
 RUNID_PATTERN                   = re.compile(r'^\d{6}_[A-Z0-9]+_\d{4}_\d{9}-[A-Z0-9]{5}$') # make sure that the RunID we get passed follows a pattern
 
