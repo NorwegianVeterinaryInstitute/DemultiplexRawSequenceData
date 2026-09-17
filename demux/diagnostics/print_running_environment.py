@@ -1,3 +1,5 @@
+import shlex
+import sys
 import termcolor
 
 from demux.config import constants as constants
@@ -29,7 +31,8 @@ def print_running_environment( demux ):
 
     # using the constants here allows us to make removing the directories more succinct.
     demuxLogger.info( f"To rerun this script run\n" )
-    demuxLogger.info( termcolor.colored( f"\tclear; rm -rvf /data/" + "{" + f"{constants.DEMULTIPLEX_DIR_NAME},{constants.FOR_TRANSFER_DIR_NAME}" + "}" + f"/{demux.RunID}* " + f"&& {demux.exec_path} {demux.RunID}\n\n", attrs=["bold"] ) )
+    arguments: str = shlex.join( sys.argv[ 1: ] )                                                                    # everything as typed, including the flags; _preprocess_argv( ) may have inserted "run"
+    demuxLogger.info( termcolor.colored( f"\tclear; rm -rvf /data/" + "{" + f"{constants.DEMULTIPLEX_DIR_NAME},{constants.FOR_TRANSFER_DIR_NAME}" + "}" + f"/{demux.RunID}* " + f"&& {demux.exec_path} {arguments}\n\n", attrs=["bold"] ) )
 
     printed_keys:list[ str ] = [ ]
 
