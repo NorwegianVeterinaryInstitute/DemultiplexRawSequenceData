@@ -227,9 +227,13 @@ def process_run(RunID: str) -> None:
     if demux.upload_vigas_enabled and demux.upload_to_vigasp:
         demuxLogger.debug( f"{RunID} has to be uploaded to VIGASP" )
         deliver_files_to_VIGASP( demux )                                                                # Deliver the output files to VIGASP
+    elif demux.upload_to_vigasp:
+        demuxLogger.warning( termcolor.colored( f"{RunID}: VIGASP delivery skipped (--skip-vigasp)", color="magenta" ) )
     if demux.upload_nird_enabled and demux.transfer_to_nird:
         demuxLogger.debug( f"{RunID} has to be uploaded to NIRD" )
         deliver_files_to_NIRD( demux )                                                                  # deliver the output files to NIRD
+    elif demux.transfer_to_nird:
+        demuxLogger.warning( termcolor.colored( f"{RunID}: NIRD delivery skipped (--skip-nird)", color="magenta" ) )
     # finalize( demux )                                                                                 # mark the script as complete
     # shutdownEventAndLoggingHandling( )                                                                # shutdown logging before exiting.
 
@@ -297,4 +301,6 @@ if __name__ == '__main__':
     logging.shutdown( )         # shut down basic logging, main logging will take charge in main( )
     args   = parse_arguments( )
     RunIDs = getattr( args, 'RunID', [] ) or []
+    demux.upload_vigas_enabled = not getattr( args, 'skip_vigasp', False )                                # --skip-vigasp: run everything, deliver nothing to VIGASP
+    demux.upload_nird_enabled  = not getattr( args, 'skip_nird',   False )                                # --skip-nird:   run everything, deliver nothing to NIRD
     main( RunIDs )
