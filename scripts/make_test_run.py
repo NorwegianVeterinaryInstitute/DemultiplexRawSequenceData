@@ -4,7 +4,10 @@ make_test_run.py - clone a real Illumina run directory into a fake test run.
 
 Copies /data/rawdata/<source RunID> to /data/rawdata/999999_M09180_9999_<NNNNNNNNN>-M7V7K,
 where NNNNNNNNN is one higher than the highest existing fake run, and rewrites
-SampleSheet.csv so every Sample_Project is renamed to a TESTDATA project.
+SampleSheet.csv so every Sample_ID, Sample_Name and Sample_Plate is replaced by a
+TESTDATA name carrying the fake run counter. Sample_Project and every other column
+stay as they are: the fake run lands in the real projects, as new samples that are
+unique per fake run, identifiable and deletable by prefix.
 Everything else in the run directory is copied untouched.
 
 usage: make_test_run.py 260904_M09180_0073_000000000-MF398
@@ -30,14 +33,19 @@ import re
 import subprocess
 import sys
 
+from sample_sheet import SampleSheet
+
 RAWDATA_DIR: str = "/data/rawdata"
 SAMPLE_SHEET: str = "SampleSheet.csv"
 FAKE_PREFIX: str = "999999_M09180_9999_"
 FAKE_SUFFIX: str = "-M7V7K"
 FAKE_PATTERN: re.Pattern = re.compile(r"^999999_M09180_9999_(\d{9})-M7V7K$")
-TEST_PROJECT_PREFIX: str = "99999-TESTDATA_Trollus_norvegicus_"
-DATA_SECTION: str = "[Data]"
-PROJECT_COLUMN: str = "Sample_Project"
+SAMPLE_COLUMNS: tuple[str, ...] = ("Sample_ID", "Sample_Name")
+PLATE_COLUMN: str = "Sample_Plate"
+TEST_SAMPLE_PREFIX: str = "TESTDATA_"
+# cp -a rather than shutil.copytree: a run directory is tens of gigabytes of BCL
+# files, and cp -a preserves owner, mode, timestamps, ACLs and xattrs in one pass;
+# copytree keeps mode and times only and is slower on trees this size.
 CP: str = "/usr/bin/cp"
 
 
@@ -56,50 +64,41 @@ def next_fake_run_id() -> str:
     return f"{FAKE_PREFIX}{highest + 1:09d}{FAKE_SUFFIX}"
 
 
-def rewrite_sample_sheet(path: str) -> dict[str, str]:
+def rewrite_sample_sheet(path: str, run_counter: str) -> dict[str, str]:
     """
-    Rewrite Sample_Project values in the [Data] section to TESTDATA names.
+    Rewrite the [Data] section with the sample_sheet library:
+    Sample_ID and Sample_Name -> TESTDATA_<run counter>_<NNNN>,
+    Sample_Plate -> TESTDATA_<run counter>_PLATE. Sample_Project is left alone.
+    The same original sample name maps to the same counter in both columns, and
+    the run counter makes every fake run its own set of samples in IRIDA.
 
     :param path: absolute path to SampleSheet.csv inside the fake run
-    :return: mapping of original project name -> test project name
+    :param run_counter: the nine-digit counter of the fake run
+    :return: mapping of original sample name -> test sample name
     """
-    with open(path, "r", encoding="utf-8", newline="") as handle:
-        lines: list[str] = handle.read().splitlines(keepends=True)
+    sheet: SampleSheet = SampleSheet(path)
+    if not sheet.samples:
+        raise ValueError(f"no samples in [Data] section of {path}")
 
-    mapping: dict[str, str] = {}
-    in_data: bool = False
-    project_index: int = -1
-    output: list[str] = []
-    line: str
-    for line in lines:
-        stripped: str = line.rstrip("\r\n")
-        newline: str = line[len(stripped):]
-        if stripped.startswith("["):
-            in_data = stripped == DATA_SECTION
-            output.append(line)
-            continue
-        if not in_data or stripped == "":
-            output.append(line)
-            continue
-        fields: list[str] = stripped.split(",")
-        if project_index < 0:
-            if PROJECT_COLUMN not in fields:
-                raise ValueError(f"{PROJECT_COLUMN} column not found in {path}")
-            project_index = fields.index(PROJECT_COLUMN)
-            output.append(line)
-            continue
-        original: str = fields[project_index]
-        if original not in mapping:
-            mapping[original] = f"{TEST_PROJECT_PREFIX}{len(mapping) + 1:02d}"
-        fields[project_index] = mapping[original]
-        output.append(",".join(fields) + newline)
+    samples: dict[str, str] = {}
+    for sample in sheet.samples:
+        column: str
+        for column in SAMPLE_COLUMNS:
+            name: str | None = sample.get(column)
+            if not name:
+                continue
+            if name not in samples:
+                samples[name] = f"{TEST_SAMPLE_PREFIX}{run_counter}_{len(samples) + 1:04d}"
+            sample[column] = samples[name]
+        if sample.get(PLATE_COLUMN):
+            sample[PLATE_COLUMN] = f"{TEST_SAMPLE_PREFIX}{run_counter}_PLATE"
 
-    if project_index < 0:
-        raise ValueError(f"{DATA_SECTION} section not found in {path}")
+    if not samples:
+        raise ValueError(f"none of {SAMPLE_COLUMNS} found in {path}")
 
     with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.writelines(output)
-    return mapping
+        sheet.write(handle)
+    return samples
 
 
 def main() -> int:
@@ -143,7 +142,8 @@ def main() -> int:
     if os.path.realpath(sheet_path).startswith(os.path.realpath(source_dir) + os.sep):
         print(f"ERROR: {sheet_path} is inside the source run; refusing to write", file=sys.stderr)
         return 1
-    mapping: dict[str, str] = rewrite_sample_sheet(sheet_path)
+    run_counter: str = FAKE_PATTERN.match(fake_run_id).group(1)
+    mapping: dict[str, str] = rewrite_sample_sheet(sheet_path, run_counter)
     original: str
     renamed: str
     for original, renamed in mapping.items():
