@@ -176,6 +176,7 @@ Global flags (valid for all subcommands):
     -V, --version               Show version and exit.
     --config <PATH>             Path to an alternate config file.
 """
+import argcomplete
 import argparse
 import os
 import sys
@@ -257,6 +258,24 @@ def parse_runid(value: str) -> str:
     return RunID
 
 
+def _complete_runid(prefix: str, parsed_args: argparse.Namespace, **kwargs) -> list[str]:
+    """
+    argcomplete completer for the RunID positional: every directory under the
+    rawdata directory whose name matches RUNID_PATTERN and starts with the prefix.
+    """
+    rawdata_dir: str = os.path.join(constants.DATA_ROOT_DIR, constants.RAW_DATA_DIR_NAME)
+    try:
+        entries: list[str] = os.listdir(rawdata_dir)
+    except OSError:
+        return []
+    return sorted(
+        entry for entry in entries
+        if entry.startswith(prefix)
+        and constants.RUNID_PATTERN.match(entry)
+        and os.path.isdir(os.path.join(rawdata_dir, entry))
+    )
+
+
 def _add_runid_argument(parser: argparse.ArgumentParser) -> None:
     """
     Add the RunID positional argument to a subcommand parser.
@@ -269,7 +288,7 @@ def _add_runid_argument(parser: argparse.ArgumentParser) -> None:
             'Illumina RunID, e.g. 230415_M01234_1234_000000000-ABCDE. '
             'Optionally prefixed with its absolute directory path.'
         )
-    )
+    ).completer = _complete_runid
 
 
 def _add_verbose_argument(parser: argparse.ArgumentParser) -> None:
@@ -747,6 +766,7 @@ def parse_arguments() -> argparse.Namespace:
     )
     _add_daemon_arguments(daemon_parser)
 
+    argcomplete.autocomplete(parser)                                    # tab completion; needs the shell hook from register-python-argcomplete
     args = parser.parse_args()
 
     # normalize stats alias so downstream code only checks for 'statistics'

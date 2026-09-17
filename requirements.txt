@@ -5,6 +5,7 @@ sample_sheet
 scp
 termcolor
 multiqc
+argcomplete
 
 # IdentitiesOnly yes
 # StrictHostKeyChecking yes

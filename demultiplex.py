@@ -1,4 +1,5 @@
 #!/usr/bin/env -S -- /usr/bin/python3.11 -X pycache_prefix=/tmp/demultiplex
+# PYTHON_ARGCOMPLETE_OK
 
 ########################################################################
 # Demutliplex a MiSEQ or NextSEQ run, perform QC using FastQC and
@@ -296,10 +297,10 @@ def main( RunIDs: list) -> None:
 
 if __name__ == '__main__':
 
+    args   = parse_arguments( ) # first: a tab-completion request exits inside parse_arguments( ) and must not take the lock
     setup_logging( )            # set up basic logging for now, will move all log setup there
     setup_lock( )               # make sure we only run one instance at a time
     logging.shutdown( )         # shut down basic logging, main logging will take charge in main( )
-    args   = parse_arguments( )
     RunIDs = getattr( args, 'RunID', [] ) or []
     demux.upload_vigas_enabled = not getattr( args, 'skip_vigasp', False )                                # --skip-vigasp: run everything, deliver nothing to VIGASP
     demux.upload_nird_enabled  = not getattr( args, 'skip_nird',   False )                                # --skip-nird:   run everything, deliver nothing to NIRD
