@@ -138,10 +138,11 @@ class demux:
     newProjectNameList:list                    = [ ]
     newProjectFileList:list                    = [ ]
     controlProjectsFoundList:list              = [ ]
+    emptyProjectsFoundList:list                = [ ]
     tarFilesToTransferList:list                = [ ]
     globalDictionary:dict                      = dict( )
     ######################################################
-    controlProjects:list                       = [ "Negativ" ]
+    controlProjects:list                       = [ "Negativ", "Control_" ]   # 2026-09-18: lab labels every control project Control_<tag>, e.g. Control_PRK
     ######################################################
     forTransferRunIdDir:str                    = ""
     forTransferQCtarFile:str                   = ""
