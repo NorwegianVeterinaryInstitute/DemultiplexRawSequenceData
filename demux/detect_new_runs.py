@@ -134,7 +134,7 @@ def detect_new_runs( rawdata: RawDataDirectory, demultiplex: DemultiplexDirector
         demuxLogger.warning( termcolor.colored( text, color="magenta", attrs=["bold"] ) )
 
     for runid, missing in demultiplex.pending_deliveries.items( ):
-        demuxLogger.info( f"{runid}: demultiplexed, missing markers: {', '.join( missing )}" )
+        demuxLogger.debug( f"{runid}: demultiplexed, missing markers: {', '.join( missing )}" )
 
     new_runs   = [ runid for runid in rawdata.runs if runid not in demultiplex.runs and runid not in demultiplex.incomplete_runs ]
     ready_runs = [ runid for runid in new_runs if rawdata.is_ready( runid ) ]
