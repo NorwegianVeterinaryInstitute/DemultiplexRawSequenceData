@@ -13,8 +13,10 @@
 #
 
 import logging
+import os
 import sys
 import termcolor
+import traceback
 
 from inspect            import currentframe, getframeinfo
 from collections        import deque
@@ -23,6 +25,7 @@ from collections        import deque
 
 from demux.loggers                                              import setup_event_and_log_handling, setup_file_log_handling
 from demux.core                                                 import demux             # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
+from demux.config                                               import constants
 from demux.detect_new_runs                                      import RawDataDirectory, DemultiplexDirectory, detect_new_runs
 
 from demux.util.buffering_smtp_handler                          import BufferingSMTPHandler
@@ -31,8 +34,6 @@ from demux.util.change_permissions                              import change_pe
 from demux.util.arguments                                       import parse_arguments
 from demux.util.logging                                         import setup_logging
 from demux.util.lock                                            import setup_lock
-
-from demux.detect_new_runs                                      import detect_new_runs
 
 from demux.envsetup.setup_environment                           import setup_environment
 from demux.envsetup.create_demultiplex_directory_structure      import create_demultiplex_directory_structure
@@ -225,17 +226,20 @@ def process_run(RunID: str) -> None:
     change_permissions( demux )                                                                         # change permissions for all the delivery files, including QC
     control_projects_qc( demux )                                                                        # check to see if we need to create the report for any control projects present
     tar_file_quality_check( demux )                                                                     # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
+    finalize( demux, demux.demultiplexCompleteFile )                                                    # phase marker: demultiplexing, QC and tar done; detect_new_runs( ) treats its absence as an incomplete run
     if demux.upload_vigas_enabled and demux.upload_to_vigasp:
         demuxLogger.debug( f"{RunID} has to be uploaded to VIGASP" )
         deliver_files_to_VIGASP( demux )                                                                # Deliver the output files to VIGASP
+        finalize( demux, demux.vigaspDeliveryCompleteFile )                                             # phase marker: VIGASP delivery done
     elif demux.upload_to_vigasp:
         demuxLogger.warning( termcolor.colored( f"{RunID}: VIGASP delivery skipped (--skip-vigasp)", color="magenta" ) )
     if demux.upload_nird_enabled and demux.transfer_to_nird:
         demuxLogger.debug( f"{RunID} has to be uploaded to NIRD" )
         deliver_files_to_NIRD( demux )                                                                  # deliver the output files to NIRD
+        finalize( demux, demux.nirdDeliveryCompleteFile )                                               # phase marker: NIRD delivery done
     elif demux.transfer_to_nird:
         demuxLogger.warning( termcolor.colored( f"{RunID}: NIRD delivery skipped (--skip-nird)", color="magenta" ) )
-    # finalize( demux )                                                                                 # mark the script as complete
+    finalize( demux, demux.runCompleteFile )                                                            # process_run( ) reached the end for this run
     # shutdownEventAndLoggingHandling( )                                                                # shutdown logging before exiting.
 
     # make sure to notify the operator if no files where uploaded
@@ -243,6 +247,22 @@ def process_run(RunID: str) -> None:
         demuxLogger.info( termcolor.colored( f"\n\nNo files uploaded.\n", color="light_cyan", attrs=["blink"] ) )
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
     logging.shutdown( )
+
+def _write_failed_marker( RunID: str, reason: str ) -> None:
+    """
+    Write {demultiplexRunIDdir}/{demux.demultiplexFailedFile} with the reason a run died, so
+    detect_new_runs( ) can report it. First line is a one-line summary, the rest is the detail.
+    Best effort: if the run directory does not exist yet, there is nothing to mark.
+    """
+    run_dir = os.path.join( demux.demultiplexDir, RunID + constants.DEMULTIPLEX_DIR_SUFFIX )       # same path setup_environment( ) builds; do not trust demux.demultiplexRunIDdir, it may be from an earlier run in the queue
+    if not os.path.isdir( run_dir ):
+        return
+    summary = reason.strip( ).splitlines( )[ -1 ] if reason.strip( ) else "unknown"
+    try:
+        with open( os.path.join( run_dir, demux.demultiplexFailedFile ), "w", encoding = "utf-8" ) as handle:
+            handle.write( f"{summary}\n\n{reason}\n" )
+    except OSError as error:
+        demuxLogger.error( f"could not write {demux.demultiplexFailedFile} for {RunID}: {error}" )
 
 
 def deduplicate_runids( RunIDs: list ) -> list:
@@ -288,7 +308,15 @@ def main( RunIDs: list) -> None:
 
     queue = deque( RunIDs )                                                                               # setup a queue to allow for multiple runs
     while queue:
-        process_run( queue.popleft( ) )                                                                   # process the run(s)
+        RunID = queue.popleft( )
+        try:
+            process_run( RunID )                                                                          # process the run(s)
+        except SystemExit:
+            _write_failed_marker( RunID, "sys.exit( ) called by a step; see the run log for the CRITICAL entry" )
+            raise
+        except BaseException:
+            _write_failed_marker( RunID, traceback.format_exc( ) )
+            raise
 
 
 ########################################################################
