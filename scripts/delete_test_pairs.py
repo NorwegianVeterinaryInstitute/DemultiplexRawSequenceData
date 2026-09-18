@@ -36,7 +36,8 @@ import time
 import requests
 
 TIMEOUT: int = 60
-STAGGER: int = 5                                                              # seconds between DELETEs; IRIDA does not like bursts
+STAGGER: int = 5       # seconds between DELETEs; IRIDA does not like bursts
+COUNTDOWN: int = 60    # seconds between Phase 1 and the first DELETE, lets IRIDA settle
 SPINNER: str = "|/-\\"
 
 
@@ -90,6 +91,11 @@ def main( ) -> int:
     if not args.delete:
         print( "dry run, pass --delete to remove them" )
         return 0
+
+    for remaining in range( COUNTDOWN, 0, -1 ):
+        print( f"\rletting IRIDA settle, deleting in {remaining:2d} s ", end = "", file = sys.stderr, flush = True )
+        time.sleep( 1 )
+    print( file = sys.stderr )
 
     # phase 2: delete, one every STAGGER seconds, spinner on stderr
     deleted: int = 0
