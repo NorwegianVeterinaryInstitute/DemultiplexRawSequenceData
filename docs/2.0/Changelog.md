@@ -14,7 +14,6 @@
 ## Run handling *new*
 - Detection of new runs by comparing rawdata against demultiplex (#34, #122); SampleSheet-with-path-names.csv preferred when present (#195).
 - Incomplete run detection: phase markers DemultiplexComplete, VigaspDeliveryComplete, NirdDeliveryComplete, RunComplete; DemultiplexFailed with the traceback; incomplete runs reported with the reason and the rm command, never re-run silently (#174).
-- Run directory manifest validation: RunInfo.xml read for lanes, tiles and cycles; the expected BCL, filter and locs file set is built and compared against the run directory before bcl2fastq starts, so a half-copied run is refused up front (#194).
 - Control projects: Control_ prefix agreed with the lab; a project with no fastq.gz is a warning, dropped from QC, tar and delivery, kept in the MultiQC stats (#43, #49, #50, #202).
 - Guard against SampleSheets older than 251110_M09180_0048 that lack the delivery columns (#179, partial).
 
