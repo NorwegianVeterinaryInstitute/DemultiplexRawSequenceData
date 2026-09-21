@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.11
 """
 make_test_run.py - clone a real Illumina run directory into a fake test run.
 
