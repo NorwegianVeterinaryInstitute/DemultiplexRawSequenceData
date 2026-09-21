@@ -2,15 +2,16 @@
 """
 make_test_run.py - clone a real Illumina run directory into a fake test run.
 
-Copies /data/rawdata/<source RunID> to /data/rawdata/999999_M09180_9999_<NNNNNNNNN>-M7V7K,
-where NNNNNNNNN is one higher than the highest existing fake run, and rewrites
+Copies /data/rawdata/<source RunID> to /data/rawdata/999999_M09180_9999_<NNNNNNNNN>-<flowcell>,
+where NNNNNNNNN is one higher than the highest existing fake run and <flowcell> is the
+flowcell suffix of the source RunID (the part after the last "-"), and rewrites
 SampleSheet.csv so every Sample_ID, Sample_Name and Sample_Plate is replaced by a
 TESTDATA name carrying the fake run counter. Sample_Project and every other column
 stay as they are: the fake run lands in the real projects, as new samples that are
 unique per fake run, identifiable and deletable by prefix.
 Everything else in the run directory is copied untouched.
 
-usage: make_test_run.py 260904_M09180_0073_000000000-MF398
+usage: make_test_run.py 260807_M09180_0070_000000000-MDJ2D
 
 Copyright (C) 2026  George Marselis <george.marselis@vetinst.no>
 This program is free software: you can redistribute it and/or modify
@@ -38,8 +39,8 @@ from sample_sheet import SampleSheet
 RAWDATA_DIR: str = "/data/rawdata"
 SAMPLE_SHEET: str = "SampleSheet.csv"
 FAKE_PREFIX: str = "999999_M09180_9999_"
-FAKE_SUFFIX: str = "-M7V7K"
-FAKE_PATTERN: re.Pattern = re.compile(r"^999999_M09180_9999_(\d{9})-M7V7K$")
+FAKE_PATTERN: re.Pattern = re.compile(r"^999999_M09180_9999_(\d{9})-[A-Z0-9]+$")
+REAL_PATTERN: re.Pattern = re.compile(r"^\d{6}_[A-Z0-9]+_\d{4}_[A-Z0-9]+-([A-Z0-9]+)$")
 SAMPLE_COLUMNS: tuple[str, ...] = ("Sample_ID", "Sample_Name")
 PLATE_COLUMN: str = "Sample_Plate"
 TEST_SAMPLE_PREFIX: str = "TESTDATA_"
@@ -49,10 +50,26 @@ TEST_SAMPLE_PREFIX: str = "TESTDATA_"
 CP: str = "/usr/bin/cp"
 
 
-def next_fake_run_id() -> str:
+def flowcell_suffix(run_id: str) -> str:
+    """
+    Return the flowcell suffix of a real RunID: the part after the last "-".
+
+    :param run_id: a real RunID such as 260807_M09180_0070_000000000-MDJ2D
+    :return: the suffix, such as MDJ2D
+    """
+    match: re.Match | None = REAL_PATTERN.match(run_id)
+    if not match:
+        raise ValueError(f"{run_id} is not a RunID of the form YYMMDD_INSTRUMENT_NNNN_FLOWCELL-SUFFIX")
+    return match.group(1)
+
+
+def next_fake_run_id(suffix: str) -> str:
     """
     Scan RAWDATA_DIR for existing fake runs and return the next RunID.
+    The counter is global across all fake runs regardless of suffix, so a
+    counter is never reused.
 
+    :param suffix: flowcell suffix to append
     :return: RunID string with the nine-digit counter incremented
     """
     highest: int = -1
@@ -61,7 +78,7 @@ def next_fake_run_id() -> str:
         match: re.Match | None = FAKE_PATTERN.match(entry)
         if match:
             highest = max(highest, int(match.group(1)))
-    return f"{FAKE_PREFIX}{highest + 1:09d}{FAKE_SUFFIX}"
+    return f"{FAKE_PREFIX}{highest + 1:09d}-{suffix}"
 
 
 def rewrite_sample_sheet(path: str, run_counter: str) -> dict[str, str]:
@@ -122,8 +139,13 @@ def main() -> int:
     if FAKE_PATTERN.match(args.source):
         print(f"ERROR: {args.source} is a fake run; source must be a real run", file=sys.stderr)
         return 1
+    try:
+        suffix: str = flowcell_suffix(args.source)
+    except ValueError as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 1
 
-    fake_run_id: str = next_fake_run_id()
+    fake_run_id: str = next_fake_run_id(suffix)
     target_dir: str = os.path.join(RAWDATA_DIR, fake_run_id)
     if os.path.exists(target_dir):
         print(f"ERROR: {target_dir} already exists", file=sys.stderr)
