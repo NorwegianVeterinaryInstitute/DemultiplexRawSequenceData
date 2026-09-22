@@ -3,13 +3,19 @@
 make_test_run.py - clone a real Illumina run directory into a fake test run.
 
 Copies /data/rawdata/<source RunID> to /data/rawdata/999999_M09180_9999_<NNNNNNNNN>-<flowcell>,
-where NNNNNNNNN is one higher than the highest existing fake run and <flowcell> is the
-flowcell suffix of the source RunID (the part after the last "-"), and rewrites
-SampleSheet.csv so every Sample_ID, Sample_Name and Sample_Plate is replaced by a
-TESTDATA name carrying the fake run counter. Sample_Project and every other column
-stay as they are: the fake run lands in the real projects, as new samples that are
-unique per fake run, identifiable and deletable by prefix.
+where NNNNNNNNN is one higher than the highest existing fake run with the same
+flowcell suffix, and <flowcell> is the flowcell suffix of the source RunID (the
+part after the last "-"), and rewrites SampleSheet.csv so every Sample_ID,
+Sample_Name and Sample_Plate is replaced by a TESTDATA name carrying the fake
+run counter. Sample_Project and every other column stay as they are: the fake
+run lands in the real projects, as new samples that are unique per fake run,
+identifiable and deletable by prefix.
 Everything else in the run directory is copied untouched.
+
+The source argument accepts a bare RunID or a path to it under RAWDATA_DIR,
+with or without a trailing slash: 260807_M09180_0070_000000000-MDJ2D,
+260807_M09180_0070_000000000-MDJ2D/, /data/rawdata/260807_M09180_0070_000000000-MDJ2D
+and /data/rawdata/260807_M09180_0070_000000000-MDJ2D/ are all accepted.
 
 usage: make_test_run.py 260807_M09180_0070_000000000-MDJ2D
 
@@ -39,7 +45,7 @@ from sample_sheet import SampleSheet
 RAWDATA_DIR: str = "/data/rawdata"
 SAMPLE_SHEET: str = "SampleSheet.csv"
 FAKE_PREFIX: str = "999999_M09180_9999_"
-FAKE_PATTERN: re.Pattern = re.compile(r"^999999_M09180_9999_(\d{9})-[A-Z0-9]+$")
+FAKE_PATTERN: re.Pattern = re.compile(r"^999999_M09180_9999_(\d{9})-([A-Z0-9]+)$")
 REAL_PATTERN: re.Pattern = re.compile(r"^\d{6}_[A-Z0-9]+_\d{4}_[A-Z0-9]+-([A-Z0-9]+)$")
 SAMPLE_COLUMNS: tuple[str, ...] = ("Sample_ID", "Sample_Name")
 PLATE_COLUMN: str = "Sample_Plate"
@@ -65,17 +71,17 @@ def flowcell_suffix(run_id: str) -> str:
 
 def next_fake_run_id(suffix: str) -> str:
     """
-    Scan RAWDATA_DIR for existing fake runs and return the next RunID.
-    The counter is global across all fake runs regardless of suffix, so a
-    counter is never reused.
+    Scan RAWDATA_DIR for existing fake runs with this suffix and return the
+    next RunID. The counter restarts at 0 for each distinct flowcell suffix.
 
     :param suffix: flowcell suffix to append
     :return: RunID string with the nine-digit counter incremented
     """
+    pattern: re.Pattern = re.compile(rf"^999999_M09180_9999_(\d{{9}})-{re.escape(suffix)}$")
     highest: int = -1
     entry: str
     for entry in os.listdir(RAWDATA_DIR):
-        match: re.Match | None = FAKE_PATTERN.match(entry)
+        match: re.Match | None = pattern.match(entry)
         if match:
             highest = max(highest, int(match.group(1)))
     return f"{FAKE_PREFIX}{highest + 1:09d}-{suffix}"
@@ -125,9 +131,9 @@ def main() -> int:
     :return: process exit code
     """
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Clone a real run into an incrementing fake test run.")
-    parser.add_argument("source", help=f"source RunID under {RAWDATA_DIR}")
+    parser.add_argument("source", help=f"source RunID, bare or as a path under {RAWDATA_DIR}")
     args: argparse.Namespace = parser.parse_args()
-    args.source = args.source.rstrip("/")
+    args.source = os.path.basename(args.source.rstrip("/"))
 
     source_dir: str = os.path.join(RAWDATA_DIR, args.source)
     if not os.path.isdir(source_dir):
