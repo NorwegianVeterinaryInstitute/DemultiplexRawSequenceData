@@ -2,7 +2,7 @@
 
 ## Delivery to VIGASP (IRIDA) *new*
 - Full IRIDA upload state machine in step07: preflight and credentials from Bitwarden, project check, sequencing run creation, sample find-or-create, paired-end upload, sha256 verification against IRIDA's uploadSha256, run marked COMPLETE (#27).
-- Parallel uploads bounded by irida_max_in_flight with a stagger between batches; benchmark harness and integration test against project 154; production defaults from the NREC benchmark, stagger raised to 60 s then 240 s for MiSeq file sizes.
+- Parallel uploads bounded by irida_max_in_flight with a stagger between batches; benchmark harness and integration test against project 154; production defaults from the NREC benchmark, stagger raised from 10 s to 30 s to 60 s for MiSeq file sizes, two pairs in flight.
 - Per-sample Transfer_VIGAS and VIGASP_ID read from the SampleSheet; the development override to project 154 removed (#205).
 - Retry with backoff on the IRIDA project sample list call under analysis load (#210).
 
