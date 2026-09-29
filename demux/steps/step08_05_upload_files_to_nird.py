@@ -302,7 +302,7 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
         shutil.copy2( file_info[ 'md5_file_local' ],    file_info[ 'md5_file_remote' ] )
         shutil.copy2( file_info[ 'sha512_file_local' ], file_info[ 'sha512_file_remote' ] )
 
-        demuxLogger.info( f"Done: LOCAL:{file_info[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{file_info[ 'tar_file_remote' ]}" )
+        demuxLogger.info( f"Verified: LOCAL:{file_info[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{file_info[ 'tar_file_remote' ]}" )
 
     except Exception as error:
         message = f"RuntimeError: local sshfs upload failed for {file_info[ 'tar_file_remote' ]}: {error}"
@@ -322,8 +322,8 @@ def _upload_files_to_nird( demux ) -> None:
     and raises a single RuntimeError after synchronization if any upload failed.
     """
 
-    if len( demux.tarFilesToTransferList ) == 0:
-        message = f"Length of demux.tarFilesToTransferList is zero while copying."
+    if len( demux.absoluteFilesToTransferList ) == 0:
+        message = f"Length of demux.absoluteFilesToTransferList is zero while copying."
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
@@ -340,7 +340,7 @@ def _upload_files_to_nird( demux ) -> None:
 
     if constants.SERIAL_COPYING == demux.nird_copy_mode:
         demuxLogger.info( "Serial copying enabled." )
-        for tar_file in demux.tarFilesToTransferList:
+        for tar_file in demux.absoluteFilesToTransferList:
             upload_func( demux, tar_file )
 
     elif constants.PARALLEL_COPYING == demux.nird_copy_mode:
@@ -349,7 +349,7 @@ def _upload_files_to_nird( demux ) -> None:
         future_to_tar: dict[ Any, Any ] = { }
 
         with ThreadPoolExecutor( max_workers = demux.max_workers ) as pool:
-            for tar_file in demux.tarFilesToTransferList:
+            for tar_file in demux.absoluteFilesToTransferList:
                 future: Any = pool.submit( upload_func, demux, tar_file )
                 future_to_tar[ future ] = tar_file
 
