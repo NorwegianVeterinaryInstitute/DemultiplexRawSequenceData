@@ -269,9 +269,7 @@ class demux:
     cpuMultiplier:int                          = 2
     running_threads:int                        = availableCpus * cpuMultiplier  # the amount of threads bcl2fastq, fasqcq and multiqc to use
     ######################################################
-    with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize totalTasks to it
-        tree = ast.parse( f.read( ) )
-        totalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body ) + 2 # + 2 adjust as needed
+    totalTasks = 28 # hardcoded until the object refactor; steps include VIGASP and NIRD delivery
     n = 0 # counter for keeping track of the number of the current task
 
 
