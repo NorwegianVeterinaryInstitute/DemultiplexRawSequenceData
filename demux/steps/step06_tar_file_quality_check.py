@@ -32,7 +32,7 @@ def tar_file_quality_check( demux ):
         Input is RunID rather than demux.RunID or some other variable because we can use this method later to check the tarFile quality of any fetched tar file from archive
     """
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Tar files quaility check started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Tar files quality check started ==", color="green", attrs=["bold"] ) )
 
     forTransferRunIdDirTestName = os.path.join( demux.forTransferRunIdDir,demux.forTransferRunIdDirTestName )
 
@@ -79,7 +79,7 @@ def tar_file_quality_check( demux ):
 
 #---- Step 3: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} and contents ------------------------------------------------------------
     # clean up
-    text = "Cleanup up path:"
+    text = "Clean up path:"
     demuxLogger.info( f"{text:{demux.spacing2}}" + forTransferRunIdDirTestName )
     shutil.rmtree( forTransferRunIdDirTestName )
 
