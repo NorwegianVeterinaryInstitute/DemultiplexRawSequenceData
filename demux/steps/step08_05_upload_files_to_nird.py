@@ -123,7 +123,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    demuxLogger.info( f"Done: LOCAL:{file_entry[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{demux.hostname}:{file_entry[ 'tar_file_remote' ]}" )
+    demuxLogger.info( f"Verified: LOCAL:{file_entry[ 'tar_file_local' ]:<{longest_local_path}} REMOTE:{demux.hostname}:{file_entry[ 'tar_file_remote' ]}" )
 
 
 def progress(filename, size, sent) -> None:
@@ -236,7 +236,7 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     finally:
         scp_client.close( )
 
-    demuxLogger.info( f"Done: LOCAL:{tar_file_local:<{longest_local_path}} REMOTE:{demux.hostname}:{tar_file_remote}" )
+    demuxLogger.info( f"Uploaded: LOCAL:{tar_file_local:<{longest_local_path}} REMOTE:{demux.hostname}:{tar_file_remote}" )
 
 
 def _upload_and_verify_file_via_ssh( demux, tar_file: str ) -> None:
