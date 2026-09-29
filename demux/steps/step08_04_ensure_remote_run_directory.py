@@ -87,7 +87,7 @@ def _ensure_remote_run_directory( demux ) -> None:
     Dispatch to the correct remote-directory preparation method
     based on NIRD access mode.
     """
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: checking if remote directrory exists started\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: checking if remote directory exists started\n", color="green", attrs=["bold"] ) )
 
     if constants.NIRD_MODE_SSH == demux.nird_access_mode:
         _ensure_remote_run_directory_ssh( demux )
@@ -106,4 +106,4 @@ def _ensure_remote_run_directory( demux ) -> None:
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: checking if remote directory exists finished\n", color="red", attrs=["bold"] ) )
