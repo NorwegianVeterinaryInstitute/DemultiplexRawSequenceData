@@ -416,7 +416,13 @@ class demux:
                 # demux.project_samples_metadata[ project ][ sample_id ][ 'upload_to_vigasp' ] = True
                 # demux.project_samples_metadata[ project ][ sample_id ][ 'vigas_project_id' ]  = 154
 
-        for project, tar_file in zip( demux.projectList, demux.tarFilesToTransferList ):
+        for project in demux.projectList:
+            if any( var in project for var in [ demux.testProject ] ):                  # skip the test project; it gets no tar, same rule as _create_tar_files_to_transfer_list( )
+                continue
+            if any( var in project for var in demux.controlProjects ):                  # skip control projects; they get no tar, same rule as _create_tar_files_to_transfer_list( )
+                continue
+            # derive the tar path from the project name, so control and test projects in any SampleSheet row cannot shift the pairing
+            tar_file:str = os.path.join( demux.forTransferDir, demux.RunID, f"{demux.runIDShort}.{project}{demux.tarSuffix}" )
             # take the project-level values directly from the first sample in that project
             first_sample = next( iter( demux.project_samples_metadata[ project ].values( ) ) )
             locations: set[ str ] = { entry[ 'nird_location' ] for entry in demux.project_samples_metadata[ project ].values( ) }
@@ -618,6 +624,3 @@ class demux:
         demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Checking SampleSheet.csv for characters that might cause us headaches finished ==\n", color="red", attrs=["bold"] ) )
 
         return sampleSheetContent
-
-
-
