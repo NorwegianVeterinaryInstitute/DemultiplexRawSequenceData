@@ -578,7 +578,7 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
             demuxLogger.critical( message )
             raise SSHException( message ) from error
 
-        demuxLogger.info( termcolor.colored( "Remote directory does not exist, created\n", color="cyan", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"Remote directory {ip}:{remote_absolute_dir_path} did not exist, created\n", color="cyan", attrs=["bold"] ) )
     finally:
         try:
             sftp_client.close( )
