@@ -8,7 +8,7 @@ import sys
 import syslog
 import termcolor
 
-import demux.config.constants
+import demux.config.constants as constants
 
 
 demuxLogger = None
