@@ -161,7 +161,7 @@ def _parse_ssh_config( demux ) -> List[ paramiko.config.SSHConfig ]:
     # make sure the ssh config is up to spec with our stuff
     _verify_ssh_config_policy_for_hop( target_lookup )
 
-    return _resolve_proxyjump_chain( ssh_config, target_lookup.get( "hostname" ) )
+    return _resolve_proxyjump_chain( ssh_config, demux.nird_upload_host )   # resolve from the Host alias; HostName is only for the TCP connect
 
 
 
