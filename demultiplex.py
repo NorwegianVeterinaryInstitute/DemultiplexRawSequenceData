@@ -62,6 +62,7 @@ from demux.steps.step08_deliver_files_to_NIRD import deliver_files_to_NIRD
 # ... add here as needed ...
 #
 from demux.steps.step99_finalize import finalize
+from demux.subcommands import SUBCOMMAND_HANDLERS
 from demux.util.arguments import parse_arguments, validate_arguments
 from demux.util.change_permissions import change_permissions
 from demux.util.checksum import calc_file_hash
@@ -339,6 +340,8 @@ if __name__ == '__main__':
 
     args   = parse_arguments( )                                                 # first: a tab-completion request exits inside parse_arguments( ) and must not take the lock
     validate_arguments( args )                                                  # constraints argparse cannot express; unimplemented subcommands raise NotImplementedError
+    if args.subcommand in SUBCOMMAND_HANDLERS:                                          # every subcommand except run and scan mode; stubs stop with "not yet implemented"
+        SUBCOMMAND_HANDLERS[ args.subcommand ]( args )
     setup_logging( )                                                            # set up basic logging for now, will move all log setup there
     setup_lock( )                                                               # make sure we only run one instance at a time
     logging.shutdown( )                                                         # shut down basic logging, main logging will take charge in main( )

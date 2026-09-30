@@ -192,10 +192,8 @@ class _VerboseHelpFormatter(argparse.RawDescriptionHelpFormatter):
     """
     def _get_help_string(self, action):
         help_text = action.help
-        if action.default is not None and action.default is not argparse.SUPPRESS:
-            if '%(default)' not in (help_text or ''):
-                if action.default is not False:                     # skip store_true flags with default=False
-                    help_text = f"{help_text} (default: {action.default})"
+        if action.default is not None and action.default is not argparse.SUPPRESS and '%(default)' not in ( help_text or '' ) and action.default is not False:   # skip store_true flags with default=False
+            help_text = f"{help_text} (default: {action.default})"
         return help_text
 
 
@@ -465,7 +463,6 @@ def validate_arguments(args: argparse.Namespace) -> None:
     """
     Enforce constraints that argparse cannot express natively.
     Raises SystemExit with a descriptive error message on violation.
-    Raises NotImplementedError for subcommands not yet implemented.
     """
     if args.subcommand == 'run':
         if args.only_vigasp and args.skip_vigasp:
@@ -479,17 +476,14 @@ def validate_arguments(args: argparse.Namespace) -> None:
         if only_active and skip_active:
             raise SystemExit("error: --only-vigasp/--only-nird cannot be combined with --skip-X flags.")
 
-    if args.subcommand == 'validate':
-        if not args.samplesheet and not args.hashes:
-            args.samplesheet = True  # enforce default explicitly
+    if args.subcommand == 'validate' and not args.samplesheet and not args.hashes:
+        args.samplesheet = True  # enforce default explicitly
 
-    if args.subcommand in ('rename-run', 'rename-sample'):
-        if os.getuid() != 0:
-            raise SystemExit(f"error: {args.subcommand} requires root.")
+    if args.subcommand in ( 'rename-run', 'rename-sample' ) and os.getuid( ) != 0:
+        raise SystemExit(f"error: {args.subcommand} requires root.")
 
-    if args.subcommand == 'statistics':
-        if (args.qc or args.qc_plots or args.undetermined) and not args.RunID:
-            raise SystemExit("error: --qc, --qc-plots and --undetermined require a RunID.")
+    if args.subcommand == 'statistics' and ( args.qc or args.qc_plots or args.undetermined ) and not args.RunID:
+        raise SystemExit("error: --qc, --qc-plots and --undetermined require a RunID.")
 
     if args.subcommand == 'export-rawdata':
         if not args.RunID:
@@ -497,33 +491,11 @@ def validate_arguments(args: argparse.Namespace) -> None:
         if args.keep and args.destination:
             raise SystemExit("error: --keep is only meaningful with --ssh or --url.")
 
-    if args.subcommand == 'tag':
-        if not args.badrun and not args.control:
-            raise SystemExit("error: tag requires at least one of --badrun or --control.")
+    if args.subcommand == 'tag' and not args.badrun and not args.control:
+        raise SystemExit("error: tag requires at least one of --badrun or --control.")
 
-    if args.subcommand == 'daemon':
-        if args.force and args.action != 'stop':
-            raise SystemExit("error: --force is only valid with daemon stop.")
-
-    # not yet implemented
-    for subcommand in (
-        'statistics',
-        'status',
-        'list',
-        'clean',
-        'delete',
-        'rename-run',
-        'rename-sample',
-        'export-rawdata',
-        'archive',
-        'tag',
-        'notify',
-        'approve',
-        'reject',
-        'daemon',
-    ):
-        if args.subcommand == subcommand:
-            raise NotImplementedError(f"{subcommand}: not yet implemented.")
+    if args.subcommand == 'daemon' and args.force and args.action != 'stop':
+        raise SystemExit("error: --force is only valid with daemon stop.")
 
 
 def parse_arguments() -> argparse.Namespace:
