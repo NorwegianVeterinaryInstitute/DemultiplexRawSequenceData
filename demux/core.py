@@ -167,6 +167,7 @@ class demux:
                                     # "mounted" uses sshfs but only with keys
     allowed_nird_access_modes:ClassVar[ list ] = [ "ssh", "ssh2fa", "mounted" ]
     nird_copy_mode:str                         = "parallel"
+    nird_verify_timeout:int                    = 600          # seconds allowed for the remote md5sum/sha512sum of one tar; also the read timeout on their channels
     allowed_nird_copy_modes:ClassVar[ list ]   = [ "serial", "parallel" ]
     ######################################################
     # defaults

@@ -68,6 +68,8 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
         sha512sum_channel = demux.transport.open_session( )
         md5sum_channel.exec_command( md5sum_command )
         sha512sum_channel.exec_command( sha512sum_command )
+        md5sum_channel.settimeout( demux.nird_verify_timeout )                    # a silent connection raises in the drain thread instead of blocking forever
+        sha512sum_channel.settimeout( demux.nird_verify_timeout )
     except Exception:                                                               # close what was opened before the error, then let it propagate
         for channel in ( md5sum_channel, sha512sum_channel ):
             if channel is not None:
@@ -77,13 +79,20 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
     results: dict[ str, tuple[ bytes, bytes, int ] ] = { }
 
     # we can devote a core for each process, easily. Cut down on waiting time
-    md5_thread: threading.Thread    = threading.Thread( target = _drain_channel, args = ( md5sum_channel, results, "md5" ) )
-    sha512_thread: threading.Thread = threading.Thread( target = _drain_channel, args = ( sha512sum_channel, results, "sha512" ) )
+    md5_thread: threading.Thread    = threading.Thread( target = _drain_channel, args = ( md5sum_channel, results, "md5" ), daemon = True )
+    sha512_thread: threading.Thread = threading.Thread( target = _drain_channel, args = ( sha512sum_channel, results, "sha512" ), daemon = True )
 
     md5_thread.start( )
     sha512_thread.start( )
-    md5_thread.join( )
-    sha512_thread.join( )
+    md5_thread.join( timeout = demux.nird_verify_timeout )
+    sha512_thread.join( timeout = demux.nird_verify_timeout )
+    for key, thread in ( ( "md5", md5_thread ), ( "sha512", sha512_thread ) ):
+        if thread.is_alive( ):                                                      # stuck drain thread: close the channels so it ends, then fail
+            for channel in ( md5sum_channel, sha512sum_channel ):
+                channel.close( )
+            message = f"RuntimeError: remote {key}sum for {file_entry[ 'tar_file_remote' ]} did not finish within {demux.nird_verify_timeout}s"
+            demuxLogger.critical( message )
+            raise RuntimeError( message )
 
     for key, value in results.items( ):                                             # a drain thread failed: report its real cause instead of KeyError below
         if isinstance( value, Exception ):
