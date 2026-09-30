@@ -59,12 +59,12 @@ def create_demultiplex_directory_structure( demux ):
         demuxFailureLogger.critical( f"File already exists! Exiting!\n{err}" )
         demuxLogger.critical( f"File already exists! Exiting!\n{err}" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
     except FileNotFoundError as err:
         demuxFailureLogger.critical( f"A component of the passed path is missing! Exiting!\n{err}" )
         demuxLogger.critical( f"A component of the passed path is missing! Exiting!\n{err}" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Create directory structure finished ==\n", color="red", attrs=["bold"] ) )

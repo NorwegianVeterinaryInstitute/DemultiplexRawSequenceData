@@ -34,6 +34,6 @@ def copy_sample_sheet_into_demultiplex_runiddir( demux ):
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir} ==\n", color="red", attrs=["bold"] ) )

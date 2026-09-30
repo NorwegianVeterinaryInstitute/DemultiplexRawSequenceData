@@ -32,7 +32,7 @@ def archive_sample_sheet( demux ):
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
 
     if not os.path.isfile( demux.sampleSheetFilePath ):
@@ -40,7 +40,7 @@ def archive_sample_sheet( demux ):
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     try:
         shutil.copy2( demux.sampleSheetFilePath, demux.sampleSheetArchiveFilePath )
@@ -56,6 +56,6 @@ def archive_sample_sheet( demux ):
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks:  Archive {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} ==\n", color="red", attrs=["bold"] ) )

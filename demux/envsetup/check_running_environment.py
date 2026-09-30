@@ -21,7 +21,7 @@ def check_running_directory_structure( ):
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     #   check if {demux.demultiplexDirRoot} exists
     #       exit if not
@@ -30,19 +30,19 @@ def check_running_directory_structure( ):
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     if not os.path.isdir( demux.demultiplexDirRoot ):
         text = f"{demux.demultiplexDirRoot} is not a directory! Cannot stored demultiplex data in a non-directory structure! Exiting." 
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
     if os.path.exists( demux.demultiplexDirRoot ):
         text = f"{demux.demultiplexRunIDdir} exists. Delete the demultiplex folder before re-running the script"
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Check if the runtime directory structure is ready for processing ==\n", color="red" ) )

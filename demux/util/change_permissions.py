@@ -49,7 +49,7 @@ def change_permissions( demux ):
                 demuxFailureLogger.critical( f"{ text }" )
                 demuxLogger.critical( f"{ text }" )
                 logging.shutdown( )
-                sys.exit( )
+                sys.exit( 1 )
 
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
@@ -65,7 +65,7 @@ def change_permissions( demux ):
                 demuxFailureLogger.critical( f"{ text }" )
                 demuxLogger.critical( f"{ text }" )
                 logging.shutdown( )
-                sys.exit( )
+                sys.exit( 1 )
 
     # change ownership and access mode of directories
     demuxLogger.debug( termcolor.colored( f"= walk the dir tree, {inspect.stack()[0][3]}() ======================", attrs=["bold"] ) )
@@ -81,7 +81,7 @@ def change_permissions( demux ):
                 demuxFailureLogger.critical( f"{ text }" )
                 demuxLogger.critical( f"{ text }" )
                 logging.shutdown( )
-                sys.exit( )
+                sys.exit( 1 )
 
             try:
                 # EXAMPLE: '/bin/chmod -R g+rwX sambagroup ' + folder_or_file, demultiplex_out_file
@@ -98,7 +98,7 @@ def change_permissions( demux ):
                 demuxFailureLogger.critical( f"{ text }" )
                 demuxLogger.critical( f"{ text }" )
                 logging.shutdown( )
-                sys.exit( )
+                sys.exit( 1 )
 
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Changing Permissions finished ==\n", color="red", attrs=["bold"] ) )
