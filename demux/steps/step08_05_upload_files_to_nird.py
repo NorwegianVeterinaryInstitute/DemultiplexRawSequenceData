@@ -167,7 +167,7 @@ def _resolve_hostname(ip_address: str) -> str:
     if ip_address not in cache:
         try:
             hostname, _, _  = socket.gethostbyaddr( ip_address )
-        except socket.herror:
+        except OSError:                          # herror and gaierror are both OSError; a failed lookup must never abort the upload
             hostname        = ip_address
         cache[ ip_address ] = hostname
 
