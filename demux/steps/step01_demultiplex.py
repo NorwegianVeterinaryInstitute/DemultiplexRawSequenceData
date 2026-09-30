@@ -81,13 +81,13 @@ def bcl2fastq( demux ):
         demuxFailureLogger.critical( text )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     if not result.stderr:
         demuxLogger.critical( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
         demuxFailureLogger.critical( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     try: 
         file = open( demux.bcl2FastqLogFile, "w" )
@@ -103,14 +103,14 @@ def bcl2fastq( demux ):
         demuxFailureLogger.critical( text )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
 
     if not os.path.isfile( demux.bcl2FastqLogFile ):
         demuxFailureLogger.critical( f"{demux.bcl2FastqLogFile} did not get written to disk. Exiting." )
         demuxLogger.critical( f"{demux.bcl2FastqLogFile} did not get written to disk. Exiting." )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
     else:
         filesize = os.path.getsize( demux.bcl2FastqLogFile )
         text = "bcl2FastqLogFile:"

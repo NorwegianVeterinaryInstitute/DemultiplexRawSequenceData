@@ -96,7 +96,7 @@ def setup_file_log_handling( demux ):
         demuxFailureLogger.critical( "".join( text ) )
         demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     # # set up logging for /data/log/{demux.RunID}.log
     try: 
@@ -112,7 +112,7 @@ def setup_file_log_handling( demux ):
         demuxFailureLogger.critical( "".join( text ) )
         demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxFileLogHandler.setFormatter( demuxLogFormatter )
@@ -132,7 +132,7 @@ def setup_file_log_handling( demux ):
         demuxFailureLogger.critical( "".join( text ) )
         demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
 
@@ -155,7 +155,7 @@ def setup_file_log_handling( demux ):
         demuxFailureLogger.critical( "".join( text ) )
         demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxScriptLogHandler.setFormatter( demuxLogFormatter )
 

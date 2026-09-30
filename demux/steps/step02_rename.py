@@ -59,7 +59,7 @@ def rename_directories( demux ):
                 demuxFailureLogger.critical( f"{ text }" )
                 demuxLogger.critical( f"{ text }" )
                 logging.shutdown( )
-                sys.exit( )
+                sys.exit( 1 )
 
             demuxLogger.debug( f"Renaming " + termcolor.colored(  f"{oldname:92}", color="cyan", attrs=["reverse"] ) + " to " + termcolor.colored(  f"{newname:106}", color="yellow", attrs=["reverse"] ) )
 
@@ -193,7 +193,7 @@ def rename_files( demux ):
                     demuxFailureLogger.critical( f"{ text }" )
                     demuxLogger.critical( f"{ text }" )
                     logging.shutdown( )
-                    sys.exit( )
+                    sys.exit( 1 )
         demuxLogger.debug( "-----------------")
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Rename files ==\n", color="red" ) )
