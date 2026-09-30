@@ -1,11 +1,10 @@
 import os
-import paramiko
 import psutil
 import termcolor
 
 from demux.util.ssh_transport   import _ensure_remote_dir_via_sftp
 from demux.config               import constants
-from demux.loggers              import demuxLogger, demuxFailureLogger
+from demux.loggers              import demuxLogger
 
 def _ensure_remote_run_directory_mounted( demux ) -> None:
     """

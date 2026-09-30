@@ -1,6 +1,5 @@
  # close off the channels we opened and any transports
 
-from demux.loggers              import demuxLogger, demuxFailureLogger
 
 
 def _tear_down_transport( demux ) -> None:

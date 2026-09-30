@@ -4,22 +4,19 @@ import base64
 import hashlib
 import os
 import paramiko
-import pprint
 import re
-import shlex
 import socket
 import stat
-import sys
 import termcolor
 
-from typing import Any, Dict, List, Optional, Tuple, Mapping
+from typing import List, Optional
 
-from paramiko               import SSHClient, SSHConfig, AutoAddPolicy, RejectPolicy, Transport, SSHException
+from paramiko               import SSHException
 from paramiko.ssh_exception import AuthenticationException
 
 from demux.util.bitwarden  import _get_login_credentials, _get_password, get_passphrase
 from demux.config          import constants
-from demux.loggers         import demuxLogger, demuxFailureLogger
+from demux.loggers         import demuxLogger
 
 
 def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig ) -> None:

@@ -1,17 +1,6 @@
-import hashlib
-import json
-import os
-import paramiko
-import psutil
-import shlex
-import shutil
-import socket
-import subprocess
-import sys
 import termcolor
-import urllib.request
 
-from demux.loggers              import demuxLogger, demuxFailureLogger
+from demux.loggers              import demuxLogger
 
 from demux.steps.step08_01_build_absolute_paths        import _build_absolute_paths
 from demux.steps.step08_02_verify_local_files          import _verify_local_files

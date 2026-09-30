@@ -181,7 +181,6 @@ import argparse
 import os
 import sys
 import demux.config.constants as constants
-from demux.loggers import demuxLogger, demuxFailureLogger
 
 
 class _VerboseHelpFormatter(argparse.RawDescriptionHelpFormatter):

@@ -27,9 +27,8 @@ from collections.abc      import ValuesView
 from typing               import Any
 from scp                  import SCPClient
 
-from demux.util.bitwarden import _get_login_credentials
 from demux.config         import constants
-from demux.loggers        import demuxLogger, demuxFailureLogger
+from demux.loggers        import demuxLogger
 
 
 import scp

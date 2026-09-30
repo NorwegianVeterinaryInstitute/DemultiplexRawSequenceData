@@ -4,7 +4,7 @@ import termcolor
 
 from demux.config import constants as constants
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxLogger
 
 SEPARATOR:str = "============================================================================="
 

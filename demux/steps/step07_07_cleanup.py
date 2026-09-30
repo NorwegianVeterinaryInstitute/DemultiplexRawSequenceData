@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxLogger
 
 
 ########################################################################

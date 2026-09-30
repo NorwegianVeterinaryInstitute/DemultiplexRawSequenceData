@@ -10,7 +10,7 @@ import urllib.request
 from typing import Tuple
 
 from demux.config  import constants
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxLogger
 
 # bitwarden methods
 

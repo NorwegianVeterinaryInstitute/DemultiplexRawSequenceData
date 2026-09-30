@@ -1,9 +1,6 @@
 import hashlib
-import inspect
 import logging
 import os
-import pathlib
-import subprocess
 import sys
 import termcolor
 

@@ -18,7 +18,6 @@ import sys
 import termcolor
 import traceback
 
-from inspect            import currentframe, getframeinfo
 from collections        import deque
 
 # Breaking down the script into more digestible chunks
@@ -28,7 +27,6 @@ from demux.core                                                 import demux    
 from demux.config                                               import constants
 from demux.detect_new_runs                                      import RawDataDirectory, DemultiplexDirectory, detect_new_runs
 
-from demux.util.buffering_smtp_handler                          import BufferingSMTPHandler
 from demux.util.checksum                                        import calc_file_hash
 from demux.util.change_permissions                              import change_permissions
 from demux.util.arguments                                       import parse_arguments
@@ -57,7 +55,7 @@ from demux.steps.step08_deliver_files_to_NIRD                   import deliver_f
 #
 from demux.steps.step99_finalize                                import finalize
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxLogger
 
 
 """

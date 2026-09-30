@@ -5,7 +5,7 @@ import termcolor
 from demux.config   import constants as constants
 
 from demux.core    import demux
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxLogger
 
 ########################################################################
 # setup_environment( )

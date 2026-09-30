@@ -4,7 +4,7 @@ import urllib.parse
 import urllib.request
 
 from demux.config  import constants
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxLogger
 from demux.util.bitwarden import _probe_bw_api_state
 
 

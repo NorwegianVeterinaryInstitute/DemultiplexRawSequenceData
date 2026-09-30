@@ -4,7 +4,7 @@ import shutil
 import stat
 
 from demux.config  import constants
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxLogger
 
 
 ########################################################################

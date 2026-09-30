@@ -5,7 +5,6 @@ Compares the contents of the raw data directory against the demultiplex director
 to determine which runs are new and ready for processing.
 """
 
-import logging
 import os
 import termcolor
 
@@ -13,7 +12,7 @@ import demux.core
 
 from demux.config  import constants
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxLogger
 
 class RawDataDirectory:
     """
