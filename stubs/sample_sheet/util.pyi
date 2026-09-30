@@ -1,0 +1,6 @@
+from typing import Any
+
+__all__ = ['is_ipython_interpreter', 'maybe_render_markdown']
+
+def is_ipython_interpreter() -> bool: ...
+def maybe_render_markdown(string: str) -> Any: ...

@@ -21,7 +21,7 @@ SECTIONS:dict[ str, list[ str ] ] = {
 ########################################################################
 # print_running_environment( )
 ########################################################################
-def print_running_environment( demux ):
+def print_running_environment( demux ) -> None:
     """
     Print our running environment, grouped by the explicit SECTIONS map.
     """

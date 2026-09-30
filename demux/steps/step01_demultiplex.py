@@ -1,5 +1,4 @@
 
-import inspect
 import logging
 import os
 import resource
@@ -14,7 +13,7 @@ from demux.loggers import demuxFailureLogger, demuxLogger
 # bcl2fastq
 ########################################################################
 
-def bcl2fastq( demux ):
+def bcl2fastq( demux ) -> None:
     """
     Use Illumina's blc2fastq linux command-line tool to demultiplex each lane into an appropriate fastq file
 
@@ -71,22 +70,22 @@ def bcl2fastq( demux ):
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
         result =  subprocess.run( argv, capture_output = True, cwd = demux.rawDataRunIDdir, check = True, encoding = demux.decodeScheme )
     except subprocess.CalledProcessError as err:
-        text = [    "Caught exception!",
+        lines = [   "Caught exception!",
                     f"Command: {err.cmd}", # interpolated strings
                     f"Return code: {err.returncode}",
                     f"Process output: {err.stdout}",
                     f"Process error:  {err.stderr}",
                     "Exiting."
                  ]
-        text = '\n'.join( text )
+        text = "\n".join( lines )
         demuxFailureLogger.critical( text )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
         sys.exit( 1 )
 
     if not result.stderr:
-        demuxLogger.critical( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
-        demuxFailureLogger.critical( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
+        demuxLogger.critical( "result.stderr has zero lenth. exiting at bcl2fastq()" )
+        demuxFailureLogger.critical( "result.stderr has zero lenth. exiting at bcl2fastq()" )
         logging.shutdown( )
         sys.exit( 1 )
 
@@ -94,12 +93,12 @@ def bcl2fastq( demux ):
         with open( demux.bcl2FastqLogFile, "w" ) as file:
             file.write( result.stderr )
     except OSError as err:
-        text = [    "Caught exception!",
+        lines = [   "Caught exception!",
                     f"File: {err.filename}",
                     f"Error: [{err.errno}] {err.strerror}",
                     "Exiting."
                  ]
-        text = '\n'.join( text )
+        text = "\n".join( lines )
         demuxFailureLogger.critical( text )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )

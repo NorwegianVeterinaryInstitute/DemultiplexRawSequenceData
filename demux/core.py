@@ -288,12 +288,14 @@ class demux:
         self.RunID = RunID # variables in __init___ are unique to each instance
         # # self.RunID = discover_new_runs( )  # this is for later # apparently this si a bad idea
 
+    @staticmethod
     def _get_unique_sample_projects( sample_sheet ):
         """
         Returns the list of sample project names from the sample sheet, preserving their original order and removing duplicates.
         """
         return list( dict.fromkeys( sample_obj.Sample_Project for sample_obj in sample_sheet.samples ) )
 
+    @staticmethod
     def _create_renamed_demux_project_list( projectList ):
         """
         Returns the list of project names with test and control projects removed and all remaining projects renamed using runIDShort.
@@ -311,6 +313,7 @@ class demux:
 
         return newProjectNameList
 
+    @staticmethod
     def _create_tar_files_to_transfer_list( newProjectNameList ):
         """
         Builds and returns the list of absolute tar file paths to transfer, skipping test and control projects and appending the tar suffix for each remaining project.
@@ -328,6 +331,7 @@ class demux:
 
         return tarFilesToTransferList
 
+    @staticmethod
     def _build_project_sample_metadata( sample_sheet: SampleSheet) -> defaultdict[ str, dict[ str, dict[ str, bool | int | str ] ] ]:
         """
         Build a nested mapping from Sample_Project to Sample_ID and all transfer-related metadata fields.
@@ -373,7 +377,7 @@ class demux:
     # parse_sample_sheet
     ########################################################################
     @staticmethod
-    def parse_sample_sheet( ):
+    def parse_sample_sheet( ) -> None:
         """
         Parse the NVI SampleSheet.csv into an object and get the associated project name(s)
 
@@ -427,10 +431,10 @@ class demux:
             # derive the tar path from the project name, so control and test projects in any SampleSheet row cannot shift the pairing
             tar_file:str = os.path.join( demux.forTransferDir, demux.RunID, f"{demux.runIDShort}.{project}{demux.tarSuffix}" )
             # the whole project is one tar, so Transfer_NIRD must be the same for every sample in it
-            transfer_flags: set[ bool ] = { entry[ 'transfer_to_nird' ] for entry in demux.project_samples_metadata[ project ].values( ) }
+            transfer_flags: set[ bool | int | str ] = { entry[ 'transfer_to_nird' ] for entry in demux.project_samples_metadata[ project ].values( ) }
             if len( transfer_flags ) != 1:
                 raise ValueError( f"Transfer_NIRD mismatch for Sample_Project '{project}': {sorted( transfer_flags )}. Aborting." )
-            locations: set[ str ] = { entry[ 'nird_location' ] for entry in demux.project_samples_metadata[ project ].values( ) }
+            locations: set[ bool | int | str ] = { entry[ 'nird_location' ] for entry in demux.project_samples_metadata[ project ].values( ) }
             if len( locations ) != 1:
                 raise ValueError( f"NIRD_Location mismatch for Sample_Project '{project}': {sorted( locations )}. Aborting." )
             demux.absoluteFilesToTransferList[ tar_file ]  = {

@@ -211,7 +211,11 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     current_len        = len( tar_file_local )
     longest_local_path = max( ( len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
 
-    sftp_client: paramiko.SFTPClient = paramiko.SFTPClient.from_transport( demux.transport )
+    sftp_client: paramiko.SFTPClient | None = paramiko.SFTPClient.from_transport( demux.transport )
+    if sftp_client is None:                                                             # from_transport( ) returns None when the SFTP channel cannot be opened
+        message = f"RuntimeError: no SFTP session to {demux.hostname}"
+        demuxLogger.critical( message )
+        raise RuntimeError( message )
     try:
         try:
             sftp_client.stat( tar_file_remote )

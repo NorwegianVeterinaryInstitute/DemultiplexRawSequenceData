@@ -17,7 +17,7 @@ from demux.loggers import demuxLogger
 from demux.util.bitwarden import _get_login_credentials, _get_password, get_passphrase
 
 
-def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig ) -> None:
+def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfigDict ) -> None:
     """
     @in_use by _parse_ssh_config
     Verify that a single SSH hop configuration complies with enforced security
@@ -80,7 +80,7 @@ def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig 
         raise ValueError( f"Multiple IdentityFile values for host alias {target_lookup.get( 'hostname' )}")
 
 
-def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias: str ) -> list[ paramiko.config.SSHConfig ]:
+def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias: str ) -> list[ paramiko.config.SSHConfigDict ]:
     """
     @in_use by ssh_transport:_parse_ssh_config
     Resolve a ProxyJump chain starting from a given SSH alias.
@@ -98,7 +98,7 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
     # override ambiguity. ProxyJump must reference aliases only.
     INLINE_JUMP_RE = re.compile( r"^(?:ssh://)?(?:[^@/]+@)?[^:/\s,]+(?::\d+)?(?:/.*)?$" )
 
-    def _resolve( alias: str, in_progress: set[ str ] ) -> list[ paramiko.config.SSHConfig ]:
+    def _resolve( alias: str, in_progress: set[ str ] ) -> list[ paramiko.config.SSHConfigDict ]:
         """ Depth-first: the hops needed to reach alias, then alias itself. """
         if alias in in_progress:
             raise RuntimeError( f"ProxyJump loop detected at '{alias}'" )
@@ -111,7 +111,7 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
         if any( INLINE_JUMP_RE.match( hop_alias ) and ( ( "@" in hop_alias ) or ( ":" in hop_alias ) or hop_alias.startswith( "ssh://" ) ) for hop_alias in hop_aliases ):
             raise ValueError( "ProxyJump must be aliases only; This library has no support for [user@]host[:port] or ssh:// URIs in ssh client config." )
 
-        chain: list[ paramiko.config.SSHConfig ] = [ ]
+        chain: list[ paramiko.config.SSHConfigDict ] = [ ]
         for hop_alias in hop_aliases:
             chain += _resolve( hop_alias, in_progress | { alias } )                     # a jump host may have its own ProxyJump
         chain.append( lookup )
@@ -121,18 +121,18 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
 
 
 
-def _parse_ssh_config( demux ) -> list[ paramiko.config.SSHConfig ]:
+def _parse_ssh_config( demux ) -> list[ paramiko.config.SSHConfigDict ]:
     """
     @in_use by step08_03_setup_ssh_connection.py:_setup_ssh_connection
     Parse the user SSH client configuration and resolve the effective connection chain for
     demux.nird_upload_host.
 
     Reads the SSH config file, validates the target host entry against demux policy and
-    resolves any ProxyJump directives into an ordered list of paramiko.config.SSHConfig hop
+    resolves any ProxyJump directives into an ordered list of paramiko.config.SSHConfigDict hop
     definitions representing the full jump chain.
 
     Returns:
-        List[paramiko.config.SSHConfig]: Ordered hop configurations from the local client to
+        List[paramiko.config.SSHConfigDict]: Ordered hop configurations from the local client to
         the final target host.
 
     Raises:
@@ -159,7 +159,7 @@ def _parse_ssh_config( demux ) -> list[ paramiko.config.SSHConfig ]:
 
 
 
-def _validate_hostkey( hop: paramiko.config.SSHConfig, transport: paramiko.Transport, *, timeout: float = 30 ):
+def _validate_hostkey( hop: paramiko.config.SSHConfigDict, transport: paramiko.Transport, *, timeout: float = 30 ):
     """
     @in_use by step08_03_setup_ssh_connection.py:_setup_ssh_connection
     Validate the remote host key for a single SSH hop against the user's known_hosts file.
@@ -179,7 +179,7 @@ def _validate_hostkey( hop: paramiko.config.SSHConfig, transport: paramiko.Trans
         SSHException: If the remote host key does not match any entry in known_hosts.
     """
 
-    hostname: str = hop.get( "hostname" )
+    hostname: str = hop[ "hostname" ]
 
     known_hosts_paths: list[ str ] = [ ]
     user_known_hosts = hop.get( "userknownhostsfile" )
@@ -201,7 +201,7 @@ def _validate_hostkey( hop: paramiko.config.SSHConfig, transport: paramiko.Trans
     for path in existing_paths:
         host_keys.load( path )
 
-    known_for_host: paramiko.HostKeys.SubDict = host_keys.lookup( hostname )
+    known_for_host = host_keys.lookup( hostname )
     if not known_for_host:
         raise paramiko.SSHException( f"No host key found for {hostname} in {existing_paths}" )
 
@@ -235,7 +235,7 @@ def _load_private_key( identityfile: str, *, passphrase: str = "" ) -> paramiko.
         paramiko.SSHException:              If no supported key type matches the file.
     """
 
-    pkey_password: bytes | None = passphrase.encode( ) if passphrase else None
+    pkey_password: str | None = passphrase if passphrase else None
     last_error: Exception | None = None
 
     for key_class in ( paramiko.Ed25519Key, paramiko.RSAKey, paramiko.ECDSAKey ):
@@ -315,7 +315,7 @@ def _auth_via_agent( transport: paramiko.Transport, username: str, identityfile_
 
 
 
-def _validate_ssh_key_auth_inputs( hop: paramiko.config.SSHConfig ) -> tuple[str, str, str]:
+def _validate_ssh_key_auth_inputs( hop: paramiko.config.SSHConfigDict ) -> tuple[str, str, str]:
     """
     Validate SSH key authentication inputs resolved from SSHConfig.
 
@@ -327,9 +327,9 @@ def _validate_ssh_key_auth_inputs( hop: paramiko.config.SSHConfig ) -> tuple[str
     Raises ValueError on validation failure.
     """
 
-    username: str     = hop.get( "user" )
-    hostname: str     = hop.get( "hostname" )
-    identityfile: str = os.path.abspath( os.path.expanduser( hop.get( "identityfile" )[0] ) )
+    username: str | None = hop.get( "user" )
+    hostname: str     = hop[ "hostname" ]
+    identityfile: str = os.path.abspath( os.path.expanduser( hop[ "identityfile" ][ 0 ] ) )
 
     if not username:
         raise ValueError( f"ValueError: No username provided for hostname {hostname}. Aborting." )
@@ -380,7 +380,7 @@ def _auth_via_private_key( transport: paramiko.Transport, username: str, private
         raise paramiko.AuthenticationException( f"Private key authentication returned without success for {username}." )
 
 
-def _auth_transport_ssh_keys( hop: paramiko.config.SSHConfig, transport: paramiko.Transport  ) -> None:
+def _auth_transport_ssh_keys( hop: paramiko.config.SSHConfigDict, transport: paramiko.Transport  ) -> None:
     """
     Authenticate an existing SSH Transport using public key credentials.
 
@@ -415,7 +415,7 @@ def _auth_transport_ssh_keys( hop: paramiko.config.SSHConfig, transport: paramik
 
 
 
-def _auth_transport_2fa( hop: paramiko.config.SSHConfig, transport: paramiko.Transport ) -> None:
+def _auth_transport_2fa( hop: paramiko.config.SSHConfigDict, transport: paramiko.Transport ) -> None:
     """
     Authenticate an existing SSH transport using keyboard-interactive 2FA
     (paramiko considers this "keyboard-interactive" even if there is not a real user typing)
@@ -427,7 +427,7 @@ def _auth_transport_2fa( hop: paramiko.config.SSHConfig, transport: paramiko.Tra
         AuthenticationException: if 2FA authentication fails or the transport
         remains unauthenticated after the interactive exchange.
     """
-    hostname                 = hop.get( "hostname" )
+    hostname                 = hop[ "hostname" ]
     port                     = hop.get( "port" )
     username, password, totp = _get_login_credentials( hostname )
 
@@ -453,7 +453,7 @@ def _auth_transport_2fa( hop: paramiko.config.SSHConfig, transport: paramiko.Tra
         raise AuthenticationException( message )
 
 
-def _select_auth_method( hop: paramiko.config.SSHConfig, *, is_target: bool, nird_access_mode: str ) -> str:
+def _select_auth_method( hop: paramiko.config.SSHConfigDict, *, is_target: bool, nird_access_mode: str ) -> str:
     """
     Decide the authentication method for one hop. Declared, not guessed:
 
@@ -480,7 +480,7 @@ def _select_auth_method( hop: paramiko.config.SSHConfig, *, is_target: bool, nir
 
 
 
-def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko.Transport, *, auth_method: str ) -> None:
+def _authenticate_transport( hop: paramiko.config.SSHConfigDict, transport: paramiko.Transport, *, auth_method: str ) -> None:
     """
     Authenticate an existing SSH Transport for a single hop using the method selected by
     _select_auth_method and the credentials in the SSH client configuration and BitWarden.
@@ -489,8 +489,8 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
     and AuthenticationException when the remote server rejects the selected method.
     """
 
-    hostname: str = hop.get( "hostname" )
-    username: str = hop.get( "user" )
+    hostname: str = hop[ "hostname" ]
+    username: str | None = hop.get( "user" )
 
     if auth_method == constants.SSH_AUTH_KEY:
         _auth_transport_ssh_keys( hop, transport )
@@ -498,8 +498,8 @@ def _authenticate_transport( hop: paramiko.config.SSHConfig, transport: paramiko
         _auth_transport_2fa( hop, transport )
     elif auth_method == constants.SSH_AUTH_PASSWORD:
         password: str = _get_password( hostname )                                                 # demux.util.bitwarden
-        if not password:
-            raise ValueError( f"Missing lookup fields for hop {hostname}: password" )
+        if not password or not username:
+            raise ValueError( f"Missing lookup fields for hop {hostname}: user or password" )
         transport.auth_password( username = username, password = password )
     else:
         raise ValueError( f"Unknown ssh auth method {auth_method} for {hostname}" )
@@ -534,11 +534,15 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
         raise SSHException( message )
 
     try:
-        sftp_client: paramiko.SFTPClient = paramiko.SFTPClient.from_transport( demux.transport )
+        sftp_client: paramiko.SFTPClient | None = paramiko.SFTPClient.from_transport( demux.transport )
     except Exception as error:
         message = f"SFTPError: failed to create SFTP session at hop {ip}:{port}"
         demuxLogger.critical( message )
         raise SSHException( message ) from error
+    if sftp_client is None:                                                                      # from_transport( ) returns None when the SFTP channel cannot be opened
+        message = f"SFTPError: no SFTP session at hop {ip}:{port}"
+        demuxLogger.critical( message )
+        raise SSHException( message )
 
     try:
         attributes: paramiko.SFTPAttributes | None = None
@@ -552,7 +556,7 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
             raise SSHException( message ) from error
 
         if attributes is not None:
-            if stat.S_ISDIR( attributes.st_mode ):
+            if attributes.st_mode is not None and stat.S_ISDIR( attributes.st_mode ):
                 message = f"{ip}:{remote_absolute_dir_path} already exists.\n"
                 message += "Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
                 demuxLogger.critical( message )
@@ -573,7 +577,7 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
 
 
 
-def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: paramiko.Transport | None, *, port: int = 22, timeout: float = 30.0, keepalive: int = 30 ) -> paramiko.Transport:
+def _connect_next_proxy_jump( hop: paramiko.config.SSHConfigDict, transport: paramiko.Transport | None, *, port: int = 22, timeout: float = 30.0, keepalive: int = 30 ) -> paramiko.Transport:
     """
     Build a new SSH Transport for a single hop described by a parsed SSHConfig
     entry, either by opening a direct TCP connection (first hop) or by tunneling
@@ -601,7 +605,7 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: paramik
     """
 
     next_transport: paramiko.Transport | None = None
-    hostname: str = hop.get( 'hostname' ) # since we already have an ordered list of hops, we do not need to do some crazy
+    hostname: str = hop[ "hostname" ]   # since we already have an ordered list of hops, we do not need to do some crazy
                                           # checking to see if ProxyJump is set and use that or not. We just select the
                                           # hostname.
     port = int( hop.get( 'port', port ) ) # honour Port from ssh_config; fall back to the argument default (22)
