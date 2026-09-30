@@ -40,7 +40,7 @@ class RawDataDirectory:
             if any( tag in dirName for tags in [ demux.core.demux.nextSeq, demux.core.demux.miSeq ] for tag in tags ):
                 runs.append( dirName )
         demuxLogger.info( termcolor.colored( f"Found {len( runs )} runs in {self.path}", color = "light_cyan", attrs = [ "reverse" ] ) )
-        return runs
+        return sorted( runs ) # RunIDs start with YYMMDD: oldest first, so a broken run blocks the newer ones predictably
 
     def is_ready( self, runid: str ) -> bool:
         """
