@@ -18,6 +18,8 @@ from sample_sheet import (
 
 import demux.config.constants
 
+from demux.loggers import demuxLogger
+
 """
 The demux object is the central configuration/state holder for the whole pipeline.  It:
     - Defines all constants, paths, suffixes, executables, logging setup, and state variables used in the run
