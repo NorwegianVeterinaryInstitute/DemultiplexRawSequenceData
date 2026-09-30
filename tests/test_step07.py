@@ -30,8 +30,6 @@
 #
 ########################################################################
 
-import json
-import logging
 import os
 import shutil
 import stat
@@ -39,12 +37,11 @@ import sys
 import tempfile
 import time
 import urllib.request
-
 from collections import defaultdict
 
 sys.path.insert( 0, os.path.join( os.path.dirname( __file__ ), '..' ) )
-from demux.core import demux
 from demux.config import constants
+from demux.core import demux
 from demux.steps.step07_deliver_files_to_VIGASP import deliver_files_to_VIGASP
 
 # works!
@@ -131,8 +128,6 @@ def _setup() -> str:
     demux.irida_oauth_token          = ""
     demux.irida_samples              = [ ]
     demux.irida_verified_projects    = { }
-    demux.irida_tmp_dir              = ""
-    demux.irida_decompressed_map     = { }
     demux.irida_local_hashes         = { }
     demux.irida_sequencing_run_id    = 0
     demux.irida_uploaded_samples     = [ ]
@@ -236,10 +231,10 @@ def _cleanup_irida() -> None:
         request.add_header( constants.HTTP_HEADER_AUTHORIZATION, f'{constants.HTTP_BEARER_PREFIX} {demux.irida_oauth_token}' )
 
         try:
-            with urllib.request.urlopen( request, timeout = demux.irida_timeout ) as response:
+            with urllib.request.urlopen( request, timeout = demux.irida_timeout ):
                 pass
             print( f"  deleted sample {sample_id} from project {project_id}" )
-        except Exception as error:
+        except OSError as error:
             print( f"  WARNING: failed to delete sample {sample_id} from project {project_id}: {error}" )
 
     # ---- delete sequencing run ----------------------------------------
@@ -251,10 +246,10 @@ def _cleanup_irida() -> None:
         request.add_header( constants.HTTP_HEADER_AUTHORIZATION, f'{constants.HTTP_BEARER_PREFIX} {demux.irida_oauth_token}' )
 
         try:
-            with urllib.request.urlopen( request, timeout = demux.irida_timeout ) as response:
+            with urllib.request.urlopen( request, timeout = demux.irida_timeout ):
                 pass
             print( f"  deleted sequencing run {demux.irida_sequencing_run_id}" )
-        except Exception as error:
+        except OSError as error:
             print( f"  WARNING: failed to delete sequencing run {demux.irida_sequencing_run_id}: {error}" )
 
 
@@ -292,7 +287,7 @@ def main() -> int:
     try:
         tmp_base = _setup()
         print( f"  temp directory: {tmp_base}" )
-    except Exception as error:
+    except Exception as error:   # noqa: BLE001 - test harness: any setup failure is reported and ends the test
         print( f"SETUP FAILED: {type( error ).__name__}: {error}" )
         return 1
 
@@ -304,7 +299,7 @@ def main() -> int:
 
     try:
         deliver_files_to_VIGASP( demux )
-    except Exception as error:
+    except Exception as error:   # noqa: BLE001 - test harness: any failure must still print and run the IRIDA cleanup below
         print( f"\nEXECUTION FAILED: {type( error ).__name__}: {error}" )
         print( )
         print( "IRIDA cleanup after failure:" )

@@ -118,7 +118,6 @@ A mismatch, or a hash still empty after `irida_verify_max_poll_attempts`, fails 
 
 * If a sample with the same name already exists in the target project, the pair is added to that sample. Test runs use `TESTDATA_<counter>_<NNNN>` names to avoid this (see #211).
 * Deleting a sample in IRIDA leaves its analysis submissions behind; the Analyses tab then shows entries that open an error page. This is an IRIDA bug; see the analysis in #211.
-* `step07_03_decompress.py` and `step07_07_cleanup.py` are not used by the state machine.
 
 ---
 

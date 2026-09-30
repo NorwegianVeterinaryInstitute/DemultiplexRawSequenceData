@@ -212,7 +212,6 @@ class demux:
     irida_upload_batch_stagger_seconds:int     = 60           # seconds to wait between upload batches; 0 = no stagger; tune if IRIDA async processing queue falls behind # lowest verify time, consistent pass rate
     irida_stage_times:ClassVar[ dict ]         = { 'preflight': 0.0, 'check_projects': 0.0, 'hash': 0.0, 'create_run': 0.0, 'upload': 0.0, 'verify': 0.0, 'complete': 0.0 } # per-stage wall times in seconds populated by deliver_files_to_VIGASP
     irida_oauth_token:str                      = ""
-    irida_tmp_dir_name:str                     = "tmp_irida_upload"
     irida_bw_item_uuid:str                     = "a615e24b-c323-48c1-92aa-b474009567e7"
     irida_base_url:str                         = "http://irida.vigasp.vetinst.no:8080/irida-23.01.3"
     # Bitwarden endpoint for IRIDA credentials
@@ -239,8 +238,6 @@ class demux:
     irida_password:str                         = ""
     irida_samples:ClassVar[ list ]             = [ ]
     irida_verified_projects:ClassVar[ dict ]   = { }
-    irida_tmp_dir:str                          = ""            # store for cleanup (step07_07) to know what to delete
-    irida_decompressed_map:ClassVar[ dict ]    = { }
     irida_local_hashes:ClassVar[ dict ]        = { }
     irida_sequencing_run_id:int                = 0
     irida_uploaded_samples:ClassVar[ list ]    = [ ]
@@ -265,7 +262,7 @@ class demux:
         "transfer_to_nird", "upload_to_vigasp",
         "proxy_jump_chain", "transport_stack",
         "irida_stage_times", "irida_oauth_token", "irida_client_id", "irida_client_secret", "irida_username", "irida_password",
-        "irida_samples", "irida_verified_projects", "irida_tmp_dir", "irida_decompressed_map", "irida_local_hashes",
+        "irida_samples", "irida_verified_projects", "irida_local_hashes",
         "irida_sequencing_run_id", "irida_uploaded_samples", "irida_verification_passed", "irida_run_completed",
     )
 
