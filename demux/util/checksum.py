@@ -136,7 +136,7 @@ def calc_file_hash( demux ):
     # build the filetree
     demuxLogger.debug( f'= walk the file tree dir_to_hash: {dir_to_hash} ======================')
 
-    fileList = list( )
+    fileList = [ ]
     for directoryRoot, dirnames, filenames, in os.walk( dir_to_hash, followlinks = False ):
 
         for file in filenames:

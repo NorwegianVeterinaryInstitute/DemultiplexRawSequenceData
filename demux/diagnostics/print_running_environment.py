@@ -3,7 +3,7 @@ import sys
 
 import termcolor
 
-from demux.config import constants as constants
+from demux.config import constants
 from demux.loggers import demuxLogger
 
 SEPARATOR:str = "============================================================================="
@@ -36,7 +36,7 @@ def print_running_environment( demux ):
 
     printed_keys:list[ str ] = [ ]
 
-    for section, keys in SECTIONS.items( ):
+    for section, keys in SECTIONS.items( ):   # noqa: PERF102 - kept on purpose: shows what .items( ) returns
         demuxLogger.debug( SEPARATOR )
         for key in keys:
             if key not in demux.globalDictionary:

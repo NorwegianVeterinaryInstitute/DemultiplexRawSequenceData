@@ -1,4 +1,3 @@
-#!/usr/bin/python3.11
 
 import logging
 import logging.handlers
@@ -101,7 +100,7 @@ def setup_file_log_handling( demux ):
     # # set up logging for /data/log/{demux.RunID}.log
     try: 
         demuxFileLogHandler   = logging.FileHandler( demux.demuxRunLogFilePath, mode = 'w', encoding = demux.decodeScheme )
-    except Exception as err:
+    except OSError as err:
         text = [    "Trying to setup demuxFileLogHandler failed. Reason:\n",
                     str(err),
                     "The parts of demux.demuxRunLogFilePath have the following values:\n",
@@ -121,7 +120,7 @@ def setup_file_log_handling( demux ):
     # set up cummulative logging in /data/log/demultiplex.log
     try:
         demuxFileCumulativeLogHandler   = logging.FileHandler( demux.demuxCumulativeLogFilePath, mode = 'a', encoding = demux.decodeScheme )
-    except Exception as err:
+    except OSError as err:
         text = [    "Trying to setup demuxFileCumulativeLogHandler failed. Reason:\n",
                     str(err),
                     "The parts of demux.demuxRunLogFilePath have the following values:\n",
@@ -139,7 +138,7 @@ def setup_file_log_handling( demux ):
     # setup logging for demux.RunID/demultiplex_log/00_script.log
     try:
         demuxScriptLogHandler   = logging.FileHandler( demux.demultiplexScriptLogFilePath, mode = 'w', encoding = demux.decodeScheme )
-    except Exception as err:
+    except OSError as err:
         text = [    "Trying to setup demuxScriptLogHandler failed. Reason:\n",
                     str(err),
                     "The parts of demux.DemultiplexScriptLogFilePath have the following values:\n",

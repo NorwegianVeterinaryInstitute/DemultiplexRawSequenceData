@@ -50,7 +50,7 @@ def _complete( demux ) -> None:
     try:
         # urlopen raises HTTPError on 4xx/5xx; all 2xx codes are treated as success
         with urllib.request.urlopen( request, timeout = demux.irida_timeout ) as response:
-            body:dict = json.load( response )
+            json.load( response )   # the body is not used; parsing it still fails loudly on a non-JSON reply
     except urllib.error.HTTPError as http_error:
         raise RuntimeError( f"IRIDA complete: PATCH {url} failed. HTTP {http_error.code}: {http_error.reason}" ) from http_error
     except urllib.error.URLError as url_error:

@@ -26,7 +26,6 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
         RuntimeError: if no hops are produced, or if transport construction fails.
     """
     hops_list: list[ paramiko.config.SSHConfig ] = _parse_ssh_config( demux )
-    first_transport  : paramiko.Transport        = None
     current_transport: paramiko.Transport        = None
     next_transport   : paramiko.Transport        = None
     transport_stack: list[ paramiko.Transport ]  = [ ]  # having a stack of the previous transports would be a good idea

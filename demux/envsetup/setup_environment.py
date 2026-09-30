@@ -3,7 +3,7 @@ import os
 
 import termcolor
 
-from demux.config import constants as constants
+from demux.config import constants
 from demux.core import demux
 from demux.loggers import demuxLogger
 
@@ -75,7 +75,6 @@ def setup_environment( RunID ):
         'demuxQCDirectoryFullPath'      : "",
         'demuxRunLogFilePath'           : "",
         'demuxCumulativeLogFilePath'    : "",
-        'demultiplexLogDirPath'         : "",
         'demultiplexScriptLogFilePath'  : "",
         'bcl2FastqLogFile'              : "",
         'fastQCLogFilePath'             : "",
@@ -83,10 +82,10 @@ def setup_environment( RunID ):
         'forTransferRunIdDir'           : "",
         'forTransferQCtarFile'          : "",
         'sampleSheetArchiveFilePath'    : "",
-        'projectList'                   : list( ),
-        'newProjectNameList'            : list( ),
-        'controlProjectsFoundList'      : list( ),
-        'tarFilesToTransferList'        : list( )
+        'projectList'                   : [ ],
+        'newProjectNameList'            : [ ],
+        'controlProjectsFoundList'      : [ ],
+        'tarFilesToTransferList'        : [ ]
     }
 
 
@@ -101,7 +100,6 @@ def setup_environment( RunID ):
     demux.globalDictionary[ 'demuxQCDirectoryFullPath'     ] = demux.demuxQCDirectoryFullPath
     demux.globalDictionary[ 'demuxRunLogFilePath'          ] = demux.demuxRunLogFilePath
     demux.globalDictionary[ 'demuxCumulativeLogFilePath'   ] = demux.demuxCumulativeLogFilePath
-    demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
     demux.globalDictionary[ 'demultiplexScriptLogFilePath' ] = demux.demultiplexScriptLogFilePath
     demux.globalDictionary[ 'bcl2FastqLogFile'             ] = demux.bcl2FastqLogFile
     demux.globalDictionary[ 'fastQCLogFilePath'            ] = demux.fastQCLogFilePath
@@ -116,7 +114,7 @@ def setup_environment( RunID ):
 
 
 
-    if 'demuxLogger' in logging.Logger.manager.loggerDict.keys():
+    if 'demuxLogger' in logging.Logger.manager.loggerDict:
         demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )
     else:
         print( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )

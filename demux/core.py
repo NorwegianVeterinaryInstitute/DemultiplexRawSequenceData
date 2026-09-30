@@ -1,4 +1,3 @@
-#!/usr/bin/python3.11
 
 import copy
 import logging
@@ -9,6 +8,7 @@ import socket
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import ClassVar
 
 import paramiko
 import termcolor
@@ -17,7 +17,6 @@ from sample_sheet import (
 )
 
 import demux.config.constants
-
 from demux.loggers import demuxLogger
 
 """
@@ -91,13 +90,12 @@ class demux:
     vannControlNegativReport:str               = 'Negativ'
     forTransferRunIdDirTestName:str            = 'test_tar'
     md5File:str                                = 'md5sum.txt'
-    miSeq:list                                 = ['M06578', 'M09180']       # array of serial numbers for miseq. Change to read from config, or read from illumina
-    nextSeq:list                               = ['NB552450']               # array of serial numbers for nextseq. Change to read from config, or read from illumina
+    miSeq:ClassVar[ list ]                     = ['M06578', 'M09180']       # array of serial numbers for miseq. Change to read from config, or read from illumina
+    nextSeq:ClassVar[ list ]                   = ['NB552450']               # array of serial numbers for nextseq. Change to read from config, or read from illumina
     encoding:str                               = "utf-8"
     decodeScheme:str                           = encoding                   # same as encoding; Python uses the same string name for both encode and decode, but in the code it can be refered either way, 'decodingScheme' or 'encoding'
     footarfile:str                             = f"foo{demux.config.constants.TAR_SUFFIX}"      # class variable shared by all instances
     barzipfile:str                             = f"zip{demux.config.constants.ZIP_SUFFIX}"
-    totalTasks:int                             = 0
     tabSpace:int                               = 8
     spacing1:int                               = 40
     spacing2:int                               = spacing1 + tabSpace
@@ -105,7 +103,7 @@ class demux:
     spacing4:int                               = spacing3 + tabSpace
     spacing5:int                               = spacing4 + tabSpace
     spacing6:int                               = spacing5 + tabSpace
-    spacing6:int                               = spacing6 + tabSpace
+    spacing7:int                               = spacing6 + tabSpace
     ######################################################
     # All following are supposed to be filled in at run time
     RunID:str                                  = ""
@@ -121,21 +119,20 @@ class demux:
     multiqc_run_dir:str                        = ""
     sampleSheetFilePath:str                    = os.path.join( sampleSheetDirPath, sampleSheetFileName )
     sampleSheetArchiveFilePath:str             = ""                                                            # demux/envsetup/setup_environment.py
-    project_samples_metadata:dict              = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
+    project_samples_metadata:ClassVar[ dict ]  = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
     ######################################################
-    projectList:list                           = [ ]
-    newProjectNameList:list                    = [ ]
-    newProjectFileList:list                    = [ ]
-    controlProjectsFoundList:list              = [ ]
-    emptyProjectsFoundList:list                = [ ]
-    tarFilesToTransferList:list                = [ ]
-    globalDictionary:dict                      = dict( )
+    projectList:ClassVar[ list ]               = [ ]
+    newProjectNameList:ClassVar[ list ]        = [ ]
+    newProjectFileList:ClassVar[ list ]        = [ ]
+    controlProjectsFoundList:ClassVar[ list ]  = [ ]
+    emptyProjectsFoundList:ClassVar[ list ]    = [ ]
+    tarFilesToTransferList:ClassVar[ list ]    = [ ]
+    globalDictionary:ClassVar[ dict ]          = { }
     ######################################################
-    controlProjects:list                       = [ "Negativ", "Control_" ]   # 2026-09-18: lab labels every control project Control_<tag>, e.g. Control_PRK
+    controlProjects:ClassVar[ list ]           = [ "Negativ", "Control_" ]   # 2026-09-18: lab labels every control project Control_<tag>, e.g. Control_PRK
     ######################################################
     forTransferRunIdDir:str                    = ""
-    forTransferQCtarFile:str                   = ""
-    absoluteFilesToTransferList:dict           = { }
+    absoluteFilesToTransferList:ClassVar[ dict ] = { }
     ######################################################
     demuxCumulativeLogFileName:str             = 'demultiplex.log'
     demultiplexLogDirName:str                  = 'demultiplex_log'
@@ -168,9 +165,9 @@ class demux:
                                     # "ssh" uses only keys
                                     # "ssh_2fa" uses username, password, TOTP, from bitwarden
                                     # "mounted" uses sshfs but only with keys
-    allowed_nird_access_modes:list             = [ "ssh", "ssh2fa", "mounted" ]
+    allowed_nird_access_modes:ClassVar[ list ] = [ "ssh", "ssh2fa", "mounted" ]
     nird_copy_mode:str                         = "parallel"
-    allowed_nird_copy_modes:list               = [ "serial", "parallel" ]
+    allowed_nird_copy_modes:ClassVar[ list ]   = [ "serial", "parallel" ]
     ######################################################
     # defaults
     nird_upload_host:str                       = "login.nird.sigma2.no"
@@ -203,7 +200,7 @@ class demux:
     upload_to_vigasp:bool                      = False      # determine if trasfers should happen to vigasp
     vigasp_api_key:str                         = ""           # we need to see how we can limit the damage including this api key can have
     vigasp_copy_mode:str                       = "serial"
-    allowed_vigasp_copy_modes:list             = [ "serial", "parallel" ]
+    allowed_vigasp_copy_modes:ClassVar[ list ] = [ "serial", "parallel" ]
     irida_timeout:int                          = 60           # default timeout for IRIDA API metadata calls
     irida_list_timeout:int                     = 180          # timeout for project sample list calls; large projects under load exceed 60s
     irida_list_retries:int                     = 6            # attempts for the sample list call before giving up
@@ -213,7 +210,7 @@ class demux:
     irida_verify_poll_interval_seconds:int     = 5            # seconds between polls
     irida_max_in_flight:int                    = 2            # max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair), so N workers -> N*2 files in flight # 2 is the safe default for current VIGASP NREC VM
     irida_upload_batch_stagger_seconds:int     = 60           # seconds to wait between upload batches; 0 = no stagger; tune if IRIDA async processing queue falls behind # lowest verify time, consistent pass rate
-    irida_stage_times:dict                     = { 'preflight': 0.0, 'check_projects': 0.0, 'hash': 0.0, 'create_run': 0.0, 'upload': 0.0, 'verify': 0.0, 'complete': 0.0 } # per-stage wall times in seconds populated by deliver_files_to_VIGASP
+    irida_stage_times:ClassVar[ dict ]         = { 'preflight': 0.0, 'check_projects': 0.0, 'hash': 0.0, 'create_run': 0.0, 'upload': 0.0, 'verify': 0.0, 'complete': 0.0 } # per-stage wall times in seconds populated by deliver_files_to_VIGASP
     irida_oauth_token:str                      = ""
     irida_tmp_dir_name:str                     = "tmp_irida_upload"
     irida_bw_item_uuid:str                     = "a615e24b-c323-48c1-92aa-b474009567e7"
@@ -240,13 +237,13 @@ class demux:
     irida_client_secret:str                    = ""
     irida_username:str                         = ""
     irida_password:str                         = ""
-    irida_samples:list                         = [ ]
-    irida_verified_projects:dict               = { }
+    irida_samples:ClassVar[ list ]             = [ ]
+    irida_verified_projects:ClassVar[ dict ]   = { }
     irida_tmp_dir:str                          = ""            # store for cleanup (step07_07) to know what to delete
-    irida_decompressed_map:dict                = { }
-    irida_local_hashes:dict                    = { }
+    irida_decompressed_map:ClassVar[ dict ]    = { }
+    irida_local_hashes:ClassVar[ dict ]        = { }
     irida_sequencing_run_id:int                = 0
-    irida_uploaded_samples:list                = [ ]
+    irida_uploaded_samples:ClassVar[ list ]    = [ ]
     irida_verification_passed:bool             = False
     irida_run_completed:bool                   = False
     ######################################################

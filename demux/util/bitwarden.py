@@ -257,7 +257,7 @@ def _probe_bw_cli_state( ) -> bool:
         message += unlock_vault_cmd
         message += "on the command line to unlock.\n"
         demuxLogger.critical( message )
-        raise Exception( message )
+        raise RuntimeError( message )
 
     return status == "unlocked"
 

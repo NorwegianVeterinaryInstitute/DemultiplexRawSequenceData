@@ -3,7 +3,7 @@ This is a file with all the constant-constants: things that should be parametriz
 
 use by
 
-from demux.config import constants as constants
+from demux.config import constants
 '''
 
 import re

@@ -26,7 +26,7 @@ def _check_projects( demux ) -> None:
     demuxLogger.info( "IRIDA check_projects: starting" )
 
     # deduplicate project IDs so we only verify each IRIDA project once
-    unique_project_ids:set = set( sample[ 'project_id' ] for sample in demux.irida_samples )
+    unique_project_ids:set = { sample[ 'project_id' ] for sample in demux.irida_samples }
 
     demuxLogger.info( f"IRIDA check_projects: verifying {len( unique_project_ids )} project(s)" )
 
@@ -42,7 +42,6 @@ def _check_projects( demux ) -> None:
         try:
             # urlopen raises HTTPError on 4xx/5xx;  all 2xx codes are treated as success
             with urllib.request.urlopen( request, timeout = demux.irida_timeout ) as response:
-                status_code:int = response.status  # always 2xx here; kept for debugging/logging
                 body:dict       = json.load( response )
         except urllib.error.HTTPError as http_error:
             raise RuntimeError( f"IRIDA project {project_id} is not accessible. HTTP {http_error.code}: {http_error.reason}" ) from http_error

@@ -1,9 +1,9 @@
-#!/usr/bin/python3.11
 
 # demux/__init__.py
 
-import demux.core
-
+from . import (
+    core as core,  # redundant alias = explicit re-export; loads demux.core first, before loggers
+)
 from . import (
     loggers as demux_logging,  # avoid naming loggers as logging cuz python might import the stdlib logging, depending on path
 )

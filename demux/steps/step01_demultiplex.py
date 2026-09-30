@@ -1,4 +1,3 @@
-#!/usr/bin/python3.11
 
 import inspect
 import logging
@@ -48,6 +47,7 @@ def bcl2fastq( demux ):
     # command line equiv: ulimit -n $(ulimit -Hn)
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard)) # raise the soft limit to the hard limit, the highest this process may set
+    demuxLogger.debug( f"RLIMIT_NOFILE soft limit raised from {soft} to {hard}" )
 
     command: str = demux.bcl2fastq_bin
     argv = [ command,
@@ -91,9 +91,8 @@ def bcl2fastq( demux ):
         sys.exit( 1 )
 
     try: 
-        file = open( demux.bcl2FastqLogFile, "w" )
-        file.write( result.stderr )
-        file.close( )
+        with open( demux.bcl2FastqLogFile, "w" ) as file:
+            file.write( result.stderr )
     except OSError as err:
         text = [    "Caught exception!",
                     f"File: {err.filename}",

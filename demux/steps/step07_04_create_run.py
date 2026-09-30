@@ -41,7 +41,6 @@ def _create_run( demux ) -> None:
     try:
         # urlopen raises HTTPError on 4xx/5xx; all 2xx codes are treated as success
         with urllib.request.urlopen( request, timeout = demux.irida_timeout ) as response:
-            status_code:int = response.status  # always 2xx here; kept for debugging/logging
             body:dict       = json.load( response )
     except urllib.error.HTTPError as http_error:
         raise RuntimeError( f"IRIDA create_run: POST {url} failed. HTTP {http_error.code}: {http_error.reason}" ) from http_error
