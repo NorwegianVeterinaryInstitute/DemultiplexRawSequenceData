@@ -75,7 +75,7 @@ def tar_file_quality_check( demux ):
             demuxFailureLogger.critical( f"{ text }" )
             demuxLogger.critical( f"{ text }" )
             logging.shutdown( )
-            sys.exit( )
+            sys.exit( 1 )
 
 #---- Step 3: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} and contents ------------------------------------------------------------
     # clean up
