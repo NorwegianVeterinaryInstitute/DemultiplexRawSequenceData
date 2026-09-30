@@ -31,7 +31,7 @@ def collect_projects_to_tar( demux ):
     for project in demux.newProjectNameList:                                        # this loop is a check against project names which are not suppossed to be eventually tarred
 
         if any( var in project for var in [ constants.QC_SUFFIX ] ):                     # skip anything that includes '_QC'
-            demuxLogger.warning( f"{demux.qcSuffix} directory found in projects. Skipping." )
+            demuxLogger.warning( f"{constants.QC_SUFFIX} directory found in projects. Skipping." )
             continue
         elif any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
             demuxLogger.warning( f"{demux.testProject} test project directory found in projects. Skipping." )
@@ -78,7 +78,7 @@ def tar_project_files( demux ):
             demuxFailureLogger.critical( f"{ text }" )
             demuxLogger.critical( f"{ text }" )
             logging.shutdown( )
-            sys.exit( )
+            sys.exit( 1 )
 
 #---------- Iterrate through demux.demultiplexRunIDdir/projectsToProcessList and make a single tar file for each project under data.forTransferRunIdDir   ----------------------
 
@@ -91,7 +91,7 @@ def tar_project_files( demux ):
                 # add one file at a time so we can give visual feedback to the user that the script is processing files
                 # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
                 # of output that make users uncomfortable
-                filenameToTar = os.path.join( project, file )
+                filenameToTar = os.path.join( directoryRoot, file )
                 tarFileHandle.add( name = filenameToTar, recursive = False )
                 text = "filenameToTar:"
                 text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
@@ -137,7 +137,7 @@ def create_qc_tar_file( demux ):
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     # paths are relative here, cuz we chdir( ) in tarProjectFiles( )
     for directoryRoot, dirnames, filenames, in os.walk( demux.demuxQCDirectoryName , followlinks = False ): 
@@ -145,7 +145,7 @@ def create_qc_tar_file( demux ):
             # add one file at a time so we can give visual feedback to the Archivinguser that the script is processing files
             # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
             # of output that make users uncomfortable
-            filenameToTar = os.path.join( demux.demuxQCDirectoryName, file ) # demux.demuxQCDirectoryName is relative, for example '220603_M06578_QC'
+            filenameToTar = os.path.join( directoryRoot, file ) # directoryRoot starts with demux.demuxQCDirectoryName, which is relative, for example '220603_M06578_QC'
             tarQCFileHandle.add( name = filenameToTar, recursive = False )
             text = "filenameToTar:"
             text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
@@ -175,7 +175,7 @@ def create_multiqc_tar_file( demux ):
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     # paths are relative here, cuz we chdir( ) in tarProjectFiles( )
     for directoryRoot, dirnames, filenames, in os.walk( os.path.join( constants.MULTIQC_DATA_DIR_NAME ), followlinks = False ): 
@@ -183,7 +183,7 @@ def create_multiqc_tar_file( demux ):
             # add one file at a time so we can give visual feedback to the user that the script is processing files
             # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
             # of output that make users uncomfortable
-            filenameToTar = os.path.join( constants.MULTIQC_DATA_DIR_NAME, file )
+            filenameToTar = os.path.join( directoryRoot, file )
             multiQCFileHandle.add( name = filenameToTar, recursive = False )
             text = "filenameToTar"
             text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
@@ -254,7 +254,7 @@ def prepare_delivery( demux ):
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     tar_project_files( demux )
     create_qc_tar_file( demux )
