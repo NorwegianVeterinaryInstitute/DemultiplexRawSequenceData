@@ -28,10 +28,17 @@ def hash_file( filepath ):
     Calculate the md5 and the sha512 hash of an object and return
         filepath, md5sum, sha512sum
     """
+    md5_hash    = hashlib.md5( )
+    sha512_hash = hashlib.sha512( )
     with open( filepath, 'rb' ) as filehandle:
-        filetobehashed = filehandle.read( )
-    md5sum       = hashlib.md5( filetobehashed ).hexdigest( )
-    sha512sum    = hashlib.sha512( filetobehashed ).hexdigest( )
+        while True:
+            chunk = filehandle.read( constants.HASH_CHUNK_SIZE )   # constant memory per worker, whatever the file size
+            if not chunk:
+                break
+            md5_hash.update( chunk )
+            sha512_hash.update( chunk )
+    md5sum       = md5_hash.hexdigest( )
+    sha512sum    = sha512_hash.hexdigest( )
     return filepath, md5sum, sha512sum
 
 
@@ -167,7 +174,7 @@ def calc_file_hash( demux ):
     # When the with block ends, the pool closes before launching any work. Wrapping it in list() forces full iteration so all tasks actually run.
     # So, we need that list( ) there, even if it returns nothing.
 
-    # since we got 96gb of ram, read all the files in and hash them in parallel
+    # hash all files in parallel, one worker per CPU; each worker reads in HASH_CHUNK_SIZE chunks, so memory stays flat
     with ProcessPoolExecutor( ) as executor:
         filePathAndHashesResults = list( executor.map( hash_file, fileList ) ) # hash_file( ) returns filepath, md5sum, sha512sum
 
