@@ -27,10 +27,10 @@ def copy_sample_sheet_into_demultiplex_runiddir( demux ):
         shutil.copy2( demux.sampleSheetFilePath, demux.demultiplexRunIDdir )
     except Exception as err:
         text = [    f"Copying {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir} failed.",
-                    err.tostring( ),
+                    str( err ),
                     "Exiting."
         ]
-        '\n'.join( text )
+        text = '\n'.join( text )
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
