@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import urllib.parse
 import urllib.request
 
@@ -42,30 +43,39 @@ def _resolve_fastq_paths( demux, sample_name: str, project_name: str ) -> tuple:
     :param project_name: the Sample_Project name (pre-rename).
     :returns: ( r1_path, r2_path ) as absolute paths.
     :raises FileNotFoundError: if the project directory does not exist or R1/R2 not found.
+    :raises RuntimeError: if more than one R1 or more than one R2 matches the sample.
     """
     project_dir:str = os.path.join( demux.demultiplexRunIDdir, f"{demux.runIDShort}.{project_name}" )
 
     if not os.path.isdir( project_dir ):
         raise FileNotFoundError( f"Project directory does not exist: {project_dir}" )
 
-    r1_path:str = ""
-    r2_path:str = ""
+    # exact match on the whole filename: bcl2fastq --no-lane-splitting writes {Sample}_S{n}_R{1,2}_001.fastq.gz and step02 prefixes {runIDShort}.
+    # a substring test also matched sample 123 when looking for 12, and every file when the sample name is part of runIDShort
+    fastq_pattern:re.Pattern = re.compile( rf"^{re.escape( demux.runIDShort )}\.{re.escape( sample_name )}_S\d+_R([12])_001{re.escape( constants.COMPRESSED_FASTQ_SUFFIX )}$" )
 
-    for filename in os.listdir( project_dir ):
-        if not filename.endswith( constants.COMPRESSED_FASTQ_SUFFIX ):
-            continue
-        if sample_name not in filename:
+    r1_matches:list[ str ] = [ ]
+    r2_matches:list[ str ] = [ ]
+
+    for filename in sorted( os.listdir( project_dir ) ):
+        match = fastq_pattern.match( filename )
+        if not match:
             continue
         full_path:str = os.path.join( project_dir, filename )
-        if '_R1_' in filename:
-            r1_path = full_path
-        elif '_R2_' in filename:
-            r2_path = full_path
+        if match.group( 1 ) == '1':
+            r1_matches.append( full_path )
+        else:
+            r2_matches.append( full_path )
 
-    if not r1_path:
+    if len( r1_matches ) > 1 or len( r2_matches ) > 1:
+        raise RuntimeError( f"More than one R1 or R2 file matches sample '{sample_name}' in '{project_dir}': {r1_matches + r2_matches}" )
+    if not r1_matches:
         raise FileNotFoundError( f"R1 file not found for sample '{sample_name}' in '{project_dir}'" )
-    if not r2_path:
+    if not r2_matches:
         raise FileNotFoundError( f"R2 file not found for sample '{sample_name}' in '{project_dir}'" )
+
+    r1_path:str = r1_matches[ 0 ]
+    r2_path:str = r2_matches[ 0 ]
 
     return ( r1_path, r2_path )
 
