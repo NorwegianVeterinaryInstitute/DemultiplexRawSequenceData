@@ -45,12 +45,12 @@ def rename_directories( demux ):
 
             try: 
                 os.rename( oldname, newname )
-            except FileNotFoundError as err:
+            except OSError as err:
                 text = [    f"Error during renaming {oldname}:", 
                             f"oldname: {oldname}",
-                            f"oldfileExists: {oldfileExists}",
-                            f"newfile: {newname}",
-                            f"newfileExists: {newfileExists}",
+                            f"olddirExists: {olddirExists}",
+                            f"newname: {newname}",
+                            f"newdirExists: {newdirExists}",
                             f"err.filename:  {err.filename}",
                             f"err.filename2: {err.filename2}",
                             f"Exiting!"
@@ -181,7 +181,7 @@ def rename_files( demux ):
             if oldfileExists and not newfileExists:
                 try: 
                     os.rename( oldname, newname )
-                except FileNotFoundError as err:
+                except OSError as err:
                     text = [    f"Error during renaming {oldname}:",
                                 f"oldname: {oldname}\noldfileExists: {oldfileExists}",
                                 f"newname: {newname}\nnewfileExists: {newfileExists}",
@@ -196,7 +196,7 @@ def rename_files( demux ):
                     sys.exit( )
         demuxLogger.debug( "-----------------")
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir} ==\n", color="red" ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Rename files ==\n", color="red" ) )
 
 ########################################################################
 # rename_files_and_directories( )
