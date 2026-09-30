@@ -52,6 +52,8 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
             stderr_bytes: bytes = channel.makefile_stderr( "rb" ).read( )
             exit_status: int    = channel.recv_exit_status( )
             results[ key ]      = ( stdout_bytes, stderr_bytes, exit_status )
+        except Exception as error:                                                  # keep the real cause; a thread cannot raise into its caller
+            results[ key ] = error
         finally:
             channel.close( )
 
@@ -78,6 +80,12 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
     sha512_thread.start( )
     md5_thread.join( )
     sha512_thread.join( )
+
+    for key, value in results.items( ):                                             # a drain thread failed: report its real cause instead of KeyError below
+        if isinstance( value, Exception ):
+            message = f"RuntimeError: remote {key}sum failed for {file_entry[ 'tar_file_remote' ]}: {value!r}"
+            demuxLogger.critical( message )
+            raise RuntimeError( message ) from value
 
     md5sum_stdout_bytes: bytes
     md5sum_stderr_bytes: bytes
