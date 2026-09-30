@@ -76,7 +76,7 @@ def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig 
             raise ValueError( f"IdentityFile must be a single entry for {target_lookup.get( 'hostname' )}, got {len( identity_file )}" )
 
     # Ensure we are serving only identities stated in ssh_config entry and that we do not spam the host with keys
-    identities_only = str( target_lookup.get( "identitiesonly" ) or "" ).strip( ).lower( ) 
+    identities_only = str( target_lookup.get( "identitiesonly" ) or "" ).strip( ).lower( )
     if identities_only != "yes":
         raise ValueError( f"IdentitiesOnly must be 'yes' for {target_lookup.get( 'hostname' )}, so we do not spam the server with keys" )
 
@@ -110,7 +110,7 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
         seen_aliases.add( current_alias )
         current_lookup = ssh_config.lookup( current_alias )
         proxyjump_value = ( current_lookup.get( "proxyjump" ) or "" ).strip( )
-        hop_aliases = [ hop.strip( ) for hop in proxyjump_value.split(" ") if hop.strip( ) ]
+        hop_aliases = [ hop.strip( ) for hop in proxyjump_value.split( "," ) if hop.strip( ) ]   # ssh_config(5): multiple jump hosts are comma separated
         # ProxyJump allows [user@]host[:port] and ssh:// URIs. We reject them to enforce
         # single-source-of-truth per hop, keep parsing trivial, and avoid user/port
         # override ambiguity. ProxyJump must reference aliases only.
@@ -295,34 +295,37 @@ def _auth_via_agent( transport: paramiko.Transport, username: str, identityfile_
         raise FileNotFoundError( f"Public key file not found: {identityfile_pub}" )
 
     with open( identityfile_pub, constants.READ_ONLY_TEXT ) as fh:
-        pub_line: str        = fh.read( ).split( )
-        pub_b64: str         = pub_line[ 1 ] if len( pub_line ) >= 2 else ""
-    pub_bytes: bytes         = base64.b64decode( pub_b64 )
-    disk_fingerprint: str    = hashlib.sha256( pub_bytes ).digest( ).hex( )
+        pub_line: list[ str ] = fh.read( ).split( )
+        pub_b64: str          = pub_line[ 1 ] if len( pub_line ) >= 2 else ""
+    pub_bytes: bytes          = base64.b64decode( pub_b64 )
+    disk_fingerprint: str     = hashlib.sha256( pub_bytes ).digest( ).hex( )
 
-    agent: paramiko.Agent    = paramiko.Agent( )
-    agent_keys               = agent.get_keys( )
+    agent: paramiko.Agent     = paramiko.Agent( )
+    try:
+        agent_keys            = agent.get_keys( )
 
-    for agent_key in agent_keys:
-        agent_fingerprint: str = hashlib.sha256( agent_key.asbytes( ) ).digest( ).hex( )
-        if agent_fingerprint != disk_fingerprint:
-            continue
+        for agent_key in agent_keys:
+            agent_fingerprint: str = hashlib.sha256( agent_key.asbytes( ) ).digest( ).hex( )
+            if agent_fingerprint != disk_fingerprint:
+                continue
 
-        # matching key found in agent - attempt authentication
-        try:
-            transport.auth_publickey( username, agent_key )
-        except paramiko.AuthenticationException:
-            raise
-        except OSError as exception:
-            if getattr( exception, "errno", None ) == 9:
-                raise OSError( 9, "Peer closed the connection" ) from exception
-            raise # raise the original error, in case something comes up we have not anticipated
+            # matching key found in agent - attempt authentication
+            try:
+                transport.auth_publickey( username, agent_key )
+            except paramiko.AuthenticationException:
+                raise
+            except OSError as exception:
+                if getattr( exception, "errno", None ) == 9:
+                    raise OSError( 9, "Peer closed the connection" ) from exception
+                raise # raise the original error, in case something comes up we have not anticipated
 
-        if not transport.is_authenticated( ):
-            raise paramiko.AuthenticationException( "public key authentication attempt returned without success." )
-        return True
+            if not transport.is_authenticated( ):
+                raise paramiko.AuthenticationException( "public key authentication attempt returned without success." )
+            return True
 
-    return False # requested key not present in ssh-agent
+        return False # requested key not present in ssh-agent
+    finally:
+        agent.close( )   # release the ssh-agent socket on every path
 
 
 
@@ -333,7 +336,7 @@ def _validate_ssh_key_auth_inputs( hop: paramiko.config.SSHConfig ) -> tuple[str
     Ensures user, hostname and IdentityFile are present and that IdentityFile is an
     absolute, readable, non-symlink regular file suitable for key loading.
 
-    Returns (username, hostname, identityfile); 
+    Returns (username, hostname, identityfile);
 
     Raises ValueError on validation failure.
     """
@@ -428,7 +431,7 @@ def _auth_transport_ssh_keys( hop: paramiko.config.SSHConfig, transport: paramik
 
 def _auth_transport_2fa( hop: paramiko.config.SSHConfig, transport: paramiko.Transport ) -> None:
     """
-    Authenticate an existing SSH transport using keyboard-interactive 2FA 
+    Authenticate an existing SSH transport using keyboard-interactive 2FA
     (paramiko considers this "keyboard-interactive" even if there is not a real user typing)
 
     Retrieves username, password and TOTP credentials and performs interactive
@@ -440,7 +443,7 @@ def _auth_transport_2fa( hop: paramiko.config.SSHConfig, transport: paramiko.Tra
     """
     hostname                 = hop.get( "hostname" )
     port                     = hop.get( "port" )
-    username, password, totp = _get_login_credentials( hostname ) 
+    username, password, totp = _get_login_credentials( hostname )
 
     def _kbdint_handler( title, instructions, prompt_list ):
         responses = [ ]
@@ -616,20 +619,22 @@ def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optiona
 
     next_transport: paramiko.Transport | None = None
     hostname: str = hop.get( 'hostname' ) # since we already have an ordered list of hops, we do not need to do some crazy
-                                          # checking to see if ProxyJump is set and use that or not. We just select the 
+                                          # checking to see if ProxyJump is set and use that or not. We just select the
                                           # hostname.
+    port = int( hop.get( 'port', port ) ) # honour Port from ssh_config; fall back to the argument default (22)
+
     if transport is None:   # first hop
         tcp_socket: socket.socket = socket.create_connection( ( hostname, port ), timeout = timeout )
         next_transport = paramiko.Transport( tcp_socket )
 
     elif transport.is_active( ):                   # second hop and onwards
-        channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout ) # src_addr here is a tupple, so the assignment is correct
+        channel = transport.open_channel( kind = "direct-tcpip", dest_addr = ( hostname, port ), src_addr = transport.getpeername( ), timeout = timeout ) # src_addr here is a tuple, so the assignment is correct
         if not channel.active:
             raise RuntimeError( f"RuntimeError: channel not active at hop:{hostname}")
         next_transport = paramiko.Transport( channel )
     else:
         raise RuntimeError( "RuntimeError: in _connect_next_proxy_jump, transport was neither 'None' nor active")
-    
+
 
     # check if transport exists and is open
     if next_transport is None:
