@@ -99,39 +99,31 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
     construction (first hop -> next hop -> .. -> last hop).
     """
 
-    resolved_hops, seen_aliases, pending_aliases = [ ], set( ), [ start_alias ]
+    # ProxyJump allows [user@]host[:port] and ssh:// URIs. We reject them to enforce
+    # single-source-of-truth per hop, keep parsing trivial, and avoid user/port
+    # override ambiguity. ProxyJump must reference aliases only.
+    INLINE_JUMP_RE = re.compile( r"^(?:ssh://)?(?:[^@/]+@)?[^:/\s,]+(?::\d+)?(?:/.*)?$" )
 
-    while pending_aliases:
-        current_alias = pending_aliases.pop( 0 )
+    def _resolve( alias: str, in_progress: set[ str ] ) -> List[ paramiko.config.SSHConfig ]:
+        """ Depth-first: the hops needed to reach alias, then alias itself. """
+        if alias in in_progress:
+            raise RuntimeError( f"ProxyJump loop detected at '{alias}'" )
 
-        if current_alias in seen_aliases:
-            raise RuntimeError( f"ProxyJump loop detected at '{current_alias}'" )
-
-        seen_aliases.add( current_alias )
-        current_lookup = ssh_config.lookup( current_alias )
-        proxyjump_value = ( current_lookup.get( "proxyjump" ) or "" ).strip( )
+        lookup          = ssh_config.lookup( alias )
+        proxyjump_value = ( lookup.get( "proxyjump" ) or "" ).strip( )
+        if proxyjump_value.lower( ) == "none":                                          # ssh_config(5): "none" disables ProxyJump
+            proxyjump_value = ""
         hop_aliases = [ hop.strip( ) for hop in proxyjump_value.split( "," ) if hop.strip( ) ]   # ssh_config(5): multiple jump hosts are comma separated
-        # ProxyJump allows [user@]host[:port] and ssh:// URIs. We reject them to enforce
-        # single-source-of-truth per hop, keep parsing trivial, and avoid user/port
-        # override ambiguity. ProxyJump must reference aliases only.
-        INLINE_JUMP_RE = re.compile( r"^(?:ssh://)?(?:[^@/]+@)?[^:/\s,]+(?::\d+)?(?:/.*)?$" )
         if any( INLINE_JUMP_RE.match( hop_alias ) and ( ( "@" in hop_alias ) or ( ":" in hop_alias ) or hop_alias.startswith( "ssh://" ) ) for hop_alias in hop_aliases ):
             raise ValueError( f"ProxyJump must be aliases only; This library has no support for [user@]host[:port] or ssh:// URIs in ssh client config." )
-        if hop_aliases:
-            pending_aliases = hop_aliases + pending_aliases
-        else:
-            resolved_hops.append( current_lookup )
 
-    # add the first link as last to finish the resolved chain
-    final_lookup: paramiko.config.SSHConfig = ssh_config.lookup( start_alias )
-    if resolved_hops[ -1 ] != final_lookup :
-        resolved_hops.append( final_lookup )
+        chain: List[ paramiko.config.SSHConfig ] = [ ]
+        for hop_alias in hop_aliases:
+            chain += _resolve( hop_alias, in_progress | { alias } )                     # a jump host may have its own ProxyJump
+        chain.append( lookup )
+        return chain
 
-    if not resolved_hops:
-        raise ValueError( f"ValueError: no hops, not even {demux.nird_upload_host}" )
-    # delete any existing value in the array to signal to caller the array is over
-
-    return resolved_hops
+    return _resolve( start_alias, set( ) )                                              # never empty: always ends with start_alias
 
 
 
