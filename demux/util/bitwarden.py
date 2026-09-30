@@ -4,6 +4,7 @@ import socket
 import subprocess
 import termcolor
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from typing import Tuple
@@ -24,7 +25,7 @@ def _get_username( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return username. Aborting." )
 
-    get_username_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/username/{hostname}"
+    get_username_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/username/{urllib.parse.quote( hostname, safe = '' )}"
     try:
         with urllib.request.urlopen( get_username_url, timeout = 1 ) as r:
             username:str = json.load( r )[ "data" ][ "data" ]
@@ -48,7 +49,7 @@ def _get_password( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return password. Aborting." )
 
-    get_password_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{hostname}"
+    get_password_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/password/{urllib.parse.quote( hostname, safe = '' )}"   # item names may contain spaces, e.g. "<host> ssh passphrase"
     try:
         with urllib.request.urlopen( get_password_url, timeout = 1 ) as r:
             password:str = json.load( r )[ "data" ][ "data" ]
@@ -72,7 +73,7 @@ def _get_totp( hostname: str ) -> str:
     if not hostname:
         raise ValueError( "ValueError: hostname not provided, cannot return TOTP token. Aborting." )
 
-    get_totp_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/totp/{hostname}"
+    get_totp_url: str = f"{constants.BW_BASE_URL}:{constants.BW_PORT}/object/totp/{urllib.parse.quote( hostname, safe = '' )}"
     try:
         with urllib.request.urlopen( get_totp_url, timeout = 1 ) as r:
             totp:str     = json.load( r )[ "data" ][ "data" ]
@@ -116,7 +117,7 @@ def _get_login_credentials_via_bw_cli( hostname: str ) -> Tuple[ str, str, str ]
     totp_process     = subprocess.run( [ constants.BITWARDEN_CLI_PATH, "get", "totp",     hostname ], check = True, capture_output = True, text = True )
 
     username:str     = username_process.stdout.strip( )
-    passwordL:str    = password_process.stdout.strip( )
+    password:str     = password_process.stdout.strip( )
     totp:str         = totp_process.stdout.strip( )
 
     if not username:
@@ -147,21 +148,19 @@ def _is_bw_port_open( ) -> bool:
     Verify that the local Bitwarden HTTP service endpoint is reachable.
 
     Attempts a TCP connection to (constants.BW_IP, constants.BW_PORT).
-    Returns True on success. On failure, logs a critical error with
-    user-level systemd diagnostics and raises ConnectionError.
+    Returns True on success. On failure, logs a warning with user-level
+    systemd diagnostics and returns False, so the caller falls back to the CLI.
     """
     port_open: bool = False
 
     try:
         socket.create_connection( ( constants.BW_IP, constants.BW_PORT ), timeout = 1 ).close( )
         port_open = True
-    except ConnectionError as error:
-        # port_open = False is already set
-        message = f"Cannot connect to the bw-serve.service socket {constants.BW_PORT} on {constants.BW_BASE_URL}. Use\n"
+    except OSError:                                                                 # ConnectionRefusedError, TimeoutError, EHOSTUNREACH; port_open = False is already set
+        message = f"Cannot connect to the bw-serve.service socket {constants.BW_PORT} on {constants.BW_BASE_URL}; falling back to the bw command line client. Use\n"
         message += termcolor.colored( "    /usr/bin/systemctl --user status bw-serve.service\n", color="cyan", attrs=["bold"] )
         message += "as the seqtech user to see if it is running.\n"
-        demuxLogger.critical( message )
-        raise ConnectionError( f"ConnectionError: failure to reach a required local service endpoint. {message}" ) from error
+        demuxLogger.warning( message )
 
     return port_open
 
@@ -182,13 +181,11 @@ def _is_bw_port_unlocked( ) -> bool:
         vault_unlocked = json.load( r )[ "data"][ "template" ][ "status" ] == "unlocked" # assigns true to vault_unlocked, if unlocked.
     
     if not vault_unlocked:
-        unlock_vault_cmd = "    /usr/local/bin/vault_unlocked.sh"
-        unlock_vault_cmd += termcolor.colored(curl_cmd, color="cyan", attrs=["bold"])
-        message += "Cannot connect to the bw serve vault. Vault is locked. Use\n"
-        message += unlock_vault_cmd
+        message  = "Cannot connect to the bw serve vault. Vault is locked. Use\n"
+        message += termcolor.colored( "    /usr/local/bin/vault_unlock.sh\n", color="cyan", attrs=["bold"] )
         message += "on the command line to unlock."
         demuxLogger.critical( message )
-        raise RuntimeError( message ) from error
+        raise RuntimeError( message )
 
     return vault_unlocked
 
@@ -205,11 +202,11 @@ def _probe_bw_api_state( ) -> Tuple[ bool, bool ]:
         (port_open: bool, vault_unlocked: bool)
 
     Raises:
-        Exception only on unexpected internal errors (not for normal "service down"
-        or "vault locked" states).
+        RuntimeError if the vault is locked (with unlock instructions).
+        Not for "service down": that returns port_open = False so the caller can fall back to the CLI.
     """
     port_open     : bool = _is_bw_port_open( )
-    vault_unlocked: bool = _is_bw_port_unlocked( )
+    vault_unlocked: bool = _is_bw_port_unlocked( ) if port_open else False   # no point asking /status when nothing listens; the caller falls back to the CLI
 
     return ( port_open, vault_unlocked )
 
@@ -280,7 +277,7 @@ def _get_login_credentials( hostname: str ) -> Tuple[ str, str, str ]:
             fifty tar files to upload, this will take a minute and a half just to authenticate.
     
         So, we will use bw serve as a user systemd process and make curl calls to that, as it
-        decrypts the vault once and if that fails, we will go back ot the command line client.
+        decrypts the vault once and if that fails, we will go back to the command line client.
     """
 
     port_open: bool          = False
