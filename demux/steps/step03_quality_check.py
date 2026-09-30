@@ -1,3 +1,4 @@
+import inspect
 import glob
 import logging
 import os
@@ -63,7 +64,7 @@ def fastqc( demux ):
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: FastQC complete ==\n", color="cyan" )  )
 
@@ -150,10 +151,10 @@ def prepare_multiqc( demux ):
         demuxLogger.debug( "-----------------")
 
 
-    if ( not zipFiles[0] or not HTMLfiles[0] ):
+    if not zipFiles or not HTMLfiles:
         demuxLogger.critical( f"zipFiles or HTMLfiles in {inspect.stack()[0][3]} came up empty! Please investigate {demux.demultiplexRunIDdir}. Exiting.")
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxLogger.debug( "-----------------")
     sourcefiles = zipFiles + HTMLfiles # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/129
@@ -170,14 +171,14 @@ def prepare_multiqc( demux ):
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     if not os.path.isdir( destination ) :
         text =  f"Directory {destination} does not exist. Please check the logs. You can also just delete {demux.demultiplexRunIDdir} and try again."
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     try:
         # EXAMPLE: /usr/bin/cp project/*zip project/*html DemultiplexDir/demux.runIDShort.short_QC # (destination is a directory)
@@ -186,8 +187,8 @@ def prepare_multiqc( demux ):
             command = f"/usr/bin/cp {source} {destination}"
             demuxLogger.debug( f"{text:{demux.spacing2}}" + command )
             shutil.copy2( source, destination )     # destination has to be a directory
-    except FileNotFoundError as err:                # FileNotFoundError is a subclass of OSError[ errno, strerror, filename, filename2 ]
-        text = [ f"\tFileNotFoundError in {inspect.stack()[0][3]}()" ,
+    except OSError as err:                          # covers FileNotFoundError and PermissionError; OSError[ errno, strerror, filename, filename2 ]
+        text = [ f"\t{type( err ).__name__} in {inspect.stack()[0][3]}()" ,
                  f"\terrno:\t{err.errno}",
                  f"\tstrerror:\t{err.strerror}",
                  f"\tfilename:\t{err.filename}",
@@ -198,6 +199,7 @@ def prepare_multiqc( demux ):
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
+        sys.exit( 1 )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for multiQC finished ==\n", color="cyan" ) )
 
@@ -257,17 +259,15 @@ def multiqc( demux ):
         multiQCLogFileHandle.close( )
     except OSError as err:
         text = [    f"Caught exception!",
-                    f"Command: {err.cmd}", # interpolated strings
-                    f"Return code: {err.returncode}"
-                    f"Process output: {err.stdout}",
-                    f"Process error:  {err.stderr}",
+                    f"File: {err.filename}",
+                    f"Error: [{err.errno}] {err.strerror}",
                     f"Exiting."
                  ]
         text = '\n'.join( text )
         demuxFailureLogger.critical( text )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )    
+        sys.exit( 1 )    
 
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: multiQC finished ==\n", color="cyan" ) )
