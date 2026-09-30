@@ -240,7 +240,7 @@ def _cleanup_irida() -> None:
     # ---- delete sequencing run ----------------------------------------
 
     if demux.irida_sequencing_run_id:
-        url:str = f"{demux.irida_base_url}/{demux.irida_sequencingrun_endpoint}/{demux.irida_sequencing_run_id}"
+        url = f"{demux.irida_base_url}/{demux.irida_sequencingrun_endpoint}/{demux.irida_sequencing_run_id}"
 
         request = urllib.request.Request( url, method = constants.HTTP_DELETE )
         request.add_header( constants.HTTP_HEADER_AUTHORIZATION, f'{constants.HTTP_BEARER_PREFIX} {demux.irida_oauth_token}' )
@@ -325,7 +325,7 @@ def main() -> int:
 
     # ---- report -------------------------------------------------------
 
-    elapsed:float = time.time() - test_start_time
+    elapsed = time.time() - test_start_time
 
     print( )
     if passed:

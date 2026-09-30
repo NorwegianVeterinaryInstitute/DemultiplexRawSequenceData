@@ -128,8 +128,14 @@ def _cleanup_remote_via_existing_transport() -> None:
     """
     remote_dir:str = os.path.join( demux.nird_base_upload_path_ssh, TEST_RUN_ID )
 
+    if demux.transport is None:
+        print( "  remote cleanup skipped: no transport" )
+        return
+
     try:
-        sftp:paramiko.SFTPClient = paramiko.SFTPClient.from_transport( demux.transport )
+        sftp:paramiko.SFTPClient | None = paramiko.SFTPClient.from_transport( demux.transport )
+        if sftp is None:
+            raise paramiko.SSHException( "no SFTP session for remote cleanup" )
         for entry in demux.absoluteFilesToTransferList.values():
             for key in ( 'tar_file_remote', 'md5_file_remote', 'sha512_file_remote' ):
                 try:

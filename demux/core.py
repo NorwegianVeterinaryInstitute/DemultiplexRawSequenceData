@@ -187,6 +187,7 @@ class demux:
     key_file:str                               = ""
     proxy_jump:str                             = ""
     proxy_jump_chain:list | None               = None
+    transport:paramiko.Transport | None        = None         # last hop of the NIRD chain, set by step08_03
     transport_stack:list[ paramiko.Transport ] | None = None
     # max_workers: int                         = len( demux.tarFilesToTransferList ) # this would be possible if the firewall did not choke.
     max_workers:int                            = 5            # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
@@ -261,7 +262,7 @@ class demux:
         "controlProjectsFoundList", "emptyProjectsFoundList", "tarFilesToTransferList",
         "globalDictionary", "absoluteFilesToTransferList",
         "transfer_to_nird", "upload_to_vigasp",
-        "proxy_jump_chain", "transport_stack",
+        "proxy_jump_chain", "transport", "transport_stack",
         "irida_stage_times", "irida_oauth_token", "irida_client_id", "irida_client_secret", "irida_username", "irida_password",
         "irida_samples", "irida_verified_projects", "irida_local_hashes",
         "irida_sequencing_run_id", "irida_uploaded_samples", "irida_verification_passed", "irida_run_completed",

@@ -33,6 +33,7 @@
 import os
 import subprocess
 import tempfile
+from collections.abc import Iterator
 
 import pytest
 
@@ -41,7 +42,7 @@ from demux.util.checksum import hash_file, write_checksum_files
 
 
 @pytest.fixture
-def tmp_target_file():
+def tmp_target_file() -> Iterator[str]:
     """Write a small binary file to a temp directory, yield its path, clean up after."""
     with tempfile.TemporaryDirectory() as tmpdir:
         filepath: str = os.path.join(tmpdir, "test_run_sample.tar")

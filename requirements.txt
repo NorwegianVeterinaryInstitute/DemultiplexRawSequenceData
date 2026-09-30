@@ -10,3 +10,4 @@ types-paramiko
 types-requests
 types-psutil
 types-scp
+pytest
