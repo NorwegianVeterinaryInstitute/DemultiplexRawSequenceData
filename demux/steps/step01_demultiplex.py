@@ -44,9 +44,9 @@ def bcl2fastq( demux ):
     #       Dynamic exception type: boost::exception_detail::clone_impl<bcl2fastq::common::IoError>
     #       std::exception::what: Failed to allocate a file handle
     # raising the file descriptor , seems to fix the issue
-    # command line equiv: ulimit -n 65535
+    # command line equiv: ulimit -n $(ulimit -Hn)
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-    resource.setrlimit(resource.RLIMIT_NOFILE, (65535, hard))
+    resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard)) # raise the soft limit to the hard limit, the highest this process may set
 
     command: str = demux.bcl2fastq_bin
     argv = [ command,
@@ -64,7 +64,7 @@ def bcl2fastq( demux ):
     ]
 
     text = f"Command to execute:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + "ulimit -n 65535; " + " ".join( argv ) )
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + f"ulimit -n {hard}; " + " ".join( argv ) )
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
@@ -95,10 +95,8 @@ def bcl2fastq( demux ):
         file.close( )
     except OSError as err:
         text = [    f"Caught exception!",
-                    f"Command: {err.cmd}", # interpolated strings
-                    f"Return code: {err.returncode}"
-                    f"Process output: {err.stdout}",
-                    f"Process error:  {err.stderr}",
+                    f"File: {err.filename}",
+                    f"Error: [{err.errno}] {err.strerror}",
                     f"Exiting."
                  ]
         text = '\n'.join( text )
