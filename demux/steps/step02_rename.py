@@ -138,7 +138,19 @@ def rename_files( demux ):
         filesToSearchFor     = os.path.join( compressedFastQfilesDir, '*' + demux.compressedFastqSuffix )
         compressedFastQfiles = glob.glob( filesToSearchFor )            # example: /data/demultiplex/220314_M06578_0091_000000000-DFM6K_demultiplex/220314_M06578.SAV-amplicon-MJH/sample*fastq.gz
 
-        if not any( compressedFastQfiles ): # if array is empty: bcl2fastq wrote nothing for this project, every sample in it has zero reads
+        if not any( compressedFastQfiles ): # nothing at the top level: either every sample has zero reads (dropped below) or bcl2fastq used per-sample subdirectories (fatal)
+            nestedFastQfiles = glob.glob( os.path.join( compressedFastQfilesDir, '*', '*' + demux.compressedFastqSuffix ) )
+            if nestedFastQfiles:                                        # bcl2fastq wrote into <Project>/<Sample_ID>/: not empty, the SampleSheet breaks the flat layout
+                text = [    f"Project {project} has no .fastq.gz files in {compressedFastQfilesDir}, but {len( nestedFastQfiles )} in per-sample subdirectories, e.g. {nestedFastQfiles[ 0 ]}",
+                            f"bcl2fastq does this when Sample_Name differs from Sample_ID in the SampleSheet.",
+                            f"This pipeline needs Sample_Name empty or equal to Sample_ID. Fix the SampleSheet and demultiplex again.",
+                            f"Exiting.",
+                       ]
+                text = '\n'.join( text )
+                demuxFailureLogger.critical( text )
+                demuxLogger.critical( text )
+                logging.shutdown( )
+                sys.exit( 1 )
             _drop_empty_project( demux, project )
             continue
 
