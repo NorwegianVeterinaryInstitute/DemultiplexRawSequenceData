@@ -61,11 +61,18 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
     md5sum_command: str                 = f"/usr/bin/md5sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}"
     sha512sum_command: str              = f"/usr/bin/sha512sum {shlex.quote( file_entry[ 'tar_file_remote' ] )}"
 
-    md5sum_channel: paramiko.Channel    = demux.transport.open_session( )
-    sha512sum_channel: paramiko.Channel = demux.transport.open_session( )
-
-    md5sum_channel.exec_command( md5sum_command )
-    sha512sum_channel.exec_command( sha512sum_command )
+    md5sum_channel: paramiko.Channel | None    = None
+    sha512sum_channel: paramiko.Channel | None = None
+    try:
+        md5sum_channel    = demux.transport.open_session( )
+        sha512sum_channel = demux.transport.open_session( )
+        md5sum_channel.exec_command( md5sum_command )
+        sha512sum_channel.exec_command( sha512sum_command )
+    except Exception:                                                               # close what was opened before the error, then let it propagate
+        for channel in ( md5sum_channel, sha512sum_channel ):
+            if channel is not None:
+                channel.close( )
+        raise
 
     results: dict[ str, tuple[ bytes, bytes, int ] ] = { }
 
