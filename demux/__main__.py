@@ -8,8 +8,8 @@
 ########################################################################
 
 
-import sys
 import argparse
+import sys
 
 # from demultiplex import main
 

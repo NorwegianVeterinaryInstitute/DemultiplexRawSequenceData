@@ -3,20 +3,18 @@
 import base64
 import hashlib
 import os
-import paramiko
 import re
 import socket
 import stat
+
+import paramiko
 import termcolor
-
-from typing import List, Optional
-
-from paramiko               import SSHException
+from paramiko import SSHException
 from paramiko.ssh_exception import AuthenticationException
 
-from demux.util.bitwarden  import _get_login_credentials, _get_password, get_passphrase
-from demux.config          import constants
-from demux.loggers         import demuxLogger
+from demux.config import constants
+from demux.loggers import demuxLogger
+from demux.util.bitwarden import _get_login_credentials, _get_password, get_passphrase
 
 
 def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig ) -> None:
@@ -83,7 +81,7 @@ def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig 
         raise ValueError( f"Multiple IdentityFile values for host alias {target_lookup.get( 'hostname' )}")
 
 
-def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias: str ) -> List[ paramiko.config.SSHConfig ]:
+def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias: str ) -> list[ paramiko.config.SSHConfig ]:
     """
     @in_use by ssh_transport:_parse_ssh_config
     Resolve a ProxyJump chain starting from a given SSH alias.
@@ -101,7 +99,7 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
     # override ambiguity. ProxyJump must reference aliases only.
     INLINE_JUMP_RE = re.compile( r"^(?:ssh://)?(?:[^@/]+@)?[^:/\s,]+(?::\d+)?(?:/.*)?$" )
 
-    def _resolve( alias: str, in_progress: set[ str ] ) -> List[ paramiko.config.SSHConfig ]:
+    def _resolve( alias: str, in_progress: set[ str ] ) -> list[ paramiko.config.SSHConfig ]:
         """ Depth-first: the hops needed to reach alias, then alias itself. """
         if alias in in_progress:
             raise RuntimeError( f"ProxyJump loop detected at '{alias}'" )
@@ -112,9 +110,9 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
             proxyjump_value = ""
         hop_aliases = [ hop.strip( ) for hop in proxyjump_value.split( "," ) if hop.strip( ) ]   # ssh_config(5): multiple jump hosts are comma separated
         if any( INLINE_JUMP_RE.match( hop_alias ) and ( ( "@" in hop_alias ) or ( ":" in hop_alias ) or hop_alias.startswith( "ssh://" ) ) for hop_alias in hop_aliases ):
-            raise ValueError( f"ProxyJump must be aliases only; This library has no support for [user@]host[:port] or ssh:// URIs in ssh client config." )
+            raise ValueError( "ProxyJump must be aliases only; This library has no support for [user@]host[:port] or ssh:// URIs in ssh client config." )
 
-        chain: List[ paramiko.config.SSHConfig ] = [ ]
+        chain: list[ paramiko.config.SSHConfig ] = [ ]
         for hop_alias in hop_aliases:
             chain += _resolve( hop_alias, in_progress | { alias } )                     # a jump host may have its own ProxyJump
         chain.append( lookup )
@@ -124,7 +122,7 @@ def _resolve_proxyjump_chain( ssh_config: paramiko.config.SSHConfig, start_alias
 
 
 
-def _parse_ssh_config( demux ) -> List[ paramiko.config.SSHConfig ]:
+def _parse_ssh_config( demux ) -> list[ paramiko.config.SSHConfig ]:
     """
     @in_use by step08_03_setup_ssh_connection.py:_setup_ssh_connection
     Parse the user SSH client configuration and resolve the effective connection chain for
@@ -287,14 +285,14 @@ def _auth_via_agent( transport: paramiko.Transport, username: str, identityfile_
         pub_line: list[ str ] = fh.read( ).split( )
         pub_b64: str          = pub_line[ 1 ] if len( pub_line ) >= 2 else ""
     pub_bytes: bytes          = base64.b64decode( pub_b64 )
-    disk_fingerprint: str     = hashlib.sha256( pub_bytes ).digest( ).hex( )
+    disk_fingerprint: str     = hashlib.sha256( pub_bytes ).hexdigest( )
 
     agent: paramiko.Agent     = paramiko.Agent( )
     try:
         agent_keys            = agent.get_keys( )
 
         for agent_key in agent_keys:
-            agent_fingerprint: str = hashlib.sha256( agent_key.asbytes( ) ).digest( ).hex( )
+            agent_fingerprint: str = hashlib.sha256( agent_key.asbytes( ) ).hexdigest( )
             if agent_fingerprint != disk_fingerprint:
                 continue
 
@@ -579,7 +577,7 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
 
 
 
-def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: Optional[ paramiko.Transport ], *, port: int = 22, timeout: float = 30.0, keepalive: int = 30 ) -> paramiko.Transport:
+def _connect_next_proxy_jump( hop: paramiko.config.SSHConfig, transport: paramiko.Transport | None, *, port: int = 22, timeout: float = 30.0, keepalive: int = 30 ) -> paramiko.Transport:
     """
     Build a new SSH Transport for a single hop described by a parsed SSHConfig
     entry, either by opening a direct TCP connection (first hop) or by tunneling

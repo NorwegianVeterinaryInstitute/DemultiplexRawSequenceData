@@ -19,16 +19,17 @@
 #
 ########################################################################
 import time
-import termcolor
-from demux.loggers import demuxLogger, demuxFailureLogger
-from demux.steps.step07_01_preflight       import _preflight
-from demux.steps.step07_02_check_projects  import _check_projects
-from demux.steps.step07_03_hash            import _hash
-from demux.steps.step07_04_create_run      import _create_run
-from demux.steps.step07_05_upload          import _upload
-from demux.steps.step07_06_verify          import _verify
-from demux.steps.step07_07_complete        import _complete
 
+import termcolor
+
+from demux.loggers import demuxFailureLogger, demuxLogger
+from demux.steps.step07_01_preflight import _preflight
+from demux.steps.step07_02_check_projects import _check_projects
+from demux.steps.step07_03_hash import _hash
+from demux.steps.step07_04_create_run import _create_run
+from demux.steps.step07_05_upload import _upload
+from demux.steps.step07_06_verify import _verify
+from demux.steps.step07_07_complete import _complete
 
 ########################################################################
 # _timed

@@ -1,10 +1,12 @@
 import os
+
 import psutil
 import termcolor
 
-from demux.util.ssh_transport   import _ensure_remote_dir_via_sftp
-from demux.config               import constants
-from demux.loggers              import demuxLogger
+from demux.config import constants
+from demux.loggers import demuxLogger
+from demux.util.ssh_transport import _ensure_remote_dir_via_sftp
+
 
 def _ensure_remote_run_directory_mounted( demux ) -> None:
     """
@@ -65,7 +67,7 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
     remote_base_list: set[ str ] = { entry[ 'nird_upload_location' ] for entry in demux.absoluteFilesToTransferList.values( ) }
 
     if not remote_base_list:
-        message = f"ValueError: no NIRD upload locations found in demux.absoluteFilesToTransferList. Refusing to continue, as any transfer will "
+        message = "ValueError: no NIRD upload locations found in demux.absoluteFilesToTransferList. Refusing to continue, as any transfer will "
         message += "end up in the home directory of the uploading user."
         raise ValueError( message )
 

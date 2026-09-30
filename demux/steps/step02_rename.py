@@ -4,9 +4,10 @@ import glob
 import logging
 import os
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # renameDirectories( )
@@ -53,7 +54,7 @@ def rename_directories( demux ):
                             f"newdirExists: {newdirExists}",
                             f"err.filename:  {err.filename}",
                             f"err.filename2: {err.filename2}",
-                            f"Exiting!"
+                            "Exiting!"
                         ]
                 text = '\n'.join( text )
                 demuxFailureLogger.critical( f"{ text }" )
@@ -61,7 +62,7 @@ def rename_directories( demux ):
                 logging.shutdown( )
                 sys.exit( 1 )
 
-            demuxLogger.debug( f"Renaming " + termcolor.colored(  f"{oldname:92}", color="cyan", attrs=["reverse"] ) + " to " + termcolor.colored(  f"{newname:106}", color="yellow", attrs=["reverse"] ) )
+            demuxLogger.debug( "Renaming " + termcolor.colored(  f"{oldname:92}", color="cyan", attrs=["reverse"] ) + " to " + termcolor.colored(  f"{newname:106}", color="yellow", attrs=["reverse"] ) )
 
     for index, item in enumerate( demux.newProjectFileList ):
         text = f"demux.newProjectFileList[{index}]:"
@@ -86,7 +87,7 @@ def _drop_empty_project( demux, project ):
     tarFile        = os.path.join( demux.forTransferDir, demux.RunID, renamedProject + demux.tarSuffix )
 
     text = [    f"Project {project} does not contain any .fastq.gz entries: every sample in it produced zero reads.",
-                f"This is expected for a water control in its own Sample_Project. Check the sample sheet if it is not one.",
+                "This is expected for a water control in its own Sample_Project. Check the sample sheet if it is not one.",
                 f"Dropping {project} from QC, tar and delivery.",
            ]
     text = '\n'.join( text )
@@ -142,9 +143,9 @@ def rename_files( demux ):
             nestedFastQfiles = glob.glob( os.path.join( compressedFastQfilesDir, '*', '*' + demux.compressedFastqSuffix ) )
             if nestedFastQfiles:                                        # bcl2fastq wrote into <Project>/<Sample_ID>/: not empty, the SampleSheet breaks the flat layout
                 text = [    f"Project {project} has no .fastq.gz files in {compressedFastQfilesDir}, but {len( nestedFastQfiles )} in per-sample subdirectories, e.g. {nestedFastQfiles[ 0 ]}",
-                            f"bcl2fastq does this when Sample_Name differs from Sample_ID in the SampleSheet.",
-                            f"This pipeline needs Sample_Name empty or equal to Sample_ID. Fix the SampleSheet and demultiplex again.",
-                            f"Exiting.",
+                            "bcl2fastq does this when Sample_Name differs from Sample_ID in the SampleSheet.",
+                            "This pipeline needs Sample_Name empty or equal to Sample_ID. Fix the SampleSheet and demultiplex again.",
+                            "Exiting.",
                        ]
                 text = '\n'.join( text )
                 demuxFailureLogger.critical( text )
@@ -163,7 +164,7 @@ def rename_files( demux ):
 
 
         demuxLogger.debug( "-----------------")
-        demuxLogger.debug( f"Move commands to execute:" )
+        demuxLogger.debug( "Move commands to execute:" )
         for file in compressedFastQfiles: # compressedFastQfiles is already in absolute path format
     
             # get the base filename. We picked up sample*.{CompressedFastqSuffix} and we have to rename it to {demux.runIDShort}sample*.{CompressedFastqSuffix}
@@ -199,7 +200,7 @@ def rename_files( demux ):
                                 f"newname: {newname}\nnewfileExists: {newfileExists}",
                                 f"err.filename:  {err.filename}",
                                 f"err.filename2: {err.filename2}",
-                                f"Exiting!"
+                                "Exiting!"
                          ]
                     text = '\n'.join( text )
                     demuxFailureLogger.critical( f"{ text }" )
@@ -243,9 +244,9 @@ def rename_files_and_directories( demux ):
 
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Renaming started ==", color="green", attrs=["bold"] ) )
 
-    text = f"demultiplexRunIDdir:"
+    text = "demultiplexRunIDdir:"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.demultiplexRunIDdir )    # tabulation error
-    text = f"runIDShort:"
+    text = "runIDShort:"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.runIDShort )
     if demux.verbosity == 2:
         text = "demux.projectList:"

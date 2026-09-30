@@ -3,9 +3,10 @@ import os
 import shutil
 import stat
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # copy_sample_sheet_into_demultiplex_runiddir( demux )
@@ -16,7 +17,6 @@ def copy_sample_sheet_into_demultiplex_runiddir( demux ):
     Copy SampleSheet.csv from {demux.SampleSheetFilePath} to {demux.DemultiplexRunIdDir}
         because bcl2fastq requires the file existing before it starts demultiplexing
     """
-    #
 
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Copy {demux.sampleSheetFilePath} to {demux.demultiplexRunIDdir} ==\n", color="green", attrs=["bold"] ) )

@@ -6,9 +6,10 @@ import os
 import resource
 import subprocess
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # bcl2fastq
@@ -63,19 +64,19 @@ def bcl2fastq( demux ):
         f"{demux.demultiplexRunIDdir}"
     ]
 
-    text = f"Command to execute:"
+    text = "Command to execute:"
     demuxLogger.debug( f"{text:{demux.spacing2}}" + f"ulimit -n {hard}; " + " ".join( argv ) )
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
         result =  subprocess.run( argv, capture_output = True, cwd = demux.rawDataRunIDdir, check = True, encoding = demux.decodeScheme )
     except subprocess.CalledProcessError as err:
-        text = [    f"Caught exception!",
+        text = [    "Caught exception!",
                     f"Command: {err.cmd}", # interpolated strings
                     f"Return code: {err.returncode}",
                     f"Process output: {err.stdout}",
                     f"Process error:  {err.stderr}",
-                    f"Exiting."
+                    "Exiting."
                  ]
         text = '\n'.join( text )
         demuxFailureLogger.critical( text )
@@ -94,10 +95,10 @@ def bcl2fastq( demux ):
         file.write( result.stderr )
         file.close( )
     except OSError as err:
-        text = [    f"Caught exception!",
+        text = [    "Caught exception!",
                     f"File: {err.filename}",
                     f"Error: [{err.errno}] {err.strerror}",
-                    f"Exiting."
+                    "Exiting."
                  ]
         text = '\n'.join( text )
         demuxFailureLogger.critical( text )

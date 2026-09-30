@@ -1,10 +1,10 @@
 import logging
 import os
+
 import termcolor
 
-from demux.config   import constants as constants
-
-from demux.core    import demux
+from demux.config import constants as constants
+from demux.core import demux
 from demux.loggers import demuxLogger
 
 ########################################################################
@@ -65,24 +65,24 @@ def setup_environment( RunID ):
 
     # maintain the order added this way, so our little stateLetter trick will work
     demux.globalDictionary = {  
-        'RunID'                         : str( ),
-        'runIDShort'                    : str( ),
-        'rawDataRunIDdir'               : str( ),
-        'rtaCompleteFilePath'           : str( ),
-        'sampleSheetFilePath'           : str( ),
-        'demultiplexRunIDdir'           : str( ),
-        'demultiplexLogDirPath'         : str( ),
-        'demuxQCDirectoryFullPath'      : str( ),
-        'demuxRunLogFilePath'           : str( ),
-        'demuxCumulativeLogFilePath'    : str( ),
-        'demultiplexLogDirPath'         : str( ),
-        'demultiplexScriptLogFilePath'  : str( ),
-        'bcl2FastqLogFile'              : str( ),
-        'fastQCLogFilePath'             : str( ),
-        'mutliQCLogFilePath'            : str( ),
-        'forTransferRunIdDir'           : str( ),
-        'forTransferQCtarFile'          : str( ),
-        'sampleSheetArchiveFilePath'    : str( ),
+        'RunID'                         : "",
+        'runIDShort'                    : "",
+        'rawDataRunIDdir'               : "",
+        'rtaCompleteFilePath'           : "",
+        'sampleSheetFilePath'           : "",
+        'demultiplexRunIDdir'           : "",
+        'demultiplexLogDirPath'         : "",
+        'demuxQCDirectoryFullPath'      : "",
+        'demuxRunLogFilePath'           : "",
+        'demuxCumulativeLogFilePath'    : "",
+        'demultiplexLogDirPath'         : "",
+        'demultiplexScriptLogFilePath'  : "",
+        'bcl2FastqLogFile'              : "",
+        'fastQCLogFilePath'             : "",
+        'mutliQCLogFilePath'            : "",
+        'forTransferRunIdDir'           : "",
+        'forTransferQCtarFile'          : "",
+        'sampleSheetArchiveFilePath'    : "",
         'projectList'                   : list( ),
         'newProjectNameList'            : list( ),
         'controlProjectsFoundList'      : list( ),

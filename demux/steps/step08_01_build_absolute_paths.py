@@ -2,6 +2,7 @@ import os
 
 from demux.config import constants
 
+
 def _select_nird_base_upload_path( demux ) -> str:
     """
     @in_use
@@ -10,12 +11,10 @@ def _select_nird_base_upload_path( demux ) -> str:
     upload_path:str = ""
     if constants.NIRD_MODE_MOUNTED   == demux.nird_access_mode:
         upload_path = demux.nird_base_upload_path_local
-    elif constants.NIRD_MODE_SSH     == demux.nird_access_mode:
-        upload_path = demux.nird_base_upload_path_ssh
-    elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
+    elif constants.NIRD_MODE_SSH     == demux.nird_access_mode or constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
         upload_path = demux.nird_base_upload_path_ssh
     else:
-        message = f"ValueError: NIRD upload method does not guarantee remote directory value. Refusing to continue."
+        message = "ValueError: NIRD upload method does not guarantee remote directory value. Refusing to continue."
         raise ValueError( message )
 
     return upload_path

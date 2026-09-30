@@ -2,13 +2,12 @@ import hashlib
 import logging
 import os
 import sys
-import termcolor
-
 from concurrent.futures import ProcessPoolExecutor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+import termcolor
 
-import demux.config.constants as constants
+from demux.config import constants
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 """
 
@@ -125,7 +124,7 @@ def calc_file_hash( demux ):
 
     """
 
-    dir_to_hash = str( )
+    dir_to_hash = ''
     if( "demultiplexRunIDdir" == demux.state ):
         dir_to_hash = demux.demultiplexRunIDdir
     else:

@@ -1,13 +1,14 @@
-import inspect
 import glob
+import inspect
 import logging
 import os
 import shutil
 import subprocess
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # fastqc
@@ -51,14 +52,14 @@ def fastqc( demux ):
     try: 
         fastQCLogFileHandle = open( demux.fastQCLogFilePath, "x" ) # fail if file exists
         if demux.verbosity == 2:
-            text = f"fastQCLogFilePath:"
+            text = "fastQCLogFilePath:"
             demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.fastQCLogFilePath )
         fastQCLogFileHandle.write( result.stdout ) 
         fastQCLogFileHandle.close( )
     except FileNotFoundError as err:
         text = [    f"Error opening fastQCLogFilePath: {demux.fastQCLogFilePath} does not exist",
                     f"err.filename:  {err.filename}",
-                    f"Exiting!"
+                    "Exiting!"
                 ]
         text = '\n'.join( text )
         demuxFailureLogger.critical( f"{ text }" )
@@ -130,7 +131,7 @@ def prepare_multiqc( demux ):
             zipFiles  = zipFiles  + globZipFiles  # source zip files
             HTMLfiles = HTMLfiles + globHTMLFiles # source html files
 
-        text  = termcolor.colored( f"Now working on project:", color="cyan", attrs=["reverse"]      ) 
+        text  = termcolor.colored( "Now working on project:", color="cyan", attrs=["reverse"]      ) 
         demuxLogger.debug( f"{text:{demux.spacing3}}" + project                                     )
         if demux.verbosity == 2:
             text = "added"
@@ -140,11 +141,11 @@ def prepare_multiqc( demux ):
             demuxLogger.debug( f"{text:{demux.spacing2}}" + str( totalZipFiles  )                )
             text = "totalHTMLFiles:"
             demuxLogger.debug( f"{text:{demux.spacing2}}" + str( totalHTMLFiles )                )
-            text  = f"zipFiles:"
+            text  = "zipFiles:"
             # text1 = " ".join( zipFiles[ counter ] )
             text1 = " ".join( zipFiles )
             demuxLogger.debug( f"{text:{demux.spacing3}}" + text1                                   )
-            text  = f"HTMLfiles:"
+            text  = "HTMLfiles:"
             # text1 = " ".join( HTMLfiles[ counter ] )
             text1 = " ".join( HTMLfiles )
             demuxLogger.debug( f"{text:{demux.spacing3}}" + text1                                   )
@@ -193,7 +194,7 @@ def prepare_multiqc( demux ):
                  f"\tstrerror:\t{err.strerror}",
                  f"\tfilename:\t{err.filename}",
                  f"\tfilename2:\t{err.filename2}",
-                 f"Exiting."
+                 "Exiting."
                ]
         text = '\n'.join( text )
         demuxFailureLogger.critical( f"{ text }" )
@@ -258,10 +259,10 @@ def multiqc( demux ):
         multiQCLogFileHandle.write( result.stderr ) # The MultiQC people are special: They write output to stderr
         multiQCLogFileHandle.close( )
     except OSError as err:
-        text = [    f"Caught exception!",
+        text = [    "Caught exception!",
                     f"File: {err.filename}",
                     f"Error: [{err.errno}] {err.strerror}",
-                    f"Exiting."
+                    "Exiting."
                  ]
         text = '\n'.join( text )
         demuxFailureLogger.critical( text )

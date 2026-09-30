@@ -6,13 +6,13 @@ to determine which runs are new and ready for processing.
 """
 
 import os
+
 import termcolor
 
 import demux.core
-
-from demux.config  import constants
-
+from demux.config import constants
 from demux.loggers import demuxLogger
+
 
 class RawDataDirectory:
     """
@@ -130,7 +130,7 @@ def detect_new_runs( rawdata: RawDataDirectory, demultiplex: DemultiplexDirector
     for runid, reason in demultiplex.incomplete_runs.items( ):
         text = [ f"INCOMPLETE RUN: {runid}",
                  f"    reason:  {reason}",
-                 f"    this run is skipped until the incomplete directory is removed:",
+                 "    this run is skipped until the incomplete directory is removed:",
                  f"    rm -rvf {os.path.join( demux.core.demux.demultiplexDir, runid + constants.DEMULTIPLEX_DIR_SUFFIX )}* {os.path.join( demux.core.demux.forTransferDir, runid )}*",
                ]
         text = '\n'.join( text )

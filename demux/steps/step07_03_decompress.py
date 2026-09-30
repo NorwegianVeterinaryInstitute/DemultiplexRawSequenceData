@@ -3,9 +3,8 @@ import os
 import shutil
 import stat
 
-from demux.config  import constants
+from demux.config import constants
 from demux.loggers import demuxLogger
-
 
 ########################################################################
 # _decompress

@@ -2,7 +2,6 @@ import fcntl
 import logging
 import os
 import sys
-
 from typing import TextIO
 
 _lock_fd: TextIO | None = None   # module-level: the flock lives as long as this file object stays open, i.e. until the process exits

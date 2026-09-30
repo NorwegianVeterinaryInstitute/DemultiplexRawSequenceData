@@ -15,48 +15,58 @@
 import logging
 import os
 import sys
-import termcolor
 import traceback
+from collections import deque
 
-from collections        import deque
+import termcolor
+
+from demux.config import constants
+from demux.core import (
+    demux,  # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
+)
+from demux.detect_new_runs import (
+    DemultiplexDirectory,
+    RawDataDirectory,
+    detect_new_runs,
+)
+from demux.diagnostics.check_running_environment import check_running_environment
+from demux.diagnostics.print_running_environment import print_running_environment
+from demux.envsetup.archive_sample_sheet import archive_sample_sheet
+from demux.envsetup.copy_sample_sheet_into_demultiplex_runiddir import (
+    copy_sample_sheet_into_demultiplex_runiddir,
+)
+from demux.envsetup.create_demultiplex_directory_structure import (
+    create_demultiplex_directory_structure,
+)
+from demux.envsetup.prepare_fortransfer_directory_structure import (
+    prepare_fortransfer_directory_structure,
+)
+from demux.envsetup.setup_environment import setup_environment
 
 # Breaking down the script into more digestible chunks
+from demux.loggers import (
+    demuxLogger,
+    setup_event_and_log_handling,
+    setup_file_log_handling,
+)
+from demux.steps.step01_demultiplex import bcl2fastq
+from demux.steps.step02_rename import rename_files_and_directories
+from demux.steps.step03_quality_check import quality_check
+from demux.steps.step04_prepare_delivery import prepare_delivery
+from demux.steps.step05_control_projects_qc import control_projects_qc
+from demux.steps.step06_tar_file_quality_check import tar_file_quality_check
+from demux.steps.step07_deliver_files_to_VIGASP import deliver_files_to_VIGASP
+from demux.steps.step08_deliver_files_to_NIRD import deliver_files_to_NIRD
 
-from demux.loggers                                              import setup_event_and_log_handling, setup_file_log_handling
-from demux.core                                                 import demux             # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
-from demux.config                                               import constants
-from demux.detect_new_runs                                      import RawDataDirectory, DemultiplexDirectory, detect_new_runs
-
-from demux.util.checksum                                        import calc_file_hash
-from demux.util.change_permissions                              import change_permissions
-from demux.util.arguments                                       import parse_arguments
-from demux.util.logging                                         import setup_logging
-from demux.util.lock                                            import setup_lock
-
-from demux.envsetup.setup_environment                           import setup_environment
-from demux.envsetup.create_demultiplex_directory_structure      import create_demultiplex_directory_structure
-from demux.envsetup.prepare_fortransfer_directory_structure     import prepare_fortransfer_directory_structure
-from demux.envsetup.copy_sample_sheet_into_demultiplex_runiddir import copy_sample_sheet_into_demultiplex_runiddir
-from demux.envsetup.archive_sample_sheet                        import archive_sample_sheet
-
-from demux.diagnostics.print_running_environment                import print_running_environment
-from demux.diagnostics.check_running_environment                import check_running_environment
-
-from demux.steps.step01_demultiplex                             import bcl2fastq
-from demux.steps.step02_rename                                  import rename_files_and_directories
-from demux.steps.step03_quality_check                           import quality_check
-from demux.steps.step04_prepare_delivery                        import prepare_delivery
-from demux.steps.step05_control_projects_qc                     import control_projects_qc
-from demux.steps.step06_tar_file_quality_check                  import tar_file_quality_check
-from demux.steps.step07_deliver_files_to_VIGASP                 import deliver_files_to_VIGASP
-from demux.steps.step08_deliver_files_to_NIRD                   import deliver_files_to_NIRD
 #
 # ... add here as needed ...
 #
-from demux.steps.step99_finalize                                import finalize
-
-from demux.loggers import demuxLogger
-
+from demux.steps.step99_finalize import finalize
+from demux.util.arguments import parse_arguments
+from demux.util.change_permissions import change_permissions
+from demux.util.checksum import calc_file_hash
+from demux.util.lock import setup_lock
+from demux.util.logging import setup_logging
 
 """
 demultiplex.py:
@@ -243,7 +253,7 @@ def process_run(RunID: str) -> None:
 
     # make sure to notify the operator if no files where uploaded
     if not demux.upload_to_vigasp and not demux.transfer_to_nird:
-        demuxLogger.info( termcolor.colored( f"\n\nNo files uploaded.\n", color="light_cyan", attrs=["blink"] ) )
+        demuxLogger.info( termcolor.colored( "\n\nNo files uploaded.\n", color="light_cyan", attrs=["blink"] ) )
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
     for handler in list( demuxLogger.handlers ):                                                        # detach and close this run's three log files, so the next run in the queue does not write into them
         if isinstance( handler, logging.FileHandler ):

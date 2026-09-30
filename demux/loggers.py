@@ -6,10 +6,10 @@ import os
 import socket
 import sys
 import syslog
+
 import termcolor
 
-import demux.config.constants as constants
-
+from demux.config import constants
 
 demuxLogger = None
 demuxFailureLogger = None

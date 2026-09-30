@@ -2,10 +2,10 @@ import os
 import pathlib
 import stat
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
-
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # finalize( )

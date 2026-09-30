@@ -1,12 +1,12 @@
 import concurrent.futures
 import json
 import os
-import requests
 import time
 
-from demux.config  import constants
-from demux.loggers import demuxLogger
+import requests
 
+from demux.config import constants
+from demux.loggers import demuxLogger
 
 ########################################################################
 # _sanitize_sample_name
@@ -109,7 +109,7 @@ def _upload( demux ) -> None:
 
 
 def _check_and_create_sample( demux, project_id: int, sample_name: str ) -> int:
-    """
+    r"""
     Check if sample exists in project. If it does not exist, create it.
 
     Sample names are sanitized before IRIDA API calls because IRIDA
@@ -152,7 +152,7 @@ def _check_and_create_sample( demux, project_id: int, sample_name: str ) -> int:
             response.raise_for_status()
             body = response.json()
             break
-        except requests.exceptions.ReadTimeout as error:
+        except requests.exceptions.ReadTimeout:
             if attempt == demux.irida_list_retries:
                 raise
             wait:int = demux.irida_list_retry_backoff * ( 2 ** ( attempt - 1 ) )

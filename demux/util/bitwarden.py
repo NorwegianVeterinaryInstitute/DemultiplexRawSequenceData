@@ -2,14 +2,13 @@ import json
 import os
 import socket
 import subprocess
-import termcolor
 import urllib.error
 import urllib.parse
 import urllib.request
 
-from typing import Tuple
+import termcolor
 
-from demux.config  import constants
+from demux.config import constants
 from demux.loggers import demuxLogger
 
 # bitwarden methods
@@ -105,7 +104,7 @@ def get_passphrase( hostname: str ) -> str:
 
 
 
-def _get_login_credentials_via_bw_cli( hostname: str ) -> Tuple[ str, str, str ]:
+def _get_login_credentials_via_bw_cli( hostname: str ) -> tuple[ str, str, str ]:
     """
     Fetch username, password, and TOTP via bw CLI.
     Returns (username, password, totp) as strings.
@@ -130,7 +129,7 @@ def _get_login_credentials_via_bw_cli( hostname: str ) -> Tuple[ str, str, str ]
     return ( username, password, totp )
 
 
-def _get_login_credentials_via_api( hostname: str ) -> Tuple[ str, str, str ]: # 
+def _get_login_credentials_via_api( hostname: str ) -> tuple[ str, str, str ]:
     """
     Fetch username, password, and TOTP via bw serve (localhost HTTP API).
     Returns (username, password, totp) as strings.
@@ -190,7 +189,7 @@ def _is_bw_port_unlocked( ) -> bool:
     return vault_unlocked
 
 
-def _probe_bw_api_state( ) -> Tuple[ bool, bool ]:
+def _probe_bw_api_state( ) -> tuple[ bool, bool ]:
     """
     Probe the Bitwarden bw-serve HTTP API.
 
@@ -264,7 +263,7 @@ def _probe_bw_cli_state( ) -> bool:
 
 
 
-def _get_login_credentials( hostname: str ) -> Tuple[ str, str, str ]:
+def _get_login_credentials( hostname: str ) -> tuple[ str, str, str ]:
     """
     Get the logging credentials from bitwarden
         if 'bw serve' exists on port 8087 on localhost, it gets
@@ -296,6 +295,6 @@ def _get_login_credentials( hostname: str ) -> Tuple[ str, str, str ]:
     elif vault_cli_unlocked:
         return _get_login_credentials_via_bw_cli( hostname )
     else:
-        message = f"bw-serve.service is not running and the command line client does not exist or is locked. Contact your system administrator."
+        message = "bw-serve.service is not running and the command line client does not exist or is locked. Contact your system administrator."
         demuxLogger.critical( message)
         raise FileNotFoundError( message )

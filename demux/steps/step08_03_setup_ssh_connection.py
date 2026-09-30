@@ -1,10 +1,16 @@
+
 import paramiko
 import termcolor
 
-from typing import List
+from demux.loggers import demuxLogger
+from demux.util.ssh_transport import (
+    _authenticate_transport,
+    _connect_next_proxy_jump,
+    _parse_ssh_config,
+    _select_auth_method,
+    _validate_hostkey,
+)
 
-from demux.util.ssh_transport   import _connect_next_proxy_jump, _validate_hostkey, _authenticate_transport, _parse_ssh_config, _select_auth_method
-from demux.loggers              import demuxLogger
 
 def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     """
@@ -19,16 +25,16 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     Raises:
         RuntimeError: if no hops are produced, or if transport construction fails.
     """
-    hops_list: List[ paramiko.config.SSHConfig ] = _parse_ssh_config( demux )
+    hops_list: list[ paramiko.config.SSHConfig ] = _parse_ssh_config( demux )
     first_transport  : paramiko.Transport        = None
     current_transport: paramiko.Transport        = None
     next_transport   : paramiko.Transport        = None
-    transport_stack: List[ paramiko.Transport ]  = [ ]  # having a stack of the previous transports would be a good idea
+    transport_stack: list[ paramiko.Transport ]  = [ ]  # having a stack of the previous transports would be a good idea
                                                         # so we can close the transports later in reverse order
     if len( hops_list ) == 0:
         raise RuntimeError( "SSH config resolution produced zero hops; cannot build transport chain." )
 
-    message = termcolor.colored( f"Null hop", color="cyan", attrs=["bold"] )
+    message = termcolor.colored( "Null hop", color="cyan", attrs=["bold"] )
     demuxLogger.debug( message )
 
     for index, hop in enumerate( hops_list ):

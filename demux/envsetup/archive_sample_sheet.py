@@ -4,10 +4,10 @@ import os
 import shutil
 import stat
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
-
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # archive_sample_sheet( )

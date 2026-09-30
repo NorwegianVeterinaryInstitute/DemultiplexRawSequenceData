@@ -2,6 +2,7 @@ import os
 
 from demux.loggers import demuxLogger
 
+
 def _verify_local_files( demux ):
     """
     @in_use

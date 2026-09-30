@@ -4,7 +4,9 @@
 
 import demux.core
 
-from . import loggers as demux_logging # avoid naming loggers as logging cuz python might import the stdlib logging, depending on path
+from . import (
+    loggers as demux_logging,  # avoid naming loggers as logging cuz python might import the stdlib logging, depending on path
+)
 
 # set up the logging handling
 

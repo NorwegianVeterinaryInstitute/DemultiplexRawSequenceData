@@ -9,6 +9,7 @@ that emits log messages.
 import logging
 import logging.handlers
 
+
 def setup_logging( ) -> None:
     """
     Set up basic logging for demultiplex.py.

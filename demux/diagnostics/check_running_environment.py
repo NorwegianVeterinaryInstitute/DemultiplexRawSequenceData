@@ -1,9 +1,10 @@
 import logging
 import shutil
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # checkRunningEnvironment( )

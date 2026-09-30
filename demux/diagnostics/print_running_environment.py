@@ -1,9 +1,9 @@
 import shlex
 import sys
+
 import termcolor
 
 from demux.config import constants as constants
-
 from demux.loggers import demuxLogger
 
 SEPARATOR:str = "============================================================================="
@@ -30,9 +30,9 @@ def print_running_environment( demux ):
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Print out the current running environment ==\n", color="green", attrs=["bold"] ) )
 
     # using the constants here allows us to make removing the directories more succinct.
-    demuxLogger.info( f"To rerun this script run\n" )
+    demuxLogger.info( "To rerun this script run\n" )
     arguments: str = shlex.join( sys.argv[ 1: ] )                                                                    # everything as typed, including the flags; _preprocess_argv( ) may have inserted "run"
-    demuxLogger.info( termcolor.colored( f"\tclear; rm -rvf /data/" + "{" + f"{constants.DEMULTIPLEX_DIR_NAME},{constants.FOR_TRANSFER_DIR_NAME}" + "}" + f"/{demux.RunID}* " + f"&& {demux.exec_path} {arguments}\n\n", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( "\tclear; rm -rvf /data/" + "{" + f"{constants.DEMULTIPLEX_DIR_NAME},{constants.FOR_TRANSFER_DIR_NAME}" + "}" + f"/{demux.RunID}* " + f"&& {demux.exec_path} {arguments}\n\n", attrs=["bold"] ) )
 
     printed_keys:list[ str ] = [ ]
 
@@ -63,7 +63,7 @@ def _print_item( demux, key:str, value ) -> None:
     """
     if type( value ) is list:
         for index, item in enumerate( value ):
-            text:str = f"{key}[{str(index)}]:"
+            text:str = f"{key}[{index!s}]:"
             text = f"{text:{demux.spacing3}}{item}"
             demuxLogger.debug( text )
     else:

@@ -1,9 +1,8 @@
 import json
 import urllib.request
 
-from demux.config  import constants
+from demux.config import constants
 from demux.loggers import demuxLogger
-
 
 ########################################################################
 # _create_run

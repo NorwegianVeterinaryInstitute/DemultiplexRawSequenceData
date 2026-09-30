@@ -1,15 +1,14 @@
-#
 
+import inspect
+import logging
 import os
 import sys
 import tarfile
-import logging
-import inspect
+
 import termcolor
 
 from demux.config import constants as constants
-
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # tar_project_files
@@ -127,7 +126,7 @@ def create_qc_tar_file( demux ):
     if demux.verbosity == 2:
         text = "demuxQCDirectoryFullPath:"
         demuxLogger.debug( f"{text:{demux.spacing3}}" + demux.demuxQCDirectoryFullPath )
-        text = f"multiqc_data:"
+        text = "multiqc_data:"
         demuxLogger.debug( f"{text:{demux.spacing3}}" + constants.MULTIQC_DATA_DIR_NAME )
 
     if not os.path.isfile( demux.forTransferQCtarFile ): # exit if /data/for_transfer/RunID/qc.tar file exists.

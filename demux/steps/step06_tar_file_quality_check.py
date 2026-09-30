@@ -1,11 +1,12 @@
+import logging
 import os
+import shutil
 import sys
 import tarfile
-import shutil
-import logging
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # tar_file_quality_check: verify tar files before upload
@@ -49,7 +50,7 @@ def tar_file_quality_check( demux ):
     try: 
         os.mkdir( forTransferRunIdDirTestName )
     except Exception as err:
-        text = f"{forTransferRunIdDirTestName} cannot be created: { str( err ) }\nExiting!"
+        text = f"{forTransferRunIdDirTestName} cannot be created: { err !s}\nExiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
@@ -71,7 +72,7 @@ def tar_file_quality_check( demux ):
             tarFileHandle.extractall( path = forTransferRunIdDirTestName, filter = 'tar' )
             tarFileHandle.close( )
         except Exception as err:
-            text = f"{tarFile} cannot be extracted into {forTransferRunIdDirTestName}: { str( err ) }\nExiting!"
+            text = f"{tarFile} cannot be extracted into {forTransferRunIdDirTestName}: { err !s}\nExiting!"
             demuxFailureLogger.critical( f"{ text }" )
             demuxLogger.critical( f"{ text }" )
             logging.shutdown( )

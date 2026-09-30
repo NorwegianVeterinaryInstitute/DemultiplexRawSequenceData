@@ -4,20 +4,19 @@ import copy
 import logging
 import logging.handlers
 import os
-import paramiko
 import pprint
 import socket
 import sys
-import termcolor
-
-from typing  import List
+from collections import defaultdict
 from pathlib import Path
 
+import paramiko
+import termcolor
+from sample_sheet import (
+    SampleSheet,  # https://sample-sheet.readthedocs.io/quick-start.html
+)
+
 import demux.config.constants
-
-from collections import defaultdict
-from sample_sheet import SampleSheet # https://sample-sheet.readthedocs.io/quick-start.html
-
 
 """
 The demux object is the central configuration/state holder for the whole pipeline.  It:
@@ -72,11 +71,11 @@ class demux:
     htmlSuffix:str                             = '.html'
     logSuffix:str                              = '.log'
     ######################################################
-    executableProgramsPath:str                 = f"/usr/local"
+    executableProgramsPath:str                 = "/usr/local"
     bcl2fastq_bin:str                          = f"{executableProgramsPath}/bin/bcl2fastq"
     fastqc_bin:str                             = f"{executableProgramsPath}/bin/fastqc"
     mutliqc_bin:str                            = f"{executableProgramsPath}/bin/multiqc"
-    python3_bin:str                            = f"/usr/bin/python3.11"     # Switching over to python3.11 for speed gains
+    python3_bin:str                            = "/usr/bin/python3.11"     # Switching over to python3.11 for speed gains
     ######################################################
     rtaCompleteFile:str                        = 'RTAComplete.txt'
     sampleSheetFileName:str                    = 'SampleSheet.csv'          # or 'SampleSheet-with-path-names.csv': https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/195
@@ -162,7 +161,7 @@ class demux:
     httpsHandlerUrl:str                        = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
     ######################################################
     upload_nird_enabled:bool                   = True                  # determine if the feature of uploading to nird is enabled
-    transfer_to_nird:bool                      = bool( )               # determine from sample sheet if we have any uploads
+    transfer_to_nird:bool                      = False               # determine from sample sheet if we have any uploads
     nird_access_mode:str                       = "ssh2fa"
                                     # "ssh" uses only keys
                                     # "ssh_2fa" uses username, password, TOTP, from bitwarden
@@ -185,11 +184,11 @@ class demux:
     nird_key_filename:str                      = "/home/gmarselis/.ssh/id_ed25519.3jane"
     hostname:str                               = ""
     username:str                               = ""
-    port:int                                   = int( )
+    port:int                                   = 0
     key_file:str                               = ""
     proxy_jump:str                             = ""
-    proxy_jump_chain:List                      = None
-    transport_stack:List[ paramiko.Transport]  = None
+    proxy_jump_chain:list                      = None
+    transport_stack:list[ paramiko.Transport]  = None
     # max_workers: int                         = len( demux.tarFilesToTransferList ) # this would be possible if the firewall did not choke.
     max_workers:int                            = 5            # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
     ######################################################
@@ -199,7 +198,7 @@ class demux:
     bw_timeout:int                             = 5            # bw serve is local; 5 seconds is generous
     ######################################################
     upload_vigas_enabled:bool                  = True         # determine if the feature of uploading to vigas is enabled
-    upload_to_vigasp:bool                      = bool( )      # determine if trasfers should happen to vigasp
+    upload_to_vigasp:bool                      = False      # determine if trasfers should happen to vigasp
     vigasp_api_key:str                         = ""           # we need to see how we can limit the damage including this api key can have
     vigasp_copy_mode:str                       = "serial"
     allowed_vigasp_copy_modes:list             = [ "serial", "parallel" ]

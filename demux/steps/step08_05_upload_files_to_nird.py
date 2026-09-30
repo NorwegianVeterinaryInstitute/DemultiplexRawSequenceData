@@ -15,23 +15,21 @@
 
 import hashlib
 import os
-import paramiko
 import shlex
 import shutil
 import socket
 import sys
 import threading
+from collections.abc import ValuesView
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
+from typing import Any
 
-from concurrent.futures   import ThreadPoolExecutor, wait, ALL_COMPLETED
-from collections.abc      import ValuesView
-from typing               import Any
-from scp                  import SCPClient
-
-from demux.config         import constants
-from demux.loggers        import demuxLogger
-
-
+import paramiko
 import scp
+from scp import SCPClient
+
+from demux.config import constants
+from demux.loggers import demuxLogger
 
 
 def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None:
@@ -330,13 +328,11 @@ def _upload_files_to_nird( demux ) -> None:
     """
 
     if len( demux.absoluteFilesToTransferList ) == 0:
-        message = f"Length of demux.absoluteFilesToTransferList is zero while copying."
+        message = "Length of demux.absoluteFilesToTransferList is zero while copying."
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    if constants.NIRD_MODE_SSH       == demux.nird_access_mode:
-        upload_func = _upload_and_verify_file_via_ssh
-    elif constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
+    if constants.NIRD_MODE_SSH       == demux.nird_access_mode or constants.NIRD_MODE_SSH_2FA == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_ssh
     elif constants.NIRD_MODE_MOUNTED == demux.nird_access_mode:
         upload_func = _upload_and_verify_file_via_local_sshfs_mount

@@ -1,10 +1,9 @@
+import concurrent.futures
 import hashlib
 import os
-import concurrent.futures
 
-from demux.config  import constants
+from demux.config import constants
 from demux.loggers import demuxLogger
-
 
 ########################################################################
 # _hash_file_sha256

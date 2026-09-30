@@ -2,7 +2,6 @@ import termcolor
 
 from demux.loggers import demuxLogger
 
-
 ########################################################################
 # Water Control Negative report
 ########################################################################

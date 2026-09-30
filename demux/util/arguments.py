@@ -176,11 +176,13 @@ Global flags (valid for all subcommands):
     -V, --version               Show version and exit.
     --config <PATH>             Path to an alternate config file.
 """
-import argcomplete
 import argparse
 import os
 import sys
-import demux.config.constants as constants
+
+import argcomplete
+
+from demux.config import constants
 
 
 class _VerboseHelpFormatter(argparse.RawDescriptionHelpFormatter):

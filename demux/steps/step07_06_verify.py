@@ -2,9 +2,8 @@ import json
 import time
 import urllib.request
 
-from demux.config  import constants
+from demux.config import constants
 from demux.loggers import demuxLogger
-
 
 ########################################################################
 # _verify
