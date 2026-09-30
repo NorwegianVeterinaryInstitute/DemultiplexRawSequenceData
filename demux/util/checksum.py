@@ -156,8 +156,8 @@ def calc_file_hash( demux ):
                 logging.shutdown( )
                 sys.exit( 1 )
 
-            if not any( filepath ): # make sure it's not a zero length file 
-                demuxLogger.warning( termcolor.colored(  f"file {filepath} has zero length. Skipping.", color="purple", attrs=["bold"] ) )
+            if os.path.getsize( filepath ) == 0: # make sure it's not a zero length file
+                demuxLogger.warning( termcolor.colored(  f"file {filepath} has zero length. Skipping.", color="magenta", attrs=["bold"] ) )
                 continue
 
             fileList.append( filepath )
