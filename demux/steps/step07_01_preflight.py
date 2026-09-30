@@ -139,7 +139,12 @@ def _fetch_irida_credentials( demux ) -> None:
         bw_item       = json.load( response )
 
     login_data:dict   = bw_item[ "data" ][ "login" ]
-    notes_parsed:dict = dict( line.split( ":", 1 ) for line in bw_item[ "data" ][ "notes" ].strip( ).split( "\n" ) )
+    notes_parsed:dict = { }
+    for line in bw_item[ "data" ][ "notes" ].splitlines( ):     # splitlines( ) also handles CRLF
+        if not line.strip( ):                                   # skip blank lines
+            continue
+        key, _, value = line.partition( ":" )                   # split on the first colon only
+        notes_parsed[ key.strip( ) ] = value.strip( )           # "client_id: abc" -> "client_id", "abc"
 
     demux.irida_username      = login_data[ "username" ]
     demux.irida_password      = login_data[ "password" ]
