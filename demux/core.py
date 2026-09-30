@@ -2,6 +2,7 @@
 
 import argparse
 import ast
+import copy
 import glob
 import grp
 import hashlib
@@ -270,6 +271,30 @@ class demux:
     ######################################################
     totalTasks = 28 # hardcoded until the object refactor; steps include VIGASP and NIRD delivery
     n = 0 # counter for keeping track of the number of the current task
+
+    # per-run state: every attribute a run fills in that the next run in the same invocation must not inherit.
+    # reset_run_state( ) puts each one back to its class-body default (snapshot in _per_run_defaults, below the class).
+    # add the name of any new per-run list, dict, flag or counter here.
+    _PER_RUN_ATTRIBUTES: tuple[ str, ... ] = (
+        "state", "n",
+        "project_samples_metadata", "projectList", "newProjectNameList", "newProjectFileList",
+        "controlProjectsFoundList", "emptyProjectsFoundList", "tarFilesToTransferList",
+        "globalDictionary", "absoluteFilesToTransferList",
+        "transfer_to_nird", "upload_to_vigasp",
+        "proxy_jump_chain", "transport_stack",
+        "irida_stage_times", "irida_oauth_token", "irida_client_id", "irida_client_secret", "irida_username", "irida_password",
+        "irida_samples", "irida_verified_projects", "irida_tmp_dir", "irida_decompressed_map", "irida_local_hashes",
+        "irida_sequencing_run_id", "irida_uploaded_samples", "irida_verification_passed", "irida_run_completed",
+    )
+
+    @classmethod
+    def reset_run_state( cls ) -> None:
+        """
+        Put every per-run attribute back to its class-body default, so a run never inherits
+        lists, flags or counters from the run processed before it in the same invocation.
+        """
+        for name in cls._PER_RUN_ATTRIBUTES:
+            setattr( cls, name, copy.deepcopy( cls._per_run_defaults[ name ] ) )
 
 
 
@@ -623,3 +648,9 @@ class demux:
         demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Checking SampleSheet.csv for characters that might cause us headaches finished ==\n", color="red", attrs=["bold"] ) )
 
         return sampleSheetContent
+
+
+# snapshot the class-body defaults once, at import, before any run changes them; demux.reset_run_state( ) copies them back
+demux._per_run_defaults = { }
+for name in demux._PER_RUN_ATTRIBUTES:
+    demux._per_run_defaults[ name ] = copy.deepcopy( getattr( demux, name ) )

@@ -203,6 +203,7 @@ def process_run(RunID: str) -> None:
     demuxLogger.info( termcolor.colored( f"Now processing: {RunID}", color="light_cyan" ) )
 
 
+    demux.reset_run_state( )                                                                            # start every run from the class-body defaults, not from the leftovers of the previous run
     setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
     # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
     create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIDdir}
