@@ -170,7 +170,11 @@ def main() -> int:
     if os.path.realpath(sheet_path).startswith(os.path.realpath(source_dir) + os.sep):
         print(f"ERROR: {sheet_path} is inside the source run; refusing to write", file=sys.stderr)
         return 1
-    run_counter: str = FAKE_PATTERN.match(fake_run_id).group(1)
+    fake_match: re.Match[str] | None = FAKE_PATTERN.match(fake_run_id)
+    if fake_match is None:
+        print(f"ERROR: {fake_run_id} does not match {FAKE_PATTERN.pattern}", file=sys.stderr)
+        return 1
+    run_counter: str = fake_match.group(1)
     mapping: dict[str, str] = rewrite_sample_sheet(sheet_path, run_counter)
     original: str
     renamed: str

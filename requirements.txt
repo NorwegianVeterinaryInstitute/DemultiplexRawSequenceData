@@ -6,3 +6,6 @@ scp
 termcolor
 multiqc
 argcomplete
+types-paramiko
+types-requests
+types-psutil

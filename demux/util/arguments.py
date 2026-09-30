@@ -279,7 +279,7 @@ def _add_runid_argument(parser: argparse.ArgumentParser) -> None:
     """
     Add the RunID positional argument to a subcommand parser.
     """
-    parser.add_argument(
+    parser.add_argument(   # type: ignore[attr-defined]  # .completer below is read by argcomplete; argparse.Action does not declare it
         'RunID',
         type=parse_runid,
         nargs='*',
@@ -290,7 +290,7 @@ def _add_runid_argument(parser: argparse.ArgumentParser) -> None:
     ).completer = _complete_runid
 
 
-def _add_verbose_argument(parser: argparse.ArgumentParser) -> None:
+def _add_verbose_argument(parser: argparse.ArgumentParser | argparse._ArgumentGroup) -> None:
     """
     Add the -v/--verbose flag to a subcommand parser.
     Only valid for subcommands that involve active execution or validation.

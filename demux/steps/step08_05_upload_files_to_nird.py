@@ -50,7 +50,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
             exit_status: int    = channel.recv_exit_status( )
             results[ key ]      = ( stdout_bytes, stderr_bytes, exit_status )
         except Exception as error:   # noqa: BLE001 - keep the real cause; a thread cannot raise into its caller
-            results[ key ] = error
+            results[ key ] = error   # type: ignore[assignment]  # the caller checks for an Exception before unpacking the tuple
         finally:
             channel.close( )
 
@@ -95,12 +95,12 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
     sha512sum_stdout_bytes, sha512sum_stderr_bytes, sha512sum_status = results[ "sha512" ]
 
     if md5sum_status != 0:
-        message: str = f"RuntimeError: remote md5sum failed for {file_entry['tar_file_remote']}: {md5sum_stderr_bytes.decode( ).strip( )}"
+        message = f"RuntimeError: remote md5sum failed for {file_entry['tar_file_remote']}: {md5sum_stderr_bytes.decode( ).strip( )}"
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
     if sha512sum_status != 0:
-        message: str = f"RuntimeError: remote sha512sum failed for {file_entry['tar_file_remote']}: {sha512sum_stderr_bytes.decode( ).strip( )}"
+        message = f"RuntimeError: remote sha512sum failed for {file_entry['tar_file_remote']}: {sha512sum_stderr_bytes.decode( ).strip( )}"
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
@@ -113,7 +113,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
         sha512_file_local: str = handle_sha512.read( ).split( )[ 0 ]
 
     if md5_file_local != md5_file_remote:
-        message: str  = "Error: Local md5 differs from calculated remote md5:\n"
+        message = "Error: Local md5 differs from calculated remote md5:\n"
         message += f"LOCAL MD5:  {md5_file_local}  | {file_entry[ 'md5_file_local' ]}\n"
         message += f"REMOTE MD5: {md5_file_remote} | {file_entry[ 'md5_file_remote' ]}\n"
         message += "Please check both files, delete/move as appropriate and try uploading again."
@@ -121,7 +121,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
         raise RuntimeError( message )
 
     if sha512_file_local != sha512_file_remote:
-        message: str  = "Error: Local sha512 differs from calculated remote sha512:\n"
+        message = "Error: Local sha512 differs from calculated remote sha512:\n"
         message += f"LOCAL SHA512:  {sha512_file_local}  | {file_entry[ 'sha512_file_local' ]}\n"
         message += f"REMOTE SHA512: {sha512_file_remote} | {file_entry[ 'sha512_file_remote' ]}\n"
         message += "Please check both files, delete/move as appropriate and try uploading again."
@@ -145,6 +145,8 @@ def progress(filename, size, sent) -> None:
     sys.stdout.write( f"{filename} progress: {float( sent )/float( size )*100:.2f}%   \r" )
 
 
+_hostname_cache: dict[ str, str ] = { }     # ip -> hostname, filled by _resolve_hostname( ) for the lifetime of the process
+
 def _resolve_hostname(ip_address: str) -> str:
     """
     Resolve an IP address to a hostname once and cache the result
@@ -156,10 +158,8 @@ def _resolve_hostname(ip_address: str) -> str:
     Returns:
         Hostname from reverse DNS, or the original IP if lookup fails.
     """
-    if not hasattr( _resolve_hostname, "cache" ):
-        _resolve_hostname.cache: dict[ str, str ] = { }
 
-    cache: dict[ str, str ] = _resolve_hostname.cache
+    cache: dict[ str, str ] = _hostname_cache
 
     if ip_address not in cache:
         try:
@@ -357,7 +357,7 @@ def _upload_files_to_nird( demux ) -> None:
             errors: list[ Exception ] = [ ]
 
             for future in done:
-                tar_file: Any = future_to_tar[ future ]
+                tar_file = future_to_tar[ future ]
                 try:
                     future.result( )
                 except EOFError as exception:
@@ -370,6 +370,6 @@ def _upload_files_to_nird( demux ) -> None:
         if errors:
             raise RuntimeError( f"{len(errors)} upload(s) failed; first={errors[0]!r}" )
     else:
-        message: str = f"Unknown NIRD copy mode: {demux.nird_copy_mode}"
+        message = f"Unknown NIRD copy mode: {demux.nird_copy_mode}"
         demuxLogger.critical( message )
         raise RuntimeError( message )

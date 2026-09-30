@@ -16,7 +16,7 @@ from sample_sheet import (
     SampleSheet,  # https://sample-sheet.readthedocs.io/quick-start.html
 )
 
-import demux.config.constants
+from demux.config import constants
 from demux.loggers import demuxLogger
 
 """
@@ -48,26 +48,26 @@ class demux:
     verbosity:int                              = 2
     state:str                                  = "demultiplexRunIDdir"  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
 
-    rawDataDir:str                             = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.RAW_DATA_DIR_NAME     )
-    demultiplexDir:str                         = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.DEMULTIPLEX_DIR_NAME  )
-    forTransferDir:str                         = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.FOR_TRANSFER_DIR_NAME )
-    sampleSheetDirPath:str                     = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.SAMPLESHEET_DIR_NAME  )
-    logDirPath:str                             = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.LOG_DIR_NAME          )
-    exec_path:str                              = Path( sys.argv[ 0 ] ).resolve( ) # full path to executable
-    exec_dir:str                               = exec_path.parent                 # e.g. "/usr/local/bin" or ~/.local/bin
+    rawDataDir:str                             = os.path.join( constants.DATA_ROOT_DIR, constants.RAW_DATA_DIR_NAME     )
+    demultiplexDir:str                         = os.path.join( constants.DATA_ROOT_DIR, constants.DEMULTIPLEX_DIR_NAME  )
+    forTransferDir:str                         = os.path.join( constants.DATA_ROOT_DIR, constants.FOR_TRANSFER_DIR_NAME )
+    sampleSheetDirPath:str                     = os.path.join( constants.DATA_ROOT_DIR, constants.SAMPLESHEET_DIR_NAME  )
+    logDirPath:str                             = os.path.join( constants.DATA_ROOT_DIR, constants.LOG_DIR_NAME          )
+    exec_path:Path                             = Path( sys.argv[ 0 ] ).resolve( ) # full path to executable
+    exec_dir:Path                              = exec_path.parent                 # e.g. "/usr/local/bin" or ~/.local/bin
     exec_name:str                              = exec_path.name                   # e.g. "demultiplex"
     ######################################################
     # commonEgid = 'sambagroup' # i don't know where i was going with this...
     ######################################################
     multiqc_data:str                           = 'multiqc_data'
-    md5Suffix:str                              = demux.config.constants.MD5_SUFFIX
-    md5Length:int                              = demux.config.constants.MD5_LENGTH     # 128 bits
+    md5Suffix:str                              = constants.MD5_SUFFIX
+    md5Length:int                              = constants.MD5_LENGTH     # 128 bits
     # qcSuffix                                 = '_QC'
-    sha512Suffix:str                           = demux.config.constants.SHA512_SUFFIX
-    sha512Length:int                           = demux.config.constants.SHA512_LENGTH  # 512 bits
-    tarSuffix:str                              = demux.config.constants.TAR_SUFFIX
-    zipSuffix:str                              = demux.config.constants.ZIP_SUFFIX
-    compressedFastqSuffix:str                  = demux.config.constants.COMPRESSED_FASTQ_SUFFIX
+    sha512Suffix:str                           = constants.SHA512_SUFFIX
+    sha512Length:int                           = constants.SHA512_LENGTH  # 512 bits
+    tarSuffix:str                              = constants.TAR_SUFFIX
+    zipSuffix:str                              = constants.ZIP_SUFFIX
+    compressedFastqSuffix:str                  = constants.COMPRESSED_FASTQ_SUFFIX
     temp:str                                   = 'temp'
     htmlSuffix:str                             = '.html'
     logSuffix:str                              = '.log'
@@ -94,8 +94,8 @@ class demux:
     nextSeq:ClassVar[ list ]                   = ['NB552450']               # array of serial numbers for nextseq. Change to read from config, or read from illumina
     encoding:str                               = "utf-8"
     decodeScheme:str                           = encoding                   # same as encoding; Python uses the same string name for both encode and decode, but in the code it can be refered either way, 'decodingScheme' or 'encoding'
-    footarfile:str                             = f"foo{demux.config.constants.TAR_SUFFIX}"      # class variable shared by all instances
-    barzipfile:str                             = f"zip{demux.config.constants.ZIP_SUFFIX}"
+    footarfile:str                             = f"foo{constants.TAR_SUFFIX}"      # class variable shared by all instances
+    barzipfile:str                             = f"zip{constants.ZIP_SUFFIX}"
     tabSpace:int                               = 8
     spacing1:int                               = 40
     spacing2:int                               = spacing1 + tabSpace
@@ -186,8 +186,8 @@ class demux:
     port:int                                   = 0
     key_file:str                               = ""
     proxy_jump:str                             = ""
-    proxy_jump_chain:list                      = None
-    transport_stack:list[ paramiko.Transport]  = None
+    proxy_jump_chain:list | None               = None
+    transport_stack:list[ paramiko.Transport ] | None = None
     # max_workers: int                         = len( demux.tarFilesToTransferList ) # this would be possible if the firewall did not choke.
     max_workers:int                            = 5            # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
     ######################################################
@@ -244,7 +244,7 @@ class demux:
     irida_verification_passed:bool             = False
     irida_run_completed:bool                   = False
     ######################################################
-    availableCpus:int                          = os.cpu_count() # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
+    availableCpus:int                          = os.cpu_count( ) or 1 # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
     cpuMultiplier:int                          = 2
     running_threads:int                        = availableCpus * cpuMultiplier  # the amount of threads bcl2fastq, fasqcq and multiqc to use
     ######################################################
@@ -254,6 +254,7 @@ class demux:
     # per-run state: every attribute a run fills in that the next run in the same invocation must not inherit.
     # reset_run_state( ) puts each one back to its class-body default (snapshot in _per_run_defaults, below the class).
     # add the name of any new per-run list, dict, flag or counter here.
+    _per_run_defaults: ClassVar[ dict ]        = { }          # snapshot of the per-run defaults, filled once at import at the end of this file
     _PER_RUN_ATTRIBUTES: tuple[ str, ... ] = (
         "state", "n",
         "project_samples_metadata", "projectList", "newProjectNameList", "newProjectFileList",
@@ -371,6 +372,7 @@ class demux:
     ########################################################################
     # parse_sample_sheet
     ########################################################################
+    @staticmethod
     def parse_sample_sheet( ):
         """
         Parse the NVI SampleSheet.csv into an object and get the associated project name(s)

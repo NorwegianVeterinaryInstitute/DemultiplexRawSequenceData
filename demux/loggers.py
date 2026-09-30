@@ -10,8 +10,8 @@ import termcolor
 
 from demux.config import constants
 
-demuxLogger = None
-demuxFailureLogger = None
+demuxLogger: logging.Logger = None               # type: ignore[assignment]  # set by set_loggers( ) before any step module imports it
+demuxFailureLogger: logging.Logger = None        # type: ignore[assignment]  # set by set_loggers( ) before any step module imports it
 
 ########################################################################
 # set_loggers( )

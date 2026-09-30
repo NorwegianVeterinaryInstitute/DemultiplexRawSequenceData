@@ -44,7 +44,7 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
             message = f"current hop: {hop.get( 'hostname' )}"
         demuxLogger.debug( message )
 
-        next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
+        next_transport = _connect_next_proxy_jump( hop, current_transport )
 
         _validate_hostkey( hop, next_transport )
         auth_method: str = _select_auth_method( hop, is_target = is_last, nird_access_mode = demux.nird_access_mode )

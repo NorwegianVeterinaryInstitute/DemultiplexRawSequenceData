@@ -66,9 +66,9 @@ class DemultiplexDirectory:
 
     def __init__( self, path: str ) -> None:
         self.path            = path
-        self.runs            = [ ]                                                              # complete runs, RunID without suffix
-        self.incomplete_runs = { }                                                              # RunID -> reason, for runs without the completion marker
-        self.pending_deliveries = { }                                                           # RunID -> missing delivery and run markers, for complete runs, informational
+        self.runs: list[ str ] = [ ]                                                              # complete runs, RunID without suffix
+        self.incomplete_runs: dict[ str, str ] = { }                                                              # RunID -> reason, for runs without the completion marker
+        self.pending_deliveries: dict[ str, list[ str ] ] = { }                                                        # RunID -> missing delivery and run markers, for complete runs, informational
         self._scan( )
 
     def _scan( self ) -> None:
@@ -128,12 +128,12 @@ def detect_new_runs( rawdata: RawDataDirectory, demultiplex: DemultiplexDirector
         demuxLogger.warning( termcolor.colored( f"Runs in demultiplex but deleted from rawdata: {in_demultiplex_only}", color="magenta", attrs=["reverse"] ) )
 
     for runid, reason in demultiplex.incomplete_runs.items( ):
-        text = [ f"INCOMPLETE RUN: {runid}",
+        lines = [ f"INCOMPLETE RUN: {runid}",
                  f"    reason:  {reason}",
                  "    this run is skipped until the incomplete directory is removed:",
                  f"    rm -rvf {os.path.join( demux.core.demux.demultiplexDir, runid + constants.DEMULTIPLEX_DIR_SUFFIX )}* {os.path.join( demux.core.demux.forTransferDir, runid )}*",
                ]
-        text = '\n'.join( text )
+        text = "\n".join( lines )
         demuxLogger.warning( termcolor.colored( text, color="magenta", attrs=["bold"] ) )
 
     for runid, missing in demultiplex.pending_deliveries.items( ):
