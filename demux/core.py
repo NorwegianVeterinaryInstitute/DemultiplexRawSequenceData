@@ -39,11 +39,10 @@ The demux object is the central configuration/state holder for the whole pipelin
     - Defines all constants, paths, suffixes, executables, logging setup, and state variables used in the run
     - Tracks run IDs, directories, SampleSheet paths, QC directories, tar/checksum file names, and log locations
     - Is updated by functions( setupEnvironment, demultiplex, prepareDelivery, etc. ) which read/write its attributes while demultiplexing, running FastQC/MultiQC, hashing, packaging, and preparing delivery
-    - 
 
     In short: it encapsulates the demultiplexing workflow state machine—everything from input rawdata → fastq/QC → tarballs with md5/sha512 for transfer.
 
-Methods that mater: 
+Methods that mater:
     - getProjectName( ) parses the samplesheet and gets the info needed.
 
 """
@@ -53,7 +52,7 @@ class demux:
     demux: make an object of the entire demultiplex process.
     """
 
-    # any variables here are *class* variables, their values do not change. 
+    # any variables here are *class* variables, their values do not change.
     # values that their values change per run, go to __init__( )
     # constanths like /data/rawdata and the corresponding values are in demux/config/constants.py
 
@@ -226,7 +225,7 @@ class demux:
     irida_upload_timeout:int                   = 300          # 5 minutes; uploading large files to IRIDA on NREC mechanical drives
     irida_verify_max_poll_attempts:int         = 10           # how many times to poll for uploadSha256 before giving up
     irida_verify_poll_interval_seconds:int     = 5            # seconds between polls
-    irida_max_in_flight:int                    = 2            # max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair), so N workers -> N*2 files in flight # 2 is the safe default for current VIGASP NREC VM 
+    irida_max_in_flight:int                    = 2            # max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair), so N workers -> N*2 files in flight # 2 is the safe default for current VIGASP NREC VM
     irida_upload_batch_stagger_seconds:int     = 60           # seconds to wait between upload batches; 0 = no stagger; tune if IRIDA async processing queue falls behind # lowest verify time, consistent pass rate
     irida_stage_times:dict                     = { 'preflight': 0.0, 'check_projects': 0.0, 'hash': 0.0, 'create_run': 0.0, 'upload': 0.0, 'verify': 0.0, 'complete': 0.0 } # per-stage wall times in seconds populated by deliver_files_to_VIGASP
     irida_oauth_token:str                      = ""
@@ -377,7 +376,7 @@ class demux:
 
         Returns:
             Samplesheet object
-            List of included Sample Projects. 
+            List of included Sample Projects.
                 Example of returned projectList:     {'SAV-amplicon-MJH'}
 
         Parsing is done by the sample_sheet library
@@ -436,7 +435,7 @@ class demux:
 
         # if we are debugging, print out the list of projects.
         if demux.verbosity == 3:
-            pprint( "projectList: ", demux.projectList, width = 120 )
+            print( "projectList: " + pprint.pformat( demux.projectList, width = 120 ) )
 
         print( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -449,7 +448,7 @@ class demux:
         Check to see if the tar files created for delivery can be listed with no errors
         use
             TarFile.list(verbose=True, *, members=None)
-                    Print a table of contents to sys.stdout. If verbose is False, only the names of the members are logging.infoed. If it is True, output similar to that of ls -l is produced. If optional members is given, it must be a subset of the list returned by getmembers(). 
+                    Print a table of contents to sys.stdout. If verbose is False, only the names of the members are logging.infoed. If it is True, output similar to that of ls -l is produced. If optional members is given, it must be a subset of the list returned by getmembers().
 
             https://docs.python.org/3/library/tarfile.html
 
