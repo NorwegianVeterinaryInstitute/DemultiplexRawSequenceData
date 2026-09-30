@@ -420,13 +420,15 @@ class demux:
                 continue
             # derive the tar path from the project name, so control and test projects in any SampleSheet row cannot shift the pairing
             tar_file:str = os.path.join( demux.forTransferDir, demux.RunID, f"{demux.runIDShort}.{project}{demux.tarSuffix}" )
-            # take the project-level values directly from the first sample in that project
-            first_sample = next( iter( demux.project_samples_metadata[ project ].values( ) ) )
+            # the whole project is one tar, so Transfer_NIRD must be the same for every sample in it
+            transfer_flags: set[ bool ] = { entry[ 'transfer_to_nird' ] for entry in demux.project_samples_metadata[ project ].values( ) }
+            if len( transfer_flags ) != 1:
+                raise ValueError( f"Transfer_NIRD mismatch for Sample_Project '{project}': {sorted( transfer_flags )}. Aborting." )
             locations: set[ str ] = { entry[ 'nird_location' ] for entry in demux.project_samples_metadata[ project ].values( ) }
             if len( locations ) != 1:
                 raise ValueError( f"NIRD_Location mismatch for Sample_Project '{project}': {sorted( locations )}. Aborting." )
             demux.absoluteFilesToTransferList[ tar_file ]  = {
-                'transfer_to_nird':     first_sample[ 'transfer_to_nird' ],
+                'transfer_to_nird':     next( iter( transfer_flags ) ),
                 'nird_upload_location': next( iter( locations ) )
             }
 
