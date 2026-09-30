@@ -89,12 +89,12 @@ def setup_file_log_handling( demux ):
     if not os.path.isdir( demux.logDirPath ) :
         text = [    "Trying to setup demux.logDirPath failed. Reason:\n",
                     "The parts of demux.logDirPath have the following values:\n",
-                    f"demux.dataRootDirPath:\t\t\t{demux.config.constants.DATA_ROOT_DIR}\n",
-                    f"demux.logDirName:\t\t\t{demux.logDirName}\n",
+                    f"constants.DATA_ROOT_DIR:\t\t\t{constants.DATA_ROOT_DIR}\n",
+                    f"constants.LOG_DIR_NAME:\t\t\t{constants.LOG_DIR_NAME}\n",                
                     f"demux.logDirPath:\t\t\t\t{demux.logDirPath}\n"
         ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
+        demuxFailureLogger.critical( "".join( text ) )
+        demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
         sys.exit( )
 
@@ -109,8 +109,8 @@ def setup_file_log_handling( demux ):
                     f"demux.RunID + demux.logSuffix:\t\t{demux.RunID} + {demux.logSuffix}\n",
                     f"demux.logDirPath:\t\t\t\t{demux.logDirPath}\n"
         ]
-        demuxFailureLogger.critical( *text  )
-        demuxLogger.critical( *text )
+        demuxFailureLogger.critical( "".join( text ) )
+        demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
         sys.exit( )
 
@@ -129,8 +129,8 @@ def setup_file_log_handling( demux ):
                     f"demux.logDirPath:\t\t\t\t\t{demux.logDirPath}\n",
                     f"demux.demultiplexLogDirName:\t\t\t{demux.demultiplexLogDirName}\n",
         ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
+        demuxFailureLogger.critical( "".join( text ) )
+        demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
         sys.exit( )
 
@@ -149,11 +149,11 @@ def setup_file_log_handling( demux ):
                     f"demux.demultiplexRunIDdir:\t\t\t\t{demux.demultiplexRunIDdir}\n",
                     f"demux.demultiplexLogDirName:\t\t\t\t{demux.demultiplexLogDirName}\n",
                     f"demux.demultiplexDir:\t\t\t\t\t{demux.demultiplexDir}\n",
-                    f"RunID + demux.config.constants.DEMULTIPLEX_DIR_SUFFIX:\t\t\t\t{demux.RunID} + {constants.DEMULTIPLEX_DIR_SUFFIX}\n",
+                    f"RunID + constants.DEMULTIPLEX_DIR_SUFFIX:\t\t\t\t{demux.RunID} + {constants.DEMULTIPLEX_DIR_SUFFIX}\n",
                     "Exiting.",
         ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
+        demuxFailureLogger.critical( "".join( text ) )
+        demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
         sys.exit( )
 
