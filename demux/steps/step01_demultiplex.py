@@ -1,5 +1,6 @@
 #!/usr/bin/python3.11
 
+import inspect
 import logging
 import os
 import resource
@@ -68,10 +69,10 @@ def bcl2fastq( demux ):
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
         result =  subprocess.run( argv, capture_output = True, cwd = demux.rawDataRunIDdir, check = True, encoding = demux.decodeScheme )
-    except ChildProcessError as err: 
+    except subprocess.CalledProcessError as err:
         text = [    f"Caught exception!",
                     f"Command: {err.cmd}", # interpolated strings
-                    f"Return code: {err.returncode}"
+                    f"Return code: {err.returncode}",
                     f"Process output: {err.stdout}",
                     f"Process error:  {err.stderr}",
                     f"Exiting."
