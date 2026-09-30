@@ -9,7 +9,7 @@ from demux.loggers import demuxLogger, demuxFailureLogger
 
 def control_projects_qc(  demux ):
     """
-    This function creeates a report if any water 1 samples are submitted for sequence ( and subsequently, analysis )
+    This function creates a report if any water control (negative control) samples are submitted for sequencing ( and subsequently, analysis )
 
     If there are no water control samples, no report is generated.
 
@@ -23,4 +23,4 @@ def control_projects_qc(  demux ):
     demux.n = demux.n + 1
     demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard projects started ==", color="green", attrs=["bold"] ) )
 
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard projects finished ==", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Control Project QC for non-standard projects finished ==", color="red", attrs=["bold"] ) )
