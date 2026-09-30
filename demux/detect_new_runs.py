@@ -59,8 +59,10 @@ class DemultiplexDirectory:
     Represents the demultiplex directory and the runs within it.
 
     A run directory is complete when it contains demux.demultiplexCompleteFile, which
-    finalize( ) touches as the last step. A run directory without it is a run that died
-    mid-way: setup_lock( ) guarantees one instance, so at scan time nothing is in progress.
+    finalize( ) touches after demultiplexing, and no demux.demultiplexFailedFile: the failed
+    marker wins, because a VIGASP/NIRD delivery can fail after demultiplexing finished.
+    A run directory with neither marker is a run that died mid-way: setup_lock( ) guarantees
+    one instance, so at scan time nothing is in progress.
     """
 
     def __init__( self, path: str ) -> None:
@@ -85,16 +87,16 @@ class DemultiplexDirectory:
             complete = os.path.join( run_path, demux.core.demux.demultiplexCompleteFile )
             failed   = os.path.join( run_path, demux.core.demux.demultiplexFailedFile )
 
-            if os.path.isfile( complete ):
+            if os.path.isfile( failed ):                                                            # checked first: a VIGASP/NIRD delivery can fail after DemultiplexComplete.txt was written
+                with open( failed, encoding = "utf-8" ) as handle:
+                    first_line = handle.readline( ).strip( )
+                self.incomplete_runs[ runid ] = first_line or f"{demux.core.demux.demultiplexFailedFile} present"
+            elif os.path.isfile( complete ):
                 self.runs.append( runid )
                 missing = [ marker for marker in ( demux.core.demux.vigaspDeliveryCompleteFile, demux.core.demux.nirdDeliveryCompleteFile, demux.core.demux.runCompleteFile )
                             if not os.path.isfile( os.path.join( run_path, marker ) ) ]
                 if missing:
                     self.pending_deliveries[ runid ] = missing
-            elif os.path.isfile( failed ):
-                with open( failed, encoding = "utf-8" ) as handle:
-                    first_line = handle.readline( ).strip( )
-                self.incomplete_runs[ runid ] = first_line or f"{demux.core.demux.demultiplexFailedFile} present"
             else:
                 self.incomplete_runs[ runid ] = f"no {demux.core.demux.demultiplexCompleteFile}, no {demux.core.demux.demultiplexFailedFile}: killed or crashed outside process_run( )"
 
