@@ -7,7 +7,7 @@ termcolor
 multiqc
 argcomplete
 types-paramiko
-types-requests
+types-requests<2.31.0.7   # 2.31.0.7+ requires urllib3>=2, which shadows the RHEL urllib3 1.26 that requests 2.28 needs
 types-psutil
 types-scp
 pytest
