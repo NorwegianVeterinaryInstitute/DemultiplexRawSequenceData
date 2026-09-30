@@ -79,8 +79,18 @@ def _verify( demux ) -> None:
                 with urllib.request.urlopen( request, timeout = demux.irida_timeout ) as response:
                     files_body:dict = json.load( response )
             except urllib.error.HTTPError as http_error:
-                mismatches.append( f"{sample_name}: failed to list files, HTTP {http_error.code}" )
-                break
+                if http_error.code not in constants.HTTP_TRANSIENT_STATUS_CODES:
+                    mismatches.append( f"{sample_name}: failed to list files, HTTP {http_error.code}" )
+                    break
+                demuxLogger.warning( f"IRIDA verify: [{current}/{total}] {sample_name}: HTTP {http_error.code} while listing files, polling again (attempt {attempt}/{demux.irida_verify_max_poll_attempts})" )
+                if attempt < demux.irida_verify_max_poll_attempts:
+                    time.sleep( demux.irida_verify_poll_interval_seconds )
+                continue
+            except ( urllib.error.URLError, TimeoutError ) as error:                         # connection refused, reset or timed out: IRIDA busy, not a hash problem
+                demuxLogger.warning( f"IRIDA verify: [{current}/{total}] {sample_name}: {error!r} while listing files, polling again (attempt {attempt}/{demux.irida_verify_max_poll_attempts})" )
+                if attempt < demux.irida_verify_max_poll_attempts:
+                    time.sleep( demux.irida_verify_poll_interval_seconds )
+                continue
 
             # IRIDA HATEOAS response field names; not our constants
             resources:list = files_body.get( 'resource', { } ).get( 'resources', [ ] )
