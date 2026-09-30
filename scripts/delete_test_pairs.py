@@ -102,7 +102,7 @@ def main( ) -> int:
     for index, ( project, sample_id, sample_name, pair_id, filename ) in enumerate( matches ):
         print( f"\r{SPINNER[ index % len( SPINNER ) ]} deleting {index + 1}/{len( matches )}", end = "", file = sys.stderr, flush = True )
         response: requests.Response = session.delete( f"{base_url}/api/samples/{sample_id}/pairs/{pair_id}", timeout = TIMEOUT )
-        if response.status_code == 200:
+        if 200 <= response.status_code < 300:   # any 2xx is success; DELETE may answer 204 No Content
             deleted += 1
         else:
             print( f"\nDELETE failed for sample {sample_id} pair {pair_id}: HTTP {response.status_code} {response.text[ :200 ]}", file = sys.stderr )
