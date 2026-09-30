@@ -152,11 +152,12 @@ def _check_and_create_sample( demux, project_id: int, sample_name: str ) -> int:
             response.raise_for_status()
             body = response.json()
             break
-        except requests.exceptions.ReadTimeout:
-            if attempt == demux.irida_list_retries:
+        except ( requests.exceptions.ConnectionError, requests.exceptions.Timeout, requests.exceptions.HTTPError ) as error:
+            transient: bool = not isinstance( error, requests.exceptions.HTTPError ) or ( error.response is not None and error.response.status_code in constants.HTTP_TRANSIENT_STATUS_CODES )   # a 4xx or other 5xx is not load and fails at once
+            if not transient or attempt == demux.irida_list_retries:
                 raise
             wait:int = demux.irida_list_retry_backoff * ( 2 ** ( attempt - 1 ) )
-            demuxLogger.warning( f"IRIDA upload: sample list for project {project_id} timed out (attempt {attempt}/{demux.irida_list_retries}), retrying in {wait}s" )
+            demuxLogger.warning( f"IRIDA upload: sample list for project {project_id} failed: {error!r} (attempt {attempt}/{demux.irida_list_retries}), retrying in {wait}s" )
             time.sleep( wait )
 
     # IRIDA HATEOAS response field names; not our constants

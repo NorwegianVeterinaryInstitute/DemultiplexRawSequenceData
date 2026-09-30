@@ -87,3 +87,4 @@ HTTP_HEADER_CONTENT_TYPE:str    = "Content-Type"
 HTTP_CONTENT_TYPE_JSON:str      = "application/json"
 HTTP_CONTENT_TYPE_GZIP:str      = "application/gzip"
 HTTP_BEARER_PREFIX:str          = "Bearer"
+HTTP_TRANSIENT_STATUS_CODES:tuple[ int, ... ] = ( 502, 503, 504 )     # gateway and overload answers from Tomcat or the proxy; worth a retry
