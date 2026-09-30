@@ -59,6 +59,7 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
 
     # Save transport_stack[-1]
     demux.transport = transport_stack[-1]
+    demux.hostname  = hops_list[ -1 ][ "hostname" ]     # the NIRD host we uploaded to, for log and error messages
     # save the transport stack for later, so we can .reverse and walk it backwards.
     demux.transport_stack = transport_stack
 
