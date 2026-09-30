@@ -16,7 +16,7 @@ def _tear_down_transport( demux ) -> None:
 
     transport_closing_failures: list[ Exception ] = [ ]
 
-    for index, transport in reversed( list( enumerate( demux.transport_stack ) ) ):
+    for index, transport in reversed( list( enumerate( demux.transport_stack or [ ] ) ) ):
         try:
             transport.close( )
         except Exception as error:   # noqa: BLE001 - collect every close failure, then raise them together as an ExceptionGroup below

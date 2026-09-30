@@ -30,6 +30,7 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     next_transport   : paramiko.Transport | None = None
     transport_stack: list[ paramiko.Transport ]  = [ ]  # having a stack of the previous transports would be a good idea
                                                         # so we can close the transports later in reverse order
+    demux.transport_stack = transport_stack             # store the list now: if a later hop fails, teardown can still close the hops already open
     if len( hops_list ) == 0:
         raise RuntimeError( "SSH config resolution produced zero hops; cannot build transport chain." )
 
