@@ -60,7 +60,7 @@ SSH_AUTH_KEY: str               = "key"
 SSH_AUTH_2FA: str               = "2fa"
 SSH_AUTH_PASSWORD: str          = "password"
 
-RUNID_PATTERN                   = re.compile(r'^\d{6}_[A-Z0-9]+_\d{4}_\d{9}-[A-Z0-9]{5}$') # make sure that the RunID we get passed follows a pattern
+RUNID_PATTERN                   = re.compile(r'^\d{6}_[A-Z0-9]+_\d{4}_(\d{9}-[A-Z0-9]{5}|[AB][A-Z0-9]{9})$') # make sure that the RunID we get passed follows a pattern
 
 MISEQ_TAGS                      = ['M06578', 'M09180']  # array of serial numbers for miseq. Add serial when we buy or retire a machine, so we canvalidate the run is from our machines.
 NEXTSEQ_TAGS                    = ['NB552450']          # array of serial numbers for nextseq. Add serial when we buy or retire a machine, so we canvalidate the run is from our machines.
