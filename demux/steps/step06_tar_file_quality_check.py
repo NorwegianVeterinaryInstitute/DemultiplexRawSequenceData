@@ -49,7 +49,7 @@ def tar_file_quality_check( demux ):
 
     try: 
         os.mkdir( forTransferRunIdDirTestName )
-    except Exception as err:
+    except OSError as err:
         text = f"{forTransferRunIdDirTestName} cannot be created: { err !s}\nExiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
@@ -68,10 +68,9 @@ def tar_file_quality_check( demux ):
         try:
             text = "Now extracting tarfile:"
             demuxLogger.debug( f"{text:{demux.spacing3}}" + tarFile )
-            tarFileHandle = tarfile.open( name = tarFile, mode = "r:" )     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
-            tarFileHandle.extractall( path = forTransferRunIdDirTestName, filter = 'tar' )
-            tarFileHandle.close( )
-        except Exception as err:
+            with tarfile.open( name = tarFile, mode = "r:" ) as tarFileHandle:   # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
+                tarFileHandle.extractall( path = forTransferRunIdDirTestName, filter = 'tar' )
+        except ( OSError, tarfile.TarError ) as err:
             text = f"{tarFile} cannot be extracted into {forTransferRunIdDirTestName}: { err !s}\nExiting!"
             demuxFailureLogger.critical( f"{ text }" )
             demuxLogger.critical( f"{ text }" )

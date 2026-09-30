@@ -36,8 +36,8 @@ import tempfile
 
 import pytest
 
+from demux.config import constants
 from demux.util.checksum import hash_file, write_checksum_files
-import demux.config.constants as constants
 
 
 @pytest.fixture
@@ -52,10 +52,10 @@ def tmp_target_file():
 
 def test_hash_lengths(tmp_target_file: str) -> None:
     """#78 - md5 digest is 32 hex chars, sha512 digest is 128 hex chars."""
-    filepath: str
+    _filepath: str
     md5sum: str
     sha512sum: str
-    filepath, md5sum, sha512sum = hash_file(tmp_target_file)
+    _filepath, md5sum, sha512sum = hash_file(tmp_target_file)
     assert len(md5sum)    == 32,  f"md5 digest should be 32 hex chars, got {len(md5sum)}"
     assert len(sha512sum) == 128, f"sha512 digest should be 128 hex chars, got {len(sha512sum)}"
 
@@ -104,6 +104,7 @@ def test_hash_files_pass_system_verification(tmp_target_file: str) -> None:
             cwd=workdir,
             capture_output=True,
             text=True,
+            check=False,                                            # returncode is asserted below
         )
         assert result.returncode == 0, (
             f"{cmd} --check failed for {hash_filepath}\n"

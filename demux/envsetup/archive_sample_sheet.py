@@ -45,7 +45,7 @@ def archive_sample_sheet( demux ):
     try:
         shutil.copy2( demux.sampleSheetFilePath, demux.sampleSheetArchiveFilePath )
         os.chmod( demux.sampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "u=rw,g=r,o=r"
-    except Exception as err:
+    except OSError as err:
         frameinfo = inspect.getframeinfo( inspect.currentframe( ) )
         text = [    f"Archiving {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} failed.",
                     str(err),

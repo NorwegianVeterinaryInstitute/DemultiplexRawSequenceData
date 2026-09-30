@@ -37,14 +37,20 @@ import sys
 import time
 
 import matplotlib
+
 matplotlib.use( 'Agg' )  # no display needed
 import matplotlib.pyplot as plt
 
 sys.path.insert( 0, os.path.join( os.path.dirname( __file__ ), '..' ) )
 from demux.core import demux
-from tests.test_step07 import _setup, _cleanup_irida, _cleanup_local, _wait_for_irida_processing, TEST_SAMPLE_COUNT
 from demux.steps.step07_deliver_files_to_VIGASP import deliver_files_to_VIGASP
-
+from tests.test_step07 import (
+    TEST_SAMPLE_COUNT,
+    _cleanup_irida,
+    _cleanup_local,
+    _setup,
+    _wait_for_irida_processing,
+)
 
 ########################################################################
 # benchmark matrix
@@ -86,7 +92,7 @@ def _run_one( max_in_flight: int, stagger: int ) -> dict:
         deliver_files_to_VIGASP( demux )
         total_time = round( time.time() - t0, 2 )
         passed = demux.irida_verification_passed and demux.irida_run_completed
-    except Exception as error:
+    except Exception as error:   # noqa: BLE001 - benchmark harness: any failure is recorded as a failed run
         print( f"  FAILED: {type( error ).__name__}: {error}" )
         total_time = round( time.time() - t0, 2 ) if 't0' in dir() else 0.0
     finally:

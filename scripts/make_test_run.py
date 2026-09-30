@@ -161,7 +161,7 @@ def main() -> int:
         return 1
 
     print(f"copying {source_dir} -> {target_dir}")
-    result: subprocess.CompletedProcess = subprocess.run([CP, "-a", source_dir, target_dir], capture_output=True, text=True)
+    result: subprocess.CompletedProcess = subprocess.run([CP, "-a", source_dir, target_dir], capture_output=True, text=True, check=False)   # returncode is checked below
     if result.returncode != 0:
         print(f"ERROR: {CP} failed: {result.stderr.strip()}", file=sys.stderr)
         return result.returncode

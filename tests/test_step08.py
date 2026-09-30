@@ -29,21 +29,24 @@
 
 import hashlib
 import os
-import paramiko
 import shutil
 import stat
 import sys
 import tempfile
 import time
 
+import paramiko
+
 sys.path.insert( 0, os.path.join( os.path.dirname( __file__ ), '..' ) )
 from demux.core import demux
-from demux.steps.step08_01_build_absolute_paths        import _build_absolute_paths
-from demux.steps.step08_02_verify_local_files          import _verify_local_files
-from demux.steps.step08_03_setup_ssh_connection        import _setup_ssh_connection
-from demux.steps.step08_04_ensure_remote_run_directory import _ensure_remote_run_directory
-from demux.steps.step08_05_upload_files_to_nird        import _upload_files_to_nird
-from demux.steps.step08_06_tear_down_transport         import _tear_down_transport
+from demux.steps.step08_01_build_absolute_paths import _build_absolute_paths
+from demux.steps.step08_02_verify_local_files import _verify_local_files
+from demux.steps.step08_03_setup_ssh_connection import _setup_ssh_connection
+from demux.steps.step08_04_ensure_remote_run_directory import (
+    _ensure_remote_run_directory,
+)
+from demux.steps.step08_05_upload_files_to_nird import _upload_files_to_nird
+from demux.steps.step08_06_tear_down_transport import _tear_down_transport
 
 ########################################################################
 # test configuration
@@ -132,15 +135,15 @@ def _cleanup_remote_via_existing_transport() -> None:
                 try:
                     sftp.remove( entry[ key ] )
                     print( f"  deleted remote: {entry[ key ]}" )
-                except Exception as error:
+                except OSError as error:
                     print( f"  WARNING: could not delete {entry[ key ]}: {error}" )
         try:
             sftp.rmdir( remote_dir )
             print( f"  deleted remote directory: {remote_dir}" )
-        except Exception as error:
+        except OSError as error:
             print( f"  WARNING: could not delete remote directory: {error}" )
         sftp.close()
-    except Exception as error:
+    except ( OSError, paramiko.SSHException ) as error:
         print( f"  WARNING: remote cleanup failed: {error}" )
 
 
@@ -173,7 +176,7 @@ def main() -> int:
         tmp_base = _setup()
         print( f"  temp directory: {tmp_base}" )
         print( f"  files:          {[ os.path.basename( f ) for f in demux.tarFilesToTransferList ]}" )
-    except Exception as error:
+    except Exception as error:   # noqa: BLE001 - test harness: any setup failure is reported and ends the test
         print( f"SETUP FAILED: {type( error ).__name__}: {error}" )
         return 1
 
@@ -187,7 +190,7 @@ def main() -> int:
         _ensure_remote_run_directory( demux )
         _upload_files_to_nird( demux )
         passed = True
-    except Exception as error:
+    except Exception as error:   # noqa: BLE001 - test harness: any failure is reported, then cleanup runs in finally
         print( f"\nEXECUTION FAILED: {type( error ).__name__}: {error}" )
     finally:
         print( )
@@ -198,8 +201,8 @@ def main() -> int:
             print( "  remote cleanup skipped: upload failed - verify remote state manually before deleting" )
         try:
             _tear_down_transport( demux )
-        except Exception:
-            pass
+        except ExceptionGroup as error:
+            print( f"  WARNING: transport teardown failed: {error!r}" )
         _cleanup_local( tmp_base )
 
     elapsed:float = time.time() - test_start_time

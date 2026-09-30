@@ -48,14 +48,12 @@ def fastqc( demux ):
         sys.exit( 1 )
 
     # log FastQC output
-    fastQCLogFileHandle = ""
     try: 
-        fastQCLogFileHandle = open( demux.fastQCLogFilePath, "x" ) # fail if file exists
-        if demux.verbosity == 2:
-            text = "fastQCLogFilePath:"
-            demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.fastQCLogFilePath )
-        fastQCLogFileHandle.write( result.stdout ) 
-        fastQCLogFileHandle.close( )
+        with open( demux.fastQCLogFilePath, "x" ) as fastQCLogFileHandle: # fail if file exists
+            if demux.verbosity == 2:
+                text = "fastQCLogFilePath:"
+                demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.fastQCLogFilePath )
+            fastQCLogFileHandle.write( result.stdout ) 
     except FileNotFoundError as err:
         text = [    f"Error opening fastQCLogFilePath: {demux.fastQCLogFilePath} does not exist",
                     f"err.filename:  {err.filename}",
@@ -252,12 +250,11 @@ def multiqc( demux ):
     # log multiqc output
     demux.multiQCLogFilePath  = os.path.join( demux.demultiplexLogDirPath, demux.multiqcLogFileName ) ############# FIXME FIXME FIXME FIXME take out
     try: 
-        multiQCLogFileHandle      = open( demux.multiQCLogFilePath, "x" ) # fail if file exists
-        if demux.verbosity == 2:
-            text = "multiQCLogFilePath"
-            demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.multiQCLogFilePath )
-        multiQCLogFileHandle.write( result.stderr ) # The MultiQC people are special: They write output to stderr
-        multiQCLogFileHandle.close( )
+        with open( demux.multiQCLogFilePath, "x" ) as multiQCLogFileHandle: # fail if file exists
+            if demux.verbosity == 2:
+                text = "multiQCLogFilePath"
+                demuxLogger.debug( f"{text:{demux.spacing2}}" + demux.multiQCLogFilePath )
+            multiQCLogFileHandle.write( result.stderr ) # The MultiQC people are special: They write output to stderr
     except OSError as err:
         text = [    "Caught exception!",
                     f"File: {err.filename}",

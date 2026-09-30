@@ -66,9 +66,8 @@ def _verify_ssh_config_policy_for_hop( target_lookup: paramiko.config.SSHConfig 
 
     # Ensure we got an IdentityFile key-value and it is unique
     identity_file = target_lookup.get( "identityfile" )
-    if isinstance( identity_file, list ):
-        if len( identity_file ) > 1:
-            raise ValueError( f"IdentityFile must be a single entry for {target_lookup.get( 'hostname' )}, got {len( identity_file )}" )
+    if isinstance( identity_file, list ) and len( identity_file ) > 1:
+        raise ValueError( f"IdentityFile must be a single entry for {target_lookup.get( 'hostname' )}, got {len( identity_file )}" )
 
     # Ensure we are serving only identities stated in ssh_config entry and that we do not spam the host with keys
     identities_only = str( target_lookup.get( "identitiesonly" ) or "" ).strip( ).lower( )
@@ -570,10 +569,7 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
 
         demuxLogger.info( termcolor.colored( f"Remote directory {ip}:{remote_absolute_dir_path} did not exist, created\n", color="cyan", attrs=["bold"] ) )
     finally:
-        try:
-            sftp_client.close( )
-        except Exception:
-            pass
+        sftp_client.close( )                                                            # no try: a failed close is a network problem and must fail loudly
 
 
 

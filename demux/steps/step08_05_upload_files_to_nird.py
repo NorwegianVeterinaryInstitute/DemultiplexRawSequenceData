@@ -49,7 +49,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
             stderr_bytes: bytes = channel.makefile_stderr( "rb" ).read( )
             exit_status: int    = channel.recv_exit_status( )
             results[ key ]      = ( stdout_bytes, stderr_bytes, exit_status )
-        except Exception as error:                                                  # keep the real cause; a thread cannot raise into its caller
+        except Exception as error:   # noqa: BLE001 - keep the real cause; a thread cannot raise into its caller
             results[ key ] = error
         finally:
             channel.close( )
@@ -82,7 +82,7 @@ def _verify_remote_hashes_against_local_files( demux, file_entry: dict ) -> None
         if isinstance( value, Exception ):
             message = f"RuntimeError: remote {key}sum failed for {file_entry[ 'tar_file_remote' ]}: {value!r}"
             demuxLogger.critical( message )
-            raise RuntimeError( message ) from value
+            raise RuntimeError( message ) from value                                 # noqa: TRY004 - value is the exception a drain thread stored, not a bad argument type
 
     md5sum_stdout_bytes: bytes
     md5sum_stderr_bytes: bytes
@@ -142,7 +142,7 @@ def progress(filename, size, sent) -> None:
 
     Prints percentage completion to stdout.
     """
-    sys.stdout.write("%s progress: %.2f%%   \r" % ( filename, float( sent )/float( size )*100 ) )
+    sys.stdout.write( f"{filename} progress: {float( sent )/float( size )*100:.2f}%   \r" )
 
 
 def _resolve_hostname(ip_address: str) -> str:
@@ -184,7 +184,7 @@ def progress4(filename, size, sent, peername) -> None:
     Prints percentage completion with peer address to stdout.
     """
     hostname: str = _resolve_hostname( peername[ 0 ] )
-    sys.stdout.write("(%s:%s) %s progress: %.2f%%   \r" % ( hostname, peername[ 1 ], filename, float( sent )/float( size )*100 ) )
+    sys.stdout.write( f"({hostname}:{peername[ 1 ]}) {filename} progress: {float( sent )/float( size )*100:.2f}%   \r" )
 
 
 def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
@@ -211,8 +211,8 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     current_len        = len( tar_file_local )
     longest_local_path = max( ( len( entry[ 'tar_file_local' ] ) for entry in items ), default = current_len )
 
+    sftp_client: paramiko.SFTPClient = paramiko.SFTPClient.from_transport( demux.transport )
     try:
-        sftp_client: paramiko.SFTPClient = paramiko.SFTPClient.from_transport( demux.transport )
         try:
             sftp_client.stat( tar_file_remote )
         except FileNotFoundError:
@@ -223,10 +223,7 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
             demuxLogger.critical( message )
             raise RuntimeError( message )
     finally:
-        try:
-            sftp_client.close( )
-        except Exception:
-            pass
+        sftp_client.close( )                                                        # no try: a failed close is a network problem and must fail loudly
 
     scp_client = SCPClient( demux.transport, progress4 = progress4 )
 
@@ -312,7 +309,7 @@ def _upload_and_verify_file_via_local_sshfs_mount( demux, tar_file ):
     except Exception as error:
         message = f"RuntimeError: local sshfs upload failed for {file_info[ 'tar_file_remote' ]}: {error}"
         demuxLogger.critical( message )
-        raise RuntimeError( message )
+        raise RuntimeError( message ) from error
 
 
 def _upload_files_to_nird( demux ) -> None:
@@ -356,8 +353,8 @@ def _upload_files_to_nird( demux ) -> None:
                 future: Any = pool.submit( upload_func, demux, tar_file )
                 future_to_tar[ future ] = tar_file
 
-            done, not_done = wait( list( future_to_tar.keys( ) ), return_when = ALL_COMPLETED )
-            errors: list[ BaseException ] = [ ]
+            done, _not_done = wait( list( future_to_tar.keys( ) ), return_when = ALL_COMPLETED )
+            errors: list[ Exception ] = [ ]
 
             for future in done:
                 tar_file: Any = future_to_tar[ future ]
@@ -366,7 +363,7 @@ def _upload_files_to_nird( demux ) -> None:
                 except EOFError as exception:
                     demuxLogger.critical( f"Upload failed (EOFError): {tar_file} {exception!r}" )
                     errors.append( exception )
-                except BaseException as exception:
+                except Exception as exception:   # noqa: BLE001 - collect every failed upload, then raise them together below
                     demuxLogger.critical( f"Upload failed: {tar_file} {exception!r}" )
                     errors.append( exception )
 
