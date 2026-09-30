@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.11
 ########################################################################
 #
-# tests/test_step07.py
+# tests/integration_step07.py
 #
 # Integration test harness for the IRIDA upload state machine (step07).
 #
@@ -21,7 +21,7 @@
 #   - test .fastq.gz files exist in tests/
 #
 # Usage:
-#   /usr/bin/python3.11 tests/test_step07.py (from within the nvi-demux directory)
+#   /usr/bin/python3.11 tests/integration_step07.py (from within the nvi-demux directory)
 #
 # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/27
 #
@@ -95,7 +95,7 @@ def _setup() -> str:
         raise FileNotFoundError( f"Test R2 file not found: {TEST_R2}" )
 
     # create temp directory layout: <base>/<runIDShort>.<project_name>/
-    tmp_base:str    = tempfile.mkdtemp( prefix = "test_step07_" )
+    tmp_base:str    = tempfile.mkdtemp( prefix = "integration_step07_" )
     project_dir:str = os.path.join( tmp_base, f"{TEST_RUN_ID_SHORT}.{TEST_PROJECT_NAME}" )
     os.makedirs( project_dir, mode = stat.S_IRWXU )  # rwx------ (owner only)
 
@@ -271,7 +271,7 @@ def main() -> int:
     test_start_time:float = time.time()
 
     print( "=" * 72 )
-    print( "test_step07: IRIDA upload state machine integration test" )
+    print( "integration_step07: IRIDA upload state machine integration test" )
     print( "=" * 72 )
     print( f"  IRIDA project:  {TEST_IRIDA_PROJECT_ID} (ZZTEST_API_DO_NOT_USE)" )
     print( f"  sample count:   {TEST_SAMPLE_COUNT}" )

@@ -415,7 +415,7 @@ class demux:
 
         ##########################################################################################
         # Development-only override, disabled 2026-09-12 for the 2.0 production rollout: forced every sample to
-        # upload_to_vigasp=True and vigas_project_id=154 (IRIDA project ZZTEST_API_DO_NOT_USE, see tests/test_step07.py)
+        # upload_to_vigasp=True and vigas_project_id=154 (IRIDA project ZZTEST_API_DO_NOT_USE, see tests/integration_step07.py)
         # so live runs landed in the test project. Real values now come from Transfer_VIGAS and VIGASP_ID in the SampleSheet
         # via _build_project_sample_metadata(). Closes the VIGASP half of #205.
         ##########################################################################################

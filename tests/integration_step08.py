@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.11
 ########################################################################
 #
-# tests/test_step08.py
+# tests/integration_step08.py
 #
 # Integration test harness for the NIRD SSH transport and upload (step08).
 #
@@ -20,7 +20,7 @@
 #   - NIRD base path exists: /nird/datalake/NS9305K/test_demultiplex
 #
 # Usage:
-#   /usr/bin/python3.11 tests/test_step08.py (from within the nvi-demux directory)
+#   /usr/bin/python3.11 tests/integration_step08.py (from within the nvi-demux directory)
 #
 # Copyright: The Norwegian Veterinary Institute
 # Licenced under the GNU Public License 3.0 or newer
@@ -77,7 +77,7 @@ def _setup() -> str:
     if not os.path.isfile( TEST_R2 ):
         raise FileNotFoundError( f"Test R2 not found: {TEST_R2}" )
 
-    tmp_base:str = tempfile.mkdtemp( prefix = "test_step08_" )
+    tmp_base:str = tempfile.mkdtemp( prefix = "integration_step08_" )
     run_dir:str  = os.path.join( tmp_base, TEST_RUN_ID )
     os.makedirs( run_dir, mode = stat.S_IRWXU )
 
@@ -168,7 +168,7 @@ def main() -> int:
     test_start_time:float = time.time()
 
     print( "=" * 72 )
-    print( "test_step08: NIRD SSH transport integration test" )
+    print( "integration_step08: NIRD SSH transport integration test" )
     print( "=" * 72 )
     print( f"  run ID:       {TEST_RUN_ID}" )
     print( f"  access mode:  {demux.nird_access_mode}" )

@@ -9,7 +9,7 @@
 ## Delivery to NIRD *new*
 - SSH transport: ProxyJump chain, host key verification, agent and private key auth, 2FA via Bitwarden TOTP; auth method now declared per hop from nird_access_mode, no hardcoded hostnames or Bitwarden item names (#212).
 - Per-project NIRD_Location from the SampleSheet, per-project remote directories, Transfer_NIRD=No honoured, QC tar no longer sent (#205).
-- Bounded parallel upload, integration test harness (test_step08.py).
+- Bounded parallel upload, integration test harness (integration_step08.py).
 
 ## Run handling *new*
 - Detection of new runs by comparing rawdata against demultiplex (#34, #122); SampleSheet-with-path-names.csv preferred when present (#195).

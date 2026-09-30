@@ -44,7 +44,7 @@ import matplotlib.pyplot as plt
 sys.path.insert( 0, os.path.join( os.path.dirname( __file__ ), '..' ) )
 from demux.core import demux
 from demux.steps.step07_deliver_files_to_VIGASP import deliver_files_to_VIGASP
-from tests.test_step07 import (
+from tests.integration_step07 import (
     TEST_SAMPLE_COUNT,
     _cleanup_irida,
     _cleanup_local,
