@@ -33,6 +33,8 @@ class RawDataDirectory:
         """
         runs = [ ]
         for dirName in os.listdir( self.path ):
+            if not os.path.isdir( os.path.join( self.path, dirName ) ):   # only directories can be runs; a stray file here would crash is_ready( )
+                continue
             if constants.DEMULTIPLEX_DIR_SUFFIX in dirName:
                 continue
             if any( tag in dirName for tags in [ demux.core.demux.nextSeq, demux.core.demux.miSeq ] for tag in tags ):
