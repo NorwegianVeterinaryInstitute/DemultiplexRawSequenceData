@@ -28,20 +28,11 @@ def collect_projects_to_tar( demux ):
     projectsToProcessList = [ ]
     for project in demux.newProjectNameList:                                        # this loop is a check against project names which are not suppossed to be eventually tarred
 
-        if any( var in project for var in [ constants.QC_SUFFIX ] ):                     # skip anything that includes '_QC'
-            demuxLogger.warning( f"{constants.QC_SUFFIX} directory found in projects. Skipping." )
-            continue
-        elif any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
+        if any( var in project for var in [ demux.testProject ] ):                  # skip the test project, 'FOO-blahblah-BAR'
             demuxLogger.warning( f"{demux.testProject} test project directory found in projects. Skipping." )
             continue
         elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
             demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
-            continue
-        elif demux.temp in project:                                                 # disregard the temp directory
-            demuxLogger.warning( f"{demux.temp} directory found. Skipping." )
-            continue
-        elif demux.demultiplexLogDirPath in project: # disregard demultiplex_log
-            demuxLogger.warning( f"{demux.demultiplexLogDirPath} directory found. Skipping." )
             continue
 
         if any( tag in project for tags in [ demux.nextSeq, demux.miSeq ] for tag in tags ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcessList
