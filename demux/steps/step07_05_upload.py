@@ -4,6 +4,7 @@ import os
 import time
 
 import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from demux.config import constants
 from demux.loggers import demuxLogger
@@ -234,28 +235,25 @@ def _upload_pair( demux, sample_id: int, r1_path: str, r2_path: str ) -> dict:
     r1_basename:str = os.path.basename( r1_path )
     r2_basename:str = os.path.basename( r2_path )
 
-    with open( r1_path, constants.READ_ONLY_BINARY ) as fh:
-        r1_bytes:bytes = fh.read()
-    with open( r2_path, constants.READ_ONLY_BINARY ) as fh:
-        r2_bytes:bytes = fh.read()
-
-    demuxLogger.debug( f"IRIDA pair upload: R1={r1_basename} ({len( r1_bytes )} bytes), R2={r2_basename} ({len( r2_bytes )} bytes)" )
+    demuxLogger.debug( f"IRIDA pair upload: R1={r1_basename} ({os.path.getsize( r1_path )} bytes), R2={r2_basename} ({os.path.getsize( r2_path )} bytes)" )
 
     # miseqRunId and layoutType are IRIDA API field names; not our constants
     # both parameters1 and parameters2 get the same JSON
     params_json:str = json.dumps( { 'miseqRunId': str( demux.irida_sequencing_run_id ), 'layoutType': demux.irida_layout_type } )
 
-    headers:dict = { constants.HTTP_HEADER_AUTHORIZATION: f'{constants.HTTP_BEARER_PREFIX} {demux.irida_oauth_token}' }
-
-    # requests library handles multipart/form-data boundary automatically
-    files:dict = {
-        'file1':       ( r1_basename, r1_bytes, 'application/octet-stream' ),
-        'file2':       ( r2_basename, r2_bytes, 'application/octet-stream' ),
-        'parameters1': ( None, params_json, 'application/json' ),
-        'parameters2': ( None, params_json, 'application/json' ),
-    }
-
-    response = requests.post( url, headers = headers, files = files, timeout = demux.irida_upload_timeout )
+    # MultipartEncoder reads the FASTQs from disk in chunks while sending, so a pair is never held in memory (#226)
+    with open( r1_path, constants.READ_ONLY_BINARY ) as r1_handle, open( r2_path, constants.READ_ONLY_BINARY ) as r2_handle:
+        encoder:MultipartEncoder = MultipartEncoder( fields = {
+            'file1':       ( r1_basename, r1_handle, 'application/octet-stream' ),
+            'file2':       ( r2_basename, r2_handle, 'application/octet-stream' ),
+            'parameters1': ( None, params_json, 'application/json' ),
+            'parameters2': ( None, params_json, 'application/json' ),
+        } )
+        headers:dict = {
+            constants.HTTP_HEADER_AUTHORIZATION: f'{constants.HTTP_BEARER_PREFIX} {demux.irida_oauth_token}',
+            constants.HTTP_HEADER_CONTENT_TYPE:  encoder.content_type,                  # multipart/form-data with the encoder's boundary
+        }
+        response = requests.post( url, headers = headers, data = encoder, timeout = demux.irida_upload_timeout )
 
     if response.status_code not in ( 200, 201 ):
         raise RuntimeError( f"Failed to upload pair for sample {sample_id}. POST {url} HTTP {response.status_code}: {response.reason}\n{response.text}" )
