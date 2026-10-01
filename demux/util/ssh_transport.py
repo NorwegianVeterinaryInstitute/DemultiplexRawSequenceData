@@ -522,25 +522,25 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
         remote filesystem errors.
     """
 
-    ip, port = demux.transport.getpeername( )[:2]  # make sure that if we are running a dual stack, we only grab the first two parameters
+    host, port = demux.hostname, demux.port  # the NIRD host from the ssh config; getpeername( ) would return the jump host over a ProxyJump
 
     if not os.path.isabs( remote_absolute_dir_path ):
         message = f"Remote directory is not in absolute path: {remote_absolute_dir_path}"
         raise RuntimeError( message )
 
     if not demux.transport.is_active( ):
-        message = f"TransportError: transport not active at hop {ip}"
+        message = f"TransportError: transport not active at hop {host}"
         demuxLogger.critical( message )
         raise SSHException( message )
 
     try:
         sftp_client: paramiko.SFTPClient | None = paramiko.SFTPClient.from_transport( demux.transport )
     except Exception as error:
-        message = f"SFTPError: failed to create SFTP session at hop {ip}:{port}"
+        message = f"SFTPError: failed to create SFTP session at hop {host}:{port}"
         demuxLogger.critical( message )
         raise SSHException( message ) from error
     if sftp_client is None:                                                                      # from_transport( ) returns None when the SFTP channel cannot be opened
-        message = f"SFTPError: no SFTP session at hop {ip}:{port}"
+        message = f"SFTPError: no SFTP session at hop {host}:{port}"
         demuxLogger.critical( message )
         raise SSHException( message )
 
@@ -551,27 +551,27 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
         except FileNotFoundError:
             pass
         except OSError as error:
-            message = f"SFTPError: stat failed for {ip}:{port}:{remote_absolute_dir_path}: {error}"
+            message = f"SFTPError: stat failed for {host}:{port}:{remote_absolute_dir_path}: {error}"
             demuxLogger.critical( message )
             raise SSHException( message ) from error
 
         if attributes is not None:
             if attributes.st_mode is not None and stat.S_ISDIR( attributes.st_mode ):
-                message = f"{ip}:{remote_absolute_dir_path} already exists.\n"
+                message = f"{host}:{remote_absolute_dir_path} already exists.\n"
                 message += "Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
                 demuxLogger.critical( message )
                 raise SSHException( message )
-            raise SSHException( f"{ip}:{remote_absolute_dir_path} exists but is not a directory." )
+            raise SSHException( f"{host}:{remote_absolute_dir_path} exists but is not a directory." )
 
         try:
             sftp_client.mkdir( remote_absolute_dir_path )
         except OSError as error:
-            message = f"Directory creation error: cannot create {ip}:{port}:{remote_absolute_dir_path}. "
+            message = f"Directory creation error: cannot create {host}:{port}:{remote_absolute_dir_path}. "
             message += f"SFTPError: {error}"
             demuxLogger.critical( message )
             raise SSHException( message ) from error
 
-        demuxLogger.info( termcolor.colored( f"Remote directory {ip}:{remote_absolute_dir_path} did not exist, created\n", color="cyan", attrs=["bold"] ) )
+        demuxLogger.info( termcolor.colored( f"Remote directory {host}:{remote_absolute_dir_path} did not exist, created\n", color="cyan", attrs=["bold"] ) )
     finally:
         sftp_client.close( )                                                            # no try: a failed close is a network problem and must fail loudly
 

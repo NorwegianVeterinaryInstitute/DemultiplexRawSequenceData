@@ -199,7 +199,7 @@ def progress4(filename, size, sent, peername) -> None:
 
     Prints percentage completion with peer address to stdout.
     """
-    hostname: str = _resolve_hostname( peername[ 0 ] )
+    hostname: str = peername[ 0 ]
     sys.stdout.write( f"({hostname}:{peername[ 1 ]}) {filename} progress: {float( sent )/float( size )*100:.2f}%   \r" )
 
 
@@ -245,7 +245,7 @@ def _upload_tar_via_scp( demux, file_entry: dict ) -> None:
     finally:
         sftp_client.close( )                                                        # no try: a failed close is a network problem and must fail loudly
 
-    scp_client = SCPClient( demux.transport, progress4 = progress4 )
+    scp_client = SCPClient( demux.transport, progress4 = lambda filename, size, sent, _peername: progress4( filename, size, sent, ( demux.hostname, demux.port ) ) )   # scp passes getpeername( ), which over a ProxyJump is the jump host: show the NIRD host instead
 
     try:
         scp_client.put( file_entry[ "tar_file_local" ],    tar_file_remote )

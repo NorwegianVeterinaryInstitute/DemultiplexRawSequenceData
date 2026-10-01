@@ -60,6 +60,9 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     # Save transport_stack[-1]
     demux.transport = transport_stack[-1]
     demux.hostname  = hops_list[ -1 ][ "hostname" ]     # the NIRD host we uploaded to, for log and error messages
+    demux.port      = int( hops_list[ -1 ].get( "port" ) or 22 )   # its port, for the same messages
+    jumps: str = " -> ".join( str( hop[ "hostname" ] ) for hop in hops_list[ :-1 ] )
+    demuxLogger.info( f"Connected to {demux.hostname}:{demux.port}" + ( f" over ProxyJump {jumps}" if jumps else " directly, no ProxyJump" ) )
     # save the transport stack for later, so we can .reverse and walk it backwards.
     demux.transport_stack = transport_stack
 
