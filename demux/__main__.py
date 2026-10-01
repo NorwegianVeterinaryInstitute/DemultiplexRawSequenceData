@@ -31,9 +31,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         sys.exit("No RunID argument present. Exiting.")
 
-    args = parse_cli( )
-    for runid in args.RunID:
-        demultiplex.main( RunID, args )
+    sys.exit( "error: python -m demux: not yet implemented, use demultiplex.py (#163)." )
 
 
 # I need:

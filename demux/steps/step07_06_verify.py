@@ -1,3 +1,4 @@
+import http.client
 import json
 import time
 import urllib.request
@@ -86,7 +87,7 @@ def _verify( demux ) -> None:
                 if attempt < demux.irida_verify_max_poll_attempts:
                     time.sleep( demux.irida_verify_poll_interval_seconds )
                 continue
-            except ( urllib.error.URLError, TimeoutError ) as error:                         # connection refused, reset or timed out: IRIDA busy, not a hash problem
+            except ( urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException ) as error:   # IRIDA refused, dropped or timed out the connection, before or after the request was sent: poll again
                 demuxLogger.warning( f"IRIDA verify: [{current}/{total}] {sample_name}: {error!r} while listing files, polling again (attempt {attempt}/{demux.irida_verify_max_poll_attempts})" )
                 if attempt < demux.irida_verify_max_poll_attempts:
                     time.sleep( demux.irida_verify_poll_interval_seconds )
