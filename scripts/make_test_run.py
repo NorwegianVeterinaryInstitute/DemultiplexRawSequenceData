@@ -96,7 +96,7 @@ def rewrite_sample_sheet(path: str, run_counter: str) -> dict[str, str]:
     the run counter makes every fake run its own set of samples in IRIDA.
 
     :param path: absolute path to SampleSheet.csv inside the fake run
-    :param run_counter: the nine-digit counter of the fake run
+    :param run_counter: the nine-digit counter and the flowcell suffix of the fake run, e.g. 000000000_MDJ2D
     :return: mapping of original sample name -> test sample name
     """
     sheet: SampleSheet = SampleSheet(path)
@@ -174,7 +174,7 @@ def main() -> int:
     if fake_match is None:
         print(f"ERROR: {fake_run_id} does not match {FAKE_PATTERN.pattern}", file=sys.stderr)
         return 1
-    run_counter: str = fake_match.group(1)
+    run_counter: str = f"{fake_match.group(1)}_{fake_match.group(2)}"   # counter and suffix: every suffix has its own counter, so the counter alone repeats across suffixes
     mapping: dict[str, str] = rewrite_sample_sheet(sheet_path, run_counter)
     original: str
     renamed: str
