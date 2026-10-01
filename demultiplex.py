@@ -265,13 +265,15 @@ def _write_failed_marker( RunID: str, reason: str ) -> None:
     """
     Write {demultiplexRunIDdir}/{demux.demultiplexFailedFile} with the reason a run died, so
     detect_new_runs( ) can report it. First line is a one-line summary, the rest is the detail.
-    Best effort: if this invocation did not create the run directory, there is nothing to mark.
+    A run directory this invocation did not create is never marked; a missing one (setup failed) is created to hold the marker.
     """
     run_dir = os.path.join( demux.demultiplexDir, RunID + constants.DEMULTIPLEX_DIR_SUFFIX )       # same path setup_environment( ) builds; do not trust demux.demultiplexRunIDdir, it may be from an earlier run in the queue
-    if not demux.run_dir_created or not os.path.isdir( run_dir ):                                        # never mark a directory this invocation did not create, e.g. a finished run re-run by hand (#235)
+    if os.path.isdir( run_dir ) and not demux.run_dir_created:                                           # never mark a directory this invocation did not create, e.g. a finished run re-run by hand (#235)
         return
     summary = reason.strip( ).splitlines( )[ -1 ] if reason.strip( ) else "unknown"
     try:
+        if not os.path.isdir( run_dir ):                                                            # the run failed before its directory was created, e.g. a SampleSheet error in setup: create it, so the failure is recorded and scan mode stops retrying the run
+            os.mkdir( run_dir )
         with open( os.path.join( run_dir, demux.demultiplexFailedFile ), "w", encoding = "utf-8" ) as handle:
             handle.write( f"{summary}\n\n{reason}\n" )
     except OSError as error:
