@@ -345,6 +345,8 @@ class demux:
         for sample in sample_sheet.samples:
             if sample.Sample_Name and sample.Sample_Name != sample.Sample_ID:          # bcl2fastq would put this sample's FASTQs in a per-sample subdirectory (#221)
                 raise ValueError( f"Sample_Name '{sample.Sample_Name}' differs from Sample_ID '{sample.Sample_ID}'. Aborting." )
+            if not ( sample.Sample_Project or "" ).strip( ):                             # bcl2fastq would write this sample's FASTQs into the top of the run directory, and step02 would rename the run directory into itself
+                raise ValueError( f"Sample_Project is empty for sample '{sample.Sample_ID}'. Aborting." )
 
             for field, value in {
                 'Transfer_VIGAS': sample.Transfer_VIGAS,
