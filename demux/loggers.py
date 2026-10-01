@@ -36,6 +36,9 @@ def setup_event_and_log_handling( logging_level = logging.DEBUG ):
     """
     # Initalize the logging for the script
     set_loggers( logging.getLogger( "demux" ), logging.getLogger( "demux.smtp.failure" ) )
+    demuxFailureLogger.propagate = False                                       # failure messages go to the failure handlers only (SMTP); every call site also logs to demuxLogger, so propagating printed each one twice
+    if not demuxFailureLogger.handlers:                                        # no failure handler wired yet: a NullHandler keeps logging.lastResort from printing them to stderr a second time
+        demuxFailureLogger.addHandler( logging.NullHandler( ) )
 
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
