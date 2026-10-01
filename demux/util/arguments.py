@@ -458,13 +458,33 @@ def _add_daemon_arguments(parser: argparse.ArgumentParser) -> None:
         help='With stop: abandon current runs, clean up partial output and exit immediately. Operator use only.'
     )
 
+# run flags that are parsed but not yet read by the pipeline; validate_arguments( ) refuses them
+RUN_FLAGS_NOT_IMPLEMENTED:tuple[ tuple[ str, str ], ... ] = (
+    ( "--skip-bcl2fastq",  "skip_bcl2fastq"  ),
+    ( "--skip-fastqc",     "skip_fastqc"     ),
+    ( "--skip-multiqc",    "skip_multiqc"    ),
+    ( "--skip-checksum",   "skip_checksum"   ),
+    ( "--skip-qc-tarball", "skip_qc_tarball" ),
+    ( "--force",           "force"           ),
+    ( "--dry-run",         "dry_run"         ),
+    ( "--only-vigasp",     "only_vigasp"     ),
+    ( "--only-nird",       "only_nird"       ),
+    ( "--note",            "note"            ),
+    ( "--verbose",         "verbose"         ),
+)
+
 
 def validate_arguments(args: argparse.Namespace) -> None:
     """
     Enforce constraints that argparse cannot express natively.
     Raises SystemExit with a descriptive error message on violation.
     """
+    if args.config is not None:                                         # --config is parsed but no code reads it yet
+        raise SystemExit( "error: --config: not yet implemented." )
     if args.subcommand == 'run':
+        not_implemented:list[ str ] = [ flag for flag, dest in RUN_FLAGS_NOT_IMPLEMENTED if getattr( args, dest ) ]
+        if not_implemented:                                             # accepted on the command line but not read by the pipeline: refuse, never run live instead
+            raise SystemExit( f"error: {', '.join( not_implemented )}: not yet implemented." )
         if args.only_vigasp and args.skip_vigasp:
             raise SystemExit("error: --only-vigasp and --skip-vigasp are mutually exclusive.")
         if args.only_nird and args.skip_nird:
@@ -738,6 +758,8 @@ def parse_arguments() -> argparse.Namespace:
         formatter_class=_VerboseHelpFormatter
     )
     _add_daemon_arguments(daemon_parser)
+    for subparser in { id( p ): p for p in subparsers.choices.values( ) }.values( ):    # aliases (stats) share one parser object; add --config once per parser
+        subparser.add_argument( "--config", type = str, metavar = "PATH", default = argparse.SUPPRESS, help = "Path to an alternate config file." )    # also accepted after the subcommand; SUPPRESS keeps a global --config from being overwritten with None
 
     argcomplete.autocomplete(parser)                                    # tab completion; needs the shell hook from register-python-argcomplete
     args = parser.parse_args()
