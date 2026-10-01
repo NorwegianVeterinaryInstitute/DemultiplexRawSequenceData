@@ -26,7 +26,7 @@ remove_nird_dir( )
     base_url="http://localhost:${port}"
     bw_vault_password_file="/home/gmarselis/src/bw/vault_password.txt"
     bw_vault_password=$( "${head_binary}" -n 1 "${bw_vault_password_file}" )
-    bw_status="$( ${curl_binary} --silent --no-progress-meter --request GET ${base_url}/status | ${jq_binary} --raw-output '.data.template.status' )"
+    bw_status="$( ${curl_binary} --no-progress-meter --request GET ${base_url}/status | ${jq_binary} --raw-output '.data.template.status' )"
     #nird_base_directory_absolute_path="/nird/datapeak/NS9305K/gmarselis/demux_transfer_test"
     nird_base_directory_absolute_path="/nird/datalake/NS9305K/test_demultiplex"
     nird_target_directory_relative_name="${1:-251110_M09180_0048_000000000-M7V7K}"
@@ -40,18 +40,18 @@ remove_nird_dir( )
     [[ -z "$bw_vault_password" ]] && { "${printf_binary}" "Could not get the value for \$bw_vault_password, exiting.\n";   exit 1; }
 
     if [[ ${bw_status} == "locked" ]]; then
-        export BW_SESSION="$( ${curl_binary} --silent --no-progress-meter --request POST --header "Content-Type: application/json" --data "{\"password\":\"$bw_vault_password\"}" ${base_url}/unlock | ${jq_binary} --raw-output '.data.raw' )"
+        export BW_SESSION="$( ${curl_binary} --no-progress-meter --request POST --header "Content-Type: application/json" --data "{\"password\":\"$bw_vault_password\"}" ${base_url}/unlock | ${jq_binary} --raw-output '.data.raw' )"
     fi
 
-    totp="$( ${curl_binary} --silent --no-progress-meter ${base_url}/object/totp/${nird_host} | ${jq_binary} --raw-output '.data.data' )"
-    password="$( ${curl_binary} --silent --no-progress-meter ${base_url}/object/password/${nird_host} | ${jq_binary} --raw-output '.data.data' )"
+    totp="$( ${curl_binary} --no-progress-meter ${base_url}/object/totp/${nird_host} | ${jq_binary} --raw-output '.data.data' )"
+    password="$( ${curl_binary} --no-progress-meter ${base_url}/object/password/${nird_host} | ${jq_binary} --raw-output '.data.data' )"
 
-    ${expect_binary} -c "set totp \"${totp}\"; set password \"${password}\"; spawn ${ssh_binary} -tt -o PubkeyAuthentication=no -o PreferredAuthentications=keyboard-interactive -o IdentitiesOnly=yes -o IdentityAgent=none ${nird_host} -- /usr/bin/test -d \"${nird_path_target}\"; after 2000; expect \"One-time password\"; send \"${totp}\r\"; expect \"Password:\"; send \"${password}\r\"; set r [wait]; exit [lindex \$r 3]" > /dev/null
+    TOTP="${totp}" PASSWORD="${password}" TARGET="$( ${printf_binary} '%q' "${nird_path_target}" )" SSH="${ssh_binary}" HOST="${nird_host}" ${expect_binary} -c 'spawn $env(SSH) -tt -o PubkeyAuthentication=no -o PreferredAuthentications=keyboard-interactive -o IdentitiesOnly=yes -o IdentityAgent=none $env(HOST) -- /usr/bin/test -d $env(TARGET); after 2000; expect "One-time password"; send -- "$env(TOTP)\r"; expect "Password:"; send -- "$env(PASSWORD)\r"; set r [wait]; exit [lindex $r 3]' > /dev/null    # secrets and path reach Tcl through the environment, never parsed as Tcl or shown in ps
     test_directory_exists=$?
 
     if [[ ${test_directory_exists} -eq 0 ]]; then # if zero, directory exists
 
-        ${expect_binary} -c "set totp \"${totp}\"; set password \"${password}\"; spawn ${ssh_binary} -tt -o PubkeyAuthentication=no -o PreferredAuthentications=keyboard-interactive,password -o IdentitiesOnly=yes -o IdentityAgent=none ${nird_host} -- /usr/bin/rm -rf \"${nird_path_target}\"; after 500; expect \"One-time password\"; send \"${totp}\r\"; expect \"Password:\"; send \"${password}\r\"; set r [wait]; exit [lindex \$r 3]" > /dev/null
+        TOTP="${totp}" PASSWORD="${password}" TARGET="$( ${printf_binary} '%q' "${nird_path_target}" )" SSH="${ssh_binary}" HOST="${nird_host}" ${expect_binary} -c 'spawn $env(SSH) -tt -o PubkeyAuthentication=no -o PreferredAuthentications=keyboard-interactive,password -o IdentitiesOnly=yes -o IdentityAgent=none $env(HOST) -- /usr/bin/rm -rf $env(TARGET); after 500; expect "One-time password"; send -- "$env(TOTP)\r"; expect "Password:"; send -- "$env(PASSWORD)\r"; set r [wait]; exit [lindex $r 3]' > /dev/null    # secrets and path reach Tcl through the environment, never parsed as Tcl or shown in ps
         rm_status=$?
 
         if [[ ${rm_status} -eq 0 ]]; then
@@ -59,8 +59,11 @@ remove_nird_dir( )
         else
             ${printf_binary} "Error removing %s:%s : exit status: %d\n" ${nird_host} ${nird_path_target} ${rm_status}
         fi
-    else
+    elif [[ ${test_directory_exists} -eq 1 ]]; then # test -d exits 1 when the directory is missing; ssh exits 255 on a login or connection failure
         ${printf_binary} "Directory ${nird_host}:${nird_path_target} does not exist, exiting.\n"
+    else
+        ${printf_binary} "Could not check %s:%s: exit status %d (login, 2FA or connection failure), exiting.\n" "${nird_host}" "${nird_path_target}" "${test_directory_exists}"
+        exit 10
     fi
 
     unset totp
