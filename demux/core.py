@@ -342,6 +342,8 @@ class demux:
         project_samples_metadata: defaultdict[ str, dict[ str, dict[ str, bool | int | str ] ] ] = defaultdict( dict )
 
         for sample in sample_sheet.samples:
+            if sample.Sample_Name and sample.Sample_Name != sample.Sample_ID:          # bcl2fastq would put this sample's FASTQs in a per-sample subdirectory (#221)
+                raise ValueError( f"Sample_Name '{sample.Sample_Name}' differs from Sample_ID '{sample.Sample_ID}'. Aborting." )
 
             for field, value in {
                 'Transfer_VIGAS': sample.Transfer_VIGAS,
