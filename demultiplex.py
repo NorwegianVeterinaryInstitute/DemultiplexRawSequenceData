@@ -265,10 +265,10 @@ def _write_failed_marker( RunID: str, reason: str ) -> None:
     """
     Write {demultiplexRunIDdir}/{demux.demultiplexFailedFile} with the reason a run died, so
     detect_new_runs( ) can report it. First line is a one-line summary, the rest is the detail.
-    Best effort: if the run directory does not exist yet, there is nothing to mark.
+    Best effort: if this invocation did not create the run directory, there is nothing to mark.
     """
     run_dir = os.path.join( demux.demultiplexDir, RunID + constants.DEMULTIPLEX_DIR_SUFFIX )       # same path setup_environment( ) builds; do not trust demux.demultiplexRunIDdir, it may be from an earlier run in the queue
-    if not os.path.isdir( run_dir ):
+    if not demux.run_dir_created or not os.path.isdir( run_dir ):                                        # never mark a directory this invocation did not create, e.g. a finished run re-run by hand (#235)
         return
     summary = reason.strip( ).splitlines( )[ -1 ] if reason.strip( ) else "unknown"
     try:
