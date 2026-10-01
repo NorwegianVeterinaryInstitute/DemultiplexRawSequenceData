@@ -250,7 +250,7 @@ class demux:
     cpuMultiplier:int                          = 2
     running_threads:int                        = availableCpus * cpuMultiplier  # the amount of threads bcl2fastq, fasqcq and multiqc to use
     ######################################################
-    totalTasks = 28 # hardcoded until the object refactor; steps include VIGASP and NIRD delivery
+    totalTasks = 30 # hardcoded until the object refactor; steps include VIGASP and NIRD delivery
     n = 0 # counter for keeping track of the number of the current task
 
     # per-run state: every attribute a run fills in that the next run in the same invocation must not inherit.
