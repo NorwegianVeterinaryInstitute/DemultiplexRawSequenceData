@@ -180,6 +180,8 @@ def _validate_hostkey( hop: paramiko.config.SSHConfigDict, transport: paramiko.T
     """
 
     hostname: str = hop[ "hostname" ]
+    port: int     = int( hop.get( "port" ) or 22 )
+    known_hosts_name: str = hostname if port == 22 else f"[{hostname}]:{port}"     # OpenSSH writes a non-22 host as [host]:port in known_hosts
 
     known_hosts_paths: list[ str ] = [ ]
     user_known_hosts = hop.get( "userknownhostsfile" )
@@ -201,9 +203,9 @@ def _validate_hostkey( hop: paramiko.config.SSHConfigDict, transport: paramiko.T
     for path in existing_paths:
         host_keys.load( path )
 
-    known_for_host = host_keys.lookup( hostname )
+    known_for_host = host_keys.lookup( known_hosts_name )
     if not known_for_host:
-        raise paramiko.SSHException( f"No host key found for {hostname} in {existing_paths}" )
+        raise paramiko.SSHException( f"No host key found for {known_hosts_name} in {existing_paths}" )
 
     key_type: str        = remote_key.get_name( )
     expected_key         = known_for_host.get( key_type )
