@@ -13,7 +13,7 @@ def _ensure_remote_run_directory_mounted( demux ) -> None:
     @in_use
     Ensure the remote run directory exists on a locally mounted sshfs path.
     """
-    remote_absolute_dir_path = os.path.join(demux.nird_base_upload_path, demux.RunID)
+    remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID ) if demux.nird_run_subdirectory else demux.nird_base_upload_path
     mount_found = False
     # Verify that the path is on an sshfs filesystem
     for partition in psutil.disk_partitions( all = True ):
@@ -73,13 +73,13 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
 
     for remote_base in sorted( remote_base_list ):
         # make sure the remote directory we will use is in absolute path
-        remote_absolute_dir_path = os.path.join( remote_base, demux.RunID )
+        remote_absolute_dir_path = os.path.join( remote_base, demux.RunID ) if demux.nird_run_subdirectory else remote_base
         if not os.path.isabs( remote_absolute_dir_path ):
             message = f"ValueError: {remote_absolute_dir_path} is not an absolute path. Refusing to continue, as any transfer will "
             message += "end up in the home directory of the uploading user."
             raise ValueError( message )
 
-        _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path )
+        _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path, must_exist = not demux.nird_run_subdirectory )   # with a run subdirectory it is created here and must be new; without one the NIRD_Location itself must already exist
 
 
 def _ensure_remote_run_directory( demux ) -> None:

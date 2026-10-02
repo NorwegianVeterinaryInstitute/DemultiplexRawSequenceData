@@ -162,6 +162,7 @@ class demux:
     upload_nird_enabled:bool                   = True                  # determine if the feature of uploading to nird is enabled
     transfer_to_nird:bool                      = False               # determine from sample sheet if we have any uploads
     nird_access_mode:str                       = "ssh2fa"
+    nird_run_subdirectory:bool                 = False        # True: deliver into <NIRD_Location>/<RunID>/, created here and refused if it exists; False: deliver flat into <NIRD_Location>/, the lab convention since 2026-02
                                     # "ssh" uses only keys
                                     # "ssh_2fa" uses username, password, TOTP, from bitwarden
                                     # "mounted" uses sshfs but only with keys

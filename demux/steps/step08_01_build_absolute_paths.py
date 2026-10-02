@@ -50,7 +50,7 @@ def _build_absolute_paths( demux ) -> None:
         # So it returned tar_file only, fuuuuuuuuu
         # So since we might meet demux.tarFilesToTransferList elsewhere, i am stripping here the absolute path
         # and allowing the tar files to still remain in absolute format
-        remote_base = os.path.join( demux.absoluteFilesToTransferList[ tar_file ][ 'nird_upload_location' ], demux.RunID )       
+        remote_base = os.path.join( demux.absoluteFilesToTransferList[ tar_file ][ 'nird_upload_location' ], demux.RunID ) if demux.nird_run_subdirectory else demux.absoluteFilesToTransferList[ tar_file ][ 'nird_upload_location' ]   # the lab keeps NIRD flat: the RunID is already in every tar name
         basenamed_tar_file = os.path.basename( tar_file )
         demux.absoluteFilesToTransferList[ tar_file ].update( {
             'tar_file_local':     os.path.join( local_base,  basenamed_tar_file ),

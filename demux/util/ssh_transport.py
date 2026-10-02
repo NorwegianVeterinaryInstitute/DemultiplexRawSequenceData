@@ -511,7 +511,7 @@ def _authenticate_transport( hop: paramiko.config.SSHConfigDict, transport: para
 
 
 
-def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
+def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str, must_exist: bool = False ) -> None:
     """
     Ensure the remote run directory exists using an already-authenticated SFTP session.
 
@@ -559,11 +559,19 @@ def _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path: str ) -> None:
 
         if attributes is not None:
             if attributes.st_mode is not None and stat.S_ISDIR( attributes.st_mode ):
+                if must_exist:
+                    demuxLogger.info( termcolor.colored( f"Remote directory {host}:{remote_absolute_dir_path} exists\n", color="cyan", attrs=["bold"] ) )
+                    return
                 message = f"{host}:{remote_absolute_dir_path} already exists.\n"
                 message += "Is this a repeat upload? If yes, delete/move the existing remote directory and try again."
                 demuxLogger.critical( message )
                 raise SSHException( message )
             raise SSHException( f"{host}:{remote_absolute_dir_path} exists but is not a directory." )
+
+        if must_exist:
+            message = f"{host}:{remote_absolute_dir_path} does not exist. The NIRD_Location directory must be created by its owners before delivery."
+            demuxLogger.critical( message )
+            raise SSHException( message )
 
         try:
             sftp_client.mkdir( remote_absolute_dir_path )
