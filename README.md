@@ -16,16 +16,16 @@ The script runs every 20 minutes, on the dot, via a systemd user timer.
 Should you need to run it manually, log into seqtech as the seqtech user and run
 
 ```bash
-/data/bin/nvi-demux/demultiplex.py <RunID1> <RunID2> ... <RunIDn>
+/data/bin/demultiplex.py <RunID1> <RunID2> ... <RunIDn>
 ```
 <RunID> is the Illumina run directory name under /data/rawdata/ you need to demultiplex.
 
 Example:
 
 ```bash
-/data/bin/nvi-demux/demultiplex.py 190912_M06578_0001_000000000-CNNTP
+/data/bin/demultiplex.py 190912_M06578_0001_000000000-CNNTP
 ```
 
-You can also run /data/bin/nvi-demux/demultiplex.py and it will discover all demultiplexed runs and run them in sequence one after the other.
+You can also run /data/bin/demultiplex.py and it will discover all demultiplexed runs and run them in sequence one after the other.
 
 See ```docs/``` for architecture, deployment and QC metrics
