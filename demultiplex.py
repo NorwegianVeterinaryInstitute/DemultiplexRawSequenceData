@@ -1,4 +1,5 @@
 #!/usr/bin/env -S -- /usr/bin/python3.11 -X pycache_prefix=/tmp/demultiplex
+# PYTHON_ARGCOMPLETE_OK
 
 ########################################################################
 # Demutliplex a MiSEQ or NextSEQ run, perform QC using FastQC and
@@ -12,51 +13,61 @@
 #
 
 import logging
+import os
 import sys
+import traceback
+from collections import deque
+
 import termcolor
 
-from inspect            import currentframe, getframeinfo
-from collections        import deque
+from demux.config import constants
+from demux.core import (
+    demux,  # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
+)
+from demux.detect_new_runs import (
+    DemultiplexDirectory,
+    RawDataDirectory,
+    detect_new_runs,
+)
+from demux.diagnostics.check_running_environment import check_running_environment
+from demux.diagnostics.print_running_environment import print_running_environment
+from demux.envsetup.archive_sample_sheet import archive_sample_sheet
+from demux.envsetup.copy_sample_sheet_into_demultiplex_runiddir import (
+    copy_sample_sheet_into_demultiplex_runiddir,
+)
+from demux.envsetup.create_demultiplex_directory_structure import (
+    create_demultiplex_directory_structure,
+)
+from demux.envsetup.prepare_fortransfer_directory_structure import (
+    prepare_fortransfer_directory_structure,
+)
+from demux.envsetup.setup_environment import setup_environment
 
 # Breaking down the script into more digestible chunks
+from demux.loggers import (
+    demuxLogger,
+    setup_event_and_log_handling,
+    setup_file_log_handling,
+)
+from demux.steps.step01_demultiplex import bcl2fastq
+from demux.steps.step02_rename import rename_files_and_directories
+from demux.steps.step03_quality_check import quality_check
+from demux.steps.step04_prepare_delivery import prepare_delivery
+from demux.steps.step05_control_projects_qc import control_projects_qc
+from demux.steps.step06_tar_file_quality_check import tar_file_quality_check
+from demux.steps.step07_deliver_files_to_VIGASP import deliver_files_to_VIGASP
+from demux.steps.step08_deliver_files_to_NIRD import deliver_files_to_NIRD
 
-from demux.loggers                                              import setup_event_and_log_handling, setup_file_log_handling
-from demux.core                                                 import demux             # the demux object is where the whole initilization happens. read the top of demux/demux.py for more into
-from demux.detect_new_runs                                      import RawDataDirectory, DemultiplexDirectory, detect_new_runs
-
-from demux.util.buffering_smtp_handler                          import BufferingSMTPHandler
-from demux.util.checksum                                        import calc_file_hash
-from demux.util.change_permissions                              import change_permissions
-from demux.util.arguments                                       import parse_arguments
-from demux.util.logging                                         import setup_logging
-from demux.util.lock                                            import setup_lock
-
-from demux.detect_new_runs                                      import detect_new_runs
-
-from demux.envsetup.setup_environment                           import setup_environment
-from demux.envsetup.create_demultiplex_directory_structure      import create_demultiplex_directory_structure
-from demux.envsetup.prepare_fortransfer_directory_structure     import prepare_fortransfer_directory_structure
-from demux.envsetup.copy_sample_sheet_into_demultiplex_runiddir import copy_sample_sheet_into_demultiplex_runiddir
-from demux.envsetup.archive_sample_sheet                        import archive_sample_sheet
-
-from demux.diagnostics.print_running_environment                import print_running_environment
-from demux.diagnostics.check_running_environment                import check_running_environment
-
-from demux.steps.step01_demultiplex                             import bcl2fastq
-from demux.steps.step02_rename                                  import rename_files_and_directories
-from demux.steps.step03_quality_check                           import quality_check
-from demux.steps.step04_prepare_delivery                        import prepare_delivery
-from demux.steps.step05_control_projects_qc                     import control_projects_qc
-from demux.steps.step06_tar_file_quality_check                  import tar_file_quality_check
-from demux.steps.step07_deliver_files_to_VIGASP                 import deliver_files_to_VIGASP
-from demux.steps.step08_deliver_files_to_NIRD                   import deliver_files_to_NIRD
 #
 # ... add here as needed ...
 #
-from demux.steps.step99_finalize                                import finalize
-
-from demux.loggers import demuxLogger, demuxFailureLogger
-
+from demux.steps.step99_finalize import finalize
+from demux.subcommands import SUBCOMMAND_HANDLERS
+from demux.util.arguments import parse_arguments, validate_arguments
+from demux.util.change_permissions import change_permissions
+from demux.util.checksum import calc_file_hash
+from demux.util.lock import setup_lock
+from demux.util.logging import setup_logging
 
 """
 demultiplex.py:
@@ -64,7 +75,7 @@ demultiplex.py:
 
     Module can run on its own, without needing to include in a library as such:
 
-    /usr/local/bin/demultiplex.py   200306_M06578_0015_000000000-CWLBG
+    /data/bin/nvi-demux/demultiplex.py   200306_M06578_0015_000000000-CWLBG
     path to script                | RunID directory from /data/rawdata
 
 INPUTS:
@@ -201,6 +212,7 @@ def process_run(RunID: str) -> None:
     demuxLogger.info( termcolor.colored( f"Now processing: {RunID}", color="light_cyan" ) )
 
 
+    demux.reset_run_state( )                                                                            # start every run from the class-body defaults, not from the leftovers of the previous run
     setup_environment( RunID )                                                                          # set up variables needed in the running setupEnvironment # demux.RunID is set here
     # # displayNewRuns( )                                                                                 # show all the new runs that need demultiplexing
     create_demultiplex_directory_structure( demux )                                                     # create the directory structure under {demux.demultiplexRunIDdir}
@@ -224,19 +236,48 @@ def process_run(RunID: str) -> None:
     change_permissions( demux )                                                                         # change permissions for all the delivery files, including QC
     control_projects_qc( demux )                                                                        # check to see if we need to create the report for any control projects present
     tar_file_quality_check( demux )                                                                     # QC for tarfiles: can we untar them? does untarring them keep match the sha512 written? have they been tampered with while in storage?
-    if demux.upload_vigas_enabled and demux.transfer_to_vigas:
+    finalize( demux, demux.demultiplexCompleteFile )                                                    # phase marker: demultiplexing, QC and tar done; detect_new_runs( ) treats its absence as an incomplete run
+    if demux.upload_vigas_enabled and demux.upload_to_vigasp:
         demuxLogger.debug( f"{RunID} has to be uploaded to VIGASP" )
         deliver_files_to_VIGASP( demux )                                                                # Deliver the output files to VIGASP
+        finalize( demux, demux.vigaspDeliveryCompleteFile )                                             # phase marker: VIGASP delivery done
+    elif demux.upload_to_vigasp:
+        demuxLogger.warning( termcolor.colored( f"{RunID}: VIGASP delivery skipped (--skip-vigasp)", color="magenta" ) )
     if demux.upload_nird_enabled and demux.transfer_to_nird:
         demuxLogger.debug( f"{RunID} has to be uploaded to NIRD" )
         deliver_files_to_NIRD( demux )                                                                  # deliver the output files to NIRD
-    # finalize( demux )                                                                                 # mark the script as complete
+        finalize( demux, demux.nirdDeliveryCompleteFile )                                               # phase marker: NIRD delivery done
+    elif demux.transfer_to_nird:
+        demuxLogger.warning( termcolor.colored( f"{RunID}: NIRD delivery skipped (--skip-nird)", color="magenta" ) )
+    finalize( demux, demux.runCompleteFile )                                                            # process_run( ) reached the end for this run
     # shutdownEventAndLoggingHandling( )                                                                # shutdown logging before exiting.
 
-    if not ( demux.transfer_to_vigas and demux.transfer_to_nird ):
-        demuxLogger.info( termcolor.colored( f"\n\nNo files uploaded.\n", color="light_cyan", attrs=["blink"] ) )
+    # make sure to notify the operator if no files where uploaded
+    if not demux.upload_to_vigasp and not demux.transfer_to_nird:
+        demuxLogger.info( termcolor.colored( "\n\nNo files uploaded.\n", color="light_cyan", attrs=["blink"] ) )
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
-    logging.shutdown( )
+    for handler in list( demuxLogger.handlers ):                                                        # detach and close this run's three log files, so the next run in the queue does not write into them
+        if isinstance( handler, logging.FileHandler ):
+            demuxLogger.removeHandler( handler )
+            handler.close( )
+
+def _write_failed_marker( RunID: str, reason: str ) -> None:
+    """
+    Write {demultiplexRunIDdir}/{demux.demultiplexFailedFile} with the reason a run died, so
+    detect_new_runs( ) can report it. First line is a one-line summary, the rest is the detail.
+    A run directory this invocation did not create is never marked; a missing one (setup failed) is created to hold the marker.
+    """
+    run_dir = os.path.join( demux.demultiplexDir, RunID + constants.DEMULTIPLEX_DIR_SUFFIX )       # same path setup_environment( ) builds; do not trust demux.demultiplexRunIDdir, it may be from an earlier run in the queue
+    if os.path.isdir( run_dir ) and not demux.run_dir_created:                                           # never mark a directory this invocation did not create, e.g. a finished run re-run by hand (#235)
+        return
+    summary = reason.strip( ).splitlines( )[ -1 ] if reason.strip( ) else "unknown"
+    try:
+        if not os.path.isdir( run_dir ):                                                            # the run failed before its directory was created, e.g. a SampleSheet error in setup: create it, so the failure is recorded and scan mode stops retrying the run
+            os.mkdir( run_dir )
+        with open( os.path.join( run_dir, demux.demultiplexFailedFile ), "w", encoding = "utf-8" ) as handle:
+            handle.write( f"{summary}\n\n{reason}\n" )
+    except OSError as error:
+        demuxLogger.error( f"could not write {demux.demultiplexFailedFile} for {RunID}: {error}" )
 
 
 def deduplicate_runids( RunIDs: list ) -> list:
@@ -282,7 +323,15 @@ def main( RunIDs: list) -> None:
 
     queue = deque( RunIDs )                                                                               # setup a queue to allow for multiple runs
     while queue:
-        process_run( queue.popleft( ) )                                                                   # process the run(s)
+        RunID = queue.popleft( )
+        try:
+            process_run( RunID )                                                                          # process the run(s)
+        except SystemExit:
+            _write_failed_marker( RunID, "sys.exit( ) called by a step; see the run log for the CRITICAL entry" )
+            raise
+        except BaseException:
+            _write_failed_marker( RunID, traceback.format_exc( ) )
+            raise
 
 
 ########################################################################
@@ -291,7 +340,14 @@ def main( RunIDs: list) -> None:
 
 if __name__ == '__main__':
 
-    setup_logging( )            # set up basic logging for now, will move all log setup there
-    setup_lock( )               # make sure we only run one instance at a time
-    logging.shutdown( )         # shut down basic logging, main logging will take charge in main( )
-    main( parse_arguments( ).RunID )
+    args   = parse_arguments( )                                                 # first: a tab-completion request exits inside parse_arguments( ) and must not take the lock
+    validate_arguments( args )                                                  # constraints argparse cannot express; unimplemented subcommands raise NotImplementedError
+    if args.subcommand in SUBCOMMAND_HANDLERS:                                          # every subcommand except run and scan mode; stubs stop with "not yet implemented"
+        SUBCOMMAND_HANDLERS[ args.subcommand ]( args )
+    setup_logging( )                                                            # set up basic logging for now, will move all log setup there
+    setup_lock( )                                                               # make sure we only run one instance at a time
+    logging.shutdown( )                                                         # shut down basic logging, main logging will take charge in main( )
+    RunIDs = getattr( args, 'RunID', [] ) or []
+    demux.upload_vigas_enabled = not getattr( args, 'skip_vigasp', False )      # --skip-vigasp: run everything, deliver nothing to VIGASP
+    demux.upload_nird_enabled  = not getattr( args, 'skip_nird',   False )      # --skip-nird:   run everything, deliver nothing to NIRD
+    main( RunIDs )

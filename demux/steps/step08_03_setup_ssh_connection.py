@@ -1,11 +1,16 @@
+
 import paramiko
-import pprint
 import termcolor
 
-from typing import Any, Dict, List, Optional, Tuple, Mapping
+from demux.loggers import demuxLogger
+from demux.util.ssh_transport import (
+    _authenticate_transport,
+    _connect_next_proxy_jump,
+    _parse_ssh_config,
+    _select_auth_method,
+    _validate_hostkey,
+)
 
-from demux.util.ssh_transport   import _connect_next_proxy_jump, _validate_hostkey, _authenticate_transport, _parse_ssh_config
-from demux.loggers              import demuxLogger, demuxFailureLogger
 
 def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     """
@@ -20,16 +25,16 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
     Raises:
         RuntimeError: if no hops are produced, or if transport construction fails.
     """
-    hops_list: List[ paramiko.config.SSHConfig ] = _parse_ssh_config( demux )
-    first_transport  : paramiko.Transport        = None
-    current_transport: paramiko.Transport        = None
-    next_transport   : paramiko.Transport        = None
-    transport_stack: List[ paramiko.Transport ]  = [ ]  # having a stack of the previous transports would be a good idea
+    hops_list: list[ paramiko.config.SSHConfigDict ] = _parse_ssh_config( demux )
+    current_transport: paramiko.Transport | None = None
+    next_transport   : paramiko.Transport | None = None
+    transport_stack: list[ paramiko.Transport ]  = [ ]  # having a stack of the previous transports would be a good idea
                                                         # so we can close the transports later in reverse order
+    demux.transport_stack = transport_stack             # store the list now: if a later hop fails, teardown can still close the hops already open
     if len( hops_list ) == 0:
         raise RuntimeError( "SSH config resolution produced zero hops; cannot build transport chain." )
 
-    message = termcolor.colored( f"Null hop", color="cyan", attrs=["bold"] )
+    message = termcolor.colored( "Null hop", color="cyan", attrs=["bold"] )
     demuxLogger.debug( message )
 
     for index, hop in enumerate( hops_list ):
@@ -40,17 +45,24 @@ def _setup_ssh_connection( demux, *, timeout: float = 30 ):
             message = f"current hop: {hop.get( 'hostname' )}"
         demuxLogger.debug( message )
 
-        next_transport: paramiko.Transport = _connect_next_proxy_jump( hop, current_transport )
+        next_transport = _connect_next_proxy_jump( hop, current_transport )
 
         _validate_hostkey( hop, next_transport )
-        _authenticate_transport( hop, next_transport )
+        auth_method: str = _select_auth_method( hop, is_target = is_last, nird_access_mode = demux.nird_access_mode )
+        demuxLogger.debug( f"auth method for {hop.get( 'hostname' )}: {auth_method}" )
+        _authenticate_transport( hop, next_transport, auth_method = auth_method )
         transport_stack.append( next_transport )
         current_transport = next_transport
 
-    if not current_transport.is_active( ):
+    if current_transport is None or not current_transport.is_active( ):
         raise RuntimeError( "Transport chain construction failed; final transport is None." )
 
     # Save transport_stack[-1]
     demux.transport = transport_stack[-1]
+    demux.hostname  = hops_list[ -1 ][ "hostname" ]     # the NIRD host we uploaded to, for log and error messages
+    demux.port      = int( hops_list[ -1 ].get( "port" ) or 22 )   # its port, for the same messages
+    jumps: str = " -> ".join( str( hop[ "hostname" ] ) for hop in hops_list[ :-1 ] )
+    demuxLogger.info( f"Connected to {demux.hostname}:{demux.port}" + ( f" over ProxyJump {jumps}" if jumps else " directly, no ProxyJump" ) )
     # save the transport stack for later, so we can .reverse and walk it backwards.
     demux.transport_stack = transport_stack
+

@@ -1,6 +1,5 @@
  # close off the channels we opened and any transports
 
-from demux.loggers              import demuxLogger, demuxFailureLogger
 
 
 def _tear_down_transport( demux ) -> None:
@@ -17,10 +16,10 @@ def _tear_down_transport( demux ) -> None:
 
     transport_closing_failures: list[ Exception ] = [ ]
 
-    for index, transport in reversed( list( enumerate( demux.transport_stack ) ) ):
+    for index, transport in reversed( list( enumerate( demux.transport_stack or [ ] ) ) ):
         try:
             transport.close( )
-        except Exception as error:
+        except Exception as error:   # noqa: BLE001 - collect every close failure, then raise them together as an ExceptionGroup below
             wrapped = RuntimeError( f"Transport close failed at stack index {index}: {transport!r}" )
             wrapped.__cause__ = error   # Python language builtin (PEP 3134).
             transport_closing_failures.append( wrapped )

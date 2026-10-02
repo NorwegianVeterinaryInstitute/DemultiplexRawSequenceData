@@ -8,7 +8,7 @@ that emits log messages.
 
 import logging
 import logging.handlers
-import sys
+
 
 def setup_logging( ) -> None:
     """

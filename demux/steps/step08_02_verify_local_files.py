@@ -1,5 +1,8 @@
 import os
 
+from demux.loggers import demuxLogger
+
+
 def _verify_local_files( demux ):
     """
     @in_use
@@ -12,7 +15,7 @@ def _verify_local_files( demux ):
 
     for entry in demux.absoluteFilesToTransferList.values( ):
         if not os.path.exists( entry[ 'tar_file_local' ] ):
-            message = f"File {entry[ 'tar_file_local' ]} does not exist. Check for the existanse of the file and try again."
+            message = f"File {entry[ 'tar_file_local' ]} does not exist. Check for the existence of the file and try again."
             demuxLogger.critical( message )
             raise FileNotFoundError( message )
         if not os.path.exists( entry[ 'md5_file_local' ] ):

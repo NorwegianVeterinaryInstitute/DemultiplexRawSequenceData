@@ -4,10 +4,10 @@ import os
 import shutil
 import stat
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
-
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # archive_sample_sheet( )
@@ -32,30 +32,30 @@ def archive_sample_sheet( demux ):
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
 
     if not os.path.isfile( demux.sampleSheetFilePath ):
-        text = f"{demux.ampleSheetFilePath} is not a file! Exiting."
+        text = f"{demux.sampleSheetFilePath} is not a file! Exiting."
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     try:
         shutil.copy2( demux.sampleSheetFilePath, demux.sampleSheetArchiveFilePath )
-        currentPermissions = stat.S_IMODE(os.lstat( demux.sampleSheetArchiveFilePath ).st_mode )
-        os.chmod( demux.sampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "o=rw,g=r,o=r"
-    except Exception as err:
+        os.chmod( demux.sampleSheetArchiveFilePath, stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IROTH ) # Set samplesheet to "u=rw,g=r,o=r"
+    except OSError as err:
         frameinfo = inspect.getframeinfo( inspect.currentframe( ) )
         text = [    f"Archiving {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} failed.",
                     str(err),
-                    f" at {frameinfo.filename}:{frameinfo.lineno}."
+                    f" at {frameinfo.filename}:{frameinfo.lineno}.",
                     "Exiting.",
         ]
+        text = '\n'.join( text )
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks:  Archive {demux.sampleSheetFilePath} to {demux.sampleSheetArchiveFilePath} ==\n", color="red", attrs=["bold"] ) )

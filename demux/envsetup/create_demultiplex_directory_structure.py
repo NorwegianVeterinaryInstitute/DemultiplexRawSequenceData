@@ -1,13 +1,12 @@
-#!/usr/bin/python3.11
 
 import logging
 import os
 import stat
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
-
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # createDirectory
@@ -48,6 +47,7 @@ def create_demultiplex_directory_structure( demux ):
 
         # The following 3 lines have to be in this order
         os.mkdir( demux.demultiplexRunIDdir )       # root directory for run
+        demux.run_dir_created = True                # this invocation owns the run directory: a failure from here on may mark it failed
         os.mkdir( demux.demultiplexLogDirPath )     # log directory  for run
         os.mkdir( demux.demuxQCDirectoryFullPath )  # QC directory   for run
 
@@ -59,12 +59,12 @@ def create_demultiplex_directory_structure( demux ):
         demuxFailureLogger.critical( f"File already exists! Exiting!\n{err}" )
         demuxLogger.critical( f"File already exists! Exiting!\n{err}" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
     except FileNotFoundError as err:
         demuxFailureLogger.critical( f"A component of the passed path is missing! Exiting!\n{err}" )
         demuxLogger.critical( f"A component of the passed path is missing! Exiting!\n{err}" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Create directory structure finished ==\n", color="red", attrs=["bold"] ) )

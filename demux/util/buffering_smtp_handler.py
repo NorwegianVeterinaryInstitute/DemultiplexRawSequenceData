@@ -1,8 +1,7 @@
-#!/usr/bin/python3.11
 
 import logging
+import logging.handlers
 import socket
-
 
 ########################################################################
 # BufferingSMTPHandler

@@ -109,7 +109,7 @@ The pipeline starts if:
 ### Manual Execution
 
 ```bash
-/usr/local/bin/demultiplex <RunID>
+/data/bin/nvi-demux/demultiplex.py <RunID>
 ```
 
 ---
@@ -139,7 +139,7 @@ The pipeline:
 Re-run pattern:
 
 ```bash
-rm -rf /data/demultiplex/<RunID>* /data/for_transfer/<RunID>* && /usr/local/bin/demultiplex <RunID>
+rm -rf /data/demultiplex/<RunID>* /data/for_transfer/<RunID>* && /data/bin/nvi-demux/demultiplex.py <RunID>
 ```
 
 ---

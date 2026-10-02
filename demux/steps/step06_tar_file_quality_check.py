@@ -1,11 +1,12 @@
+import logging
 import os
+import shutil
 import sys
 import tarfile
-import shutil
-import logging
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # tar_file_quality_check: verify tar files before upload
@@ -32,28 +33,28 @@ def tar_file_quality_check( demux ):
         Input is RunID rather than demux.RunID or some other variable because we can use this method later to check the tarFile quality of any fetched tar file from archive
     """
     demux.n = demux.n + 1
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Tar files quaility check started ==", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Tar files quality check started ==", color="green", attrs=["bold"] ) )
 
     forTransferRunIdDirTestName = os.path.join( demux.forTransferRunIdDir,demux.forTransferRunIdDirTestName )
 
 #---- Step 1: create a /data/for_transfer/RunID/test directory -------------------------------------------------------------------------------------------
 
     # ensure that demux.forTransferDir (/data/for_transfer) exists
-    if not os. path. isdir( demux.forTransferDir ):
+    if not os.path.isdir( demux.forTransferDir ):
         text = f"{demux.forTransferDir} does not exist! Please re-run the ansible playbook! Exiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )    
+        sys.exit( 1 )    
 
     try: 
         os.mkdir( forTransferRunIdDirTestName )
-    except Exception as err:
-        text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
+    except OSError as err:
+        text = f"{forTransferRunIdDirTestName} cannot be created: { err !s}\nExiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
 # there is no point in making this complicated: tar files can be easily edited, they are just a simple container and any attacker can easily alter the file insitu,
 # recalculate the hash and replace the hash again in situ
@@ -67,21 +68,20 @@ def tar_file_quality_check( demux ):
         try:
             text = "Now extracting tarfile:"
             demuxLogger.debug( f"{text:{demux.spacing3}}" + tarFile )
-            tarFileHandle = tarfile.open( name = tarFile, mode = "r:" )     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
-            tarFileHandle.extractall( path = forTransferRunIdDirTestName, filter = 'tar' )
-            tarFileHandle.close( )
-        except Exception as err:
-            text = f"{forTransferRunIdDirTestName}/{tarFile} cannot be created: { str( err ) }\nExiting!"
+            with tarfile.open( name = tarFile, mode = "r:" ) as tarFileHandle:   # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
+                tarFileHandle.extractall( path = forTransferRunIdDirTestName, filter = 'tar' )
+        except ( OSError, tarfile.TarError ) as err:
+            text = f"{tarFile} cannot be extracted into {forTransferRunIdDirTestName}: { err !s}\nExiting!"
             demuxFailureLogger.critical( f"{ text }" )
             demuxLogger.critical( f"{ text }" )
             logging.shutdown( )
-            sys.exit( )
+            sys.exit( 1 )
 
 #---- Step 3: delete {demux.forTransferRunIdDir}/{demux.forTransferRunIdDirTestName} and contents ------------------------------------------------------------
     # clean up
-    text = "Cleanup up path:"
+    text = "Clean up path:"
     demuxLogger.info( f"{text:{demux.spacing2}}" + forTransferRunIdDirTestName )
     shutil.rmtree( forTransferRunIdDirTestName )
 
 
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Tar files quaility check finished ==", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Tar files quality check finished ==", color="red", attrs=["bold"] ) )

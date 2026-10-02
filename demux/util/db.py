@@ -1,4 +1,3 @@
-import peewee
 
 """
 SQLite persistence layer for demultiplex runs using Peewee ORM.

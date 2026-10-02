@@ -1,4 +1,3 @@
-#!/usr/bin/python3.11
 
 import logging
 import logging.handlers
@@ -6,13 +5,13 @@ import os
 import socket
 import sys
 import syslog
+
 import termcolor
 
-import demux.config.constants
+from demux.config import constants
 
-
-demuxLogger = None
-demuxFailureLogger = None
+demuxLogger: logging.Logger = None               # type: ignore[assignment]  # set by set_loggers( ) before any step module imports it
+demuxFailureLogger: logging.Logger = None        # type: ignore[assignment]  # set by set_loggers( ) before any step module imports it
 
 ########################################################################
 # set_loggers( )
@@ -20,8 +19,9 @@ demuxFailureLogger = None
 
 def set_loggers( main_logger, failure_logger ):
     global demuxLogger, demuxFailureLogger
-    demuxLogger = main_logger
-    demuxFailureLogger = failure_logger
+    demuxLogger           = main_logger
+    demuxFailureLogger    = failure_logger
+    demuxLogger.propagate = False
 
 
 ########################################################################
@@ -36,6 +36,9 @@ def setup_event_and_log_handling( logging_level = logging.DEBUG ):
     """
     # Initalize the logging for the script
     set_loggers( logging.getLogger( "demux" ), logging.getLogger( "demux.smtp.failure" ) )
+    demuxFailureLogger.propagate = False                                       # failure messages go to the failure handlers only (SMTP); every call site also logs to demuxLogger, so propagating printed each one twice
+    if not demuxFailureLogger.handlers:                                        # no failure handler wired yet: a NullHandler keeps logging.lastResort from printing them to stderr a second time
+        demuxFailureLogger.addHandler( logging.NullHandler( ) )
 
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxSyslogFormatter   = logging.Formatter( "%(levelname)s %(message)s" )
@@ -88,19 +91,19 @@ def setup_file_log_handling( demux ):
     if not os.path.isdir( demux.logDirPath ) :
         text = [    "Trying to setup demux.logDirPath failed. Reason:\n",
                     "The parts of demux.logDirPath have the following values:\n",
-                    f"demux.dataRootDirPath:\t\t\t{demux.config.constants.DATA_ROOT_DIR}\n",
-                    f"demux.logDirName:\t\t\t{demux.logDirName}\n",
+                    f"constants.DATA_ROOT_DIR:\t\t\t{constants.DATA_ROOT_DIR}\n",
+                    f"constants.LOG_DIR_NAME:\t\t\t{constants.LOG_DIR_NAME}\n",                
                     f"demux.logDirPath:\t\t\t\t{demux.logDirPath}\n"
         ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
+        demuxFailureLogger.critical( "".join( text ) )
+        demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     # # set up logging for /data/log/{demux.RunID}.log
     try: 
         demuxFileLogHandler   = logging.FileHandler( demux.demuxRunLogFilePath, mode = 'w', encoding = demux.decodeScheme )
-    except Exception as err:
+    except OSError as err:
         text = [    "Trying to setup demuxFileLogHandler failed. Reason:\n",
                     str(err),
                     "The parts of demux.demuxRunLogFilePath have the following values:\n",
@@ -108,10 +111,10 @@ def setup_file_log_handling( demux ):
                     f"demux.RunID + demux.logSuffix:\t\t{demux.RunID} + {demux.logSuffix}\n",
                     f"demux.logDirPath:\t\t\t\t{demux.logDirPath}\n"
         ]
-        demuxFailureLogger.critical( *text  )
-        demuxLogger.critical( *text )
+        demuxFailureLogger.critical( "".join( text ) )
+        demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxLogFormatter      = logging.Formatter( "%(asctime)s %(dns)s %(filename)s %(levelname)s %(message)s", datefmt = '%Y-%m-%d %H:%M:%S', defaults = { "dns": socket.gethostname( ) } )
     demuxFileLogHandler.setFormatter( demuxLogFormatter )
@@ -120,7 +123,7 @@ def setup_file_log_handling( demux ):
     # set up cummulative logging in /data/log/demultiplex.log
     try:
         demuxFileCumulativeLogHandler   = logging.FileHandler( demux.demuxCumulativeLogFilePath, mode = 'a', encoding = demux.decodeScheme )
-    except Exception as err:
+    except OSError as err:
         text = [    "Trying to setup demuxFileCumulativeLogHandler failed. Reason:\n",
                     str(err),
                     "The parts of demux.demuxRunLogFilePath have the following values:\n",
@@ -128,17 +131,17 @@ def setup_file_log_handling( demux ):
                     f"demux.logDirPath:\t\t\t\t\t{demux.logDirPath}\n",
                     f"demux.demultiplexLogDirName:\t\t\t{demux.demultiplexLogDirName}\n",
         ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
+        demuxFailureLogger.critical( "".join( text ) )
+        demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
 
     # setup logging for demux.RunID/demultiplex_log/00_script.log
     try:
         demuxScriptLogHandler   = logging.FileHandler( demux.demultiplexScriptLogFilePath, mode = 'w', encoding = demux.decodeScheme )
-    except Exception as err:
+    except OSError as err:
         text = [    "Trying to setup demuxScriptLogHandler failed. Reason:\n",
                     str(err),
                     "The parts of demux.DemultiplexScriptLogFilePath have the following values:\n",
@@ -148,13 +151,13 @@ def setup_file_log_handling( demux ):
                     f"demux.demultiplexRunIDdir:\t\t\t\t{demux.demultiplexRunIDdir}\n",
                     f"demux.demultiplexLogDirName:\t\t\t\t{demux.demultiplexLogDirName}\n",
                     f"demux.demultiplexDir:\t\t\t\t\t{demux.demultiplexDir}\n",
-                    f"RunID + demux.config.constants.DEMULTIPLEX_DIR_SUFFIX:\t\t\t\t{demux.RunID} + {constants.DEMULTIPLEX_DIR_SUFFIX}\n",
+                    f"RunID + constants.DEMULTIPLEX_DIR_SUFFIX:\t\t\t\t{demux.RunID} + {constants.DEMULTIPLEX_DIR_SUFFIX}\n",
                     "Exiting.",
         ]
-        demuxFailureLogger.critical( text  )
-        demuxLogger.critical( text )
+        demuxFailureLogger.critical( "".join( text ) )
+        demuxLogger.critical( "".join( text ) )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxScriptLogHandler.setFormatter( demuxLogFormatter )
 

@@ -1,18 +1,19 @@
 import os
-import paramiko
+
 import psutil
 import termcolor
 
-from demux.util.ssh_transport   import _ensure_remote_dir_via_sftp
-from demux.config               import constants
-from demux.loggers              import demuxLogger, demuxFailureLogger
+from demux.config import constants
+from demux.loggers import demuxLogger
+from demux.util.ssh_transport import _ensure_remote_dir_via_sftp
+
 
 def _ensure_remote_run_directory_mounted( demux ) -> None:
     """
     @in_use
     Ensure the remote run directory exists on a locally mounted sshfs path.
     """
-    remote_absolute_dir_path = os.path.join(demux.nird_base_upload_path, demux.RunID)
+    remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID ) if demux.nird_run_subdirectory else demux.nird_base_upload_path
     mount_found = False
     # Verify that the path is on an sshfs filesystem
     for partition in psutil.disk_partitions( all = True ):
@@ -62,21 +63,23 @@ def _ensure_remote_run_directory_ssh( demux ) -> None:
         None
     """
 
-    # check if the '/nird/projects/NS9305K/SEQ-TECH/data_delivery' directory exists
-    if not demux.nird_base_upload_path:
-        message = f"ValueError: demux.nird_base_upload_path is empty: ({demux.nird_base_upload_path}). Refusing to continue, as any transfer will "
-        message += "end up in the home directory of the uploading user."
-        raise ValueError( message )
-    
-    # make sure the remote directory we will use is in absolute path
-    remote_absolute_dir_path = os.path.join( demux.nird_base_upload_path, demux.RunID )
-    if not os.path.isabs( remote_absolute_dir_path ):
-        message = f"ValueError: {remote_absolute_dir_path} is not an absolute path. Refusing to continue, as any transfer will "
+    # collect the distinct per-project NIRD locations from the transfer list
+    remote_base_list: set[ str ] = { entry[ 'nird_upload_location' ] for entry in demux.absoluteFilesToTransferList.values( ) }
+
+    if not remote_base_list:
+        message = "ValueError: no NIRD upload locations found in demux.absoluteFilesToTransferList. Refusing to continue, as any transfer will "
         message += "end up in the home directory of the uploading user."
         raise ValueError( message )
 
-    _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path )
+    for remote_base in sorted( remote_base_list ):
+        # make sure the remote directory we will use is in absolute path
+        remote_absolute_dir_path = os.path.join( remote_base, demux.RunID ) if demux.nird_run_subdirectory else remote_base
+        if not os.path.isabs( remote_absolute_dir_path ):
+            message = f"ValueError: {remote_absolute_dir_path} is not an absolute path. Refusing to continue, as any transfer will "
+            message += "end up in the home directory of the uploading user."
+            raise ValueError( message )
 
+        _ensure_remote_dir_via_sftp( demux, remote_absolute_dir_path, must_exist = not demux.nird_run_subdirectory )   # with a run subdirectory it is created here and must be new; without one the NIRD_Location itself must already exist
 
 
 def _ensure_remote_run_directory( demux ) -> None:
@@ -85,7 +88,7 @@ def _ensure_remote_run_directory( demux ) -> None:
     Dispatch to the correct remote-directory preparation method
     based on NIRD access mode.
     """
-    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: checking if remote directrory exists started\n", color="green", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: checking if remote directory exists started\n", color="green", attrs=["bold"] ) )
 
     if constants.NIRD_MODE_SSH == demux.nird_access_mode:
         _ensure_remote_run_directory_ssh( demux )
@@ -104,4 +107,4 @@ def _ensure_remote_run_directory( demux ) -> None:
         demuxLogger.critical( message )
         raise RuntimeError( message )
 
-    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Preparing files for archiving to NIRD finished\n", color="red", attrs=["bold"] ) )
+    demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: checking if remote directory exists finished\n", color="red", attrs=["bold"] ) )

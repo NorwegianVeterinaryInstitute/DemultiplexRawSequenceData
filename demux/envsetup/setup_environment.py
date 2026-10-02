@@ -1,11 +1,11 @@
 import logging
 import os
+
 import termcolor
 
-from demux.config   import constants as constants
-
-from demux.core    import demux
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.config import constants
+from demux.core import demux
+from demux.loggers import demuxLogger
 
 ########################################################################
 # setup_environment( )
@@ -29,8 +29,12 @@ def setup_environment( RunID ):
     demux.rawDataRunIDdir               = os.path.join( demux.rawDataDir,           demux.RunID )
     demux.sampleSheetFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.sampleSheetFileName )
     demux.rtaCompleteFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.rtaCompleteFile )
+    demux.copyCompleteFilePath          = os.path.join( demux.rawDataRunIDdir,      demux.copyCompleteFile )
 
-    demux.parse_sample_sheet(  )    # get the list of projects in this current run
+    missing_markers: list[ str ] = [ path for path in ( demux.rtaCompleteFilePath, demux.copyCompleteFilePath, demux.sampleSheetFilePath ) if not os.path.isfile( path ) ]   # same readiness rule as scan mode: a RunID given on the command line is not exempt
+    if missing_markers:
+        raise FileNotFoundError( f"{RunID} is not ready for demultiplexing, missing: {', '.join( missing_markers )}" )
+
 
 ######################################################
     demux.demultiplexRunIDdir           = os.path.join( demux.demultiplexDir,       demux.RunID + constants.DEMULTIPLEX_DIR_SUFFIX ) 
@@ -42,6 +46,8 @@ def setup_environment( RunID ):
     demux.forTransferRunIdDir           = os.path.join( demux.forTransferDir,       demux.RunID )
     demux.forTransferQCtarFile          = os.path.join( demux.forTransferRunIdDir,  demux.RunID + constants.QC_SUFFIX + demux.tarSuffix )
 ######################################################
+
+    demux.parse_sample_sheet(  )    # get the list of projects in this current run
 
     # set up
     demux.demuxRunLogFilePath           = os.path.join( demux.logDirPath,            demux.RunID + demux.logSuffix )
@@ -64,45 +70,43 @@ def setup_environment( RunID ):
 
     # maintain the order added this way, so our little stateLetter trick will work
     demux.globalDictionary = {  
-        'RunID'                         : str( ),
-        'runIDShort'                    : str( ),
-        'rawDataRunIDdir'               : str( ),
-        'rtaCompleteFilePath'           : str( ),
-        'sampleSheetFilePath'           : str( ),
-        'demultiplexRunIDdir'           : str( ),
-        'demultiplexLogDirPath'         : str( ),
-        'demuxQCDirectoryFullPath'      : str( ),
-        'demuxRunLogFilePath'           : str( ),
-        'demuxCumulativeLogFilePath'    : str( ),
-        'demultiplexLogDirPath'         : str( ),
-        'demultiplexScriptLogFilePath'  : str( ),
-        'bcl2FastqLogFile'              : str( ),
-        'fastQCLogFilePath'             : str( ),
-        'mutliQCLogFilePath'            : str( ),
-        'forTransferRunIdDir'           : str( ),
-        'forTransferQCtarFile'          : str( ),
-        'sampleSheetArchiveFilePath'    : str( ),
-        'projectList'                   : list( ),
-        'newProjectNameList'            : list( ),
-        'controlProjectsFoundList'      : list( ),
-        'tarFilesToTransferList'        : list( )
+        'RunID'                         : "",
+        'runIDShort'                    : "",
+        'rawDataRunIDdir'               : "",
+        'rtaCompleteFilePath'           : "",
+        'copyCompleteFilePath'          : "",
+        'sampleSheetFilePath'           : "",
+        'demultiplexRunIDdir'           : "",
+        'demultiplexLogDirPath'         : "",
+        'demuxQCDirectoryFullPath'      : "",
+        'demuxRunLogFilePath'           : "",
+        'demuxCumulativeLogFilePath'    : "",
+        'demultiplexScriptLogFilePath'  : "",
+        'bcl2FastqLogFile'              : "",
+        'fastQCLogFilePath'             : "",
+        'mutliQCLogFilePath'            : "",
+        'forTransferRunIdDir'           : "",
+        'forTransferQCtarFile'          : "",
+        'sampleSheetArchiveFilePath'    : "",
+        'projectList'                   : [ ],
+        'newProjectNameList'            : [ ],
+        'controlProjectsFoundList'      : [ ],
+        'tarFilesToTransferList'        : [ ]
     }
 
 
     # add the QC file to the list of tar files, even if duplicate
-    demux.tarFilesToTransferList.append( demux.forTransferQCtarFile )
-    # maintain the order added this way, so our little stateLetter trick will work
     demux.globalDictionary[ 'RunID'                        ] = demux.RunID
     demux.globalDictionary[ 'runIDShort'                   ] = demux.runIDShort
     demux.globalDictionary[ 'rawDataRunIDdir'              ] = demux.rawDataRunIDdir
     demux.globalDictionary[ 'rtaCompleteFilePath'          ] = demux.rtaCompleteFilePath
+    demux.globalDictionary[ 'copyCompleteFilePath'         ] = demux.copyCompleteFilePath
     demux.globalDictionary[ 'sampleSheetFilePath'          ] = demux.sampleSheetFilePath
     demux.globalDictionary[ 'demultiplexRunIDdir'          ] = demux.demultiplexRunIDdir
     demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
     demux.globalDictionary[ 'demuxQCDirectoryFullPath'     ] = demux.demuxQCDirectoryFullPath
     demux.globalDictionary[ 'demuxRunLogFilePath'          ] = demux.demuxRunLogFilePath
     demux.globalDictionary[ 'demuxCumulativeLogFilePath'   ] = demux.demuxCumulativeLogFilePath
-    demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath
     demux.globalDictionary[ 'demultiplexScriptLogFilePath' ] = demux.demultiplexScriptLogFilePath
     demux.globalDictionary[ 'bcl2FastqLogFile'             ] = demux.bcl2FastqLogFile
     demux.globalDictionary[ 'fastQCLogFilePath'            ] = demux.fastQCLogFilePath
@@ -117,7 +121,7 @@ def setup_environment( RunID ):
 
 
 
-    if 'demuxLogger' in logging.Logger.manager.loggerDict.keys():
+    if 'demuxLogger' in logging.Logger.manager.loggerDict:
         demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )
     else:
         print( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Set up the current running environment ==\n", color="red", attrs=["bold"] ) )

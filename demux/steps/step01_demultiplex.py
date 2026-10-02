@@ -1,19 +1,19 @@
-#!/usr/bin/python3.11
 
 import logging
 import os
 import resource
 import subprocess
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # bcl2fastq
 ########################################################################
 
-def bcl2fastq( demux ):
+def bcl2fastq( demux ) -> None:
     """
     Use Illumina's blc2fastq linux command-line tool to demultiplex each lane into an appropriate fastq file
 
@@ -43,9 +43,10 @@ def bcl2fastq( demux ):
     #       Dynamic exception type: boost::exception_detail::clone_impl<bcl2fastq::common::IoError>
     #       std::exception::what: Failed to allocate a file handle
     # raising the file descriptor , seems to fix the issue
-    # command line equiv: ulimit -n 65535
+    # command line equiv: ulimit -n $(ulimit -Hn)
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-    resource.setrlimit(resource.RLIMIT_NOFILE, (65535, hard))
+    resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard)) # raise the soft limit to the hard limit, the highest this process may set
+    demuxLogger.debug( f"RLIMIT_NOFILE soft limit raised from {soft} to {hard}" )
 
     command: str = demux.bcl2fastq_bin
     argv = [ command,
@@ -62,56 +63,53 @@ def bcl2fastq( demux ):
         f"{demux.demultiplexRunIDdir}"
     ]
 
-    text = f"Command to execute:"
-    demuxLogger.debug( f"{text:{demux.spacing2}}" + "ulimit -n 65535; " + " ".join( argv ) )
+    text = "Command to execute:"
+    demuxLogger.debug( f"{text:{demux.spacing2}}" + f"ulimit -n {hard}; " + " ".join( argv ) )
 
     try:
         # EXAMPLE: /usr/local/bin/bcl2fastq --no-lane-splitting --runfolder-dir ' + demux.rawDataRunIDdir + ' --output-dir ' + demux.demultiplexDir + ' 2> ' + demux.demultiplexDir + '/demultiplex_log/02_demultiplex.log'
         result =  subprocess.run( argv, capture_output = True, cwd = demux.rawDataRunIDdir, check = True, encoding = demux.decodeScheme )
-    except ChildProcessError as err: 
-        text = [    f"Caught exception!",
+    except subprocess.CalledProcessError as err:
+        lines = [   "Caught exception!",
                     f"Command: {err.cmd}", # interpolated strings
-                    f"Return code: {err.returncode}"
+                    f"Return code: {err.returncode}",
                     f"Process output: {err.stdout}",
                     f"Process error:  {err.stderr}",
-                    f"Exiting."
+                    "Exiting."
                  ]
-        text = '\n'.join( text )
+        text = "\n".join( lines )
         demuxFailureLogger.critical( text )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     if not result.stderr:
-        demuxLogger.critical( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
-        demuxFailureLogger.critical( f"result.stderr has zero lenth. exiting at {inspect.currentframe().f_code.co_name}()" )
+        demuxLogger.critical( "result.stderr has zero lenth. exiting at bcl2fastq()" )
+        demuxFailureLogger.critical( "result.stderr has zero lenth. exiting at bcl2fastq()" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     try: 
-        file = open( demux.bcl2FastqLogFile, "w" )
-        file.write( result.stderr )
-        file.close( )
+        with open( demux.bcl2FastqLogFile, "w" ) as file:
+            file.write( result.stderr )
     except OSError as err:
-        text = [    f"Caught exception!",
-                    f"Command: {err.cmd}", # interpolated strings
-                    f"Return code: {err.returncode}"
-                    f"Process output: {err.stdout}",
-                    f"Process error:  {err.stderr}",
-                    f"Exiting."
+        lines = [   "Caught exception!",
+                    f"File: {err.filename}",
+                    f"Error: [{err.errno}] {err.strerror}",
+                    "Exiting."
                  ]
-        text = '\n'.join( text )
+        text = "\n".join( lines )
         demuxFailureLogger.critical( text )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
 
     if not os.path.isfile( demux.bcl2FastqLogFile ):
         demuxFailureLogger.critical( f"{demux.bcl2FastqLogFile} did not get written to disk. Exiting." )
         demuxLogger.critical( f"{demux.bcl2FastqLogFile} did not get written to disk. Exiting." )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
     else:
         filesize = os.path.getsize( demux.bcl2FastqLogFile )
         text = "bcl2FastqLogFile:"

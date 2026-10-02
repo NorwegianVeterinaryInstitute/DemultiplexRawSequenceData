@@ -1,17 +1,13 @@
 import hashlib
-import inspect
 import logging
 import os
-import pathlib
-import subprocess
 import sys
-import termcolor
-
 from concurrent.futures import ProcessPoolExecutor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+import termcolor
 
-import demux.config.constants as constants
+from demux.config import constants
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 """
 
@@ -28,10 +24,17 @@ def hash_file( filepath ):
     Calculate the md5 and the sha512 hash of an object and return
         filepath, md5sum, sha512sum
     """
+    md5_hash    = hashlib.md5( )
+    sha512_hash = hashlib.sha512( )
     with open( filepath, 'rb' ) as filehandle:
-        filetobehashed = filehandle.read( )
-    md5sum       = hashlib.md5( filetobehashed ).hexdigest( )
-    sha512sum    = hashlib.sha512( filetobehashed ).hexdigest( )
+        while True:
+            chunk = filehandle.read( constants.HASH_CHUNK_SIZE )   # constant memory per worker, whatever the file size
+            if not chunk:
+                break
+            md5_hash.update( chunk )
+            sha512_hash.update( chunk )
+    md5sum       = md5_hash.hexdigest( )
+    sha512sum    = sha512_hash.hexdigest( )
     return filepath, md5sum, sha512sum
 
 
@@ -121,7 +124,7 @@ def calc_file_hash( demux ):
 
     """
 
-    dir_to_hash = str( )
+    dir_to_hash = ''
     if( "demultiplexRunIDdir" == demux.state ):
         dir_to_hash = demux.demultiplexRunIDdir
     else:
@@ -133,7 +136,7 @@ def calc_file_hash( demux ):
     # build the filetree
     demuxLogger.debug( f'= walk the file tree dir_to_hash: {dir_to_hash} ======================')
 
-    fileList = list( )
+    fileList = [ ]
     for directoryRoot, dirnames, filenames, in os.walk( dir_to_hash, followlinks = False ):
 
         for file in filenames:
@@ -154,10 +157,10 @@ def calc_file_hash( demux ):
                 demuxFailureLogger.critical( f"{ text }" )
                 demuxLogger.critical( f"{ text }" )
                 logging.shutdown( )
-                sys.exit( )
+                sys.exit( 1 )
 
-            if not any( filepath ): # make sure it's not a zero length file 
-                demuxLogger.warning( termcolor.colored(  f"file {filepath} has zero length. Skipping.", color="purple", attrs=["bold"] ) )
+            if os.path.getsize( filepath ) == 0: # make sure it's not a zero length file
+                demuxLogger.warning( termcolor.colored(  f"file {filepath} has zero length. Skipping.", color="magenta", attrs=["bold"] ) )
                 continue
 
             fileList.append( filepath )
@@ -167,7 +170,7 @@ def calc_file_hash( demux ):
     # When the with block ends, the pool closes before launching any work. Wrapping it in list() forces full iteration so all tasks actually run.
     # So, we need that list( ) there, even if it returns nothing.
 
-    # since we got 96gb of ram, read all the files in and hash them in parallel
+    # hash all files in parallel, one worker per CPU; each worker reads in HASH_CHUNK_SIZE chunks, so memory stays flat
     with ProcessPoolExecutor( ) as executor:
         filePathAndHashesResults = list( executor.map( hash_file, fileList ) ) # hash_file( ) returns filepath, md5sum, sha512sum
 

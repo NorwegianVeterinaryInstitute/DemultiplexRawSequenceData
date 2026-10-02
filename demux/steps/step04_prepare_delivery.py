@@ -1,15 +1,14 @@
-#
 
+import inspect
+import logging
 import os
 import sys
 import tarfile
-import logging
-import inspect
+
 import termcolor
 
-from demux.config import constants as constants
-
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.config import constants
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # tar_project_files
@@ -26,24 +25,14 @@ def collect_projects_to_tar( demux ):
     # the one found in demux.getProjects( )
     # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/87
     
-    tarFile = ""
     projectsToProcessList = [ ]
     for project in demux.newProjectNameList:                                        # this loop is a check against project names which are not suppossed to be eventually tarred
 
-        if any( var in project for var in [ constants.QC_SUFFIX ] ):                     # skip anything that includes '_QC'
-            demuxLogger.warning( f"{demux.qcSuffix} directory found in projects. Skipping." )
-            continue
-        elif any( var in project for var in [ demux.testProject ] ):                # skip the test project, 'FOO-blahblah-BAR'
+        if any( var in project for var in [ demux.testProject ] ):                  # skip the test project, 'FOO-blahblah-BAR'
             demuxLogger.warning( f"{demux.testProject} test project directory found in projects. Skipping." )
             continue
         elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
             demuxLogger.warning( termcolor.colored( f"\"{project}\" control project name found in projects. Skipping, it will be handled in controlProjectsQC( ).\n", color="magenta" ) )
-            continue
-        elif demux.temp in project:                                                 # disregard the temp directory
-            demuxLogger.warning( f"{demux.temp} directory found. Skipping." )
-            continue
-        elif demux.demultiplexLogDirPath in project: # disregard demultiplex_log
-            demuxLogger.warning( f"{demux.demultiplexLogDirPath} directory found. Skipping." )
             continue
 
         if any( tag in project for tags in [ demux.nextSeq, demux.miSeq ] for tag in tags ):         # Make sure there is a nextseq or misqeq tag, before adding the directory to the projectsToProcessList
@@ -71,14 +60,12 @@ def tar_project_files( demux ):
 
         tarFile    = os.path.join(  demux.forTransferRunIdDir, project + demux.tarSuffix )
 
-        if not os.path.isfile( tarFile ):                                   # Using absolute path to open the tar file
-            tarFileHandle = tarfile.open( name = tarFile, mode = "w:" )     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
-        else:
+        if os.path.isfile( tarFile ):                                       # Using absolute path to open the tar file
             text = f"{tarFile} exists. Please investigate or delete. Exiting."
             demuxFailureLogger.critical( f"{ text }" )
             demuxLogger.critical( f"{ text }" )
             logging.shutdown( )
-            sys.exit( )
+            sys.exit( 1 )
 
 #---------- Iterrate through demux.demultiplexRunIDdir/projectsToProcessList and make a single tar file for each project under data.forTransferRunIdDir   ----------------------
 
@@ -86,18 +73,18 @@ def tar_project_files( demux ):
         demuxLogger.info( termcolor.colored( f"==> Archiving {project} ( {counter} out of { len( projectsToProcessList ) } projects ) ==================", color="yellow", attrs=["bold"] ) )
         text = "tarFile:"
         demuxLogger.debug( f"{text:{demux.spacing2}}" + os.path.join( demux.forTransferRunIdDir, tarFile ) )  # print the absolute path
-        for directoryRoot, dirnames, filenames, in os.walk( project, followlinks = False ): 
-             for file in filenames:
-                # add one file at a time so we can give visual feedback to the user that the script is processing files
-                # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
-                # of output that make users uncomfortable
-                filenameToTar = os.path.join( project, file )
-                tarFileHandle.add( name = filenameToTar, recursive = False )
-                text = "filenameToTar:"
-                text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
-                demuxLogger.info( text + filenameToTar )
+        with tarfile.open( name = tarFile, mode = "w:" ) as tarFileHandle:     # Open a tar file under  demux.forTransferRunIdDir as project + demux.tarSuffix . example: /data/for_transfer/220603_M06578_0105_000000000-KB7MY/220603_M06578.42015-NORM-VET.tar
+            for directoryRoot, dirnames, filenames, in os.walk( project, followlinks = False ): 
+                 for file in filenames:
+                    # add one file at a time so we can give visual feedback to the user that the script is processing files
+                    # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
+                    # of output that make users uncomfortable
+                    filenameToTar = os.path.join( directoryRoot, file )
+                    tarFileHandle.add( name = filenameToTar, recursive = False )
+                    text = "filenameToTar:"
+                    text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
+                    demuxLogger.info( text + filenameToTar )
 
-        tarFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
 
         demuxLogger.info( termcolor.colored( f'==< Archived {project} ({counter} out of { len( projectsToProcessList ) } projects ) ==================\n', color="yellow", attrs=["bold"] ) )
 
@@ -127,31 +114,29 @@ def create_qc_tar_file( demux ):
     if demux.verbosity == 2:
         text = "demuxQCDirectoryFullPath:"
         demuxLogger.debug( f"{text:{demux.spacing3}}" + demux.demuxQCDirectoryFullPath )
-        text = f"multiqc_data:"
+        text = "multiqc_data:"
         demuxLogger.debug( f"{text:{demux.spacing3}}" + constants.MULTIQC_DATA_DIR_NAME )
 
-    if not os.path.isfile( demux.forTransferQCtarFile ): # exit if /data/for_transfer/RunID/qc.tar file exists.
-        tarQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "w:" )
-    else:
+    if os.path.isfile( demux.forTransferQCtarFile ): # exit if /data/for_transfer/RunID/qc.tar file exists.
         text = f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting."
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     # paths are relative here, cuz we chdir( ) in tarProjectFiles( )
-    for directoryRoot, dirnames, filenames, in os.walk( demux.demuxQCDirectoryName , followlinks = False ): 
-         for file in filenames:
-            # add one file at a time so we can give visual feedback to the Archivinguser that the script is processing files
-            # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
-            # of output that make users uncomfortable
-            filenameToTar = os.path.join( demux.demuxQCDirectoryName, file ) # demux.demuxQCDirectoryName is relative, for example '220603_M06578_QC'
-            tarQCFileHandle.add( name = filenameToTar, recursive = False )
-            text = "filenameToTar:"
-            text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
-            demuxLogger.info( text + filenameToTar )
+    with tarfile.open( demux.forTransferQCtarFile, "w:" ) as tarQCFileHandle:
+        for directoryRoot, dirnames, filenames, in os.walk( demux.demuxQCDirectoryName , followlinks = False ): 
+             for file in filenames:
+                # add one file at a time so we can give visual feedback to the Archivinguser that the script is processing files
+                # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
+                # of output that make users uncomfortable
+                filenameToTar = os.path.join( directoryRoot, file ) # directoryRoot starts with demux.demuxQCDirectoryName, which is relative, for example '220603_M06578_QC'
+                tarQCFileHandle.add( name = filenameToTar, recursive = False )
+                text = "filenameToTar:"
+                text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
+                demuxLogger.info( text + filenameToTar )
 
-    tarQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
 
     demuxLogger.info( termcolor.colored( f"==> Archived {demux.demuxQCDirectoryFullPath} ==================", color="yellow", attrs=["bold"] ) )
 
@@ -168,29 +153,27 @@ def create_multiqc_tar_file( demux ):
     """
     demuxLogger.info( termcolor.colored( f"==> Archiving {demux.demultiplexRunIDdir}/{constants.MULTIQC_DATA_DIR_NAME} ==================", color="yellow", attrs=["bold"] ) )
 
-    if os.path.isfile( demux.forTransferQCtarFile ): # /data/for_transfer/RunID/qc.tar must exist before writi
-        multiQCFileHandle = tarfile.open( demux.forTransferQCtarFile, "a:" ) # "a:" for exclusive, uncompresed append.
-    else:
-        text = f"{demux.forTransferQCtarFile} exists. Please investigate or delete. Exiting."
+    if not os.path.isfile( demux.forTransferQCtarFile ): # /data/for_transfer/RunID/qc.tar must exist before writi
+        text = f"{demux.forTransferQCtarFile} does not exist; create_qc_tar_file( ) must create it first. Please investigate. Exiting."
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     # paths are relative here, cuz we chdir( ) in tarProjectFiles( )
-    for directoryRoot, dirnames, filenames, in os.walk( os.path.join( constants.MULTIQC_DATA_DIR_NAME ), followlinks = False ): 
-         for file in filenames:
-            # add one file at a time so we can give visual feedback to the user that the script is processing files
-            # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
-            # of output that make users uncomfortable
-            filenameToTar = os.path.join( constants.MULTIQC_DATA_DIR_NAME, file )
-            multiQCFileHandle.add( name = filenameToTar, recursive = False )
-            text = "filenameToTar"
-            text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
-            demuxLogger.info( text + filenameToTar )
+    with tarfile.open( demux.forTransferQCtarFile, "a:" ) as multiQCFileHandle: # "a:" for exclusive, uncompresed append.
+        for directoryRoot, dirnames, filenames, in os.walk( os.path.join( constants.MULTIQC_DATA_DIR_NAME ), followlinks = False ): 
+             for file in filenames:
+                # add one file at a time so we can give visual feedback to the user that the script is processing files
+                # less efficient than setting recursive to = True and name to a directory, but it prevents long pauses
+                # of output that make users uncomfortable
+                filenameToTar = os.path.join( directoryRoot, file )
+                multiQCFileHandle.add( name = filenameToTar, recursive = False )
+                text = "filenameToTar"
+                text = f"{inspect.stack()[0][3]}: {text:{demux.spacing2}}"
+                demuxLogger.info( text + filenameToTar )
 
     # bothisfiledemux.runIDShort}_QC and multidata_qc go in the same tar file
-    multiQCFileHandle.close( )      # whatever happens make sure we have closed the handle before moving on
     demuxLogger.info( termcolor.colored( f"==> Archived {demux.demultiplexRunIDdir}/{constants.MULTIQC_DATA_DIR_NAME} ==================", color="yellow", attrs=["bold"] ) )    
 
 
@@ -254,7 +237,7 @@ def prepare_delivery( demux ):
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     tar_project_files( demux )
     create_qc_tar_file( demux )

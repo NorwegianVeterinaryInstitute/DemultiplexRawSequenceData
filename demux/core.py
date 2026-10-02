@@ -1,49 +1,33 @@
-#!/usr/bin/python3.11
 
-import argparse
-import ast
-import glob
-import grp
-import hashlib
-import inspect
+import copy
 import logging
 import logging.handlers
 import os
-import paramiko
-import pathlib
-import pdb
 import pprint
-import re
-import resource
-import shutil
 import socket
-import stat
-import string
-import subprocess
 import sys
-import syslog
-import tarfile
-import termcolor
-
-from typing  import Any, Dict, List, Optional, Tuple, Mapping
-from pathlib import Path
-
-import demux.config.constants
-
 from collections import defaultdict
-from sample_sheet import SampleSheet # https://sample-sheet.readthedocs.io/quick-start.html
+from pathlib import Path
+from typing import ClassVar
 
+import paramiko
+import termcolor
+from sample_sheet import (
+    SampleSheet,  # https://sample-sheet.readthedocs.io/quick-start.html
+)
+
+from demux.config import constants
+from demux.loggers import demuxLogger
 
 """
 The demux object is the central configuration/state holder for the whole pipeline.  It:
     - Defines all constants, paths, suffixes, executables, logging setup, and state variables used in the run
     - Tracks run IDs, directories, SampleSheet paths, QC directories, tar/checksum file names, and log locations
     - Is updated by functions( setupEnvironment, demultiplex, prepareDelivery, etc. ) which read/write its attributes while demultiplexing, running FastQC/MultiQC, hashing, packaging, and preparing delivery
-    - 
 
     In short: it encapsulates the demultiplexing workflow state machine—everything from input rawdata → fastq/QC → tarballs with md5/sha512 for transfer.
 
-Methods that mater: 
+Methods that mater:
     - getProjectName( ) parses the samplesheet and gets the info needed.
 
 """
@@ -53,175 +37,250 @@ class demux:
     demux: make an object of the entire demultiplex process.
     """
 
-    # any variables here are *class* variables, their values do not change. 
+    # any variables here are *class* variables, their values do not change.
     # values that their values change per run, go to __init__( )
     # constanths like /data/rawdata and the corresponding values are in demux/config/constants.py
 
-    ######################################################
+######################################################
     # the following three need to be moved into __init__ on later date.
     ######################################################
-    debug      = True
-    verbosity  = 2
-    state      = "demultiplexRunIDdir"  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
+    debug:bool                                 = True
+    verbosity:int                              = 2
+    state:str                                  = "demultiplexRunIDdir"  # magic variable: sets the directory structure to hash/chmod. Set once per run, changes the first time change_permissions( ) is run
 
-    rawDataDir:str                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.RAW_DATA_DIR_NAME     )
-    demultiplexDir:str              = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.DEMULTIPLEX_DIR_NAME  )
-    forTransferDir:str              = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.FOR_TRANSFER_DIR_NAME )
-    sampleSheetDirPath:str          = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.SAMPLESHEET_DIR_NAME  )
-    logDirPath:str                  = os.path.join( demux.config.constants.DATA_ROOT_DIR, demux.config.constants.LOG_DIR_NAME          )
-    exec_path: str                  = Path( sys.argv[ 0 ] ).resolve( ) # full path to executable
-    exec_dir:str                    = exec_path.parent                 # e.g. "/usr/local/bin" or ~/.local/bin
-    exec_name:str                   = exec_path.name                   # e.g. "demultiplex"
+    rawDataDir:str                             = os.path.join( constants.DATA_ROOT_DIR, constants.RAW_DATA_DIR_NAME     )
+    demultiplexDir:str                         = os.path.join( constants.DATA_ROOT_DIR, constants.DEMULTIPLEX_DIR_NAME  )
+    forTransferDir:str                         = os.path.join( constants.DATA_ROOT_DIR, constants.FOR_TRANSFER_DIR_NAME )
+    sampleSheetDirPath:str                     = os.path.join( constants.DATA_ROOT_DIR, constants.SAMPLESHEET_DIR_NAME  )
+    logDirPath:str                             = os.path.join( constants.DATA_ROOT_DIR, constants.LOG_DIR_NAME          )
+    exec_path:Path                             = Path( sys.argv[ 0 ] ).resolve( ) # full path to executable
+    exec_dir:Path                              = exec_path.parent                 # e.g. "/usr/local/bin" or ~/.local/bin
+    exec_name:str                              = exec_path.name                   # e.g. "demultiplex"
     ######################################################
     # commonEgid = 'sambagroup' # i don't know where i was going with this...
     ######################################################
-    multiqc_data                    = 'multiqc_data'
-    md5Suffix                       = demux.config.constants.MD5_SUFFIX
-    md5Length                       = demux.config.constants.MD5_LENGTH     # 128 bits
-    # qcSuffix                        = '_QC'
-    sha512Suffix                    = demux.config.constants.SHA512_SUFFIX
-    sha512Length                    = demux.config.constants.SHA512_LENGTH  # 512 bits
-    tarSuffix                       = demux.config.constants.TAR_SUFFIX
-    zipSuffix                       = demux.config.constants.ZIP_SUFFIX
-    compressedFastqSuffix           = demux.config.constants.COMPRESSED_FASTQ_SUFFIX
-    temp                            = 'temp'
-    htmlSuffix                      = '.html'
-    logSuffix                       = '.log'
+    multiqc_data:str                           = 'multiqc_data'
+    md5Suffix:str                              = constants.MD5_SUFFIX
+    md5Length:int                              = constants.MD5_LENGTH     # 128 bits
+    # qcSuffix                                 = '_QC'
+    sha512Suffix:str                           = constants.SHA512_SUFFIX
+    sha512Length:int                           = constants.SHA512_LENGTH  # 512 bits
+    tarSuffix:str                              = constants.TAR_SUFFIX
+    zipSuffix:str                              = constants.ZIP_SUFFIX
+    compressedFastqSuffix:str                  = constants.COMPRESSED_FASTQ_SUFFIX
+    temp:str                                   = 'temp'
+    htmlSuffix:str                             = '.html'
+    logSuffix:str                              = '.log'
     ######################################################
-    executableProgramsPath          = f"/usr/local"
-    bcl2fastq_bin                   = f"{executableProgramsPath}/bin/bcl2fastq"
-    fastqc_bin                      = f"{executableProgramsPath}/bin/fastqc"
-    mutliqc_bin                     = f"{executableProgramsPath}/bin/multiqc"
-    python3_bin                     = f"/usr/bin/python3.11" # Switching over to python3.11 for speed gains
+    executableProgramsPath:str                 = "/usr/local"
+    bcl2fastq_bin:str                          = f"{executableProgramsPath}/bin/bcl2fastq"
+    fastqc_bin:str                             = f"{executableProgramsPath}/bin/fastqc"
+    mutliqc_bin:str                            = f"{executableProgramsPath}/bin/multiqc"
+    python3_bin:str                            = "/usr/bin/python3.11"     # Switching over to python3.11 for speed gains
     ######################################################
-    rtaCompleteFile                 = 'RTAComplete.txt'
-    sampleSheetFileName             = 'SampleSheet.csv'
-    testProject                     = 'FOO-blahblah-BAR'
-    Sample_Project                  = 'Sample_Project'
-    demultiplexCompleteFile         = 'DemultiplexComplete.txt'
-    vannControlNegativReport        = 'Negativ'
-    forTransferRunIdDirTestName     = 'test_tar'
-    md5File                         = 'md5sum.txt'
-    miSeq                           = ['M06578', 'M09180']  # array of serial numbers for miseq. Change to read from config, or read from illumina
-    nextSeq                         = ['NB552450']          # array of serial numbers for nextseq. Change to read from config, or read from illumina
-    encoding = decodeScheme         = "utf-8"
-    footarfile                      = f"foo{demux.config.constants.TAR_SUFFIX}"      # class variable shared by all instances
-    barzipfile                      = f"zip{demux.config.constants.ZIP_SUFFIX}"
-    totalTasks                      = 0
-    tabSpace                        = 8
-    spacing1                        = 40
-    spacing2                        = spacing1 + tabSpace
-    spacing3                        = spacing2 + tabSpace
-    spacing4                        = spacing3 + tabSpace
-    spacing5                        = spacing4 + tabSpace
-    spacing6                        = spacing5 + tabSpace
-    spacing6                        = spacing6 + tabSpace
-
+    rtaCompleteFile:str                        = 'RTAComplete.txt'
+    copyCompleteFile:str                       = 'CopyComplete.txt'    # written by the sequencer when the run has been copied to rawdata; every seqtech00 run since 2023-02 has it
+    sampleSheetFileName:str                    = 'SampleSheet.csv'          # or 'SampleSheet-with-path-names.csv': https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/195
+    testProject:str                            = 'FOO-blahblah-BAR'
+    Sample_Project:str                         = 'Sample_Project'
+    demultiplexCompleteFile:str                = 'DemultiplexComplete.txt'
+    vigaspDeliveryCompleteFile:str             = 'VigaspDeliveryComplete.txt'
+    nirdDeliveryCompleteFile:str               = 'NirdDeliveryComplete.txt'
+    runCompleteFile:str                        = 'RunComplete.txt'          # touched last in process_run( ): the script completed this run
+    demultiplexFailedFile:str                  = 'DemultiplexFailed.txt'    # written by main( ) with the traceback when process_run( ) raises
+    vannControlNegativReport:str               = 'Negativ'
+    forTransferRunIdDirTestName:str            = 'test_tar'
+    md5File:str                                = 'md5sum.txt'
+    miSeq:ClassVar[ list ]                     = ['M06578', 'M09180']       # array of serial numbers for miseq. Change to read from config, or read from illumina
+    nextSeq:ClassVar[ list ]                   = ['NB552450']               # array of serial numbers for nextseq. Change to read from config, or read from illumina
+    encoding:str                               = "utf-8"
+    decodeScheme:str                           = encoding                   # same as encoding; Python uses the same string name for both encode and decode, but in the code it can be refered either way, 'decodingScheme' or 'encoding'
+    footarfile:str                             = f"foo{constants.TAR_SUFFIX}"      # class variable shared by all instances
+    barzipfile:str                             = f"zip{constants.ZIP_SUFFIX}"
+    tabSpace:int                               = 8
+    spacing1:int                               = 40
+    spacing2:int                               = spacing1 + tabSpace
+    spacing3:int                               = spacing2 + tabSpace
+    spacing4:int                               = spacing3 + tabSpace
+    spacing5:int                               = spacing4 + tabSpace
+    spacing6:int                               = spacing5 + tabSpace
+    spacing7:int                               = spacing6 + tabSpace
     ######################################################
     # All following are supposed to be filled in at run time
-    RunID                           = ""
-    runIDShort                      = ""                                                            # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/126
-    rawDataRunIDdir                 = ""
-    demultiplexRunIDdir             = ""
-    demultiplexLogDirPath           = ""
-    demultiplexScriptLogFilePath    = ""
-    demuxQCDirectoryName            = ""
-    demuxQCDirectoryFullPath        = ""
-    forTransferRunIDdir             = ""
-    forTransferQCtarFile            = ""
-    multiqc_run_dir                 = ""
-    sampleSheetFilePath             = os.path.join( sampleSheetDirPath, sampleSheetFileName )
-    sampleSheetArchiveFilePath      = ""                                                            # demux/envsetup/setup_environment.py
-    project_samples_metadata        = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
+    RunID:str                                  = ""
+    runIDShort:str                             = ""        # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/126
+    rawDataRunIDdir:str                        = ""
+    demultiplexRunIDdir:str                    = ""
+    demultiplexLogDirPath:str                  = ""
+    demultiplexScriptLogFilePath:str           = ""
+    demuxQCDirectoryName:str                   = ""
+    demuxQCDirectoryFullPath:str               = ""
+    forTransferRunIDdir:str                    = ""
+    forTransferQCtarFile:str                   = ""
+    multiqc_run_dir:str                        = ""
+    sampleSheetFilePath:str                    = os.path.join( sampleSheetDirPath, sampleSheetFileName )
+    sampleSheetArchiveFilePath:str             = ""                                                            # demux/envsetup/setup_environment.py
+    project_samples_metadata:ClassVar[ dict ]  = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
     ######################################################
-    projectList                     = [ ]
-    newProjectNameList              = [ ]
-    newProjectFileList              = [ ]
-    controlProjectsFoundList        = [ ]
-    tarFilesToTransferList          = [ ]
-    globalDictionary                = dict( )
+    projectList:ClassVar[ list ]               = [ ]
+    newProjectNameList:ClassVar[ list ]        = [ ]
+    newProjectFileList:ClassVar[ list ]        = [ ]
+    controlProjectsFoundList:ClassVar[ list ]  = [ ]
+    emptyProjectsFoundList:ClassVar[ list ]    = [ ]
+    tarFilesToTransferList:ClassVar[ list ]    = [ ]
+    globalDictionary:ClassVar[ dict ]          = { }
     ######################################################
-    controlProjects                 = [ "Negativ" ]
+    controlProjects:ClassVar[ list ]           = [ "Negativ", "Control_" ]   # 2026-09-18: lab labels every control project Control_<tag>, e.g. Control_PRK
     ######################################################
-    forTransferRunIdDir             = ""
-    forTransferQCtarFile            = ""
-    absoluteFilesToTransferList     = { }
+    forTransferRunIdDir:str                    = ""
+    absoluteFilesToTransferList:ClassVar[ dict ] = { }
     ######################################################
-    demuxCumulativeLogFileName      = 'demultiplex.log'
-    demultiplexLogDirName           = 'demultiplex_log'
-    scriptRunLogFileName            = '00_script.log'
-    bcl2FastqLogFileName            = '01_demultiplex.log'
-    fastqcLogFileName               = '02_fastqcLogFile.log'
-    multiqcLogFileName              = '03_multiqcLogFile.log'
-    loggingLevel                    = logging.DEBUG
+    demuxCumulativeLogFileName:str             = 'demultiplex.log'
+    demultiplexLogDirName:str                  = 'demultiplex_log'
+    scriptRunLogFileName:str                   = '00_script.log'
+    bcl2FastqLogFileName:str                   = '01_demultiplex.log'
+    fastqcLogFileName:str                      = '02_fastqcLogFile.log'
+    multiqcLogFileName:str                     = '03_multiqcLogFile.log'
+    loggingLevel:int                           = logging.DEBUG
     ######################################################
-    demuxCumulativeLogFilePath      = ""
-    bcl2FastqLogFile                = ""
-    fastQCLogFilePath               = ""
-    logFilePath                     = ""
-    multiQCLogFilePath              = ""
-    scriptRunLogFile                = ""
+    demuxCumulativeLogFilePath:str             = ""
+    bcl2FastqLogFile:str                       = ""
+    fastQCLogFilePath:str                      = ""
+    logFilePath:str                            = ""
+    multiQCLogFilePath:str                     = ""
+    scriptRunLogFile:str                       = ""
     ######################################################
-    # mailhost                        = 'seqtech00.vetinst.no'
-    mailhost                        = 'localhost'
-    fromAddress                     = f"demultiplex@{ socket.getfqdn( ) }"
-    toAddress                       = 'gmarselis@localhost'
-    subjectFailure                  = 'Demultiplexing has failed'
-    subjectSuccess                  = 'Demultiplexing has finished successfuly'
+    # mailhost                                 = 'seqtech00.vetinst.no'
+    mailhost:str                               = 'localhost'
+    fromAddress:str                            = f"demultiplex@{ socket.getfqdn( ) }"
+    toAddress:str                              = 'gmarselis@localhost'
+    subjectFailure:str                         = 'Demultiplexing has failed'
+    subjectSuccess:str                         = 'Demultiplexing has finished successfuly'
     ######################################################
-    httpsHandlerHost                = 'veterinaerinstituttet307.workplace.com'
-    httpsHandlerUrl                 = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
+    httpsHandlerHost:str                       = 'veterinaerinstituttet307.workplace.com'
+    httpsHandlerUrl:str                        = 'https://veterinaerinstituttet307.workplace.com/chat/t/4997584600311554'
     ######################################################
-    upload_nird_enabled             = True                  # determine if the feature of uploading to nird is enabled
-    transfer_to_nird                = bool( )               # determine from sample sheet if we have any uploads
-    nird_access_mode                = "ssh2fa"
+    upload_nird_enabled:bool                   = True                  # determine if the feature of uploading to nird is enabled
+    transfer_to_nird:bool                      = False               # determine from sample sheet if we have any uploads
+    nird_access_mode:str                       = "ssh2fa"
+    nird_run_subdirectory:bool                 = False        # True: deliver into <NIRD_Location>/<RunID>/, created here and refused if it exists; False: deliver flat into <NIRD_Location>/, the lab convention since 2026-02
                                     # "ssh" uses only keys
                                     # "ssh_2fa" uses username, password, TOTP, from bitwarden
                                     # "mounted" uses sshfs but only with keys
-    allowed_nird_access_modes       = [ "ssh", "ssh2fa", "mounted" ]
-    nird_copy_mode                  = "parallel"
-    allowed_nird_copy_modes         = [ "serial", "parallel" ]
+    allowed_nird_access_modes:ClassVar[ list ] = [ "ssh", "ssh2fa", "mounted" ]
+    nird_copy_mode:str                         = "parallel"
+    nird_verify_timeout:int                    = 600          # seconds: the floor for the remote md5sum/sha512sum of one tar, before the size share below; also the read timeout on their channels
+    nird_verify_min_rate:int                   = 20 * 1024 * 1024   # bytes/s: the slowest remote hash throughput accepted; a tar gets nird_verify_timeout + size / this rate
+    allowed_nird_copy_modes:ClassVar[ list ]   = [ "serial", "parallel" ]
     ######################################################
     # defaults
-    nird_upload_host                = "login.nird.sigma2.no"
-    # nird_upload_host                = "rei.vetinst.no"
-    # nird_upload_host                = "laptop"
-    nird_scp_port                   = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
-    nird_username                   = "gmarselis" # change this to be the user running the script
-    # nird_base_upload_path_ssh       = "/nird/projects/NS9305K/SEQ-TECH/data_delivery" # directory location before datapeak
-    # nird_base_upload_path_ssh       = "/nird/datapeak/NS9305K/gmarselis/demux_transfer_test"
-    nird_base_upload_path_ssh       = "/nird/datalake/NS9305K/test_demultiplex"
-    nird_base_upload_path_local     = "/data/tmp/nird"
-    nird_base_upload_path           = ""
-    nird_key_filename               = "/home/gmarselis/.ssh/id_ed25519.3jane"
-    hostname                        = ""
-    username                        = ""
-    port                            = int( )
-    key_file                        = ""
-    proxy_jump                      = ""
-    proxy_jump_chain: List          = None
-    transport_stack: List[ paramiko.Transport]  = None
-    # max_workers: int              = len( demux.tarFilesToTransferList ) # this would be possible if the firewall did not choke.
-    max_workers: int                = 5     # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
+    nird_upload_host:str                       = "login.nird.sigma2.no"
+    # nird_upload_host                         = "rei.vetinst.no"
+    # nird_upload_host                         = "laptop"
+    nird_scp_port:str                          = "22" # https://documentation.sigma2.no/getting_help/two_factor_authentication.html#how-to-copy-files-without-using-2fa-otp
+    nird_username:str                          = "gmarselis" # change this to be the user running the script
+    # nird_base_upload_path_ssh                = "/nird/projects/NS9305K/SEQ-TECH/data_delivery" # directory location before datapeak
+    # nird_base_upload_path_ssh                = "/nird/datapeak/NS9305K/gmarselis/demux_transfer_test"
+    nird_base_upload_path_ssh:str              = "/nird/datalake/NS9305K/test_demultiplex"
+    nird_base_upload_path_local:str            = "/data/tmp/nird"
+    nird_base_upload_path:str                  = ""
+    nird_key_filename:str                      = "/home/gmarselis/.ssh/id_ed25519.3jane"
+    hostname:str                               = ""
+    username:str                               = ""
+    port:int                                   = 0
+    key_file:str                               = ""
+    proxy_jump:str                             = ""
+    proxy_jump_chain:list | None               = None
+    transport:paramiko.Transport | None        = None         # last hop of the NIRD chain, set by step08_03
+    transport_stack:list[ paramiko.Transport ] | None = None
+    run_dir_created:bool                       = False        # True once this invocation created demultiplexRunIDdir; _write_failed_marker( ) writes only then
+    # max_workers: int                         = len( demux.tarFilesToTransferList ) # this would be possible if the firewall did not choke.
+    max_workers:int                            = 5            # this seems to be a hard limit for the current firewall at NVI. more than 5 workers gets us "Channel 11 - Closed" issues
     ######################################################
-    bw_port                         = 8087
-    bw_localhost                    = "127.0.0.1" # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. refering it by IP allows us to deterministically resolve the address
-    bw_baseurl                      = f"http://{bw_localhost}:{bw_port}"
+    bw_port:int                                = 8087
+    bw_localhost:str                           = "127.0.0.1"  # theoritically, this could be "localhost", but this might hit a IPv6 vs IPv4 resolution issue and glitch. Refering it by IP allows us to deterministically resolve the address
+    bw_baseurl:str                             = f"http://{bw_localhost}:{bw_port}"
+    bw_timeout:int                             = 5            # bw serve is local; 5 seconds is generous
     ######################################################
-    upload_vigas_enabled            = True                  # determine if the feature of uploading to vigas is enabled
-    transfer_to_vigas               = bool( )               # determine if trasfers should happen to nird
-    vigasp_api_key                  = ""    # we need to see how we can limit the damage including this api key can have
-    vigasp_copy_mode                = "serial"
-    allowed_vigasp_copy_modes       = [ "serial", "parallel" ]
+    upload_vigas_enabled:bool                  = True         # determine if the feature of uploading to vigas is enabled
+    upload_to_vigasp:bool                      = False      # determine if trasfers should happen to vigasp
+    vigasp_api_key:str                         = ""           # we need to see how we can limit the damage including this api key can have
+    vigasp_copy_mode:str                       = "serial"
+    allowed_vigasp_copy_modes:ClassVar[ list ] = [ "serial", "parallel" ]
+    irida_timeout:int                          = 60           # default timeout for IRIDA API metadata calls
+    irida_list_timeout:int                     = 180          # timeout for project sample list calls; large projects under load exceed 60s
+    irida_list_retries:int                     = 6            # attempts for the sample list call before giving up
+    irida_list_retry_backoff:int               = 120          # seconds; doubled after each failed attempt
+    irida_upload_timeout:int                   = 300          # 5 minutes; uploading large files to IRIDA on NREC mechanical drives
+    irida_verify_max_poll_attempts:int         = 10           # how many times to poll for uploadSha256 before giving up
+    irida_verify_poll_interval_seconds:int     = 5            # seconds between polls
+    irida_max_in_flight:int                    = 2            # max concurrent IRIDA upload workers (each worker POSTs one R1+R2 pair), so N workers -> N*2 files in flight # 2 is the safe default for current VIGASP NREC VM
+    irida_upload_batch_stagger_seconds:int     = 60           # seconds to wait between upload batches; 0 = no stagger; tune if IRIDA async processing queue falls behind # lowest verify time, consistent pass rate
+    irida_stage_times:ClassVar[ dict ]         = { 'preflight': 0.0, 'check_projects': 0.0, 'hash': 0.0, 'create_run': 0.0, 'upload': 0.0, 'verify': 0.0, 'complete': 0.0 } # per-stage wall times in seconds populated by deliver_files_to_VIGASP
+    irida_oauth_token:str                      = ""
+    irida_bw_item_uuid:str                     = "a615e24b-c323-48c1-92aa-b474009567e7"
+    irida_base_url:str                         = "http://irida.vigasp.vetinst.no:8080/irida-23.01.3"
+    # Bitwarden endpoint for IRIDA credentials
+    # IRIDA API endpoints - no leading slashes; URLs are built as f"{irida_base_url}/{endpoint}/{id}"
+    irida_bw_item_endpoint:str                 = "object/item"
+    irida_oauth_token_endpoint:str             = "api/oauth/token"
+    irida_projects_endpoint:str                = "api/projects"
+    irida_samples_endpoint:str                 = "api/samples"
+    irida_sequencingrun_endpoint:str           = "api/sequencingrun"
+    irida_project_samples_subpath:str          = "samples"
+    irida_sequence_files_subpath:str           = "sequenceFiles"
+    irida_sequence_files_pairs_subpath:str     = "pairs"
+    irida_layout_type:str                      = "PAIRED_END" # only paired-end supported; single-end (RNA) will be a future extension, if ever needed
+    irida_sequencer_type:str                   = "directory"  # IRIDA categorization never really implemented; always "directory"
+    irida_upload_status_uploading:str          = "UPLOADING"
+    irida_upload_status_complete:str           = "COMPLETE"
+    irida_upload_status_error:str              = "ERROR"
+    # pre-built URLs for endpoints without a dynamic ID
+    irida_bw_item_url:str                      = f"{bw_baseurl}/{irida_bw_item_endpoint}/{irida_bw_item_uuid}"
+    irida_oauth_token_url:str                  = f"{irida_base_url}/{irida_oauth_token_endpoint}"
+    irida_client_id:str                        = ""
+    irida_client_secret:str                    = ""
+    irida_username:str                         = ""
+    irida_password:str                         = ""
+    irida_samples:ClassVar[ list ]             = [ ]
+    irida_verified_projects:ClassVar[ dict ]   = { }
+    irida_local_hashes:ClassVar[ dict ]        = { }
+    irida_sequencing_run_id:int                = 0
+    irida_uploaded_samples:ClassVar[ list ]    = [ ]
+    irida_verification_passed:bool             = False
+    irida_run_completed:bool                   = False
     ######################################################
-    availableCpus:int               = os.cpu_count() # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
-    cpuMultiplier: int              = 2
-    running_threads:int             = availableCpus * cpuMultiplier  # the amount of threads bcl2fastq, fasqcq and multiqc to use
+    availableCpus:int                          = os.cpu_count( ) or 1 # get the available CPUs, and use that for --loading-threads, --processing-threads, --writing-threads
+    cpuMultiplier:int                          = 2
+    running_threads:int                        = availableCpus * cpuMultiplier  # the amount of threads bcl2fastq, fasqcq and multiqc to use
     ######################################################
-    with open( __file__ ) as f:     # little trick from openstack: read the current script and count the functions and initialize totalTasks to it
-        tree = ast.parse( f.read( ) )
-        totalTasks = sum( isinstance( exp, ast.FunctionDef ) for exp in tree.body ) + 2 # + 2 adjust as needed
+    totalTasks = 30 # hardcoded until the object refactor; steps include VIGASP and NIRD delivery
     n = 0 # counter for keeping track of the number of the current task
+
+    # per-run state: every attribute a run fills in that the next run in the same invocation must not inherit.
+    # reset_run_state( ) puts each one back to its class-body default (snapshot in _per_run_defaults, below the class).
+    # add the name of any new per-run list, dict, flag or counter here.
+    _per_run_defaults: ClassVar[ dict ]        = { }          # snapshot of the per-run defaults, filled once at import at the end of this file
+    _PER_RUN_ATTRIBUTES: tuple[ str, ... ] = (
+        "state", "n",
+        "project_samples_metadata", "projectList", "newProjectNameList", "newProjectFileList",
+        "controlProjectsFoundList", "emptyProjectsFoundList", "tarFilesToTransferList",
+        "globalDictionary", "absoluteFilesToTransferList",
+        "transfer_to_nird", "upload_to_vigasp",
+        "proxy_jump_chain", "transport", "transport_stack", "run_dir_created",
+        "irida_stage_times", "irida_oauth_token", "irida_client_id", "irida_client_secret", "irida_username", "irida_password",
+        "irida_samples", "irida_verified_projects", "irida_local_hashes",
+        "irida_sequencing_run_id", "irida_uploaded_samples", "irida_verification_passed", "irida_run_completed",
+    )
+
+    @classmethod
+    def reset_run_state( cls ) -> None:
+        """
+        Put every per-run attribute back to its class-body default, so a run never inherits
+        lists, flags or counters from the run processed before it in the same invocation.
+        """
+        for name in cls._PER_RUN_ATTRIBUTES:
+            setattr( cls, name, copy.deepcopy( cls._per_run_defaults[ name ] ) )
 
 
 
@@ -235,12 +294,14 @@ class demux:
         self.RunID = RunID # variables in __init___ are unique to each instance
         # # self.RunID = discover_new_runs( )  # this is for later # apparently this si a bad idea
 
+    @staticmethod
     def _get_unique_sample_projects( sample_sheet ):
         """
         Returns the list of sample project names from the sample sheet, preserving their original order and removing duplicates.
         """
         return list( dict.fromkeys( sample_obj.Sample_Project for sample_obj in sample_sheet.samples ) )
 
+    @staticmethod
     def _create_renamed_demux_project_list( projectList ):
         """
         Returns the list of project names with test and control projects removed and all remaining projects renamed using runIDShort.
@@ -251,13 +312,14 @@ class demux:
             if any( var in project for var in [ demux.testProject ] ):                 # skip the test project, 'FOO-blahblah-BAR'
                 continue
             elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
-                controlProjectsFoundList.append( project )
+                demux.controlProjectsFoundList.append( project )
                 continue
             elif project not in newProjectNameList:
                 newProjectNameList.append( f"{demux.runIDShort}.{project}" )  #  since we are here, we might construct the new name list.
 
         return newProjectNameList
 
+    @staticmethod
     def _create_tar_files_to_transfer_list( newProjectNameList ):
         """
         Builds and returns the list of absolute tar file paths to transfer, skipping test and control projects and appending the tar suffix for each remaining project.
@@ -268,25 +330,54 @@ class demux:
             if any( var in project for var in [ demux.testProject ] ):                 # skip the test project, 'FOO-blahblah-BAR'
                 continue
             elif any( var in project for var in demux.controlProjects ):                # if the project name includes a control project name, ignore it
-                controlProjectsFoundList.append( project )
+                demux.controlProjectsFoundList.append( project )
                 continue
             elif project not in tarFilesToTransferList:
                 tarFilesToTransferList.append(  os.path.join( demux.forTransferDir, demux.RunID, project + demux.tarSuffix) )
 
         return tarFilesToTransferList
 
-    def _build_project_sample_metadata( sample_sheet: SampleSheet) -> dict[str, dict[str, dict]]:
+    @staticmethod
+    def _build_project_sample_metadata( sample_sheet: SampleSheet) -> defaultdict[ str, dict[ str, dict[ str, bool | int | str ] ] ]:
         """
         Build a nested mapping from Sample_Project to Sample_ID and all transfer-related metadata fields.
         """
-        project_samples_metadata = defaultdict( dict ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
+        # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
+        project_samples_metadata: defaultdict[ str, dict[ str, dict[ str, bool | int | str ] ] ] = defaultdict( dict )
 
         for sample in sample_sheet.samples:
+            if sample.Sample_Name and sample.Sample_Name != sample.Sample_ID:          # bcl2fastq would put this sample's FASTQs in a per-sample subdirectory (#221)
+                raise ValueError( f"Sample_Name '{sample.Sample_Name}' differs from Sample_ID '{sample.Sample_ID}'. Aborting." )
+            if not ( sample.Sample_Project or "" ).strip( ):                             # bcl2fastq would write this sample's FASTQs into the top of the run directory, and step02 would rename the run directory into itself
+                raise ValueError( f"Sample_Project is empty for sample '{sample.Sample_ID}'. Aborting." )
+
+            for field, value in {
+                'Transfer_VIGAS': sample.Transfer_VIGAS,
+                'Transfer_NIRD':  sample.Transfer_NIRD,
+                'NIRD_Location':  sample.NIRD_Location,
+                'VIGASP_ID':      sample.VIGASP_ID,
+            }.items():
+                if value is None:
+                    raise ValueError( f"{field} is None for sample '{sample.Sample_ID}'. Aborting." )
+
+            try:
+                vigasp_id = int( sample.VIGASP_ID )
+            except ValueError:
+                raise ValueError( f"VIGASP_ID '{sample.VIGASP_ID}' for sample '{sample.Sample_ID}' is not a valid integer. Aborting." )
+
+            # bool() and str() will not raise; they accept anything. So no guard needed there.
+            transfer_vigas = bool( sample.Transfer_VIGAS.lower() == "yes" )
+            transfer_nird  = bool( sample.Transfer_NIRD.lower()  == "yes" )
+            if not os.path.isabs( sample.NIRD_Location ):
+                raise ValueError( f"NIRD_Location '{sample.NIRD_Location}' for sample '{sample.Sample_ID}' is not an absolute path. Aborting." )
+            nird_location  = str(  sample.NIRD_Location )
+
+
             project_samples_metadata[ sample.Sample_Project ][ sample.Sample_ID ] = {
-                'transfer_to_vigas': sample.Transfer_VIGAS.lower( ) == "yes",
-                'vigas_project_id': int( sample.VIGASP_ID ),
-                'transfer_to_nird': sample.Transfer_NIRD.lower( ) == "yes",
-                'nird_location': sample.NIRD_Location,
+                'upload_to_vigasp': transfer_vigas,
+                'vigas_project_id': vigasp_id,
+                'transfer_to_nird': transfer_nird,
+                'nird_location': nird_location,
             }
 
         return project_samples_metadata
@@ -295,7 +386,8 @@ class demux:
     ########################################################################
     # parse_sample_sheet
     ########################################################################
-    def parse_sample_sheet( ):
+    @staticmethod
+    def parse_sample_sheet( ) -> None:
         """
         Parse the NVI SampleSheet.csv into an object and get the associated project name(s)
 
@@ -304,7 +396,7 @@ class demux:
 
         Returns:
             Samplesheet object
-            List of included Sample Projects. 
+            List of included Sample Projects.
                 Example of returned projectList:     {'SAV-amplicon-MJH'}
 
         Parsing is done by the sample_sheet library
@@ -317,33 +409,55 @@ class demux:
         # use print for now till we figure out what is going on with the logging
         print( termcolor.colored( f"==> {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} started ==\n", color="green", attrs=["bold"] ) )
 
-        sample_sheet                    = SampleSheet( demux.sampleSheetFilePath )
-        demux.projectList               = demux._get_unique_sample_projects( sample_sheet )    # get the project list
-        demux.newProjectNameList        = demux._create_renamed_demux_project_list( demux.projectList ) # translate the project list to absolute names
-        demux.tarFilesToTransferList    = demux._create_tar_files_to_transfer_list( demux.newProjectNameList ) # does not create the absolute path.
+        # Prefer SampleSheet-with-path-names over SampleSheet.csv when present.
+        # Fallback removed in issue #195 once upload daemon sources paths from ShinyLIMS.
+        # https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/195
+        _samplesheet_with_paths         = os.path.join( os.path.dirname( demux.sampleSheetFilePath ), "SampleSheet-with-path-names.csv" )
+        _samplesheet_path               = _samplesheet_with_paths if os.path.isfile( _samplesheet_with_paths ) else demux.sampleSheetFilePath
+        sample_sheet                    = SampleSheet( _samplesheet_path )
+        # sample_sheet                  = SampleSheet( demux.sampleSheetFilePath )
+        demux.projectList               = demux._get_unique_sample_projects( sample_sheet )                     # get the project list
+        demux.newProjectNameList        = demux._create_renamed_demux_project_list( demux.projectList )         # translate the project list to absolute names
+        demux.tarFilesToTransferList    = demux._create_tar_files_to_transfer_list( demux.newProjectNameList )  # does not create the absolute path.
+        demux.tarFilesToTransferList.append( demux.forTransferQCtarFile )                                       # QC tar joins the transfer list here
         demux.project_samples_metadata  = demux._build_project_sample_metadata( sample_sheet ) # hold an association of Sample_Project -> Sample_ID { Transfer_VIGAS, VIGASP_ID, Transfer_NIRD, NIRD_Location }
 
+        ##########################################################################################
+        # Development-only override, disabled 2026-09-12 for the 2.0 production rollout: forced every sample to
+        # upload_to_vigasp=True and vigas_project_id=154 (IRIDA project ZZTEST_API_DO_NOT_USE, see tests/integration_step07.py)
+        # so live runs landed in the test project. Real values now come from Transfer_VIGAS and VIGASP_ID in the SampleSheet
+        # via _build_project_sample_metadata(). Closes the VIGASP half of #205.
+        ##########################################################################################
+        # for project in demux.project_samples_metadata:
+            # for sample_id in demux.project_samples_metadata[ project ]:
+                # demux.project_samples_metadata[ project ][ sample_id ][ 'upload_to_vigasp' ] = True
+                # demux.project_samples_metadata[ project ][ sample_id ][ 'vigas_project_id' ]  = 154
 
-        for project, tar_file in zip( demux.projectList, demux.tarFilesToTransferList ):
-            # take the project-level value directly from the first sample in that project
-            first_sample = next( iter( demux.project_samples_metadata[ project ].values( ) ) )
+        for project in demux.projectList:
+            if any( var in project for var in [ demux.testProject ] ):                  # skip the test project; it gets no tar, same rule as _create_tar_files_to_transfer_list( )
+                continue
+            if any( var in project for var in demux.controlProjects ):                  # skip control projects; they get no tar, same rule as _create_tar_files_to_transfer_list( )
+                continue
+            # derive the tar path from the project name, so control and test projects in any SampleSheet row cannot shift the pairing
+            tar_file:str = os.path.join( demux.forTransferDir, demux.RunID, f"{demux.runIDShort}.{project}{demux.tarSuffix}" )
+            # the whole project is one tar, so Transfer_NIRD must be the same for every sample in it
+            transfer_flags: set[ bool | int | str ] = { entry[ 'transfer_to_nird' ] for entry in demux.project_samples_metadata[ project ].values( ) }
+            if len( transfer_flags ) != 1:
+                raise ValueError( f"Transfer_NIRD mismatch for Sample_Project '{project}': {sorted( transfer_flags )}. Aborting." )
+            locations: set[ bool | int | str ] = { entry[ 'nird_location' ] for entry in demux.project_samples_metadata[ project ].values( ) }
+            if len( locations ) != 1:
+                raise ValueError( f"NIRD_Location mismatch for Sample_Project '{project}': {sorted( locations )}. Aborting." )
             demux.absoluteFilesToTransferList[ tar_file ]  = {
-                'transfer_to_nird': first_sample[ 'transfer_to_nird' ]
+                'transfer_to_nird':     next( iter( transfer_flags ) ),
+                'nird_upload_location': next( iter( locations ) )
             }
 
-        demux.transfer_to_vigas     = all( entry[ 'transfer_to_vigas' ] for entry in demux.project_samples_metadata[ project ].values( ) ) # all( ) logical ANDs the values
-        demux.transfer_to_nird      = all( entry[ 'transfer_to_nird' ]  for entry in demux.project_samples_metadata[ project ].values( ) )
-
-        # locations: set[str] = { entry[ "nird_location" ] for entry in demux.project_samples_metadata[ project ].values( )}
-        # if len( locations ) != 1:
-        #     raise ValueError( f"NIRD_Location mismatch for Sample_Project '{project}': {sorted( locations )}" )
-        # nird_upload_location: str = next( iter( locations ) )
-        # demux.absoluteFilesToTransferList[tar_file]["nird_upload_location"] = nird_upload_location
-
+        demux.upload_to_vigasp      = any( entry[ 'upload_to_vigasp' ] for samples in demux.project_samples_metadata.values( ) for entry in samples.values( ) ) # any( ) logical ORs the values: upload if at least one sample is marked for VIGASP
+        demux.transfer_to_nird      = any( entry[ 'transfer_to_nird' ]  for samples in demux.project_samples_metadata.values( ) for entry in samples.values( ) ) # any( ) logical ORs the values: upload if at least one sample is marked for NIRD
 
         # if we are debugging, print out the list of projects.
         if demux.verbosity == 3:
-            pprint( "projectList: ", demux.projectList, width = 120 )
+            print( "projectList: " + pprint.pformat( demux.projectList, width = 120 ) )
 
         print( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Get project name from {demux.sampleSheetFilePath} finished ==\n", color="red", attrs=["bold"] ) )
 
@@ -356,7 +470,7 @@ class demux:
         Check to see if the tar files created for delivery can be listed with no errors
         use
             TarFile.list(verbose=True, *, members=None)
-                    Print a table of contents to sys.stdout. If verbose is False, only the names of the members are logging.infoed. If it is True, output similar to that of ls -l is produced. If optional members is given, it must be a subset of the list returned by getmembers(). 
+                    Print a table of contents to sys.stdout. If verbose is False, only the names of the members are logging.infoed. If it is True, output similar to that of ls -l is produced. If optional members is given, it must be a subset of the list returned by getmembers().
 
             https://docs.python.org/3/library/tarfile.html
 
@@ -531,4 +645,7 @@ class demux:
         return sampleSheetContent
 
 
-
+# snapshot the class-body defaults once, at import, before any run changes them; demux.reset_run_state( ) copies them back
+demux._per_run_defaults = { }
+for name in demux._PER_RUN_ATTRIBUTES:
+    demux._per_run_defaults[ name ] = copy.deepcopy( getattr( demux, name ) )

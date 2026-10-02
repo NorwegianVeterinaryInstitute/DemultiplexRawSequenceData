@@ -1,12 +1,12 @@
-#!/usr/bin/python3.11
 
 import logging
 import os
 import stat
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # prepare_fortransfer_directory_structure
@@ -27,17 +27,17 @@ def prepare_fortransfer_directory_structure( demux ):
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     try:
         os.mkdir( demux.forTransferRunIdDir )       # try to create the demux.forTransferRunIdDir directory ( /data/for_transfer/220603_M06578_0105_000000000-KB7MY )
         os.chmod( demux.forTransferRunIdDir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH ) # rwxrwxr-x / 775 / read-write-execute owner, read-write-execute group, read-execute others
-    except Exception as err:
-        text = f"{demux.forTransferRunIdDir} cannot be created: { str( err ) }\nExiting!"
+    except OSError as err:
+        text = f"{demux.forTransferRunIdDir} cannot be created: { err !s}\nExiting!"
         demuxFailureLogger.critical( f"{ text }" )
         demuxLogger.critical( f"{ text }" )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks:  Create delivery directory structure under {demux.forTransferRunIdDir} ==\n", color="red", attrs=["bold"] ) )
 

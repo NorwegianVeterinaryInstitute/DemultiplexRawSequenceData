@@ -1,9 +1,10 @@
 import logging
 import shutil
 import sys
+
 import termcolor
 
-from demux.loggers import demuxLogger, demuxFailureLogger
+from demux.loggers import demuxFailureLogger, demuxLogger
 
 ########################################################################
 # checkRunningEnvironment( )
@@ -27,14 +28,14 @@ def check_running_environment( demux ):
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
 
     if not any( demux.projectList ):
         text = "List projectList contains no projects/zero length! Exiting." 
         demuxFailureLogger.critical( text  )
         demuxLogger.critical( text )
         logging.shutdown( )
-        sys.exit( )
+        sys.exit( 1 )
     elif demux.debug and len( demux.projectList ) == 1: 
         demux.projectList.append( demux.testProject )               # if debug, have at least two project names to ensure multiple paths are being created
 
