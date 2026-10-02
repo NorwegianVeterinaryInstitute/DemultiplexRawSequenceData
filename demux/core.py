@@ -79,6 +79,7 @@ class demux:
     python3_bin:str                            = "/usr/bin/python3.11"     # Switching over to python3.11 for speed gains
     ######################################################
     rtaCompleteFile:str                        = 'RTAComplete.txt'
+    copyCompleteFile:str                       = 'CopyComplete.txt'    # written by the sequencer when the run has been copied to rawdata; every seqtech00 run since 2023-02 has it
     sampleSheetFileName:str                    = 'SampleSheet.csv'          # or 'SampleSheet-with-path-names.csv': https://github.com/NorwegianVeterinaryInstitute/DemultiplexRawSequenceData/issues/195
     testProject:str                            = 'FOO-blahblah-BAR'
     Sample_Project:str                         = 'Sample_Project'

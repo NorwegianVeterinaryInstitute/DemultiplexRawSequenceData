@@ -29,6 +29,11 @@ def setup_environment( RunID ):
     demux.rawDataRunIDdir               = os.path.join( demux.rawDataDir,           demux.RunID )
     demux.sampleSheetFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.sampleSheetFileName )
     demux.rtaCompleteFilePath           = os.path.join( demux.rawDataRunIDdir,      demux.rtaCompleteFile )
+    demux.copyCompleteFilePath          = os.path.join( demux.rawDataRunIDdir,      demux.copyCompleteFile )
+
+    missing_markers: list[ str ] = [ path for path in ( demux.rtaCompleteFilePath, demux.copyCompleteFilePath, demux.sampleSheetFilePath ) if not os.path.isfile( path ) ]   # same readiness rule as scan mode: a RunID given on the command line is not exempt
+    if missing_markers:
+        raise FileNotFoundError( f"{RunID} is not ready for demultiplexing, missing: {', '.join( missing_markers )}" )
 
 
 ######################################################
@@ -69,6 +74,7 @@ def setup_environment( RunID ):
         'runIDShort'                    : "",
         'rawDataRunIDdir'               : "",
         'rtaCompleteFilePath'           : "",
+        'copyCompleteFilePath'          : "",
         'sampleSheetFilePath'           : "",
         'demultiplexRunIDdir'           : "",
         'demultiplexLogDirPath'         : "",
@@ -94,6 +100,7 @@ def setup_environment( RunID ):
     demux.globalDictionary[ 'runIDShort'                   ] = demux.runIDShort
     demux.globalDictionary[ 'rawDataRunIDdir'              ] = demux.rawDataRunIDdir
     demux.globalDictionary[ 'rtaCompleteFilePath'          ] = demux.rtaCompleteFilePath
+    demux.globalDictionary[ 'copyCompleteFilePath'         ] = demux.copyCompleteFilePath
     demux.globalDictionary[ 'sampleSheetFilePath'          ] = demux.sampleSheetFilePath
     demux.globalDictionary[ 'demultiplexRunIDdir'          ] = demux.demultiplexRunIDdir
     demux.globalDictionary[ 'demultiplexLogDirPath'        ] = demux.demultiplexLogDirPath

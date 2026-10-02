@@ -44,12 +44,15 @@ class RawDataDirectory:
     def is_ready( self, runid: str ) -> bool:
         """
         Check if a run is ready for demultiplexing.
-        A run is ready if both RTAComplete.txt and SampleSheet.csv are present.
+        A run is ready when RTAComplete.txt, CopyComplete.txt and SampleSheet.csv are all present:
+        RTAComplete.txt means the sequencer finished, CopyComplete.txt that it finished copying the run here.
         """
         run_path = os.path.join( self.path, runid )
-        ready = ( demux.core.demux.rtaCompleteFile in os.listdir( run_path ) and demux.core.demux.sampleSheetFileName in os.listdir( run_path ) )
+        entries  = os.listdir( run_path )
+        missing  = [ marker for marker in ( demux.core.demux.rtaCompleteFile, demux.core.demux.copyCompleteFile, demux.core.demux.sampleSheetFileName ) if marker not in entries ]
+        ready    = not missing
         if not ready:
-            demuxLogger.warning( f"{runid}: not ready for demultiplexing, waiting for RTAComplete.txt and/or SampleSheet.csv" )
+            demuxLogger.warning( f"{runid}: not ready for demultiplexing, waiting for {', '.join( missing )}" )
         return ready
 
 

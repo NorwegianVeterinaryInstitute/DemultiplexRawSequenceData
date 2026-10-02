@@ -11,7 +11,7 @@ SEPARATOR:str = "===============================================================
 # explicit grouping: section -> globalDictionary keys. Replaces the stateLetter
 # first-letter automaton, which depended on globalDictionary insertion order.
 SECTIONS:dict[ str, list[ str ] ] = {
-    'Run':          [ 'RunID', 'runIDShort', 'rawDataRunIDdir', 'rtaCompleteFilePath', 'sampleSheetFilePath' ],
+    'Run':          [ 'RunID', 'runIDShort', 'rawDataRunIDdir', 'rtaCompleteFilePath', 'copyCompleteFilePath', 'sampleSheetFilePath' ],
     'Demultiplex':  [ 'demultiplexRunIDdir', 'demuxQCDirectoryFullPath' ],
     'Logs':         [ 'demuxRunLogFilePath', 'demuxCumulativeLogFilePath', 'demultiplexLogDirPath', 'demultiplexScriptLogFilePath', 'bcl2FastqLogFile', 'fastQCLogFilePath', 'mutliQCLogFilePath' ],
     'Transfer':     [ 'forTransferRunIdDir', 'forTransferQCtarFile', 'sampleSheetArchiveFilePath' ],
