@@ -27,9 +27,16 @@ def set_loggers( main_logger, failure_logger ):
 ########################################################################
 # setup_event_and_log_handling( )
 ########################################################################
-def setup_event_and_log_handling( logging_level = logging.DEBUG ):
+def _has_file_handler( path: str ) -> bool:
+    """True if demuxLogger already writes to path; FileHandler stores the absolute path in baseFilename."""
+    return any( isinstance( h, logging.FileHandler ) and h.baseFilename == os.path.abspath( path ) for h in demuxLogger.handlers )
+
+
+def setup_event_and_log_handling( logging_level = logging.DEBUG, cumulative_log_path: str = "" ):
     """
     Setup the event and log handling we will be using everywhere
+    cumulative_log_path: /data/log/demultiplex.log. Attached here, before any run is picked, so the scan
+        of an idle tick is on file too and not only on the console (#242).
     Be carefu: 
         setup_event_and_log_handling() should not bump demux.n or emit "task started/finished" banners.
         This function should do one thing: wire handlers. Otherwise, you are itching for a chicken-and-egg log problem
@@ -64,6 +71,14 @@ def setup_event_and_log_handling( logging_level = logging.DEBUG ):
 
     if not any( isinstance( h, logging.handlers.SysLogHandler ) for h in demuxLogger.handlers):
         demuxLogger.addHandler(demuxSyslogLoggerHandler)
+
+    if cumulative_log_path and not _has_file_handler( cumulative_log_path ):
+        if os.path.isdir( os.path.dirname( cumulative_log_path ) ):
+            demuxFileCumulativeLogHandler = logging.FileHandler( cumulative_log_path, mode = 'a', encoding = 'utf-8' )
+            demuxFileCumulativeLogHandler.setFormatter( demuxLogFormatter )
+            demuxLogger.addHandler( demuxFileCumulativeLogHandler )
+        else:
+            demuxLogger.warning( f"{os.path.dirname( cumulative_log_path )} does not exist; the scan is logged to the console only" )
     
     # demuxLogger.addHandler( demuxSMTPsuccessLogHandler )
 
@@ -163,6 +178,9 @@ def setup_file_log_handling( demux ):
 
     demuxLogger.addHandler( demuxScriptLogHandler )
     demuxLogger.addHandler( demuxFileLogHandler )
-    demuxLogger.addHandler( demuxFileCumulativeLogHandler )
+    if _has_file_handler( demux.demuxCumulativeLogFilePath ):                                       # already attached by setup_event_and_log_handling( ); a second handler would write every line twice
+        demuxFileCumulativeLogHandler.close( )
+    else:
+        demuxLogger.addHandler( demuxFileCumulativeLogHandler )
 
     demuxLogger.info( termcolor.colored( f"==< {demux.n}/{demux.totalTasks} tasks: Setup the file event and log handling ==\n", color="red", attrs=["bold"] ) )

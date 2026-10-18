@@ -147,6 +147,11 @@ def detect_new_runs( rawdata: RawDataDirectory, demultiplex: DemultiplexDirector
 
     demuxLogger.info( termcolor.colored( f"{len( rawdata.runs )} in rawdata, {len( demultiplex.runs )} in demultiplex, {len( demultiplex.incomplete_runs )} incomplete, {len( ready_runs )} new runs ready.", color = "light_cyan", attrs = [ "reverse" ] ) )
 
+    if demultiplex.incomplete_runs and ready_runs:                                                  # an incomplete run holds the queue: nothing newer starts until the operator has dealt with it
+        held = ", ".join( ready_runs )
+        demuxLogger.critical( termcolor.colored( f"{len( ready_runs )} new run(s) held back until the incomplete run(s) above are removed: {held}", color="red", attrs=["bold", "reverse"] ) )
+        return [ ]
+
     if not ready_runs:
         demuxLogger.info("No new runs to process.")
 

@@ -256,8 +256,8 @@ def process_run(RunID: str) -> None:
     if not demux.upload_to_vigasp and not demux.transfer_to_nird:
         demuxLogger.info( termcolor.colored( "\n\nNo files uploaded.\n", color="light_cyan", attrs=["blink"] ) )
     demuxLogger.info( termcolor.colored( "\n====== All done! ======\n", attrs=["blink"] ) )
-    for handler in list( demuxLogger.handlers ):                                                        # detach and close this run's three log files, so the next run in the queue does not write into them
-        if isinstance( handler, logging.FileHandler ):
+    for handler in list( demuxLogger.handlers ):                                                        # detach and close this run's two log files, so the next run in the queue does not write into them; demultiplex.log stays attached for the whole invocation
+        if isinstance( handler, logging.FileHandler ) and handler.baseFilename != os.path.abspath( demux.demuxCumulativeLogFilePath ):
             demuxLogger.removeHandler( handler )
             handler.close( )
 
@@ -307,7 +307,7 @@ def main( RunIDs: list) -> None:
     All actions are coordinated through here
     """
 
-    setup_event_and_log_handling( )                                                                       # setup the event and log handing, which we will use everywhere, sans file logging 
+    setup_event_and_log_handling( cumulative_log_path = os.path.join( demux.logDirPath, demux.demuxCumulativeLogFileName ) ) # console, syslog and /data/log/demultiplex.log; the per-run log files are attached by setup_file_log_handling( )
     if not RunIDs:
         rawdata      = RawDataDirectory(demux.rawDataDir)
         demultiplex  = DemultiplexDirectory(demux.demultiplexDir)
