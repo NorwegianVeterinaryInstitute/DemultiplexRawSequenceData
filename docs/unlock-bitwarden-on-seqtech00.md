@@ -22,14 +22,22 @@ It asks for three things, in order:
 
 If it answers "You are already logged in", go to step 3.
 
-## 3. Restart the Bitwarden service
+## 3. Check the vault
+
+Type:
+
+    /usr/local/bin/vault_status.sh
+
+It answers in one line. "Vault is UNLOCKED. Everything is ready." means there is nothing to do; go to step 7. Any other answer: continue with step 4.
+
+## 4. Restart the Bitwarden service
 
 Type both lines, pressing **Enter** after each:
 
     systemctl --user stop bw-serve.service
     systemctl --user start bw-serve.service
 
-## 4. Unlock the vault
+## 5. Unlock the vault
 
 Type:
 
@@ -37,7 +45,7 @@ Type:
 
 It asks for your master password. Nothing is shown while you type. Press **Enter** when done. No message means it worked.
 
-## 5. Check
+## 6. Check
 
 Type:
 
@@ -45,10 +53,10 @@ Type:
 
 It answers in one line. "Vault is UNLOCKED. Everything is ready." means you are done. Any other answer tells you what to run and which step to go back to.
 
-## 6. Log out
+## 7. Log out
 
 Type `exit` and press **Enter**. The window closes. The Bitwarden service keeps running after you log out.
 
-## 7. If something goes wrong
+## 8. If something goes wrong
 
-Redo steps 3 and 4. If it still fails, send support the exact text on the screen.
+Redo steps 4 and 5. If it still fails, send support the exact text on the screen.
